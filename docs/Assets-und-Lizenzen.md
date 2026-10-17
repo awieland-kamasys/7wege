@@ -4,7 +4,7 @@ Alle externen Modelle, Texturen, Bilder, Schriften und Audio-Dateien hier dokume
 
 | Asset | Quelle/Urheber | Lizenz | Namensnennung nötig? | Ablage | Status |
 |---|---|---|---|---|---|
-|  |  |  |  |  | offen |
+| Graumännchen 3D-Charakter (`grey-man.glb`, reduziert aus `fantasy character 3d model.glb`) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/grey-man.glb` | aktiv |
 
 ## Regeln
 

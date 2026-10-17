@@ -1,3 +1,8 @@
+export interface PathPoint2D {
+  x: number;
+  z: number;
+}
+
 export interface ForestPathData {
   id: number;
   name: string;
@@ -10,16 +15,58 @@ export interface ForestPathData {
 const FULL_CIRCLE = Math.PI * 2;
 
 /**
+ * Wegpunkte für den erweiterten 1. Weg (Silberstollen-Pfad):
+ * Startet an der Kreuzung nach Norden (-Z), beschreibt im Nebel eine langgezogene Rechtskurve
+ * nach Nordosten und endet auf einem kleinen Felsvorplatz vor dem Berg mit Höhleneingang.
+ */
+export const PATH_1_WAYPOINTS: readonly PathPoint2D[] = [
+  { x: 0, z: -5.5 },
+  { x: 0, z: -14.0 },
+  { x: 0.6, z: -21.5 },
+  { x: 3.8, z: -28.5 },
+  { x: 9.2, z: -34.8 },
+  { x: 15.8, z: -40.2 },
+  { x: 22.0, z: -45.0 },
+];
+
+/**
+ * Vorplatz am Ende von Weg 1 direkt vor dem Bergmassiv und dem Stolleneingang.
+ */
+export const PATH_1_END_CLEARING = {
+  x: 22.0,
+  z: -45.0,
+  radius: 4.2,
+} as const;
+
+/**
+ * Position des Bergmassivs mit dem Höhleneingang (Stollenmundloch) am Ende von Weg 1.
+ * rotationY = -0.885 richtet die lokale +Z-Achse (Stollenöffnung) exakt auf den Vorplatz (22.0, -45.0) aus.
+ */
+export const CAVE_ENTRANCE_POS = {
+  x: 25.4,
+  z: -47.8,
+  rotationY: -0.885,
+} as const;
+
+/**
+ * Position des Graumännchens (NPC vor dem Höhleneingang am Ende von Weg 1).
+ */
+export const GREY_MAN_NPC_POS: PathPoint2D = {
+  x: 22.7,
+  z: -47.0,
+};
+
+/**
  * Die sieben Waldwege, die sternförmig von der Waldkreuzung abgehen.
  */
 export const SEVEN_PATHS: readonly ForestPathData[] = [
   {
     id: 1,
-    name: '1. Nordpfad der Stille',
+    name: '1. Silberstollen-Pfad',
     directionLabel: 'Norden',
     angleRad: (0 * FULL_CIRCLE) / 7,
-    subtitle: 'Ein moosbedeckter Pfad zwischen alten Tannen.',
-    colorHex: 0x4f7f58,
+    subtitle: 'Ein gewundener Bergpfad zum alten Stollen und dem Graumännchen.',
+    colorHex: 0x6b8c7b,
   },
   {
     id: 2,

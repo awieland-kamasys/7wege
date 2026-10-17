@@ -1,5 +1,12 @@
-import { GUIDE_NPC_NAME } from '../data/npcDialogues';
-import { ForestPathData, SEVEN_PATHS } from '../data/paths';
+import { GREY_MAN_NPC_NAME, GUIDE_NPC_NAME } from '../data/npcDialogues';
+import {
+  CAVE_ENTRANCE_POS,
+  ForestPathData,
+  GREY_MAN_NPC_POS,
+  PATH_1_END_CLEARING,
+  PATH_1_WAYPOINTS,
+  SEVEN_PATHS,
+} from '../data/paths';
 
 export interface Vector2D {
   x: number;
@@ -8,6 +15,8 @@ export interface Vector2D {
 
 export type PointOfInterest =
   | { type: 'npc'; name: string; label: string }
+  | { type: 'grey_man'; name: string; label: string }
+  | { type: 'cave'; label: string }
   | { type: 'chest'; isOpen: boolean; label: string }
   | { type: 'signpost'; label: string }
   | { type: 'hut'; label: string }
@@ -15,9 +24,8 @@ export type PointOfInterest =
   | { type: 'clearing'; label: string };
 
 /**
- * Reine Spiellogik für die Waldkreuzung (ohne Three.js-Abhängigkeit, direkt mit Vitest testbar).
- * Enthält Oberflächenbegrenzung (nur Kreuzung und die 7 Wege sind begehbar) sowie
- * Kollisionserkennung für Schutzhütte, Wegweiser, Hinweisgeber-NPC und Schatztruhe.
+ * Reine Spiellogik für die Waldkreuzung und den erweiterten 1. Weg (Silberstollen-Pfad mit Kurve,
+ * Bergmassiv, Höhleneingang und Graumännchen-NPC). Ohne Three.js-Abhängigkeit direkt mit Vitest testbar.
  */
 export class CrossroadsState {
   // Schutzhütte im Zentrum (0, 0), Schatztruhe davor (0.85, 2.0),
@@ -35,8 +43,22 @@ export class CrossroadsState {
   private readonly npcPos: Vector2D = { x: -1.85, z: 2.05 };
   private readonly npcCollisionRadius = 0.48;
 
+  // Am Ende des 1. Weges: Bergmassiv mit Höhleneingang und davor das Graumännchen
+  private readonly greyManPos: Vector2D = { ...GREY_MAN_NPC_POS };
+  private readonly greyManCollisionRadius = 0.5;
+
+  private readonly cavePos: Vector2D = { x: CAVE_ENTRANCE_POS.x, z: CAVE_ENTRANCE_POS.z };
+  private readonly caveCollisionRadius = 3.0;
+  // Mindestabstand vor der Felsfront/Stollenöffnung im lokalen Koordinatensystem des Berges
+  private readonly caveFrontWallLz = 1.55;
+  private readonly caveLocalRockColliders: readonly { lx: number; lz: number; radius: number }[] = [
+    { lx: 0, lz: -1.45, radius: 3.0 }, // Stollenmundloch & Felsüberhang
+    { lx: -3.5, lz: -2.1, radius: 3.65 }, // Linke Felsflanke
+    { lx: 3.6, lz: -2.2, radius: 3.85 }, // Rechte Felsflanke
+  ];
+
   private readonly clearingRadius = 6.5;
-  private readonly pathHalfWidth = 0.9;
+  private readonly pathHalfWidth = 0.95;
   private readonly maxRadius = 26;
 
   private playerPos: Vector2D = { x: 0, z: 5.2 };
@@ -64,6 +86,10 @@ export class CrossroadsState {
     return { ...this.npcPos };
   }
 
+  public getGreyManPosition(): Readonly<Vector2D> {
+    return { ...this.greyManPos };
+  }
+
   public getChestPosition(): Readonly<Vector2D> {
     return { ...this.chestPos };
   }
@@ -89,12 +115,36 @@ export class CrossroadsState {
     return dist <= this.npcCollisionRadius + 1.05;
   }
 
+  public isNearGreyMan(): boolean {
+    const dist = Math.hypot(
+      this.playerPos.x - this.greyManPos.x,
+      this.playerPos.z - this.greyManPos.z
+    );
+    return dist <= this.greyManCollisionRadius + 1.25;
+  }
+
   public isNearChest(): boolean {
     const dist = Math.hypot(
       this.playerPos.x - this.chestPos.x,
       this.playerPos.z - this.chestPos.z
     );
     return dist <= this.chestCollisionRadius + 1.05;
+  }
+
+  /**
+   * Gibt zurück, ob sich die Spielfigur aktuell auf der zentralen Waldkreuzung befindet.
+   * Nur auf der Kreuzung darf ein neuer Weg über die Wegeauswahl gewählt werden.
+   */
+  public isOnClearing(): boolean {
+    return Math.hypot(this.playerPos.x, this.playerPos.z) <= this.clearingRadius + 0.15;
+  }
+
+  /**
+   * Lässt die Spielfigur zurück auf die zentrale Waldkreuzung laufen.
+   */
+  public setTargetToClearing(): Readonly<Vector2D> {
+    this.selectedPathId = null;
+    return this.setTargetPosition(0, 4.2);
   }
 
   public getSelectedPath(): ForestPathData | null {
@@ -115,6 +165,68 @@ export class CrossroadsState {
   }
 
   /**
+   * Berechnet für ein Segment von Weg 1 den Zentrumspunkt und den erlaubten Radius.
+   * Das letzte Segment bildet zusammen mit dem Vorplatz (Radius 4.2 m) eine konvexe Tapered Capsule,
+   * sodass beim Übergang vom Vorplatz auf den Weg keinerlei Kante oder Tasche entsteht.
+   */
+  private evaluatePath1Segment(
+    x: number,
+    z: number,
+    segmentIndex: number
+  ): { cx: number; cz: number; radius: number } {
+    const a = PATH_1_WAYPOINTS[segmentIndex];
+    const b = PATH_1_WAYPOINTS[segmentIndex + 1];
+    const abx = b.x - a.x;
+    const abz = b.z - a.z;
+    const len = Math.hypot(abx, abz);
+    if (len < 1e-6) {
+      return { cx: a.x, cz: a.z, radius: this.pathHalfWidth };
+    }
+
+    const ux = abx / len;
+    const uz = abz / len;
+    const relX = x - a.x;
+    const relZ = z - a.z;
+    const s = relX * ux + relZ * uz;
+
+    if (segmentIndex === PATH_1_WAYPOINTS.length - 2) {
+      const rA = this.pathHalfWidth;
+      const rB = PATH_1_END_CLEARING.radius;
+      const dr = rB - rA;
+      const perpDist = Math.hypot(relX - s * ux, relZ - s * uz);
+      const slopeLen = Math.sqrt(Math.max(1e-4, len * len - dr * dr));
+      const sStar = s + perpDist * (dr / slopeLen);
+      const t = Math.max(0, Math.min(1, sStar / len));
+      return {
+        cx: a.x + t * abx,
+        cz: a.z + t * abz,
+        radius: rA + t * dr,
+      };
+    }
+
+    const t = Math.max(0, Math.min(1, s / len));
+    return {
+      cx: a.x + t * abx,
+      cz: a.z + t * abz,
+      radius: this.pathHalfWidth,
+    };
+  }
+
+  /**
+   * Prüft, ob ein Punkt auf dem verlängerten, kurvigen 1. Weg oder dem Vorplatz am Höhleneingang liegt.
+   */
+  public isPointOnPath1(x: number, z: number): boolean {
+    const eps = 1e-4;
+    for (let i = 0; i < PATH_1_WAYPOINTS.length - 1; i++) {
+      const { cx, cz, radius } = this.evaluatePath1Segment(x, z, i);
+      if (Math.hypot(x - cx, z - cz) <= radius + eps) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Prüft, ob ein Punkt auf der zentralen Kreuzung oder auf einem der 7 befestigten Waldwege liegt.
    * Grünflächen und Wald außerhalb dieser Geometrie sind nicht begehbar.
    */
@@ -124,11 +236,21 @@ export class CrossroadsState {
     if (distFromCenter <= this.clearingRadius + eps) {
       return true;
     }
+
+    // Weg 1 besitzt eine verlängerte Kurve bis zum Bergmassiv
+    if (this.isPointOnPath1(x, z)) {
+      return true;
+    }
+
     if (distFromCenter > this.maxRadius + eps) {
       return false;
     }
 
+    // Wege 2 bis 7 verlaufen sternförmig
     for (const path of SEVEN_PATHS) {
+      if (path.id === 1) {
+        continue;
+      }
       const dirX = Math.sin(path.angleRad);
       const dirZ = -Math.cos(path.angleRad);
       const along = x * dirX + z * dirZ;
@@ -143,8 +265,28 @@ export class CrossroadsState {
     return false;
   }
 
+  private toCaveLocal(x: number, z: number): { lx: number; lz: number } {
+    const dx = x - CAVE_ENTRANCE_POS.x;
+    const dz = z - CAVE_ENTRANCE_POS.z;
+    const cos = Math.cos(CAVE_ENTRANCE_POS.rotationY);
+    const sin = Math.sin(CAVE_ENTRANCE_POS.rotationY);
+    return {
+      lx: dx * cos - dz * sin,
+      lz: dx * sin + dz * cos,
+    };
+  }
+
+  private fromCaveLocal(lx: number, lz: number): Vector2D {
+    const cos = Math.cos(CAVE_ENTRANCE_POS.rotationY);
+    const sin = Math.sin(CAVE_ENTRANCE_POS.rotationY);
+    return {
+      x: CAVE_ENTRANCE_POS.x + lx * cos + lz * sin,
+      z: CAVE_ENTRANCE_POS.z - lx * sin + lz * cos,
+    };
+  }
+
   /**
-   * Prüft, ob ein Punkt mit der Schutzhütte, der Schatztruhe, dem Wegweiser oder dem NPC kollidiert.
+   * Prüft, ob ein Punkt mit Schutzhütte, Schatztruhe, Wegweiser, Waldhüter, Graumännchen oder dem Felsen mit Höhleneingang kollidiert.
    */
   public isCollidingWithObstacles(x: number, z: number): boolean {
     const eps = 1e-4;
@@ -155,19 +297,46 @@ export class CrossroadsState {
       return true;
     }
 
-    const distToChest = Math.hypot(x - this.chestPos.x, z - this.chestPos.z);
-    if (distToChest < this.chestCollisionRadius - eps) {
+    if (Math.hypot(x - this.chestPos.x, z - this.chestPos.z) < this.chestCollisionRadius - eps) {
       return true;
     }
 
-    const distToSignpost = Math.hypot(x - this.signpostPos.x, z - this.signpostPos.z);
-    if (distToSignpost < this.signpostCollisionRadius - eps) {
+    if (
+      Math.hypot(x - this.signpostPos.x, z - this.signpostPos.z) <
+      this.signpostCollisionRadius - eps
+    ) {
       return true;
     }
 
-    const distToNpc = Math.hypot(x - this.npcPos.x, z - this.npcPos.z);
-    if (distToNpc < this.npcCollisionRadius - eps) {
+    if (Math.hypot(x - this.npcPos.x, z - this.npcPos.z) < this.npcCollisionRadius - eps) {
       return true;
+    }
+
+    if (
+      Math.hypot(x - this.greyManPos.x, z - this.greyManPos.z) <
+      this.greyManCollisionRadius - eps
+    ) {
+      return true;
+    }
+
+    if (Math.hypot(x - this.cavePos.x, z - this.cavePos.z) < this.caveCollisionRadius - eps) {
+      return true;
+    }
+
+    // Detaillierte Kollision für das Bergmassiv (Felswand, Stolleneingang und seitliche Felsflanken)
+    const localCave = this.toCaveLocal(x, z);
+    if (
+      Math.abs(localCave.lx) < 8.5 &&
+      localCave.lz > -10.0 &&
+      localCave.lz < this.caveFrontWallLz - eps
+    ) {
+      return true;
+    }
+
+    for (const rock of this.caveLocalRockColliders) {
+      if (Math.hypot(localCave.lx - rock.lx, localCave.lz - rock.lz) < rock.radius - eps) {
+        return true;
+      }
     }
 
     return false;
@@ -178,6 +347,34 @@ export class CrossroadsState {
    */
   public isWalkable(x: number, z: number): boolean {
     return this.isPointOnClearingOrPath(x, z) && !this.isCollidingWithObstacles(x, z);
+  }
+
+  private projectOntoPath1(x: number, z: number): Vector2D {
+    let bestPoint: Vector2D = { x: PATH_1_WAYPOINTS[0].x, z: PATH_1_WAYPOINTS[0].z };
+    let bestSignedDist = Infinity;
+
+    for (let i = 0; i < PATH_1_WAYPOINTS.length - 1; i++) {
+      const { cx, cz, radius } = this.evaluatePath1Segment(x, z, i);
+      const dx = x - cx;
+      const dz = z - cz;
+      const d = Math.hypot(dx, dz);
+      const signedDist = d - radius;
+      if (signedDist <= 0) {
+        return { x, z };
+      }
+      if (signedDist < bestSignedDist) {
+        bestSignedDist = signedDist;
+        bestPoint =
+          d < 1e-6
+            ? { x: cx, z: cz }
+            : {
+                x: cx + (dx / d) * radius,
+                z: cz + (dz / d) * radius,
+              };
+      }
+    }
+
+    return bestPoint;
   }
 
   /**
@@ -211,6 +408,16 @@ export class CrossroadsState {
         : SEVEN_PATHS;
 
     for (const path of candidatePaths) {
+      if (path.id === 1) {
+        const p1 = this.projectOntoPath1(x, z);
+        const dSq1 = (x - p1.x) ** 2 + (z - p1.z) ** 2;
+        if (dSq1 < bestDistSq) {
+          bestDistSq = dSq1;
+          bestPoint = p1;
+        }
+        continue;
+      }
+
       const dirX = Math.sin(path.angleRad);
       const dirZ = -Math.cos(path.angleRad);
       const perpX = -dirZ;
@@ -261,14 +468,13 @@ export class CrossroadsState {
   }
 
   /**
-   * Schiebt eine Position bei Kontakt mit Schutzhütte, Schatztruhe, Wegweiser oder NPC an deren Außenkante.
+   * Schiebt eine Position bei Kontakt mit Hindernissen an deren Außenkante.
    */
   private resolveObstacleCollisions(x: number, z: number): Vector2D {
     let resolvedX = x;
     let resolvedZ = z;
 
     for (let pass = 0; pass < 3; pass++) {
-      // 1. Schatztruhen-Kollision (Kreis um chestPos)
       const afterChest = this.pushOutOfCircle(
         resolvedX,
         resolvedZ,
@@ -278,7 +484,6 @@ export class CrossroadsState {
       resolvedX = afterChest.x;
       resolvedZ = afterChest.z;
 
-      // 2. Wegweiser-Kollision (Kreis um signpostPos)
       const afterSign = this.pushOutOfCircle(
         resolvedX,
         resolvedZ,
@@ -288,7 +493,6 @@ export class CrossroadsState {
       resolvedX = afterSign.x;
       resolvedZ = afterSign.z;
 
-      // 3. NPC-Kollision (Kreis um npcPos)
       const afterNpc = this.pushOutOfCircle(
         resolvedX,
         resolvedZ,
@@ -298,7 +502,47 @@ export class CrossroadsState {
       resolvedX = afterNpc.x;
       resolvedZ = afterNpc.z;
 
-      // 4. Schutzhütten-Kollision (AABB um hutPos)
+      const afterGreyMan = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.greyManPos,
+        this.greyManCollisionRadius
+      );
+      resolvedX = afterGreyMan.x;
+      resolvedZ = afterGreyMan.z;
+
+      const afterCave = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.cavePos,
+        this.caveCollisionRadius
+      );
+      resolvedX = afterCave.x;
+      resolvedZ = afterCave.z;
+
+      // Detaillierte Kollisionsauflösung für das Bergmassiv (Felswand, Stolleneingang und Felsflanken)
+      let localCave = this.toCaveLocal(resolvedX, resolvedZ);
+      for (const rock of this.caveLocalRockColliders) {
+        const pushed = this.pushOutOfCircle(
+          localCave.lx,
+          localCave.lz,
+          { x: rock.lx, z: rock.lz },
+          rock.radius
+        );
+        localCave = { lx: pushed.x, lz: pushed.z };
+      }
+      if (
+        Math.abs(localCave.lx) < 8.5 &&
+        localCave.lz > -10.0 &&
+        localCave.lz < this.caveFrontWallLz
+      ) {
+        localCave.lz = this.caveFrontWallLz;
+      }
+      const worldAfterRock = this.fromCaveLocal(localCave.lx, localCave.lz);
+      resolvedX = worldAfterRock.x;
+      resolvedZ = worldAfterRock.z;
+
+      // Schutzhütten-Kollision (AABB um hutPos)
       const relX = resolvedX - this.hutPos.x;
       const relZ = resolvedZ - this.hutPos.z;
       if (Math.abs(relX) < this.hutHalfWidth && Math.abs(relZ) < this.hutHalfDepth) {
@@ -317,6 +561,10 @@ export class CrossroadsState {
   }
 
   private getClosestPathAt(x: number, z: number): ForestPathData | null {
+    if (this.isPointOnPath1(x, z)) {
+      return SEVEN_PATHS[0];
+    }
+
     let playerAngle = Math.atan2(x, -z);
     if (playerAngle < 0) {
       playerAngle += Math.PI * 2;
@@ -358,11 +606,12 @@ export class CrossroadsState {
       currentPath ? currentPath.id : null
     );
     const collisionFree = this.resolveObstacleCollisions(onSurface.x, onSurface.z);
-    this.playerPos = this.projectOntoWalkableSurface(
+    const projectedBack = this.projectOntoWalkableSurface(
       collisionFree.x,
       collisionFree.z,
       currentPath ? currentPath.id : null
     );
+    this.playerPos = this.resolveObstacleCollisions(projectedBack.x, projectedBack.z);
 
     return this.getPlayerPosition();
   }
@@ -373,13 +622,11 @@ export class CrossroadsState {
   public setTargetPosition(x: number, z: number): Readonly<Vector2D> {
     const onSurface = this.projectOntoWalkableSurface(x, z, null);
     const collisionFree = this.resolveObstacleCollisions(onSurface.x, onSurface.z);
-    this.targetPos = this.projectOntoWalkableSurface(collisionFree.x, collisionFree.z, null);
+    const projectedBack = this.projectOntoWalkableSurface(collisionFree.x, collisionFree.z, null);
+    this.targetPos = this.resolveObstacleCollisions(projectedBack.x, projectedBack.z);
     return { ...this.targetPos };
   }
 
-  /**
-   * Löscht ein aktives Laufziel (z. B. bei manueller Tastatursteuerung).
-   */
   public clearTargetPosition(): void {
     this.targetPos = null;
   }
@@ -398,16 +645,10 @@ export class CrossroadsState {
     );
   }
 
-  /**
-   * Lässt die Spielfigur direkt vor die Schutzhütte laufen.
-   */
   public setTargetToHut(): Readonly<Vector2D> {
     return this.setTargetPosition(-0.3, this.hutPos.z + this.hutHalfDepth + 0.35);
   }
 
-  /**
-   * Lässt die Spielfigur direkt vor die Schatztruhe laufen.
-   */
   public setTargetToChest(): Readonly<Vector2D> {
     return this.setTargetPosition(
       this.chestPos.x,
@@ -415,9 +656,6 @@ export class CrossroadsState {
     );
   }
 
-  /**
-   * Lässt die Spielfigur direkt vor den Wegweiser laufen.
-   */
   public setTargetToSignpost(): Readonly<Vector2D> {
     return this.setTargetPosition(
       this.signpostPos.x,
@@ -425,14 +663,90 @@ export class CrossroadsState {
     );
   }
 
-  /**
-   * Lässt die Spielfigur in Gesprächsdistanz vor den Hinweisgeber-NPC an der Hütte laufen.
-   */
   public setTargetToNpc(): Readonly<Vector2D> {
     return this.setTargetPosition(
       this.npcPos.x,
       this.npcPos.z + this.npcCollisionRadius + 0.45
     );
+  }
+
+  /**
+   * Lässt die Spielfigur entlang des 1. Weges durch die Kurve bis vor das Graumännchen am Höhleneingang laufen.
+   */
+  public setTargetToGreyMan(): Readonly<Vector2D> {
+    this.selectPath(1);
+    return this.setTargetPosition(this.greyManPos.x - 0.9, this.greyManPos.z + 1.15);
+  }
+
+  /**
+   * Berechnet den kontinuierlichen Fortschritt (0 bis PATH_1_WAYPOINTS.length - 1) entlang der Segmente von Weg 1.
+   */
+  private getPath1Progress(x: number, z: number): number {
+    let bestProgress = 0;
+    let bestDistSq = Infinity;
+
+    for (let i = 0; i < PATH_1_WAYPOINTS.length - 1; i++) {
+      const a = PATH_1_WAYPOINTS[i];
+      const b = PATH_1_WAYPOINTS[i + 1];
+      const abx = b.x - a.x;
+      const abz = b.z - a.z;
+      const abLenSq = abx * abx + abz * abz;
+      const t =
+        abLenSq < 1e-6
+          ? 0
+          : Math.max(0, Math.min(1, ((x - a.x) * abx + (z - a.z) * abz) / abLenSq));
+      const cx = a.x + t * abx;
+      const cz = a.z + t * abz;
+      const dSq = (x - cx) ** 2 + (z - cz) ** 2;
+      if (dSq < bestDistSq) {
+        bestDistSq = dSq;
+        bestProgress = i + t;
+      }
+    }
+
+    return bestProgress;
+  }
+
+  private getPointAtPath1Progress(progress: number): Vector2D {
+    const maxSeg = PATH_1_WAYPOINTS.length - 2;
+    const clamped = Math.max(0, Math.min(maxSeg + 1, progress));
+    const idx = Math.min(maxSeg, Math.floor(clamped));
+    const t = clamped - idx;
+    const a = PATH_1_WAYPOINTS[idx];
+    const b = PATH_1_WAYPOINTS[idx + 1];
+    return {
+      x: a.x + t * (b.x - a.x),
+      z: a.z + t * (b.z - a.z),
+    };
+  }
+
+  /**
+   * Ermittelt einen stetig mitgleitenden Lookahead-Punkt entlang der Kurve von Weg 1,
+   * damit die Spielfigur beim Auto-Walk vorwärts wie rückwärts völlig ruckelfrei auf dem Pfad bleibt.
+   */
+  private getNextCurvedWaypointOnPath1(target: Vector2D): Vector2D {
+    const playerOnPath1 = this.isPointOnPath1(this.playerPos.x, this.playerPos.z);
+    const targetOnPath1 = this.isPointOnPath1(target.x, target.z);
+
+    if (!playerOnPath1 && !targetOnPath1) {
+      return target;
+    }
+
+    const playerProg = this.getPath1Progress(this.playerPos.x, this.playerPos.z);
+    const targetProg = this.getPath1Progress(target.x, target.z);
+    const diff = targetProg - playerProg;
+
+    if (Math.abs(diff) <= 0.35) {
+      return target;
+    }
+
+    const stepProg = diff > 0 ? 0.38 : -0.38;
+    const lookaheadProg =
+      diff > 0
+        ? Math.min(targetProg, playerProg + stepProg)
+        : Math.max(targetProg, playerProg + stepProg);
+
+    return this.getPointAtPath1Progress(lookaheadProg);
   }
 
   /**
@@ -445,19 +759,24 @@ export class CrossroadsState {
 
     let effectiveTarget = this.targetPos;
     const playerDist = Math.hypot(this.playerPos.x, this.playerPos.z);
-    if (playerDist > this.clearingRadius + 0.1) {
-      const playerPath = this.getClosestPathAt(this.playerPos.x, this.playerPos.z);
-      const targetPath =
-        Math.hypot(this.targetPos.x, this.targetPos.z) > this.clearingRadius
-          ? this.getClosestPathAt(this.targetPos.x, this.targetPos.z)
-          : null;
+    const targetDist = Math.hypot(this.targetPos.x, this.targetPos.z);
 
-      if (playerPath && (!targetPath || targetPath.id !== playerPath.id)) {
+    const playerPath =
+      playerDist > this.clearingRadius ? this.getClosestPathAt(this.playerPos.x, this.playerPos.z) : null;
+    const targetPath =
+      targetDist > this.clearingRadius ? this.getClosestPathAt(this.targetPos.x, this.targetPos.z) : null;
+
+    if (playerPath && (!targetPath || targetPath.id !== playerPath.id)) {
+      if (playerPath.id === 1) {
+        effectiveTarget = this.getNextCurvedWaypointOnPath1(PATH_1_WAYPOINTS[0]);
+      } else {
         effectiveTarget = {
           x: Math.sin(playerPath.angleRad) * (this.clearingRadius - 0.6),
           z: -Math.cos(playerPath.angleRad) * (this.clearingRadius - 0.6),
         };
       }
+    } else if (targetPath && targetPath.id === 1) {
+      effectiveTarget = this.getNextCurvedWaypointOnPath1(this.targetPos);
     }
 
     // Falls die direkte Linie auf der Kreuzung durch die zentrale Hütte führt,
@@ -465,7 +784,7 @@ export class CrossroadsState {
     const crossesHutZ =
       (this.playerPos.z > this.hutHalfDepth - 0.1 && effectiveTarget.z < -0.5) ||
       (this.playerPos.z < -this.hutHalfDepth + 0.1 && effectiveTarget.z > 0.5);
-    if (crossesHutZ && Math.abs(this.playerPos.x) < 2.6) {
+    if (crossesHutZ && Math.abs(this.playerPos.x) < 2.6 && playerDist <= this.clearingRadius + 0.5) {
       const sideX = this.playerPos.x + effectiveTarget.x > 0.5 ? 3.4 : -3.2;
       effectiveTarget = { x: sideX, z: 0 };
     }
@@ -480,10 +799,11 @@ export class CrossroadsState {
       this.movePlayer(dx, dz);
       if (
         effectiveTarget === this.targetPos &&
-        Math.hypot(this.playerPos.x - this.targetPos.x, this.playerPos.z - this.targetPos.z) < 0.12
+        Math.hypot(this.playerPos.x - this.targetPos.x, this.playerPos.z - this.targetPos.z) < 0.15
       ) {
         this.targetPos = null;
       } else if (
+        effectiveTarget === this.targetPos &&
         Math.hypot(this.playerPos.x - prevPos.x, this.playerPos.z - prevPos.z) < 0.001
       ) {
         this.targetPos = null;
@@ -499,7 +819,7 @@ export class CrossroadsState {
     this.movePlayer(stepX, stepZ);
 
     const movedDist = Math.hypot(this.playerPos.x - beforeX, this.playerPos.z - beforeZ);
-    if (movedDist < maxStep * 0.35) {
+    if (movedDist < maxStep * 0.35 && playerDist <= this.clearingRadius + 0.5) {
       const sideSign = beforeX * dz - beforeZ * dx >= 0 ? 1 : -1;
       const perpX = (-dz / dist) * maxStep * sideSign;
       const perpZ = (dx / dist) * maxStep * sideSign;
@@ -527,9 +847,30 @@ export class CrossroadsState {
   }
 
   /**
-   * Ermittelt, welchem Objekt, NPC oder Weg die spielende Person auf der Kreuzung am nächsten ist.
+   * Ermittelt, welchem Objekt, NPC oder Weg die spielende Person am nächsten ist.
    */
   public getActivePointOfInterest(): PointOfInterest {
+    if (this.isNearGreyMan()) {
+      return {
+        type: 'grey_man',
+        name: GREY_MAN_NPC_NAME,
+        label:
+          'Vor dem Stollenmundloch – sprich mit dem Graumännchen über die neue Silberader, das Licht und das alte Verbot (Klick oder [F]).',
+      };
+    }
+
+    const distToCave = Math.hypot(
+      this.playerPos.x - this.cavePos.x,
+      this.playerPos.z - this.cavePos.z
+    );
+    if (distToCave < this.caveCollisionRadius + 1.8) {
+      return {
+        type: 'cave',
+        label:
+          'Alter Silberstollen im Berg – ein Verbot untersagt offenes Licht, doch im Inneren wartet die rettende Silberader.',
+      };
+    }
+
     if (this.isNearNpc()) {
       return {
         type: 'npc',
@@ -543,7 +884,7 @@ export class CrossroadsState {
         type: 'chest',
         isOpen: this.chestOpen,
         label: this.chestOpen
-          ? 'Geöffnete Schatztruhe vor der Hütte – im Inneren schimmert ein goldenes Artefakt. (Klick zum Schließen)'
+          ? 'Geöffnete Schatztruhe vor der Hütte – im Inneren schimmert ein kalt leuchtender Waldkristall. (Klick zum Schließen)'
           : 'Verschlossene Schatztruhe vor der Hütte – klicke auf die Truhe, um den Deckel zu öffnen.',
       };
     }

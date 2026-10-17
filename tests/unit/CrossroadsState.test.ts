@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SEVEN_PATHS } from '../../src/game/data/paths';
+import { GREY_MAN_NPC_POS, PATH_1_WAYPOINTS, SEVEN_PATHS } from '../../src/game/data/paths';
 import { CrossroadsState } from '../../src/game/systems/CrossroadsState';
 import { DialogueSystem } from '../../src/game/systems/DialogueSystem';
 
@@ -10,12 +10,34 @@ describe('CrossroadsState & 7 Wege', () => {
     expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
-  it('platziert Schutzhütte (0, 0), Schatztruhe (0.85, 2.0), Wegweiser (2.3, 2.4) und NPC (-1.85, 2.05)', () => {
+  it('platziert Schutzhütte (0, 0), Schatztruhe (0.85, 2.0), Wegweiser (2.3, 2.4), Waldhüter (-1.85, 2.05) und Graumännchen am Berg', () => {
     const state = new CrossroadsState();
     expect(state.getHutPosition()).toEqual({ x: 0, z: 0 });
     expect(state.getChestPosition()).toEqual({ x: 0.85, z: 2.0 });
     expect(state.getSignpostPosition()).toEqual({ x: 2.3, z: 2.4 });
     expect(state.getNpcPosition()).toEqual({ x: -1.85, z: 2.05 });
+    expect(state.getGreyManPosition()).toEqual(GREY_MAN_NPC_POS);
+  });
+
+  it('erweitert den 1. Weg mit einer Kurve bis zum Vorplatz vor dem Höhleneingang', () => {
+    const state = new CrossroadsState();
+    expect(PATH_1_WAYPOINTS.length).toBeGreaterThanOrEqual(6);
+
+    for (const wp of PATH_1_WAYPOINTS) {
+      expect(state.isPointOnPath1(wp.x, wp.z)).toBe(true);
+      expect(state.isPointOnClearingOrPath(wp.x, wp.z)).toBe(true);
+    }
+
+    // Wandert entlang der Kurve von Weg 1 bis zum Graumännchen am Höhleneingang
+    state.setTargetToGreyMan();
+    for (let i = 0; i < 120; i++) {
+      state.updateAutoWalk(0.1, 8);
+      const pos = state.getPlayerPosition();
+      expect(state.isWalkable(pos.x, pos.z)).toBe(true);
+    }
+
+    expect(state.isNearGreyMan()).toBe(true);
+    expect(state.getActivePointOfInterest().type).toBe('grey_man');
   });
 
   it('kann zur Schatztruhe vor der Hütte laufen und deren Deckel öffnen und schließen', () => {
@@ -38,17 +60,15 @@ describe('CrossroadsState & 7 Wege', () => {
     expect(state.isChestOpen()).toBe(false);
   });
 
-  it('verhindert das Durchlaufen von Schutzhütte, Schatztruhe, Wegweiser und NPC (Kollision)', () => {
+  it('verhindert das Durchlaufen von Schutzhütte, Schatztruhe, Wegweiser, Waldhüter und Graumännchen (Kollision)', () => {
     const state = new CrossroadsState();
 
-    // Versuch, von der Startposition (0, 5.2) direkt nach Norden durch die Hütte (0, 0) zu laufen
     for (let i = 0; i < 30; i++) {
       state.movePlayer(0, -0.3);
       const pos = state.getPlayerPosition();
       expect(state.isCollidingWithObstacles(pos.x, pos.z)).toBe(false);
     }
 
-    // Versuch, direkt zum NPC zu laufen: stoppt in Gesprächsdistanz vor dem NPC ohne Kollision
     const stateNpc = new CrossroadsState();
     stateNpc.setTargetToNpc();
     for (let i = 0; i < 20; i++) {
@@ -63,13 +83,14 @@ describe('CrossroadsState & 7 Wege', () => {
   it('erlaubt Bewegung nur auf der Kreuzung und den 7 Wegen, nicht auf Grünflächen/Wald', () => {
     const state = new CrossroadsState();
 
-    const angleBetween1And2 = (SEVEN_PATHS[0].angleRad + SEVEN_PATHS[1].angleRad) / 2;
-    const forestX = Math.sin(angleBetween1And2) * 14;
-    const forestZ = -Math.cos(angleBetween1And2) * 14;
+    // Ein Punkt mitten im Wald zwischen Weg 2 und Weg 3 ist nicht begehbar
+    const angleBetween2And3 = (SEVEN_PATHS[1].angleRad + SEVEN_PATHS[2].angleRad) / 2;
+    const forestX = Math.sin(angleBetween2And3) * 14;
+    const forestZ = -Math.cos(angleBetween2And3) * 14;
     expect(state.isPointOnClearingOrPath(forestX, forestZ)).toBe(false);
 
     for (let i = 0; i < 40; i++) {
-      state.movePlayer(Math.sin(angleBetween1And2) * 0.5, -Math.cos(angleBetween1And2) * 0.5);
+      state.movePlayer(Math.sin(angleBetween2And3) * 0.5, -Math.cos(angleBetween2And3) * 0.5);
       const pos = state.getPlayerPosition();
       expect(state.isPointOnClearingOrPath(pos.x, pos.z)).toBe(true);
     }
@@ -118,8 +139,8 @@ describe('CrossroadsState & 7 Wege', () => {
   });
 });
 
-describe('DialogueSystem (Kommunikationssystem zwischen Spielfiguren)', () => {
-  it('öffnet ein Gespräch, navigiert durch Hinweise zu den 7 Wegen und löst Wegauswahl aus', () => {
+describe('DialogueSystem (Kommunikationssystem für Waldhüter & Graumännchen)', () => {
+  it('öffnet ein Gespräch mit Waldhüter Arvid, navigiert durch die 7 Wege und löst Aktionen aus', () => {
     const dialogue = new DialogueSystem();
     expect(dialogue.isOpen()).toBe(false);
 
@@ -138,5 +159,23 @@ describe('DialogueSystem (Kommunikationssystem zwischen Spielfiguren)', () => {
     expect(step3.node).toBeNull();
     expect(dialogue.isOpen()).toBe(false);
     expect(step3.action).toEqual({ type: 'select_path', pathId: 3 });
+  });
+
+  it('führt das Gespräch mit dem Graumännchen über Silberader, Licht und Verbot/Versprechen', () => {
+    const dialogue = new DialogueSystem();
+    const greyRoot = dialogue.startDialogue('grey_root');
+    expect(greyRoot?.speaker).toBe('Das Graumännchen');
+    expect(greyRoot?.text).toContain('Silberader');
+    expect(greyRoot?.text).toContain('Verbot');
+    expect(greyRoot?.text).toContain('Versprechen');
+
+    // Frage nach Verbot & Versprechen (Option 1)
+    const stepProhibition = dialogue.selectOption(1);
+    expect(stepProhibition.node?.id).toBe('grey_prohibition');
+
+    // Frage nach Licht-Möglichkeiten im Stollen (Option 0)
+    const stepLightChoice = dialogue.selectOption(0);
+    expect(stepLightChoice.node?.id).toBe('grey_light_choice');
+    expect(stepLightChoice.node?.options.length).toBe(3);
   });
 });

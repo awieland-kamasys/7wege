@@ -28,7 +28,12 @@ Eine spielende Person kommt an eine Waldkreuzung mit sieben Wegen und entscheide
 
 ## Die sieben Wege
 
-_Notizen zu den sieben Wegen, ihren Unterschieden und ihrer Verbindung._
+1. **1. Silberstollen-Pfad (Norden → Kurve nach Nordosten):**
+   - Verlängerter Bergpfad mit langgezogener Rechtskurve durch den Waldnebel.
+   - Endet auf einem Felsvorplatz vor einem **Bergmassiv mit Höhleneingang (Stollenmundloch)**.
+   - Vor dem Höhleneingang wartet **das Graumännchen** als NPC.
+   - **Inhalt & Konflikt:** Eine neue Silberader könnte Mine und Arbeiter retten. Ihr Auffinden verlangt Licht in einem Stollen, für den ein altes Verbot beziehungsweise Versprechen gilt.
+2. _Weitere sechs Wege folgen._
 
 ## Steuerung und Geräte
 

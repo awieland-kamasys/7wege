@@ -4,7 +4,9 @@ import { PointOfInterest } from '../game/systems/CrossroadsState';
 
 export interface HudCallbacks {
   onSelectPath: (pathId: number) => void;
+  onReturnToClearing: () => void;
   onTalkToNpc: () => void;
+  onTalkToGreyMan: () => void;
   onToggleChest: () => void;
   onSelectDialogueOption: (optionIndex: number) => void;
   onCloseDialogue: () => void;
@@ -12,14 +14,20 @@ export interface HudCallbacks {
 }
 
 /**
- * Schlanke, barrierearme DOM-Oberfläche für die Waldkreuzung inklusive
- * Kommunikationsfenster für Gespräche zwischen Spielfigur und NPC sowie Schatztruhen-Aktion.
+ * Schlanke, barrierearme DOM-Oberfläche für die Waldkreuzung und die Wege.
+ * - Auf den Wegen werden alle HUD-Menüs (Statuskarte, Wegeauswahl, Steuerungshinweis) komplett ausgeblendet,
+ *   damit die 3D-Szene vollkommen frei wirkt.
+ * - Ein aktives Gesprächsmenü wird als schlankes Panel am rechten Rand eingeblendet.
  */
 export class HudOverlay {
+  private readonly infoCardEl: HTMLElement;
   private readonly statusTitleEl: HTMLElement;
   private readonly statusTextEl: HTMLElement;
   private readonly talkActionBtn: HTMLButtonElement;
+  private readonly greyManActionBtn: HTMLButtonElement;
   private readonly chestActionBtn: HTMLButtonElement;
+  private readonly buttonNavEl: HTMLElement;
+  private readonly controlsCardEl: HTMLElement;
   private readonly dialogueModalEl: HTMLElement;
   private readonly dialogueSpeakerEl: HTMLElement;
   private readonly dialogueRoleEl: HTMLElement;
@@ -32,13 +40,13 @@ export class HudOverlay {
   constructor(container: HTMLElement, private readonly callbacks: HudCallbacks) {
     container.innerHTML = '';
 
-    // Kopfbereich: Ortsanzeige, Beschreibung & Schnellbuttons (Sprechen & Schatztruhe)
+    // Kopfbereich: Ortsanzeige (oben links, nur auf der Kreuzung) & Gesprächs-Panel (rechts außen angedockt)
     const header = document.createElement('header');
     header.className = 'hud-header';
 
-    const infoCard = document.createElement('section');
-    infoCard.className = 'hud-card';
-    infoCard.setAttribute('aria-live', 'polite');
+    this.infoCardEl = document.createElement('section');
+    this.infoCardEl.className = 'hud-card';
+    this.infoCardEl.setAttribute('aria-live', 'polite');
 
     this.statusTitleEl = document.createElement('h1');
     this.statusTitleEl.className = 'hud-title';
@@ -55,8 +63,14 @@ export class HudOverlay {
     this.talkActionBtn = document.createElement('button');
     this.talkActionBtn.type = 'button';
     this.talkActionBtn.className = 'talk-btn';
-    this.talkActionBtn.textContent = '💬 Mit Waldhüter sprechen';
+    this.talkActionBtn.textContent = '💬 Waldhüter Arvid';
     this.talkActionBtn.addEventListener('click', () => this.callbacks.onTalkToNpc());
+
+    this.greyManActionBtn = document.createElement('button');
+    this.greyManActionBtn.type = 'button';
+    this.greyManActionBtn.className = 'talk-btn';
+    this.greyManActionBtn.textContent = '⛏️ Zum Graumännchen (Weg 1)';
+    this.greyManActionBtn.addEventListener('click', () => this.callbacks.onTalkToGreyMan());
 
     this.chestActionBtn = document.createElement('button');
     this.chestActionBtn.type = 'button';
@@ -64,15 +78,15 @@ export class HudOverlay {
     this.chestActionBtn.textContent = '🗝️ Schatztruhe öffnen';
     this.chestActionBtn.addEventListener('click', () => this.callbacks.onToggleChest());
 
-    actionRow.append(this.talkActionBtn, this.chestActionBtn);
-    infoCard.append(this.statusTitleEl, this.statusTextEl, actionRow);
-    header.appendChild(infoCard);
+    actionRow.append(this.talkActionBtn, this.greyManActionBtn, this.chestActionBtn);
+    this.infoCardEl.append(this.statusTitleEl, this.statusTextEl, actionRow);
 
-    // Mittlerer Bereich: Dialogfenster für die Kommunikation zwischen den Spielfiguren
-    this.dialogueModalEl = document.createElement('section');
-    this.dialogueModalEl.className = 'dialogue-modal is-hidden';
+    // Schlankes Seiten-Panel rechts außen für Gespräche (lässt die gesamte Spielmitte frei)
+    this.dialogueModalEl = document.createElement('aside');
+    this.dialogueModalEl.className = 'dialogue-panel is-hidden';
+    this.dialogueModalEl.style.marginLeft = 'auto';
     this.dialogueModalEl.setAttribute('role', 'dialog');
-    this.dialogueModalEl.setAttribute('aria-label', 'Gespräch mit Hinweisgeber');
+    this.dialogueModalEl.setAttribute('aria-label', 'Gespräch mit NPC');
 
     const dialogueHeader = document.createElement('div');
     dialogueHeader.className = 'dialogue-header';
@@ -90,16 +104,18 @@ export class HudOverlay {
     this.speechToggleBtn = document.createElement('button');
     this.speechToggleBtn.type = 'button';
     this.speechToggleBtn.className = 'dialogue-close-btn';
-    this.speechToggleBtn.textContent = '🔊 Stimme an';
+    this.speechToggleBtn.textContent = '🔊';
+    this.speechToggleBtn.title = 'Sprachausgabe ein-/ausschalten';
     this.speechToggleBtn.addEventListener('click', () => {
       const enabled = this.callbacks.onToggleSpeech();
-      this.speechToggleBtn.textContent = enabled ? '🔊 Stimme an' : '🔇 Stumm';
+      this.speechToggleBtn.textContent = enabled ? '🔊' : '🔇';
     });
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'dialogue-close-btn';
-    closeBtn.textContent = '✕ Schließen (Esc)';
+    closeBtn.textContent = '✕ Esc';
+    closeBtn.title = 'Gespräch schließen (Esc)';
     closeBtn.addEventListener('click', () => this.callbacks.onCloseDialogue());
 
     headerActions.append(this.speechToggleBtn, closeBtn);
@@ -110,7 +126,7 @@ export class HudOverlay {
 
     const playerPromptLabel = document.createElement('div');
     playerPromptLabel.className = 'dialogue-player-label';
-    playerPromptLabel.textContent = 'Antwort deiner Spielfigur wählen:';
+    playerPromptLabel.textContent = 'Antwort wählen:';
 
     this.dialogueOptionsEl = document.createElement('div');
     this.dialogueOptionsEl.className = 'dialogue-options';
@@ -122,13 +138,15 @@ export class HudOverlay {
       this.dialogueOptionsEl
     );
 
-    // Fußbereich: Schnellwahl für die 7 Wege + Steuerungshinweis
+    header.append(this.infoCardEl, this.dialogueModalEl);
+
+    // Fußbereich: Schnellwahl für die 7 Wege + Steuerungshinweis (nur auf der Kreuzung sichtbar)
     const footer = document.createElement('footer');
     footer.className = 'hud-footer';
 
-    const buttonNav = document.createElement('nav');
-    buttonNav.className = 'path-buttons';
-    buttonNav.setAttribute('aria-label', 'Wegweiser: Auswahl der sieben Wege');
+    this.buttonNavEl = document.createElement('nav');
+    this.buttonNavEl.className = 'path-buttons';
+    this.buttonNavEl.setAttribute('aria-label', 'Wegweiser: Auswahl der sieben Wege');
 
     SEVEN_PATHS.forEach((path) => {
       const btn = document.createElement('button');
@@ -137,58 +155,69 @@ export class HudOverlay {
       btn.textContent = `${path.name} (${path.directionLabel})`;
       btn.addEventListener('click', () => this.callbacks.onSelectPath(path.id));
       this.buttons.set(path.id, btn);
-      buttonNav.appendChild(btn);
+      this.buttonNavEl.appendChild(btn);
     });
 
-    const controlsCard = document.createElement('div');
-    controlsCard.className = 'hud-card controls-hint';
-    controlsCard.textContent =
-      'Steuerung: Linksklick = Gehen / Truhe öffnen / Sprechen | Maus ziehen = Kamera | Mausrad = Zoom | WASD = Gehen';
+    this.controlsCardEl = document.createElement('div');
+    this.controlsCardEl.className = 'hud-card controls-hint';
+    this.controlsCardEl.textContent =
+      'Steuerung: Linksklick = Gehen / Interagieren | Maus ziehen = Kamera | Mausrad = Zoom | WASD = Gehen | F = Sprechen/Truhe';
 
-    footer.append(buttonNav, controlsCard);
-    container.append(header, this.dialogueModalEl, footer);
+    footer.append(this.buttonNavEl, this.controlsCardEl);
+    container.append(header, footer);
   }
 
   public update(
     poi: PointOfInterest,
     selectedPathId: number | null,
     activeDialogueNode: DialogueNode | null,
-    isChestOpen = false
+    isChestOpen = false,
+    isOnClearing = true
   ): void {
-    if (poi.type === 'path') {
-      this.statusTitleEl.textContent = poi.path.name;
-      this.statusTextEl.textContent = `${poi.path.subtitle} (Richtung: ${poi.path.directionLabel})`;
-    } else if (poi.type === 'npc') {
-      this.statusTitleEl.textContent = poi.name;
-      this.statusTextEl.textContent = poi.label;
-    } else if (poi.type === 'chest') {
-      this.statusTitleEl.textContent = 'Schatztruhe vor der Hütte';
-      this.statusTextEl.textContent = poi.label;
-    } else if (poi.type === 'hut') {
-      this.statusTitleEl.textContent = 'Schutzhütte aus Baumstämmen';
-      this.statusTextEl.textContent = poi.label;
-    } else if (poi.type === 'signpost') {
-      this.statusTitleEl.textContent = 'Wegweiser der sieben Wege';
-      this.statusTextEl.textContent = poi.label;
+    // Auf den Wegen werden sämtliche HUD-Menüs (Statuskarte, Wege-Buttons, Steuerungshinweis) ausgeblendet
+    this.infoCardEl.classList.toggle('is-hidden', !isOnClearing);
+    this.buttonNavEl.classList.toggle('is-hidden', !isOnClearing);
+    this.controlsCardEl.classList.toggle('is-hidden', !isOnClearing);
+
+    if (isOnClearing) {
+      if (poi.type === 'npc') {
+        this.statusTitleEl.textContent = poi.name;
+        this.statusTextEl.textContent = poi.label;
+      } else if (poi.type === 'chest') {
+        this.statusTitleEl.textContent = 'Schatztruhe vor der Hütte';
+        this.statusTextEl.textContent = poi.label;
+      } else if (poi.type === 'hut') {
+        this.statusTitleEl.textContent = 'Schutzhütte aus Baumstämmen';
+        this.statusTextEl.textContent = poi.label;
+      } else if (poi.type === 'signpost') {
+        this.statusTitleEl.textContent = 'Wegweiser der sieben Wege';
+        this.statusTextEl.textContent = poi.label;
+      } else if (poi.type === 'path') {
+        this.statusTitleEl.textContent = poi.path.name;
+        this.statusTextEl.textContent = poi.path.subtitle;
+      } else {
+        this.statusTitleEl.textContent = 'Waldkreuzung';
+        this.statusTextEl.textContent = poi.label;
+      }
+
+      this.talkActionBtn.classList.toggle('is-emphasized', poi.type === 'npc');
+      this.talkActionBtn.textContent =
+        poi.type === 'npc' ? '💬 Mit Waldhüter sprechen (F)' : '💬 Waldhüter Arvid';
+
+      this.chestActionBtn.classList.toggle('is-emphasized', poi.type === 'chest');
+      this.chestActionBtn.textContent = isChestOpen
+        ? '🗝️ Truhe schließen'
+        : '🗝️ Schatztruhe öffnen';
+
+      this.buttons.forEach((btn, id) => {
+        btn.disabled = false;
+        btn.classList.toggle('is-active', id === selectedPathId);
+      });
     } else {
-      this.statusTitleEl.textContent = 'Waldkreuzung';
-      this.statusTextEl.textContent = poi.label;
+      this.buttons.forEach((btn) => {
+        btn.disabled = true;
+      });
     }
-
-    this.talkActionBtn.classList.toggle('is-emphasized', poi.type === 'npc');
-    this.talkActionBtn.textContent =
-      poi.type === 'npc'
-        ? '💬 Mit Waldhüter sprechen (F)'
-        : '💬 Zu Waldhüter Arvid';
-
-    this.chestActionBtn.classList.toggle('is-emphasized', poi.type === 'chest');
-    this.chestActionBtn.textContent = isChestOpen
-      ? '🗝️ Truhendeckel schließen'
-      : '🗝️ Schatztruhe öffnen';
-
-    this.buttons.forEach((btn, id) => {
-      btn.classList.toggle('is-active', id === selectedPathId);
-    });
 
     this.renderDialogue(activeDialogueNode);
   }

@@ -29,7 +29,9 @@ export class GameApp {
   private lastPointerX = 0;
   private lastPointerY = 0;
   private pendingTalkToNpc = false;
+  private pendingTalkToGreyMan = false;
   private pendingToggleChest = false;
+  private stepDistanceAccumulator = 1.15;
 
   constructor(canvas: HTMLCanvasElement, uiRoot: HTMLElement) {
     this.canvas = canvas;
@@ -40,13 +42,23 @@ export class GameApp {
     this.scene = new CrossroadsScene(canvas);
     this.hud = new HudOverlay(uiRoot, {
       onSelectPath: (pathId) => {
+        if (!this.state.isOnClearing()) {
+          return;
+        }
         this.closeDialogueAndSpeech();
-        this.pendingTalkToNpc = false;
-        this.pendingToggleChest = false;
+        this.clearPendingActions();
         this.state.setTargetToPathEntrance(pathId);
+      },
+      onReturnToClearing: () => {
+        this.closeDialogueAndSpeech();
+        this.clearPendingActions();
+        this.state.setTargetToClearing();
       },
       onTalkToNpc: () => {
         this.initiateTalkToNpc();
+      },
+      onTalkToGreyMan: () => {
+        this.initiateTalkToGreyMan();
       },
       onToggleChest: () => {
         this.initiateToggleChest();
@@ -77,8 +89,14 @@ export class GameApp {
     this.loop(this.lastTime);
   }
 
-  private openRootDialogue(): void {
-    const node = this.dialogue.startDialogue('root');
+  private clearPendingActions(): void {
+    this.pendingTalkToNpc = false;
+    this.pendingTalkToGreyMan = false;
+    this.pendingToggleChest = false;
+  }
+
+  private openDialogueNode(startNodeId: string): void {
+    const node = this.dialogue.startDialogue(startNodeId);
     if (node) {
       this.speech.speak(node.text);
     }
@@ -99,22 +117,32 @@ export class GameApp {
   }
 
   private initiateTalkToNpc(): void {
-    this.pendingToggleChest = false;
+    this.clearPendingActions();
     if (this.state.isNearNpc()) {
-      this.pendingTalkToNpc = false;
       this.state.clearTargetPosition();
-      this.openRootDialogue();
+      this.openDialogueNode('root');
     } else {
       this.pendingTalkToNpc = true;
       this.state.setTargetToNpc();
     }
   }
 
+  private initiateTalkToGreyMan(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearGreyMan()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('grey_root');
+    } else {
+      this.pendingTalkToGreyMan = true;
+      this.state.setTargetToGreyMan();
+    }
+  }
+
   private initiateToggleChest(): void {
-    this.pendingTalkToNpc = false;
+    this.clearPendingActions();
     this.closeDialogueAndSpeech();
     if (this.state.isNearChest()) {
-      this.pendingToggleChest = false;
       this.state.clearTargetPosition();
       this.toggleChestWithSound();
     } else {
@@ -131,13 +159,15 @@ export class GameApp {
       this.speech.stop();
     }
     if (action?.type === 'select_path') {
-      this.pendingTalkToNpc = false;
-      this.pendingToggleChest = false;
+      this.clearPendingActions();
       this.state.setTargetToPathEntrance(action.pathId);
+    } else if (action?.type === 'walk_to_grey_man') {
+      this.initiateTalkToGreyMan();
     }
   }
 
   private onKeyDown = (event: KeyboardEvent): void => {
+    this.sound.unlock();
     const key = event.key.toLowerCase();
 
     if (event.key === 'Escape' && this.dialogue.isOpen()) {
@@ -154,13 +184,23 @@ export class GameApp {
       }
     }
 
-    // Taste F oder Enter: kontextabhängige Interaktion (Truhe öffnen/schließen oder mit NPC sprechen)
+    // Taste F oder Enter: kontextabhängige Interaktion
     if (key === 'f' || event.key === 'Enter') {
       if (!this.dialogue.isOpen()) {
-        if (this.state.isNearChest()) {
+        if (this.state.isNearGreyMan()) {
+          this.initiateTalkToGreyMan();
+        } else if (this.state.isNearChest()) {
           this.initiateToggleChest();
-        } else {
+        } else if (this.state.isNearNpc()) {
           this.initiateTalkToNpc();
+        } else {
+          // Wenn man auf Weg 1 unterwegs ist, führt F zum Graumännchen, sonst zu Waldhüter Arvid
+          const selected = this.state.getSelectedPath();
+          if (selected?.id === 1 && this.state.getPlayerPosition().z < -8) {
+            this.initiateTalkToGreyMan();
+          } else {
+            this.initiateTalkToNpc();
+          }
         }
         return;
       }
@@ -168,11 +208,10 @@ export class GameApp {
 
     this.pressedKeys.add(key);
 
-    // Direktwahl der Wege 1 bis 7 über Zahlentasten (wenn kein Dialog offen ist)
-    if (!this.dialogue.isOpen() && key >= '1' && key <= '7') {
+    // Direktwahl der Wege 1 bis 7 über Zahlentasten (nur auf der Kreuzung und wenn kein Dialog offen ist)
+    if (!this.dialogue.isOpen() && this.state.isOnClearing() && key >= '1' && key <= '7') {
       const pathId = Number(key);
-      this.pendingTalkToNpc = false;
-      this.pendingToggleChest = false;
+      this.clearPendingActions();
       this.state.setTargetToPathEntrance(pathId);
     }
   };
@@ -182,6 +221,7 @@ export class GameApp {
   };
 
   private onPointerDown = (event: PointerEvent): void => {
+    this.sound.unlock();
     this.isPointerDown = true;
     this.isDraggingCamera = false;
     this.pointerDownButton = event.button;
@@ -198,7 +238,6 @@ export class GameApp {
         event.clientY - this.pointerStartY
       );
 
-      // Sobald die Maus mit gedrückter Taste etwas gezogen wird, dreht sie die Kamera
       if (totalDist > 5 || this.pointerDownButton === 2 || this.pointerDownButton === 1) {
         this.isDraggingCamera = true;
       }
@@ -215,42 +254,22 @@ export class GameApp {
       return;
     }
 
-    // Hover-Erkennung für interaktive 3D-Elemente (NPC, Schatztruhe, Schilder, Wege, Schutzhütte)
     const hit = this.scene.raycastFromMouse(event.clientX, event.clientY);
     if (!hit) {
       this.scene.setHoveredPathId(null);
       this.scene.setNpcHovered(false);
+      this.scene.setGreyManHovered(false);
       this.scene.setChestHovered(false);
       this.canvas.style.cursor = 'grab';
       return;
     }
 
-    if (hit.kind === 'npc') {
-      this.scene.setHoveredPathId(null);
-      this.scene.setNpcHovered(true);
-      this.scene.setChestHovered(false);
-      this.canvas.style.cursor = 'pointer';
-    } else if (hit.kind === 'chest') {
-      this.scene.setHoveredPathId(null);
-      this.scene.setNpcHovered(false);
-      this.scene.setChestHovered(true);
-      this.canvas.style.cursor = 'pointer';
-    } else if (hit.kind === 'sign' || hit.kind === 'path') {
-      this.scene.setHoveredPathId(hit.pathId);
-      this.scene.setNpcHovered(false);
-      this.scene.setChestHovered(false);
-      this.canvas.style.cursor = 'pointer';
-    } else if (hit.kind === 'hut' || hit.kind === 'signpost') {
-      this.scene.setHoveredPathId(null);
-      this.scene.setNpcHovered(false);
-      this.scene.setChestHovered(false);
-      this.canvas.style.cursor = 'pointer';
-    } else {
-      this.scene.setHoveredPathId(null);
-      this.scene.setNpcHovered(false);
-      this.scene.setChestHovered(false);
-      this.canvas.style.cursor = 'default';
-    }
+    this.scene.setHoveredPathId(hit.kind === 'sign' || hit.kind === 'path' ? hit.pathId : null);
+    this.scene.setNpcHovered(hit.kind === 'npc');
+    this.scene.setGreyManHovered(hit.kind === 'grey_man' || hit.kind === 'cave');
+    this.scene.setChestHovered(hit.kind === 'chest');
+
+    this.canvas.style.cursor = hit.kind === 'ground' ? 'default' : 'pointer';
   };
 
   private onPointerUp = (event: PointerEvent): void => {
@@ -264,7 +283,6 @@ export class GameApp {
     this.isDraggingCamera = false;
     this.canvas.style.cursor = 'default';
 
-    // Kurzer Linksklick (ohne Kamera-Drag) bewegt die Spielfigur, öffnet Truhe oder startet Gespräch
     if (!wasDragging && button === 0) {
       const hit = this.scene.raycastFromMouse(event.clientX, event.clientY);
       if (!hit) {
@@ -276,14 +294,17 @@ export class GameApp {
         return;
       }
 
+      if (hit.kind === 'grey_man' || hit.kind === 'cave') {
+        this.initiateTalkToGreyMan();
+        return;
+      }
+
       if (hit.kind === 'chest') {
         this.initiateToggleChest();
         return;
       }
 
-      // Bei Bewegung zu einem anderen Ziel ein offenes Gespräch schließen
-      this.pendingTalkToNpc = false;
-      this.pendingToggleChest = false;
+      this.clearPendingActions();
       this.closeDialogueAndSpeech();
 
       if (hit.kind === 'sign') {
@@ -335,10 +356,10 @@ export class GameApp {
       this.scene.rotateCamera(1.6 * dtSeconds);
     }
 
+    const prevPos = this.state.getPlayerPosition();
+
     if (forward !== 0 || strafe !== 0) {
-      // Manuelle Bewegung bricht aktives Click-to-Move und ein offenes Gespräch ab
-      this.pendingTalkToNpc = false;
-      this.pendingToggleChest = false;
+      this.clearPendingActions();
       this.state.clearTargetPosition();
       const len = Math.hypot(forward, strafe);
       const normForward = forward / len;
@@ -349,7 +370,7 @@ export class GameApp {
       const dz = (-Math.cos(angle) * normForward - Math.sin(angle) * normStrafe) * speed;
 
       this.state.movePlayer(dx, dz);
-      if (!this.state.isNearNpc() && this.dialogue.isOpen()) {
+      if (!this.state.isNearNpc() && !this.state.isNearGreyMan() && this.dialogue.isOpen()) {
         this.closeDialogueAndSpeech();
       }
     } else {
@@ -357,13 +378,31 @@ export class GameApp {
       if (this.pendingTalkToNpc && this.state.isNearNpc()) {
         this.pendingTalkToNpc = false;
         this.state.clearTargetPosition();
-        this.openRootDialogue();
+        this.openDialogueNode('root');
+      }
+      if (this.pendingTalkToGreyMan && this.state.isNearGreyMan()) {
+        this.pendingTalkToGreyMan = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('grey_root');
       }
       if (this.pendingToggleChest && this.state.isNearChest()) {
         this.pendingToggleChest = false;
         this.state.clearTargetPosition();
         this.toggleChestWithSound();
       }
+    }
+
+    const newPos = this.state.getPlayerPosition();
+    const movedDist = Math.hypot(newPos.x - prevPos.x, newPos.z - prevPos.z);
+    if (movedDist > 0.004) {
+      this.stepDistanceAccumulator += movedDist;
+      if (this.stepDistanceAccumulator >= 1.45) {
+        this.stepDistanceAccumulator -= 1.45;
+        this.sound.playFootstep();
+      }
+    } else {
+      // Beim Anhalten vorladen, damit beim nächsten Loslaufen rasch der erste Schritt erklingt
+      this.stepDistanceAccumulator = 1.15;
     }
   }
 
@@ -372,6 +411,7 @@ export class GameApp {
     this.lastTime = now;
 
     this.handleInput(dtSeconds);
+    this.sound.updateAmbientBirds(dtSeconds, this.dialogue.isOpen());
 
     const poi = this.state.getActivePointOfInterest();
     const selectedPath = this.state.getSelectedPath();
@@ -385,7 +425,13 @@ export class GameApp {
       this.dialogue.isOpen(),
       this.state.isChestOpen()
     );
-    this.hud.update(poi, selectedId, this.dialogue.getCurrentNode(), this.state.isChestOpen());
+    this.hud.update(
+      poi,
+      selectedId,
+      this.dialogue.getCurrentNode(),
+      this.state.isChestOpen(),
+      this.state.isOnClearing()
+    );
 
     this.animationFrameId = requestAnimationFrame(this.loop);
   };
@@ -396,7 +442,7 @@ export class GameApp {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
-    this.canvas.removeEventListener('pointermove', this.onPointerMove);
+    window.removeEventListener('pointermove', this.onPointerMove);
     this.canvas.removeEventListener('pointerup', this.onPointerUp);
     this.canvas.removeEventListener('wheel', this.onWheel);
     this.canvas.removeEventListener('contextmenu', this.onContextMenu);
