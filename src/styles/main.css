@@ -1,0 +1,251 @@
+:root {
+  --bg-dark: rgba(18, 26, 20, 0.88);
+  --border-wood: rgba(186, 148, 96, 0.55);
+  --text-light: #f3efe6;
+  --text-muted: #c5cbbd;
+  --accent-gold: #e2b86b;
+  --accent-green: #6ca870;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #111a14;
+  color: var(--text-light);
+  user-select: none;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#ui-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.25rem;
+}
+
+.hud-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.hud-card {
+  background: var(--bg-dark);
+  border: 1px solid var(--border-wood);
+  border-radius: 10px;
+  padding: 0.9rem 1.15rem;
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+  max-width: 430px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.hud-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  margin-bottom: 0.25rem;
+}
+
+.hud-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.hud-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.talk-btn {
+  background: rgba(65, 95, 68, 0.55);
+  color: var(--text-light);
+  border: 1px solid var(--border-wood);
+  border-radius: 8px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.talk-btn:hover,
+.talk-btn:focus-visible {
+  border-color: var(--accent-gold);
+  background: rgba(108, 168, 112, 0.45);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.talk-btn.is-emphasized {
+  background: rgba(226, 184, 107, 0.24);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+/* Kommunikationsfenster (Dialog zwischen Spielfiguren) */
+.dialogue-modal {
+  align-self: center;
+  width: min(560px, 94vw);
+  background: rgba(15, 22, 17, 0.94);
+  border: 1.5px solid var(--accent-gold);
+  border-radius: 12px;
+  padding: 1.15rem 1.35rem;
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+}
+
+.dialogue-modal.is-hidden {
+  display: none;
+}
+
+.dialogue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.65rem;
+  border-bottom: 1px solid rgba(186, 148, 96, 0.3);
+  padding-bottom: 0.5rem;
+}
+
+.dialogue-speaker {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.dialogue-role {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.dialogue-header-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.dialogue-close-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-wood);
+  border-radius: 6px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.dialogue-close-btn:hover {
+  color: var(--text-light);
+  border-color: var(--accent-gold);
+}
+
+.dialogue-text {
+  font-size: 0.96rem;
+  line-height: 1.5;
+  color: var(--text-light);
+  margin-bottom: 0.9rem;
+}
+
+.dialogue-player-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-gold);
+  margin-bottom: 0.45rem;
+}
+
+.dialogue-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 230px;
+  overflow-y: auto;
+}
+
+.dialogue-option-btn {
+  text-align: left;
+  background: rgba(34, 48, 37, 0.75);
+  color: var(--text-light);
+  border: 1px solid var(--border-wood);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.dialogue-option-btn:hover,
+.dialogue-option-btn:focus-visible {
+  background: rgba(108, 168, 112, 0.32);
+  border-color: var(--accent-gold);
+  outline: none;
+}
+
+.hud-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.path-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  pointer-events: auto;
+}
+
+.path-btn {
+  background: var(--bg-dark);
+  color: var(--text-light);
+  border: 1px solid var(--border-wood);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.path-btn:hover,
+.path-btn:focus-visible {
+  border-color: var(--accent-gold);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.path-btn.is-active {
+  background: rgba(108, 168, 112, 0.32);
+  border-color: var(--accent-gold);
+  font-weight: 600;
+}
+
+.controls-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
