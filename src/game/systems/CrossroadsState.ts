@@ -4,6 +4,7 @@ import {
   GREY_MAN_NPC_NAME,
   GUIDE_NPC_NAME,
   NIXIE_NPC_NAME,
+  WILD_HUNTER_NPC_NAME,
   WOOD_WOMAN_NPC_NAME,
 } from '../data/npcDialogues';
 import {
@@ -13,6 +14,7 @@ import {
   GIANT_NPC_POS,
   GREY_MAN_NPC_POS,
   HELL_CHASM_POS,
+  HUNTING_LODGE_POS,
   LUMBER_CAMP_POS,
   NIXIE_NPC_POS,
   PATH_1_END_CLEARING,
@@ -25,10 +27,14 @@ import {
   PATH_4_WAYPOINTS,
   PATH_5_END_CLEARING,
   PATH_5_WAYPOINTS,
+  PATH_6_END_CLEARING,
+  PATH_6_WAYPOINTS,
   PathPoint2D,
   POND_CENTER_POS,
   SEVEN_PATHS,
   WEIR_BRIDGE_POS,
+  WILD_HUNTER_NPC_POS,
+  WOOD_WOMAN_LODGE_NPC_POS,
   WOOD_WOMAN_NPC_POS,
 } from '../data/paths';
 
@@ -44,11 +50,15 @@ export type PointOfInterest =
   | { type: 'giant'; name: string; label: string }
   | { type: 'wood_woman'; name: string; label: string }
   | { type: 'devil'; name: string; label: string }
+  | { type: 'wild_hunter'; name: string; label: string }
+  | { type: 'wood_woman_lodge'; name: string; label: string }
   | { type: 'cave'; label: string }
   | { type: 'pond'; label: string }
   | { type: 'weir'; label: string }
   | { type: 'lumber_camp'; label: string }
   | { type: 'hell_chasm'; label: string }
+  | { type: 'hunting_lodge'; label: string }
+  | { type: 'herb_garden'; label: string }
   | { type: 'chest'; isOpen: boolean; label: string }
   | { type: 'signpost'; label: string }
   | { type: 'hut'; label: string }
@@ -117,6 +127,20 @@ export class CrossroadsState {
   private readonly devilCollisionRadius = 0.85;
   private readonly devilTalkDistance = 6.2;
 
+  // Am Ende des 6. Weges: Jagdhütte mit Kräutergarten, Wilder Jäger, Pferd und Holzweibchen
+  private readonly huntingLodgePos: Vector2D = { x: HUNTING_LODGE_POS.x, z: HUNTING_LODGE_POS.z };
+  private readonly wildHunterPos: Vector2D = { ...WILD_HUNTER_NPC_POS };
+  private readonly wildHunterCollisionRadius = 0.55;
+  private readonly woodWomanLodgePos: Vector2D = { ...WOOD_WOMAN_LODGE_NPC_POS };
+  private readonly woodWomanLodgeCollisionRadius = 0.55;
+  // Blockhütte steht versetzt bei (-46.6, 26.0) mit Ausdehnung 4.4 x 3.8
+  private readonly huntingCabinCenter: Vector2D = { x: -46.6, z: 26.0 };
+  private readonly huntingCabinHalfWidth = 2.3;
+  private readonly huntingCabinHalfDepth = 2.0;
+  // Jagdpferd steht bei (-43.6, 20.4)
+  private readonly horsePos: Vector2D = { x: -43.6, z: 20.4 };
+  private readonly horseCollisionRadius = 0.85;
+
   private readonly clearingRadius = 6.5;
   private readonly pathHalfWidth = 0.95;
   private readonly maxRadius = 26;
@@ -164,6 +188,14 @@ export class CrossroadsState {
 
   public getDevilPosition(): Readonly<Vector2D> {
     return { ...this.devilPos };
+  }
+
+  public getWildHunterPosition(): Readonly<Vector2D> {
+    return { ...this.wildHunterPos };
+  }
+
+  public getWoodWomanLodgePosition(): Readonly<Vector2D> {
+    return { ...this.woodWomanLodgePos };
   }
 
   public getChestPosition(): Readonly<Vector2D> {
@@ -229,6 +261,22 @@ export class CrossroadsState {
       this.playerPos.z - this.devilPos.z
     );
     return dist <= this.devilTalkDistance;
+  }
+
+  public isNearWildHunter(): boolean {
+    const dist = Math.hypot(
+      this.playerPos.x - this.wildHunterPos.x,
+      this.playerPos.z - this.wildHunterPos.z
+    );
+    return dist <= this.wildHunterCollisionRadius + 1.45;
+  }
+
+  public isNearWoodWomanLodge(): boolean {
+    const dist = Math.hypot(
+      this.playerPos.x - this.woodWomanLodgePos.x,
+      this.playerPos.z - this.woodWomanLodgePos.z
+    );
+    return dist <= this.woodWomanLodgeCollisionRadius + 1.45;
   }
 
   public isNearChest(): boolean {
@@ -423,6 +471,26 @@ export class CrossroadsState {
   }
 
   /**
+   * Prüft, ob ein Punkt auf dem 6. Weg (Jägerpfad) oder der Waldlichtung vor der Jagdhütte liegt.
+   */
+  public isPointOnPath6(x: number, z: number): boolean {
+    const eps = 1e-4;
+    for (let i = 0; i < PATH_6_WAYPOINTS.length - 1; i++) {
+      const { cx, cz, radius } = this.evaluateCurvedPathSegment(
+        x,
+        z,
+        PATH_6_WAYPOINTS,
+        PATH_6_END_CLEARING.radius,
+        i
+      );
+      if (Math.hypot(x - cx, z - cz) <= radius + eps) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Prüft, ob ein Punkt auf der zentralen Kreuzung oder auf einem der 7 befestigten Waldwege liegt.
    * Grünflächen und Wald außerhalb dieser Geometrie sind nicht begehbar.
    */
@@ -433,13 +501,14 @@ export class CrossroadsState {
       return true;
     }
 
-    // Wege 1 bis 5 besitzen eigene ausgebaute Kurvenverläufe bis zu ihren Zielorten
+    // Wege 1 bis 6 besitzen eigene ausgebaute Kurvenverläufe bis zu ihren Zielorten
     if (
       this.isPointOnPath1(x, z) ||
       this.isPointOnPath2(x, z) ||
       this.isPointOnPath3(x, z) ||
       this.isPointOnPath4(x, z) ||
-      this.isPointOnPath5(x, z)
+      this.isPointOnPath5(x, z) ||
+      this.isPointOnPath6(x, z)
     ) {
       return true;
     }
@@ -448,9 +517,9 @@ export class CrossroadsState {
       return false;
     }
 
-    // Wege 6 bis 7 verlaufen sternförmig
+    // Weg 7 verläuft sternförmig
     for (const path of SEVEN_PATHS) {
-      if (path.id <= 5) {
+      if (path.id <= 6) {
         continue;
       }
       const dirX = Math.sin(path.angleRad);
@@ -572,6 +641,38 @@ export class CrossroadsState {
       Math.hypot(x - this.hellChasmPos.x, z - this.hellChasmPos.z) <
       this.hellChasmCollisionRadius - eps
     ) {
+      return true;
+    }
+
+    // Der Wilde Jäger an der Jagdhütte auf Weg 6
+    if (
+      Math.hypot(x - this.wildHunterPos.x, z - this.wildHunterPos.z) <
+      this.wildHunterCollisionRadius - eps
+    ) {
+      return true;
+    }
+
+    // Das Holzweibchen vor dem Kräutergarten auf Weg 6
+    if (
+      Math.hypot(x - this.woodWomanLodgePos.x, z - this.woodWomanLodgePos.z) <
+      this.woodWomanLodgeCollisionRadius - eps
+    ) {
+      return true;
+    }
+
+    // Das Jagdpferd neben der Jagdhütte
+    if (
+      Math.hypot(x - this.horsePos.x, z - this.horsePos.z) <
+      this.horseCollisionRadius - eps
+    ) {
+      return true;
+    }
+
+    // Die Jagdhütte selbst (Blockbau)
+    const inHuntingCabin =
+      Math.abs(x - this.huntingCabinCenter.x) < this.huntingCabinHalfWidth - eps &&
+      Math.abs(z - this.huntingCabinCenter.z) < this.huntingCabinHalfDepth - eps;
+    if (inHuntingCabin) {
       return true;
     }
 
@@ -730,6 +831,21 @@ export class CrossroadsState {
         continue;
       }
 
+      if (path.id === 6) {
+        const p6 = this.projectOntoCurvedPath(
+          x,
+          z,
+          PATH_6_WAYPOINTS,
+          PATH_6_END_CLEARING.radius
+        );
+        const dSq6 = (x - p6.x) ** 2 + (z - p6.z) ** 2;
+        if (dSq6 < bestDistSq) {
+          bestDistSq = dSq6;
+          bestPoint = p6;
+        }
+        continue;
+      }
+
       const dirX = Math.sin(path.angleRad);
       const dirZ = -Math.cos(path.angleRad);
       const perpX = -dirZ;
@@ -747,7 +863,6 @@ export class CrossroadsState {
       const candX = dirX * along + perpX * cross;
       const candZ = dirZ * along + perpZ * cross;
       const dSq = (x - candX) ** 2 + (z - candZ) ** 2;
-
       if (dSq < bestDistSq) {
         bestDistSq = dSq;
         bestPoint = { x: candX, z: candZ };
@@ -904,6 +1019,56 @@ export class CrossroadsState {
       resolvedX = afterHellChasm.x;
       resolvedZ = afterHellChasm.z;
 
+      // Wilder Jäger an der Jagdhütte auf Weg 6
+      const afterHunter = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.wildHunterPos,
+        this.wildHunterCollisionRadius
+      );
+      resolvedX = afterHunter.x;
+      resolvedZ = afterHunter.z;
+
+      // Holzweibchen vor dem Kräutergarten auf Weg 6
+      const afterLodgeWoman = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.woodWomanLodgePos,
+        this.woodWomanLodgeCollisionRadius
+      );
+      resolvedX = afterLodgeWoman.x;
+      resolvedZ = afterLodgeWoman.z;
+
+      // Jagdpferd neben der Hütte
+      const afterHorse = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.horsePos,
+        this.horseCollisionRadius
+      );
+      resolvedX = afterHorse.x;
+      resolvedZ = afterHorse.z;
+
+      // Jagdhütte selbst (AABB um huntingCabinCenter)
+      const relCabinX = resolvedX - this.huntingCabinCenter.x;
+      const relCabinZ = resolvedZ - this.huntingCabinCenter.z;
+      if (
+        Math.abs(relCabinX) < this.huntingCabinHalfWidth &&
+        Math.abs(relCabinZ) < this.huntingCabinHalfDepth
+      ) {
+        const penX = this.huntingCabinHalfWidth - Math.abs(relCabinX);
+        const penZ = this.huntingCabinHalfDepth - Math.abs(relCabinZ);
+        if (penX < penZ) {
+          resolvedX =
+            this.huntingCabinCenter.x +
+            (relCabinX >= 0 ? this.huntingCabinHalfWidth : -this.huntingCabinHalfWidth);
+        } else {
+          resolvedZ =
+            this.huntingCabinCenter.z +
+            (relCabinZ >= 0 ? this.huntingCabinHalfDepth : -this.huntingCabinHalfDepth);
+        }
+      }
+
       // Schutzhütten-Kollision (AABB um hutPos)
       const relX = resolvedX - this.hutPos.x;
       const relZ = resolvedZ - this.hutPos.z;
@@ -937,6 +1102,9 @@ export class CrossroadsState {
     }
     if (this.isPointOnPath5(x, z)) {
       return SEVEN_PATHS[4];
+    }
+    if (this.isPointOnPath6(x, z)) {
+      return SEVEN_PATHS[5];
     }
 
     let playerAngle = Math.atan2(x, -z);
@@ -1085,6 +1253,22 @@ export class CrossroadsState {
   }
 
   /**
+   * Lässt die Spielfigur entlang des 6. Weges bis vor den Wilden Jäger an der Jagdhütte laufen.
+   */
+  public setTargetToWildHunter(): Readonly<Vector2D> {
+    this.selectPath(6);
+    return this.setTargetPosition(this.wildHunterPos.x + 0.85, this.wildHunterPos.z - 0.45);
+  }
+
+  /**
+   * Lässt die Spielfigur entlang des 6. Weges vor das Holzweibchen am Kräutergartenzaun laufen.
+   */
+  public setTargetToWoodWomanLodge(): Readonly<Vector2D> {
+    this.selectPath(6);
+    return this.setTargetPosition(this.woodWomanLodgePos.x + 0.75, this.woodWomanLodgePos.z - 0.5);
+  }
+
+  /**
    * Berechnet den kontinuierlichen Fortschritt entlang der Segmente eines Kurvenweges.
    */
   private getCurvedPathProgress(
@@ -1214,6 +1398,12 @@ export class CrossroadsState {
           PATH_5_WAYPOINTS,
           (px, pz) => this.isPointOnPath5(px, pz)
         );
+      } else if (playerPath.id === 6) {
+        effectiveTarget = this.getNextCurvedWaypoint(
+          PATH_6_WAYPOINTS[0],
+          PATH_6_WAYPOINTS,
+          (px, pz) => this.isPointOnPath6(px, pz)
+        );
       } else {
         effectiveTarget = {
           x: Math.sin(playerPath.angleRad) * (this.clearingRadius - 0.6),
@@ -1249,6 +1439,12 @@ export class CrossroadsState {
         this.targetPos,
         PATH_5_WAYPOINTS,
         (px, pz) => this.isPointOnPath5(px, pz)
+      );
+    } else if (targetPath && targetPath.id === 6) {
+      effectiveTarget = this.getNextCurvedWaypoint(
+        this.targetPos,
+        PATH_6_WAYPOINTS,
+        (px, pz) => this.isPointOnPath6(px, pz)
       );
     }
 
@@ -1323,6 +1519,77 @@ export class CrossroadsState {
    * Ermittelt, welchem Objekt, NPC oder Weg die spielende Person am nächsten ist.
    */
   public getActivePointOfInterest(): PointOfInterest {
+    const nearHunter = this.isNearWildHunter();
+    const nearWoodLodge = this.isNearWoodWomanLodge();
+
+    if (nearHunter && nearWoodLodge) {
+      const distToHunter = Math.hypot(
+        this.playerPos.x - this.wildHunterPos.x,
+        this.playerPos.z - this.wildHunterPos.z
+      );
+      const distToWood = Math.hypot(
+        this.playerPos.x - this.woodWomanLodgePos.x,
+        this.playerPos.z - this.woodWomanLodgePos.z
+      );
+      if (distToWood <= distToHunter) {
+        return {
+          type: 'wood_woman_lodge',
+          name: WOOD_WOMAN_NPC_NAME,
+          label:
+            'Vor dem Kräutergarten – sprich mit dem Holzweibchen über die Rettung der jungen Hirschkuh (Klick oder [F]).',
+        };
+      } else {
+        return {
+          type: 'wild_hunter',
+          name: WILD_HUNTER_NPC_NAME,
+          label:
+            'Vor der Jagdhütte – sprich mit dem Wilden Jäger über die Jagdordnung und den Diebstahlvorwurf (Klick oder [F]).',
+        };
+      }
+    }
+
+    if (nearHunter) {
+      return {
+        type: 'wild_hunter',
+        name: WILD_HUNTER_NPC_NAME,
+        label:
+          'Vor der Jagdhütte – sprich mit dem Wilden Jäger über die Jagdordnung und den Diebstahlvorwurf (Klick oder [F]).',
+      };
+    }
+
+    if (nearWoodLodge) {
+      return {
+        type: 'wood_woman_lodge',
+        name: WOOD_WOMAN_NPC_NAME,
+        label:
+          'Vor dem Kräutergarten – sprich mit dem Holzweibchen über die Rettung der jungen Hirschkuh (Klick oder [F]).',
+      };
+    }
+
+    const distToGarden = Math.hypot(
+      this.playerPos.x - (this.huntingLodgePos.x - 2.5),
+      this.playerPos.z - (this.huntingLodgePos.z - 1.8)
+    );
+    if (distToGarden < 3.8) {
+      return {
+        type: 'herb_garden',
+        label:
+          'Umzäunter Kräutergarten – Königs-Salbei, Lavendel und die seltene Mondwurz gedeihen hier in voller Pracht.',
+      };
+    }
+
+    const distToLodge = Math.hypot(
+      this.playerPos.x - this.huntingLodgePos.x,
+      this.playerPos.z - this.huntingLodgePos.z
+    );
+    if (distToLodge < 6.8) {
+      return {
+        type: 'hunting_lodge',
+        label:
+          'Jagdhütte des Wilden Jägers – mit Schindeldach, Steinkamin und Hirschgeweih über dem Eingang.',
+      };
+    }
+
     if (this.isNearDevil()) {
       return {
         type: 'devil',
@@ -1432,7 +1699,8 @@ export class CrossroadsState {
       return {
         type: 'npc',
         name: GUIDE_NPC_NAME,
-        label: 'Hinweisgeber an der Schutzhütte – klicke auf ihn oder drücke [F] für ein Gespräch.',
+        label:
+          'Waldhüter Arvid an der Schutzhütte – sprich mit ihm über die Kreuzung, seine Vergangenheit und den Rat der sieben Wege (Klick oder [F]).',
       };
     }
 

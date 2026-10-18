@@ -51,7 +51,30 @@ Eine spielende Person kommt an eine Waldkreuzung mit sieben Wegen und entscheide
    - Am Ende des Weges öffnet sich ein gewaltiger **Höllenschlund voller Feuer, züngelnder Flammen und brodelnder Lava**.
    - Inmitten des Höllenschlundes thront auf einem erhabenen Obsidianfelsen **der Teufel** als NPC mit Hörnern und Dreizack.
    - **Inhalt & Konflikt:** _Noch keine Story hinterlegt (Platzhalter-Einstiegsdialog vorhanden)._
-6. _Weitere zwei Wege folgen._
+6. **6. Jägerpfad (Südwesten → Kurve durch weite Waldschneise):**
+   - Weit geschwungener Waldpfad durch ein waldreiches Jagdrevier bis auf eine sonnige Waldlichtung vor einer rustikalen **Jagdhütte mit rauchendem Steinkamin, Schindeldach und Hirschgeweih über der Tür**.
+   - Vor der Hütte liegt ein liebevoll angelegter, umzäunter **Kräutergarten** mit Beeten (duftender Lavendel, Königs-Salbei, die seltene, sanft schimmernde Mondwurz, Thymian und Ringelblumen) sowie einem Wassertrog.
+   - Am Gartenzaun steht **der Wilde Jäger (mit edlem Jagdpferd und aufmerksamem Jagdhund)** und diskutiert hitzig mit dem **Holzweibchen**.
+   - **Inhalt & Konflikt:** Der Jäger verfolgt das Holzweibchen und wirft ihr den Diebstahl seltener Heilkräuter (Mondwurz & Königs-Salbei) aus seinem gehegten Kräutergarten vor. Das Holzweibchen entgegnet, sie habe die Wurzeln in höchster Not genommen, um einer im Brombeerdickicht schwer verletzten jungen Hirschkuh vor dem Erfrierungs- und Wundfiebertod das Leben zu retten. Beide Seiten erzählen ihre Sicht der Dinge und eröffnen eine Debatte über Revier- und Eigentumsordnung versus Lebensrettung in der Natur.
+7. _Weg 7 folgt._
+
+## Charakter: Waldhüter Arvid (Hüter der Schutzhütte & Wächter der Sieben Wege)
+
+- **Rolle & Bedeutung:**
+  - Steht links vor der Schutzhütte an der zentralen Waldkreuzung als weiser Mentor, Wegweiser und ruhender Pol des Wanderlandes.
+  - Hält die Laterne an der Zuflucht brennend und unterstützt Wandernde bei der Orientierung und der moralischen Einordnung ihrer Entscheidungen.
+- **Erscheinung & Ausrüstung:**
+  - Wohlbeleibter, stattlicher Waldmann von kräftiger Statur mit gütigem Blick, dichtem, tiefschwarzem Vollbart und markantem Schnurrbart.
+  - Kleidung: Wetterfester tannengrüner Lodenmantel mit weitem Saum, moosbraunem Schulterkragen (Pelerine), breitem Ledergürtel mit Messingschnalle, festen Wanderstiefeln und einer ledernen Umhängetasche für Karten und Kräuter.
+  - Waldhüterhut: Breite Krempe, Lederband und ein kleines grünes Eichenlaub-Abzeichen.
+  - Wanderstab & Bergmessing-Laterne: Knorriger Eichenstab mit Lederwicklung und Eichelknauf; daran pendelt eine handgeschmiedete Messinglaterne, deren Herdfeuer-Flamme sanft flackert und selbst den dichtesten Nebel durchdringt.
+- **Hintergrundgeschichte (Lore):**
+  - Kam vor vielen Jahrzehnten selbst als rastloser Sucher an die Kreuzung und beschritt jeden der sieben Wege bis zu seinem Ende.
+  - Als sein Vorgänger die Laterne niederlegte, erkannte Arvid seine wahre Berufung: Nicht das endlose Weiterwandern, sondern das Dasein und Schützen jener, die am Scheideweg zögern.
+  - Kennt alle Wesen der Pfade persönlich (Graumännchen, Nixe, Riese, Holzweibchen, Wilder Jäger, Teufel) und schätzt deren Stärken wie deren Verwundbarkeiten.
+- **Philosophie:**
+  - *"Kein Pfad im Wanderland ist rein leicht oder gänzlich dunkel."*
+  - Er drängt niemanden in eine Richtung, sondern fordert die Wandernden auf, beiden Seiten eines Streits Gehör zu schenken und dem eigenen Gewissen zu vertrauen.
 
 ## Steuerung und Geräte
 
@@ -65,8 +88,9 @@ Eine spielende Person kommt an eine Waldkreuzung mit sieben Wegen und entscheide
 
 ## Stimmung und visuelle Richtung
 
-- Referenzen:
-- Farbwelt:
+- Referenzen: Märchenhafter, uriger Mittelgebirgs- und Zauberwald (Thüringer Wald / Schwarzwald).
+- Farbwelt: Tannengrün, warmes Erdbraun, weicher hellgrauer Nebel, herbstliche Farbakzente.
+- Wald-Flora & Details: Unter den Bäumen und an den Waldrändern sprießen idyllische Pilzgruppen auf kleinen Moospolstern (rote Fliegenpilze mit weißen Tupfen, kastanienbraune Steinpilze mit dickem Stiel und goldgelbe Pfifferlinge).
 - Kamera/Perspektive:
 - Audio:
 

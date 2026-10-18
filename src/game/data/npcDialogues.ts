@@ -7,6 +7,7 @@ export type DialogueAction =
   | { type: 'walk_to_giant' }
   | { type: 'walk_to_wood_woman' }
   | { type: 'walk_to_devil' }
+  | { type: 'walk_to_wild_hunter' }
   | { type: 'close' };
 
 export interface DialogueOption {
@@ -25,7 +26,7 @@ export interface DialogueNode {
 }
 
 export const GUIDE_NPC_NAME = 'Waldhüter Arvid';
-export const GUIDE_NPC_ROLE = 'Hinweisgeber an der Schutzhütte';
+export const GUIDE_NPC_ROLE = 'Hüter der Schutzhütte & Wächter der Sieben Wege';
 
 export const GREY_MAN_NPC_NAME = 'Das Graumännchen';
 export const GREY_MAN_NPC_ROLE = 'Hüter des alten Silberstollens';
@@ -42,6 +43,9 @@ export const WOOD_WOMAN_NPC_ROLE = 'Hüterin des Waldes im Holzfällerlager';
 export const DEVIL_NPC_NAME = 'Der Teufel';
 export const DEVIL_NPC_ROLE = 'Herr des Höllenschlundes';
 
+export const WILD_HUNTER_NPC_NAME = 'Der Wilde Jäger';
+export const WILD_HUNTER_NPC_ROLE = 'Herr der Jagdhütte';
+
 /**
  * Individuelle Hinweise des Waldhüters zu jedem der sieben Wege.
  */
@@ -51,7 +55,7 @@ const PATH_HINTS: Record<number, string> = {
   3: 'Der 3. Quellenweg im Südosten führt über eine Brücke, unter der ein Bach hindurchfließt. Ein geschlossenes Wehr an der Brücke staut den Bach zu einem kleinen Stausee zurück. Dort wacht der Riese: Die Quelle versorgt eigentlich das Tal – ihre Freigabe könnte dort eine Dürre lindern, zerstört jedoch die Heimat des Riesen.',
   4: 'Der 4. Holzfäller-Pfad im Südsüdosten führt auf eine gerodete Waldlichtung zu einem Holzfällerlager. Dort triffst du das Holzweibchen zwischen Baumstümpfen und Holzstapeln: Das geschlagene Brennholz rettet die Dorfbewohner vor der bitteren Kälte – doch zu starke Fällungen gefährden den Wald und seine gesamte Umgebung.',
   5: 'Der 5. Höllenschlund-Pfad im Südsüdwesten führt an den Rand eines tiefen, glühenden Abgrunds. Inmitten des Feuermeeres und der emporsteigenden Flammen erwartet dich der Teufel auf seinem Obsidianfelsen.',
-  6: 'Die Abendrot-Schneise im Südwesten öffnet den Blick zwischen hohen Kiefern. Besonders wenn das Licht tief steht, erkennst du dort ferne Landmarken.',
+  6: 'Der 6. Jägerpfad im Südwesten führt durch eine Waldschneise zu einer Jagdhütte mit prachtvollem Kräutergarten. Dort steht der Wilde Jäger mit Pferd und Jagdhund und streitet erbittert mit einem Holzweibchen: Er wirft ihr Diebstahl kostbarer Kräuter vor, während sie beteuert, damit leidenden Waldtieren in höchster Not das Leben gerettet zu haben.',
   7: 'Der Sternenwald-Pfad im Nordwesten liegt unter einem dichten Blätterdach. Dort leuchten selbst am Tag die Farne – ein Pfad für Entdecker und Rätselsucher.',
 };
 
@@ -62,7 +66,7 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       id: 'root',
       speaker: GUIDE_NPC_NAME,
       speakerRole: GUIDE_NPC_ROLE,
-      text: 'Willkommen an der Kreuzung der sieben Wege, Reisende! Ich wache über diese Schutzhütte. Wohin zieht es deine Schritte – oder suchst du noch Rat für deine Wahl?',
+      text: 'Sei gegrüßt an der Kreuzung der sieben Wege, Wandernde! Ich bin Arvid. Seit vielen Wintern stehe ich an diesem Scheideweg, halte die Laterne brennend und biete Schutz in dieser Hütte. Wer hier ankommt, steht vor einer Wahl, die nicht nur die Füße, sondern das Gewissen fordert. Wohin zieht es deinen Sinn?',
       options: [
         {
           id: 'ask-paths',
@@ -70,9 +74,24 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
           nextNodeId: 'paths_overview',
         },
         {
+          id: 'ask-arvid',
+          playerText: 'Wer bist du, Arvid? Wie kamst du an diese Waldkreuzung?',
+          nextNodeId: 'about_arvid',
+        },
+        {
           id: 'ask-crossroads',
           playerText: 'Was hat es mit dieser Waldkreuzung und der Hütte auf sich?',
           nextNodeId: 'about_crossroads',
+        },
+        {
+          id: 'ask-philosophy',
+          playerText: 'Wie soll ich wählen, wenn jeder Pfad schwere Fragen aufwirft?',
+          nextNodeId: 'arvid_philosophy',
+        },
+        {
+          id: 'ask-beings',
+          playerText: 'Welche Wesen erwarten mich an den Pfaden?',
+          nextNodeId: 'arvid_beings',
         },
         {
           id: 'ask-recommendation',
@@ -84,6 +103,113 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
           playerText: 'Ich sehe mich erst einmal weiter um. (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
+        },
+      ],
+    },
+
+    about_arvid: {
+      id: 'about_arvid',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Einst zog ich selbst als ruheloser Sucher durchs Wanderland. Ich bin jeden dieser sieben Pfade bis zu seinem Ende gegangen – durch Nebel, Felsstürze und lockende Spiegelungen. Als mein Vorgänger, der alte Hüter, seine Laterne niederlegte, erkannte ich: Das Größte ist nicht das endlose Weiterlaufen, sondern das Da-Sein für jene, die an der Weggabelung zögern. So gelobte ich, diese Kreuzung zu hüten.',
+      options: [
+        {
+          id: 'to-lantern',
+          playerText: 'Welche Bewandtnis hat die Messinglaterne an deinem Wanderstab?',
+          nextNodeId: 'arvid_lantern',
+        },
+        {
+          id: 'to-beings-from-arvid',
+          playerText: 'Du kennst also alle Wesen an den Pfaden persönlich?',
+          nextNodeId: 'arvid_beings',
+        },
+        {
+          id: 'to-philosophy-from-arvid',
+          playerText: 'Welche Lehre zogst du aus all deinen Wanderungen?',
+          nextNodeId: 'arvid_philosophy',
+        },
+        {
+          id: 'back-root-from-arvid',
+          playerText: 'Zurück zur Übersicht unserer Fragen.',
+          nextNodeId: 'root',
+        },
+        {
+          id: 'bye-arvid',
+          playerText: 'Danke für deine Geschichte, Arvid. (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    arvid_lantern: {
+      id: 'arvid_lantern',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Diese Laterne wurde von den Bergleuten der alten Zechen aus Bergmessing geschmiedet und trägt ein Licht, das aus der stillen Herdglut der Schutzhütte stammt. Selbst wenn dichter weißer Waldnebel die Pfade verschluckt, dringt ihr warmer Bernsteinschein durchs Geäst. Sie erinnert jeden Wandernden daran: Es gibt immer einen sicheren Rückweg zur Zuflucht, ganz gleich, wie weit man sich hinausgewagt hat.',
+      options: [
+        {
+          id: 'lantern-to-arvid',
+          playerText: 'Erzähle mir mehr über deine eigene Wanderschaft.',
+          nextNodeId: 'about_arvid',
+        },
+        {
+          id: 'lantern-to-beings',
+          playerText: 'Welche Wesen hast du auf deinen Reisen getroffen?',
+          nextNodeId: 'arvid_beings',
+        },
+        {
+          id: 'back-root-lantern',
+          playerText: 'Verstanden, zurück zum Anfang.',
+          nextNodeId: 'root',
+        },
+      ],
+    },
+
+    arvid_philosophy: {
+      id: 'arvid_philosophy',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Wisse dies: Kein Pfad im Wanderland ist rein leicht oder gänzlich dunkel. Ein Weg verlangt, dass du ein geheiligtes Verbot gegen blanke Menschennot abwägst; ein anderer lockt mit Reichtum, der eine Seele verfluchen kann; ein dritter fordert ein bitteres Opfer zwischen Durst im Tal und der Heimat eines Riesen. Wer nur den leichtesten Schritt sucht, strauchelt am tiefsten. Höre beiden Seiten zu, wenn Wesen streiten – und vertraue deinem eigenen Gewissen mehr als fremdem Drängen.',
+      options: [
+        {
+          id: 'philosophy-to-paths',
+          playerText: 'Zeige mir die sieben Wege, damit ich die Prüfungen abwägen kann.',
+          nextNodeId: 'paths_overview',
+        },
+        {
+          id: 'philosophy-to-beings',
+          playerText: 'Welche Gesichter und Wesen erwarten mich?',
+          nextNodeId: 'arvid_beings',
+        },
+        {
+          id: 'back-root-philosophy',
+          playerText: 'Danke für diese weisen Worte. Zurück zur Übersicht.',
+          nextNodeId: 'root',
+        },
+      ],
+    },
+
+    arvid_beings: {
+      id: 'arvid_beings',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Im Norden hütet das treue Graumännchen den Silberstollen – ein ehrlicher Geist, doch gebunden an ein ehernes Versprechen. Im Nordosten sitzt die Nixe auf ihrem Stein im Spiegelteich; ihre Schönheit und ihr funkelndes Gold haben schon manchen ins Verderben gezogen. Im Südosten hadert der Riese am Wehr mit der Dürre des Tals, während im Süden das uralte Holzweibchen für den Atem des Forstes kämpft. Und am Jägerpfad pocht der Wilde Jäger stolz auf sein Revierrecht. Begegne ihnen allen mit Achtung, aber lass dich von Zorn oder Schmeicheln nicht verblenden.',
+      options: [
+        {
+          id: 'beings-to-paths',
+          playerText: 'Lass mich die Wege im Detail durchgehen.',
+          nextNodeId: 'paths_overview',
+        },
+        {
+          id: 'beings-to-rec',
+          playerText: 'Mit welchem Wesen sollte ich das Gespräch beginnen?',
+          nextNodeId: 'recommendation',
+        },
+        {
+          id: 'back-root-beings',
+          playerText: 'Zurück zum Hauptgespräch.',
+          nextNodeId: 'root',
         },
       ],
     },
@@ -884,6 +1010,158 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
         },
       ],
     },
+
+    // === DER WILDE JÄGER (an der Jagdhütte am Ende von Weg 6) ===
+    hunter_root: {
+      id: 'hunter_root',
+      speaker: WILD_HUNTER_NPC_NAME,
+      speakerRole: WILD_HUNTER_NPC_ROLE,
+      text: 'Halt, Wanderer! Tritt nicht zwischen uns – mein Jagdhund knurrt und mein Pferd schlägt aus vor Unruhe! Ich habe dieses Holzweibchen quer durch den Forst bis hierher an meine Jagdhütte verfolgt. Sie hat sich nachts in meinen umzäunten Kräutergarten geschlichen und die seltenen Heilsalben-Kräuter gestohlen! Ein Diebstahl bleibt ein Vergehen gegen die Ordnung des Waldes!',
+      options: [
+        {
+          id: 'hunter-ask-theft',
+          playerText: 'Welche Kräuter wirfst du dem Holzweibchen vor, gestohlen zu haben?',
+          nextNodeId: 'hunter_herbs',
+        },
+        {
+          id: 'hunter-ask-demand',
+          playerText: 'Was forderst du nun von ihr als Sühne?',
+          nextNodeId: 'hunter_demand',
+        },
+        {
+          id: 'hunter-switch-wood-woman',
+          playerText: 'Ich möchte hören, was das Holzweibchen zu ihrer Verteidigung sagt.',
+          nextNodeId: 'wood_lodge_root',
+        },
+        {
+          id: 'hunter-bye',
+          playerText: 'Klärt euren Streit mit Bedacht. (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    hunter_herbs: {
+      id: 'hunter_herbs',
+      speaker: WILD_HUNTER_NPC_NAME,
+      speakerRole: WILD_HUNTER_NPC_ROLE,
+      text: 'Es handelt sich um die seltene Mondwurz und den Königs-Salbei! Ich hege diesen Kräutergarten seit vielen Wintern mit eigenen Händen. Aus den Blättern bereite ich Wundsalben für mein Jagdgespann und die Dorfleute. Wenn jeder nimmt, was ihm beliebt, bricht die Jagdordnung zusammen!',
+      options: [
+        {
+          id: 'hunter-to-demand',
+          playerText: 'Was verlangst du jetzt von ihr?',
+          nextNodeId: 'hunter_demand',
+        },
+        {
+          id: 'hunter-to-wood-view',
+          playerText: 'Lass mich die Gegenseite anhören.',
+          nextNodeId: 'wood_lodge_root',
+        },
+        {
+          id: 'hunter-close-herbs',
+          playerText: 'Ich verstehe deinen Zorn. (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    hunter_demand: {
+      id: 'hunter_demand',
+      speaker: WILD_HUNTER_NPC_NAME,
+      speakerRole: WILD_HUNTER_NPC_ROLE,
+      text: 'Sie soll die restlichen Wurzeln sofort zurücklegen und geloben, diesen Zaun nie wieder heimlich zu überwinden! Ein Jäger achtet das Wild – aber er duldet keinen Raub in seinem eigenen Revier!',
+      options: [
+        {
+          id: 'hunter-to-wood-plea',
+          playerText: 'Ich rede mit dem Holzweibchen darüber.',
+          nextNodeId: 'wood_lodge_root',
+        },
+        {
+          id: 'hunter-close-demand',
+          playerText: 'Ich denke über deine Worte nach. (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    // === DAS HOLZWEIBCHEN AN DER JAGDHÜTTE ===
+    wood_lodge_root: {
+      id: 'wood_lodge_root',
+      speaker: WOOD_WOMAN_NPC_NAME,
+      speakerRole: 'Verteidigerin des Waldes an der Jagdhütte',
+      text: 'Glaube dem stolzen Jäger kein bitteres Wort! Ja, ich pflückte von der Mondwurz aus seinem Garten – doch drüben im Brombeerdickicht lag eine junge Hirschkuh mit tief gerissener Flanke im Wundfieber! Ohne den Wurzelsaft wäre sie vor Morgengrauen verendet. Er sperrt Heilung hinter Zäunen ein, während der Wald leidet! Darf ein Zaun mehr wert sein als das lebendige Herz eines Geschöpfs?',
+      options: [
+        {
+          id: 'wood-ask-life',
+          playerText: 'Konntest du das Tier mit den Kräutern retten?',
+          nextNodeId: 'wood_lodge_life',
+        },
+        {
+          id: 'wood-ask-hunter-law',
+          playerText: 'Verstehst du denn auch die Sorge des Jägers um seinen gehegten Garten?',
+          nextNodeId: 'wood_lodge_hunter_view',
+        },
+        {
+          id: 'wood-switch-hunter',
+          playerText: 'Ich möchte hören, was der Wilde Jäger dazu entgegnet.',
+          nextNodeId: 'hunter_root',
+        },
+        {
+          id: 'wood-bye',
+          playerText: 'Möge sich eine gerechte Einigung finden. (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    wood_lodge_life: {
+      id: 'wood_lodge_life',
+      speaker: WOOD_WOMAN_NPC_NAME,
+      speakerRole: 'Verteidigerin des Waldes an der Jagdhütte',
+      text: 'Das Fieber sank und die Wunde schloss sich! Die Hirschkuh atmet und steht wieder auf eigenen Läufen. Der Garten des Jägers wird im nächsten Frühjahr neu austreiben – doch ein verstorbenes Waldwesen kehrt nie wieder.',
+      options: [
+        {
+          id: 'wood-to-hunter-view',
+          playerText: 'Aber wie soll der Jäger dir vertrauen, wenn du im Dunkeln nimmst?',
+          nextNodeId: 'wood_lodge_hunter_view',
+        },
+        {
+          id: 'wood-to-hunter-direct',
+          playerText: 'Lass mich mit dem Jäger sprechen.',
+          nextNodeId: 'hunter_root',
+        },
+        {
+          id: 'wood-close-life',
+          playerText: 'Ein edler Beweggrund, doch ein schwieriges Dilemma. (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    wood_lodge_hunter_view: {
+      id: 'wood_lodge_hunter_view',
+      speaker: WOOD_WOMAN_NPC_NAME,
+      speakerRole: 'Verteidigerin des Waldes an der Jagdhütte',
+      text: 'Ich anerkenne seine Mühe um diesen Kräutergarten. Wäre der Jäger zugegen gewesen, hätte ich ihn um die Wurzeln gebeten. Wenn er mir vergibt, pflanze ich ihm im Frühling wilde Waldminze und Alant als Ausgleich an den Zaun.',
+      options: [
+        {
+          id: 'wood-to-hunter-offer',
+          playerText: 'Das ist ein faires Angebot. Ich trage es dem Wilden Jäger vor.',
+          nextNodeId: 'hunter_root',
+        },
+        {
+          id: 'wood-close-view',
+          playerText: 'Ich danke dir für deine ehrliche Sicht der Dinge. (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
   };
 
   for (const path of SEVEN_PATHS) {
@@ -933,7 +1211,16 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
                       action: { type: 'walk_to_devil' },
                     },
                   ]
-                : [];
+                : path.id === 6
+                  ? [
+                      {
+                        id: 'walk-to-wild-hunter-6',
+                        playerText: 'Den gesamten 6. Weg bis zur Jagdhütte und dem Streit wandern',
+                        nextNodeId: null,
+                        action: { type: 'walk_to_wild_hunter' },
+                      },
+                    ]
+                  : [];
 
     nodes[`path_${path.id}`] = {
       id: `path_${path.id}`,

@@ -218,6 +218,54 @@ export const DEVIL_NPC_POS: PathPoint2D = {
 };
 
 /**
+ * Wegpunkte für den 6. Weg (Jägerpfad zur Jagdhütte):
+ * Startet an der Kreuzung nach Südwesten, führt durch eine weite Waldschneise
+ * und mündet auf einer idyllischen Waldlichtung vor einer Jagdhütte mit duftendem Kräutergarten.
+ */
+export const PATH_6_WAYPOINTS: readonly PathPoint2D[] = [
+  { x: -5.4, z: 1.2 },
+  { x: -12.8, z: 2.8 },
+  { x: -20.5, z: 5.4 },
+  { x: -28.2, z: 9.6 },
+  { x: -35.8, z: 14.8 },
+  { x: -42.8, z: 20.6 },
+];
+
+/**
+ * Begehbare Waldlichtung am Ende von Weg 6 vor der Jagdhütte und dem Kräutergarten.
+ */
+export const PATH_6_END_CLEARING = {
+  x: -42.8,
+  z: 20.6,
+  radius: 5.6,
+} as const;
+
+/**
+ * Zentrum der Jagdhütte und des Kräutergartens auf der Lichtung am Ende von Weg 6.
+ */
+export const HUNTING_LODGE_POS = {
+  x: -44.2,
+  z: 22.8,
+  radius: 7.8,
+} as const;
+
+/**
+ * Position des Wilden Jägers (mit Pferd und Jagdhund) an der Jagdhütte.
+ */
+export const WILD_HUNTER_NPC_POS: PathPoint2D = {
+  x: -41.8,
+  z: 21.6,
+};
+
+/**
+ * Position des Holzweibchens, das vor dem Kräutergarten mit dem Wilden Jäger diskutiert.
+ */
+export const WOOD_WOMAN_LODGE_NPC_POS: PathPoint2D = {
+  x: -42.6,
+  z: 23.2,
+};
+
+/**
  * Die sieben Waldwege, die sternförmig von der Waldkreuzung abgehen.
  */
 export const SEVEN_PATHS: readonly ForestPathData[] = [
@@ -263,11 +311,11 @@ export const SEVEN_PATHS: readonly ForestPathData[] = [
   },
   {
     id: 6,
-    name: '6. Abendrot-Schneise',
+    name: '6. Jägerpfad',
     directionLabel: 'Südwest',
     angleRad: (5 * FULL_CIRCLE) / 7,
-    subtitle: 'Weite Sicht zwischen hohen Kiefern.',
-    colorHex: 0xa66a4c,
+    subtitle: 'Führt zu einer Jagdhütte mit Kräutergarten, wo der Wilde Jäger mit dem Holzweibchen streitet.',
+    colorHex: 0x487a42,
   },
   {
     id: 7,

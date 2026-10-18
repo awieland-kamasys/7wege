@@ -5,6 +5,7 @@ import {
   GIANT_NPC_POS,
   GREY_MAN_NPC_POS,
   HELL_CHASM_POS,
+  HUNTING_LODGE_POS,
   LUMBER_CAMP_POS,
   NIXIE_NPC_POS,
   PATH_1_END_CLEARING,
@@ -17,10 +18,14 @@ import {
   PATH_4_WAYPOINTS,
   PATH_5_END_CLEARING,
   PATH_5_WAYPOINTS,
+  PATH_6_END_CLEARING,
+  PATH_6_WAYPOINTS,
   PathPoint2D,
   POND_CENTER_POS,
   SEVEN_PATHS,
   WEIR_BRIDGE_POS,
+  WILD_HUNTER_NPC_POS,
+  WOOD_WOMAN_LODGE_NPC_POS,
   WOOD_WOMAN_NPC_POS,
 } from '../data/paths';
 import { createDevilNpc, DevilNpcEntity } from '../entities/DevilNpc';
@@ -28,6 +33,7 @@ import { createGiantNpc, GiantNpcEntity } from '../entities/GiantNpc';
 import { createGreyManNpc, GreyManNpcEntity } from '../entities/GreyManNpc';
 import { createGuideNpc, GuideNpcEntity } from '../entities/GuideNpc';
 import { createHellChasm, HellChasmEntity } from '../entities/HellChasm';
+import { createHuntingLodge, HuntingLodgeEntity } from '../entities/HuntingLodge';
 import { createLogCabin } from '../entities/LogCabin';
 import { createLumberjackCamp, LumberjackCampEntity } from '../entities/LumberjackCamp';
 import { createMountainCave } from '../entities/MountainCave';
@@ -36,7 +42,9 @@ import { createNixiePond, NixiePondEntity } from '../entities/NixiePond';
 import { createSignpost, SignpostEntity } from '../entities/Signpost';
 import { createTreasureChest, TreasureChestEntity } from '../entities/TreasureChest';
 import { createWeirBridgeScene, WeirBridgeEntity } from '../entities/WeirBridgeScene';
+import { createWildHunterNpc, WildHunterNpcEntity } from '../entities/WildHunterNpc';
 import { createWoodWomanNpc, WoodWomanNpcEntity } from '../entities/WoodWomanNpc';
+import { createMushroomCluster, MushroomType } from '../entities/MushroomCluster';
 import { Vector2D } from '../systems/CrossroadsState';
 
 export type ScenePickResult =
@@ -46,11 +54,15 @@ export type ScenePickResult =
   | { kind: 'giant'; point: Vector2D }
   | { kind: 'wood_woman'; point: Vector2D }
   | { kind: 'devil'; point: Vector2D }
+  | { kind: 'wild_hunter'; point: Vector2D }
+  | { kind: 'wood_woman_lodge'; point: Vector2D }
   | { kind: 'cave'; point: Vector2D }
   | { kind: 'pond'; point: Vector2D }
   | { kind: 'weir'; point: Vector2D }
   | { kind: 'lumber_camp'; point: Vector2D }
   | { kind: 'hell_chasm'; point: Vector2D }
+  | { kind: 'hunting_lodge'; point: Vector2D }
+  | { kind: 'herb_garden'; point: Vector2D }
   | { kind: 'chest'; point: Vector2D }
   | { kind: 'sign'; pathId: number; point: Vector2D }
   | { kind: 'path'; pathId: number; point: Vector2D }
@@ -85,6 +97,9 @@ export class CrossroadsScene {
   private readonly woodWomanNpc: WoodWomanNpcEntity;
   private readonly hellChasm: HellChasmEntity;
   private readonly devilNpc: DevilNpcEntity;
+  private readonly huntingLodge: HuntingLodgeEntity;
+  private readonly wildHunterNpc: WildHunterNpcEntity;
+  private readonly woodWomanLodgeNpc: WoodWomanNpcEntity;
   private readonly treasureChest: TreasureChestEntity;
   private readonly pathMeshes = new Map<number, THREE.MeshStandardMaterial>();
   private readonly pathGemstones = new Map<
@@ -110,6 +125,8 @@ export class CrossroadsScene {
   private isGiantHovered = false;
   private isWoodWomanHovered = false;
   private isDevilHovered = false;
+  private isWildHunterHovered = false;
+  private isWoodWomanLodgeHovered = false;
   private isChestHovered = false;
   private lastPlayerPos: Vector2D = { x: 0, z: 5.2 };
   private elapsedSeconds = 0;
@@ -283,13 +300,52 @@ export class CrossroadsScene {
     });
     this.scene.add(this.devilNpc.group);
 
-    // Bäume rund um die Lichtung, zwischen den 7 Wegen und entlang der Kurven von Weg 1 bis 5
+    // Jagdhütte mit Kräutergarten, Jagdpferd und Jagdhund am Ende des 6. Weges
+    this.huntingLodge = createHuntingLodge();
+    this.huntingLodge.group.position.set(HUNTING_LODGE_POS.x, 0, HUNTING_LODGE_POS.z);
+    this.huntingLodge.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.huntingLodge.group);
+
+    // Der Wilde Jäger (NPC) an der Jagdhütte
+    this.wildHunterNpc = createWildHunterNpc();
+    this.wildHunterNpc.group.position.set(WILD_HUNTER_NPC_POS.x, 0, WILD_HUNTER_NPC_POS.z);
+    this.wildHunterNpc.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.wildHunterNpc.group);
+
+    // Das Holzweibchen (NPC) vor dem Kräutergartenzaun an der Jagdhütte
+    this.woodWomanLodgeNpc = createWoodWomanNpc({
+      interactableType: 'wood_woman_lodge',
+      defaultFacingTarget: WILD_HUNTER_NPC_POS,
+    });
+    this.woodWomanLodgeNpc.group.position.set(
+      WOOD_WOMAN_LODGE_NPC_POS.x,
+      0,
+      WOOD_WOMAN_LODGE_NPC_POS.z
+    );
+    this.woodWomanLodgeNpc.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.woodWomanLodgeNpc.group);
+
+    // Bäume rund um die Lichtung, zwischen den 7 Wegen und entlang der Kurven von Weg 1 bis 6
     this.buildForestRing();
     this.buildCurvedPath1Trees();
     this.buildCurvedPath2Trees();
     this.buildCurvedPath3Trees();
     this.buildCurvedPath4Trees();
     this.buildCurvedPath5Trees();
+    this.buildCurvedPath6Trees();
+    this.buildForestMushrooms();
 
     // Zielmarkierung für Maus-Bewegung (Click-to-Move)
     this.targetMarker = this.createTargetMarker();
@@ -409,6 +465,19 @@ export class CrossroadsScene {
           5,
           PATH_5_WAYPOINTS,
           PATH_5_END_CLEARING,
+          pathData.angleRad,
+          mat,
+          pathData.colorHex
+        );
+        return;
+      }
+
+      if (pathData.id === 6) {
+        // Weg 6: Pfad entlang PATH_6_WAYPOINTS bis zur Jagdhütte und dem Kräutergarten
+        this.buildCurvedPathMeshes(
+          6,
+          PATH_6_WAYPOINTS,
+          PATH_6_END_CLEARING,
           pathData.angleRad,
           mat,
           pathData.colorHex
@@ -660,6 +729,99 @@ export class CrossroadsScene {
     return this.isNearCurvedCorridor(x, z, PATH_5_WAYPOINTS, PATH_5_END_CLEARING, minDistance);
   }
 
+  private isNearPath6Corridor(x: number, z: number, minDistance = 3.2): boolean {
+    // Auch die Lichtung mit Jagdhütte und Kräutergarten von hohen Waldbäumen freihalten
+    if (Math.hypot(x - HUNTING_LODGE_POS.x, z - HUNTING_LODGE_POS.z) < HUNTING_LODGE_POS.radius + 1.8) {
+      return true;
+    }
+    return this.isNearCurvedCorridor(x, z, PATH_6_WAYPOINTS, PATH_6_END_CLEARING, minDistance);
+  }
+
+  private isNearStraightPath(
+    x: number,
+    z: number,
+    angleRad: number,
+    startDist = 4.5,
+    endDist = 56.0,
+    minDistance = 2.8
+  ): boolean {
+    const sinA = Math.sin(angleRad);
+    const cosA = -Math.cos(angleRad);
+    const ax = sinA * startDist;
+    const az = cosA * startDist;
+    const bx = sinA * endDist;
+    const bz = cosA * endDist;
+    const abx = bx - ax;
+    const abz = bz - az;
+    const lenSq = abx * abx + abz * abz;
+    if (lenSq < 0.0001) return false;
+    const t = Math.max(0, Math.min(1, ((x - ax) * abx + (z - az) * abz) / lenSq));
+    const cx = ax + t * abx;
+    const cz = az + t * abz;
+    return Math.hypot(x - cx, z - cz) < minDistance;
+  }
+
+  /**
+   * Prüft strikt, ob sich eine Koordinate auf den grünen Waldboden-Flächen befindet
+   * und ausreichend Abstand zu allen braunen Wegen, Plätzen, Teichen, Felsen und Bauten hält.
+   */
+  private isPositionOnGreenGrass(x: number, z: number): boolean {
+    // 1. Zentrale Lichtung / brauner Kreuzungsplatz (Radius 7.0m + 1.2m Puffer)
+    if (Math.hypot(x, z) < 8.2) {
+      return false;
+    }
+
+    // Zu weit außerhalb der Spielwelt
+    if (Math.hypot(x, z) > 70.0) {
+      return false;
+    }
+
+    // 2. Ausreichender Abstand zu allen kurvigen Wegen 1 bis 6 und deren Vorplätzen (minDistance 2.8m)
+    if (
+      this.isNearPath1Corridor(x, z, 2.8) ||
+      this.isNearPath2Corridor(x, z, 2.8) ||
+      this.isNearPath3Corridor(x, z, 2.8) ||
+      this.isNearPath4Corridor(x, z, 2.8) ||
+      this.isNearPath5Corridor(x, z, 4.0) ||
+      this.isNearPath6Corridor(x, z, 2.8)
+    ) {
+      return false;
+    }
+
+    // 3. Ausreichender Abstand zum geraden 7. Weg (Nordwest)
+    if (this.isNearStraightPath(x, z, SEVEN_PATHS[6].angleRad, 4.5, 56.0, 2.8)) {
+      return false;
+    }
+
+    // 4. Besondere Schauplätze, Vorplätze und Bauten
+    // Nixenteich-Wasserfläche und Vorplatz
+    if (Math.hypot(x - POND_CENTER_POS.x, z - POND_CENTER_POS.z) < POND_CENTER_POS.radius + 2.0) {
+      return false;
+    }
+    // Wehrbrücke, Stausee & Bachbett
+    if (Math.hypot(x - WEIR_BRIDGE_POS.x, z - WEIR_BRIDGE_POS.z) < 11.0) {
+      return false;
+    }
+    // Holzfällerlager-Vorplatz & Rodungsfläche
+    if (Math.hypot(x - LUMBER_CAMP_POS.x, z - LUMBER_CAMP_POS.z) < LUMBER_CAMP_POS.radius + 2.0) {
+      return false;
+    }
+    // Feuriger Höllenschlund & Lavakrater
+    if (Math.hypot(x - HELL_CHASM_POS.x, z - HELL_CHASM_POS.z) < HELL_CHASM_POS.radius + 2.5) {
+      return false;
+    }
+    // Jagdhütte, Vorplatz & Kräutergarten
+    if (Math.hypot(x - HUNTING_LODGE_POS.x, z - HUNTING_LODGE_POS.z) < HUNTING_LODGE_POS.radius + 2.0) {
+      return false;
+    }
+    // Bergmassiv mit Stollenmundloch
+    if (Math.hypot(x - CAVE_ENTRANCE_POS.x, z - CAVE_ENTRANCE_POS.z) < 7.0) {
+      return false;
+    }
+
+    return true;
+  }
+
   private buildForestRing(): void {
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4f3622, roughness: 0.9 });
     const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 0.85 });
@@ -674,13 +836,14 @@ export class CrossroadsScene {
           const x = Math.sin(angle) * r;
           const z = -Math.cos(angle) * r;
 
-          // Keine Bäume auf die kurvigen Korridore von Weg 1 bis Weg 5 setzen
+          // Keine Bäume auf die kurvigen Korridore von Weg 1 bis Weg 6 setzen
           if (
             this.isNearPath1Corridor(x, z, 3.0) ||
             this.isNearPath2Corridor(x, z, 3.0) ||
             this.isNearPath3Corridor(x, z, 3.0) ||
             this.isNearPath4Corridor(x, z, 3.0) ||
-            this.isNearPath5Corridor(x, z, 3.0)
+            this.isNearPath5Corridor(x, z, 3.0) ||
+            this.isNearPath6Corridor(x, z, 3.0)
           ) {
             continue;
           }
@@ -1049,6 +1212,175 @@ export class CrossroadsScene {
     }
   }
 
+  /**
+   * Platziert Bäume beidseitig entlang des 6. Weges (Jägerpfad) bis zur Lichtung mit der Jagdhütte.
+   */
+  private buildCurvedPath6Trees(): void {
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4f3622, roughness: 0.9 });
+    const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 0.85 });
+    const crownMatLight = new THREE.MeshStandardMaterial({ color: 0x335c36, roughness: 0.85 });
+
+    for (let i = 1; i < PATH_6_WAYPOINTS.length - 1; i++) {
+      const prev = PATH_6_WAYPOINTS[i - 1];
+      const curr = PATH_6_WAYPOINTS[i];
+      const next = PATH_6_WAYPOINTS[i + 1];
+
+      const dirX = next.x - prev.x;
+      const dirZ = next.z - prev.z;
+      const len = Math.hypot(dirX, dirZ) || 1;
+      const perpX = -dirZ / len;
+      const perpZ = dirX / len;
+
+      for (const side of [-1, 1]) {
+        for (const dist of [3.4, 6.2]) {
+          const tx = curr.x + perpX * side * dist;
+          const tz = curr.z + perpZ * side * dist;
+          if (
+            this.isNearPath6Corridor(tx, tz, 2.7) ||
+            this.isNearPath5Corridor(tx, tz, 2.7) ||
+            this.isNearPath1Corridor(tx, tz, 2.7)
+          ) {
+            continue;
+          }
+          const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
+          const tree = this.createTreeMesh(
+            scale,
+            (i + side) % 2 === 0,
+            trunkMat,
+            crownMatDark,
+            crownMatLight
+          );
+          tree.position.set(tx, 0, tz);
+          this.scene.add(tree);
+        }
+      }
+    }
+
+    // Zusätzliche Bäume rund um die Lichtung der Jagdhütte
+    const lodgeClearingTrees: [number, number, number, boolean][] = [
+      [-49.5, 18.5, 1.25, true],
+      [-50.2, 22.8, 1.35, false],
+      [-48.8, 27.2, 1.2, true],
+      [-44.5, 30.2, 1.3, false],
+      [-40.2, 28.5, 1.15, true],
+      [-37.5, 25.8, 1.22, false],
+      [-38.2, 16.5, 1.18, true],
+      [-42.6, 15.2, 1.32, false],
+      [-46.8, 14.8, 1.28, true],
+    ];
+
+    for (const [x, z, scale, dark] of lodgeClearingTrees) {
+      if (!this.isNearPath6Corridor(x, z, 3.2)) {
+        const tree = this.createTreeMesh(scale, dark, trunkMat, crownMatDark, crownMatLight);
+        tree.position.set(x, 0, z);
+        this.scene.add(tree);
+      }
+    }
+  }
+
+  /**
+   * Verteilt idyllische Waldpilze (Fliegenpilze, Steinpilze, Pfifferlinge und bunte Mischgruppen)
+   * ausschließlich auf den grünen Waldboden-Flächen unter den Bäumen – niemals auf braunen Wegen oder Plätzen.
+   */
+  private buildForestMushrooms(): void {
+    // 1. Pilze unter Bäumen im dichten Waldring zwischen den 7 Pfaden
+    for (let i = 0; i < SEVEN_PATHS.length; i++) {
+      const baseAngle = SEVEN_PATHS[i].angleRad + Math.PI / 7;
+
+      for (let r = 10.2; r <= 36; r += 3.8) {
+        // Natürlicher Rhythmus: nicht unter jedem Baum, sondern alle paar Schritte
+        if ((i * 3 + Math.round(r)) % 3 !== 0) {
+          continue;
+        }
+
+        const offset = (i + Math.round(r)) % 2 === 0 ? 0.08 : -0.08;
+        const angle = baseAngle + offset;
+        const bx = Math.sin(angle) * r;
+        const bz = -Math.cos(angle) * r;
+
+        // Direkt unter dem Baum am Fuß des Stammes platzieren
+        const shiftAngle = angle + 1.25;
+        const mx = bx + Math.cos(shiftAngle) * 0.55;
+        const mz = bz + Math.sin(shiftAngle) * 0.55;
+
+        // Strikte Prüfung: Pilze dürfen ausschließlich auf Grünflächen stehen
+        if (!this.isPositionOnGreenGrass(mx, mz)) {
+          continue;
+        }
+
+        const types: MushroomType[] = ['fly_agaric', 'bolete', 'chanterelle', 'mixed'];
+        const type = types[(i + Math.round(r / 2)) % types.length];
+        const scale = 0.82 + ((i + Math.round(r)) % 3) * 0.12;
+
+        const cluster = createMushroomCluster({
+          type,
+          scale,
+          rotationY: shiftAngle,
+        });
+        cluster.group.position.set(mx, 0, mz);
+        this.scene.add(cluster.group);
+      }
+    }
+
+    // 2. Gezielte Pilznester an markanten Waldbäumen auf echten Grünflächen
+    const specificMushroomSpots: Array<{
+      x: number;
+      z: number;
+      type: MushroomType;
+      scale: number;
+    }> = [
+      // Am Waldrand um die Kreuzung (auf den grünen Grasflächen zwischen den 7 Wegen)
+      { x: -4.8, z: -9.8, type: 'fly_agaric', scale: 0.95 },
+      { x: 5.2, z: -9.8, type: 'bolete', scale: 1.05 },
+      { x: 10.8, z: -2.6, type: 'chanterelle', scale: 0.9 },
+      { x: 8.8, z: 7.2, type: 'fly_agaric', scale: 1.0 },
+      { x: -8.8, z: 7.2, type: 'mixed', scale: 0.92 },
+      { x: -11.0, z: -2.4, type: 'bolete', scale: 0.95 },
+
+      // Weg 1 (Silberstollen): Im dichten Fichtenwald unter den Bergbäumen
+      { x: -4.8, z: -18.5, type: 'fly_agaric', scale: 0.95 },
+      { x: -4.6, z: -25.8, type: 'bolete', scale: 1.0 },
+      { x: 2.2, z: -35.5, type: 'chanterelle', scale: 0.9 },
+      { x: 8.2, z: -43.0, type: 'mixed', scale: 0.88 },
+
+      // Weg 2 (Nixenteich): Am moosigen Waldbodensaum
+      { x: 12.8, z: -17.5, type: 'chanterelle', scale: 1.0 },
+      { x: 18.5, z: -21.8, type: 'fly_agaric', scale: 0.92 },
+      { x: 27.2, z: -24.5, type: 'bolete', scale: 1.05 },
+
+      // Weg 3 (Wehrbrücke / Quellenweg): Unter den Auwaldbäumen
+      { x: 14.8, z: -2.2, type: 'bolete', scale: 1.05 },
+      { x: 21.2, z: 4.5, type: 'chanterelle', scale: 0.95 },
+      { x: 25.8, z: 8.8, type: 'fly_agaric', scale: 1.0 },
+
+      // Weg 4 (Holzfällerlager): Im Fichtenwald vor der Rodung
+      { x: 9.8, z: 18.2, type: 'fly_agaric', scale: 1.05 },
+      { x: 14.2, z: 25.8, type: 'bolete', scale: 0.95 },
+      { x: 17.8, z: 34.2, type: 'mixed', scale: 1.0 },
+
+      // Weg 6 (Jägerpfad): Im urigen Jagdrevierwald
+      { x: -16.8, z: 10.8, type: 'fly_agaric', scale: 1.0 },
+      { x: -24.8, z: 14.5, type: 'bolete', scale: 1.05 },
+      { x: -32.5, z: 15.2, type: 'mixed', scale: 0.95 },
+      { x: -35.2, z: 28.5, type: 'chanterelle', scale: 0.95 },
+    ];
+
+    for (const spot of specificMushroomSpots) {
+      // Sicherheitsüberprüfung: niemals auf braunen Wegen oder Plätzen platzieren
+      if (!this.isPositionOnGreenGrass(spot.x, spot.z)) {
+        continue;
+      }
+
+      const cluster = createMushroomCluster({
+        type: spot.type,
+        scale: spot.scale,
+        rotationY: Math.sin(spot.x * 2.3 + spot.z) * Math.PI,
+      });
+      cluster.group.position.set(spot.x, 0, spot.z);
+      this.scene.add(cluster.group);
+    }
+  }
+
   private createTargetMarker(): THREE.Mesh {
     const geometry = new THREE.RingGeometry(0.28, 0.42, 24);
     geometry.rotateX(-Math.PI / 2);
@@ -1127,6 +1459,14 @@ export class CrossroadsScene {
     this.isDevilHovered = hovered;
   }
 
+  public setWildHunterHovered(hovered: boolean): void {
+    this.isWildHunterHovered = hovered;
+  }
+
+  public setWoodWomanLodgeHovered(hovered: boolean): void {
+    this.isWoodWomanLodgeHovered = hovered;
+  }
+
   public setChestHovered(hovered: boolean): void {
     this.isChestHovered = hovered;
   }
@@ -1154,6 +1494,18 @@ export class CrossroadsScene {
       const data = hit.object.userData;
       const point: Vector2D = { x: hit.point.x, z: hit.point.z };
 
+      if (data.interactableType === 'wild_hunter') {
+        return { kind: 'wild_hunter', point };
+      }
+      if (data.interactableType === 'wood_woman_lodge') {
+        return { kind: 'wood_woman_lodge', point };
+      }
+      if (data.interactableType === 'hunting_lodge') {
+        return { kind: 'hunting_lodge', point };
+      }
+      if (data.interactableType === 'herb_garden') {
+        return { kind: 'herb_garden', point };
+      }
       if (data.interactableType === 'devil') {
         return { kind: 'devil', point };
       }
@@ -1266,6 +1618,17 @@ export class CrossroadsScene {
       playerPos,
       this.isDevilHovered || isDialogueActive
     );
+    this.huntingLodge.update(this.elapsedSeconds);
+    this.wildHunterNpc.update(
+      this.elapsedSeconds,
+      playerPos,
+      this.isWildHunterHovered || isDialogueActive
+    );
+    this.woodWomanLodgeNpc.update(
+      this.elapsedSeconds,
+      playerPos,
+      this.isWoodWomanLodgeHovered || isDialogueActive
+    );
     this.treasureChest.update(dtSeconds, isChestOpen, this.isChestHovered);
 
     // Ziel-Markierung am Boden anzeigen, solange Click-to-Move aktiv ist
@@ -1288,10 +1651,10 @@ export class CrossroadsScene {
       }
     });
 
-    // Edelstein am jeweils aktiven Storyweg (Weg 1 bis 5 bzw. aktuell gewählter Storyweg) leuchten lassen
+    // Edelstein am jeweils aktiven Storyweg (Weg 1 bis 6 bzw. aktuell gewählter Storyweg) leuchten lassen
     const pulse = 0.5 + 0.5 * Math.sin(this.elapsedSeconds * 3.2);
     this.pathGemstones.forEach((gem, id) => {
-      const isStoryPath = id >= 1 && id <= 5;
+      const isStoryPath = id >= 1 && id <= 6;
       const isActiveQuestPath =
         selectedPathId !== null ? id === selectedPathId && isStoryPath : isStoryPath;
 

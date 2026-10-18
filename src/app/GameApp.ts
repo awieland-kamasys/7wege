@@ -34,6 +34,8 @@ export class GameApp {
   private pendingTalkToGiant = false;
   private pendingTalkToWoodWoman = false;
   private pendingTalkToDevil = false;
+  private pendingTalkToWildHunter = false;
+  private pendingTalkToWoodWomanLodge = false;
   private pendingToggleChest = false;
   private stepDistanceAccumulator = 1.15;
 
@@ -100,6 +102,8 @@ export class GameApp {
     this.pendingTalkToGiant = false;
     this.pendingTalkToWoodWoman = false;
     this.pendingTalkToDevil = false;
+    this.pendingTalkToWildHunter = false;
+    this.pendingTalkToWoodWomanLodge = false;
     this.pendingToggleChest = false;
   }
 
@@ -195,6 +199,30 @@ export class GameApp {
     }
   }
 
+  private initiateTalkToWildHunter(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearWildHunter()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('hunter_root');
+    } else {
+      this.pendingTalkToWildHunter = true;
+      this.state.setTargetToWildHunter();
+    }
+  }
+
+  private initiateTalkToWoodWomanLodge(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearWoodWomanLodge()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('wood_lodge_root');
+    } else {
+      this.pendingTalkToWoodWomanLodge = true;
+      this.state.setTargetToWoodWomanLodge();
+    }
+  }
+
   private initiateToggleChest(): void {
     this.clearPendingActions();
     this.closeDialogueAndSpeech();
@@ -227,6 +255,8 @@ export class GameApp {
       this.initiateTalkToWoodWoman();
     } else if (action?.type === 'walk_to_devil') {
       this.initiateTalkToDevil();
+    } else if (action?.type === 'walk_to_wild_hunter') {
+      this.initiateTalkToWildHunter();
     }
   }
 
@@ -251,7 +281,22 @@ export class GameApp {
     // Taste F oder Enter: kontextabhängige Interaktion
     if (key === 'f' || event.key === 'Enter') {
       if (!this.dialogue.isOpen()) {
-        if (this.state.isNearDevil()) {
+        if (this.state.isNearWildHunter() && this.state.isNearWoodWomanLodge()) {
+          const p = this.state.getPlayerPosition();
+          const hunterPos = this.state.getWildHunterPosition();
+          const woodPos = this.state.getWoodWomanLodgePosition();
+          const dHunter = Math.hypot(p.x - hunterPos.x, p.z - hunterPos.z);
+          const dWood = Math.hypot(p.x - woodPos.x, p.z - woodPos.z);
+          if (dWood <= dHunter) {
+            this.initiateTalkToWoodWomanLodge();
+          } else {
+            this.initiateTalkToWildHunter();
+          }
+        } else if (this.state.isNearWildHunter()) {
+          this.initiateTalkToWildHunter();
+        } else if (this.state.isNearWoodWomanLodge()) {
+          this.initiateTalkToWoodWomanLodge();
+        } else if (this.state.isNearDevil()) {
           this.initiateTalkToDevil();
         } else if (this.state.isNearWoodWoman()) {
           this.initiateTalkToWoodWoman();
@@ -267,7 +312,9 @@ export class GameApp {
           this.initiateTalkToNpc();
         } else {
           const selected = this.state.getSelectedPath();
-          if (selected?.id === 5 && this.state.getPlayerPosition().z > 8) {
+          if (selected?.id === 6 && this.state.getPlayerPosition().x < -8) {
+            this.initiateTalkToWildHunter();
+          } else if (selected?.id === 5 && this.state.getPlayerPosition().z > 8) {
             this.initiateTalkToDevil();
           } else if (selected?.id === 4 && this.state.getPlayerPosition().z > 8) {
             this.initiateTalkToWoodWoman();
@@ -342,6 +389,8 @@ export class GameApp {
       this.scene.setGiantHovered(false);
       this.scene.setWoodWomanHovered(false);
       this.scene.setDevilHovered(false);
+      this.scene.setWildHunterHovered(false);
+      this.scene.setWoodWomanLodgeHovered(false);
       this.scene.setChestHovered(false);
       this.canvas.style.cursor = 'grab';
       return;
@@ -354,6 +403,8 @@ export class GameApp {
     this.scene.setGiantHovered(hit.kind === 'giant' || hit.kind === 'weir');
     this.scene.setWoodWomanHovered(hit.kind === 'wood_woman' || hit.kind === 'lumber_camp');
     this.scene.setDevilHovered(hit.kind === 'devil' || hit.kind === 'hell_chasm');
+    this.scene.setWildHunterHovered(hit.kind === 'wild_hunter' || hit.kind === 'hunting_lodge');
+    this.scene.setWoodWomanLodgeHovered(hit.kind === 'wood_woman_lodge' || hit.kind === 'herb_garden');
     this.scene.setChestHovered(hit.kind === 'chest');
 
     this.canvas.style.cursor = hit.kind === 'ground' ? 'default' : 'pointer';
@@ -403,6 +454,16 @@ export class GameApp {
 
       if (hit.kind === 'devil' || hit.kind === 'hell_chasm') {
         this.initiateTalkToDevil();
+        return;
+      }
+
+      if (hit.kind === 'wild_hunter' || hit.kind === 'hunting_lodge') {
+        this.initiateTalkToWildHunter();
+        return;
+      }
+
+      if (hit.kind === 'wood_woman_lodge' || hit.kind === 'herb_garden') {
+        this.initiateTalkToWoodWomanLodge();
         return;
       }
 
@@ -484,6 +545,8 @@ export class GameApp {
         !this.state.isNearGiant() &&
         !this.state.isNearWoodWoman() &&
         !this.state.isNearDevil() &&
+        !this.state.isNearWildHunter() &&
+        !this.state.isNearWoodWomanLodge() &&
         this.dialogue.isOpen()
       ) {
         this.closeDialogueAndSpeech();
@@ -519,6 +582,16 @@ export class GameApp {
         this.pendingTalkToDevil = false;
         this.state.clearTargetPosition();
         this.openDialogueNode('devil_root');
+      }
+      if (this.pendingTalkToWildHunter && this.state.isNearWildHunter()) {
+        this.pendingTalkToWildHunter = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('hunter_root');
+      }
+      if (this.pendingTalkToWoodWomanLodge && this.state.isNearWoodWomanLodge()) {
+        this.pendingTalkToWoodWomanLodge = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('wood_lodge_root');
       }
       if (this.pendingToggleChest && this.state.isNearChest()) {
         this.pendingToggleChest = false;

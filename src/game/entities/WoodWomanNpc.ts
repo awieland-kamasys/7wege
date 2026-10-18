@@ -9,12 +9,18 @@ export interface WoodWomanNpcEntity {
   ) => void;
 }
 
+export interface WoodWomanNpcOptions {
+  interactableType?: string;
+  defaultFacingTarget?: { x: number; z: number };
+}
+
 /**
- * Erstellt die 3D-Figur "Das Holzweibchen" im Holzfällerlager auf der Waldlichtung am Ende des 4. Weges:
+ * Erstellt die 3D-Figur "Das Holzweibchen":
  * Ein altes, naturverbundenes Waldwesen mit Rindenrock, Moos-Schultertuch, Kopftuch,
  * Reisigbündel und knorrigem Wurzelstab mit knospenden Blättchen.
  */
-export function createWoodWomanNpc(): WoodWomanNpcEntity {
+export function createWoodWomanNpc(options: WoodWomanNpcOptions = {}): WoodWomanNpcEntity {
+  const { interactableType = 'wood_woman', defaultFacingTarget } = options;
   const group = new THREE.Group();
   group.name = 'WoodWomanNpc';
 
@@ -201,10 +207,10 @@ export function createWoodWomanNpc(): WoodWomanNpcEntity {
   indicator.position.y = 1.72;
   group.add(indicator);
 
-  // Alle Meshes für Raycasting als 'wood_woman' markieren
+  // Alle Meshes für Raycasting mit dem angegebenen Typ markieren
   group.traverse((child) => {
     if ((child as THREE.Mesh).isMesh) {
-      child.userData = { interactableType: 'wood_woman' };
+      child.userData = { interactableType };
     }
   });
 
@@ -222,13 +228,18 @@ export function createWoodWomanNpc(): WoodWomanNpcEntity {
     const scale = isHighlighted ? 1.22 : 1.0;
     indicator.scale.set(scale, scale, scale);
 
-    // Holzweibchen dreht sich der spielenden Person zu, sobald diese auf die Lichtung tritt
+    // Holzweibchen dreht sich der spielenden Person zu, sobald diese nahe ist;
+    // sonst blickt sie zur Standard-Blickrichtung (z.B. zum Jäger)
     const dx = playerPos.x - group.position.x;
     const dz = playerPos.z - group.position.z;
     const dist = Math.hypot(dx, dz);
-    if (dist < 13 && dist > 0.1) {
+    if (dist < 8.5 && dist > 0.1) {
       const targetAngle = Math.atan2(dx, dz);
       group.rotation.y = targetAngle;
+    } else if (defaultFacingTarget) {
+      const fx = defaultFacingTarget.x - group.position.x;
+      const fz = defaultFacingTarget.z - group.position.z;
+      group.rotation.y = Math.atan2(fx, fz);
     }
   };
 

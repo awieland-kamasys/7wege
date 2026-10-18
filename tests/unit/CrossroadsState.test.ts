@@ -9,7 +9,10 @@ import {
   PATH_3_WAYPOINTS,
   PATH_4_WAYPOINTS,
   PATH_5_WAYPOINTS,
+  PATH_6_WAYPOINTS,
   SEVEN_PATHS,
+  WILD_HUNTER_NPC_POS,
+  WOOD_WOMAN_LODGE_NPC_POS,
   WOOD_WOMAN_NPC_POS,
 } from '../../src/game/data/paths';
 import { CrossroadsState } from '../../src/game/systems/CrossroadsState';
@@ -22,7 +25,7 @@ describe('CrossroadsState & 7 Wege', () => {
     expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
-  it('platziert Schutzhütte (0, 0), Schatztruhe (0.85, 2.0), Wegweiser (2.3, 2.4), Waldhüter (-1.85, 2.05), Graumännchen, Nixe, Riese, Holzweibchen und Teufel', () => {
+  it('platziert Schutzhütte, Schatztruhe, Wegweiser, Waldhüter, Graumännchen, Nixe, Riese, Holzweibchen, Teufel und Wilden Jäger', () => {
     const state = new CrossroadsState();
     expect(state.getHutPosition()).toEqual({ x: 0, z: 0 });
     expect(state.getChestPosition()).toEqual({ x: 0.85, z: 2.0 });
@@ -33,6 +36,8 @@ describe('CrossroadsState & 7 Wege', () => {
     expect(state.getGiantPosition()).toEqual(GIANT_NPC_POS);
     expect(state.getWoodWomanPosition()).toEqual(WOOD_WOMAN_NPC_POS);
     expect(state.getDevilPosition()).toEqual(DEVIL_NPC_POS);
+    expect(state.getWildHunterPosition()).toEqual(WILD_HUNTER_NPC_POS);
+    expect(state.getWoodWomanLodgePosition()).toEqual(WOOD_WOMAN_LODGE_NPC_POS);
   });
 
   it('erweitert den 1. Weg mit einer Kurve bis zum Vorplatz vor dem Höhleneingang', () => {
@@ -176,6 +181,47 @@ describe('CrossroadsState & 7 Wege', () => {
     expect(state.isOnClearing()).toBe(true);
   });
 
+  it('führt den 6. Weg zur Jagdhütte mit Kräutergarten, Wildem Jäger und Holzweibchen', () => {
+    const state = new CrossroadsState();
+    expect(PATH_6_WAYPOINTS.length).toBeGreaterThanOrEqual(5);
+
+    for (const wp of PATH_6_WAYPOINTS) {
+      expect(state.isPointOnPath6(wp.x, wp.z)).toBe(true);
+      expect(state.isPointOnClearingOrPath(wp.x, wp.z)).toBe(true);
+    }
+
+    // Wandert entlang von Weg 6 bis vor den Wilden Jäger an der Jagdhütte
+    state.setTargetToWildHunter();
+    for (let i = 0; i < 120; i++) {
+      state.updateAutoWalk(0.1, 8);
+      const pos = state.getPlayerPosition();
+      expect(state.isWalkable(pos.x, pos.z)).toBe(true);
+    }
+
+    expect(state.isNearWildHunter()).toBe(true);
+    expect(state.getActivePointOfInterest().type).toBe('wild_hunter');
+
+    // Wandert wenige Schritte zum Holzweibchen vor dem Kräutergartenzaun
+    state.setTargetToWoodWomanLodge();
+    for (let i = 0; i < 40; i++) {
+      state.updateAutoWalk(0.1, 8);
+      const pos = state.getPlayerPosition();
+      expect(state.isWalkable(pos.x, pos.z)).toBe(true);
+    }
+
+    expect(state.isNearWoodWomanLodge()).toBe(true);
+    expect(state.getActivePointOfInterest().type).toBe('wood_woman_lodge');
+
+    // Rückweg von der Jagdhütte zurück zur zentralen Kreuzung
+    state.setTargetToClearing();
+    for (let i = 0; i < 120; i++) {
+      state.updateAutoWalk(0.1, 8);
+      const pos = state.getPlayerPosition();
+      expect(state.isWalkable(pos.x, pos.z)).toBe(true);
+    }
+    expect(state.isOnClearing()).toBe(true);
+  });
+
   it('kann zur Schatztruhe vor der Hütte laufen und deren Deckel öffnen und schließen', () => {
     const state = new CrossroadsState();
     expect(state.isChestOpen()).toBe(false);
@@ -297,6 +343,43 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(step3.action).toEqual({ type: 'walk_to_wood_woman' });
   });
 
+  it('erzählt über Arvids persönliche Geschichte, seine Laterne und seine Lebensweisheit', () => {
+    const dialogue = new DialogueSystem();
+    const root = dialogue.startDialogue('root');
+    expect(root?.speaker).toBe('Waldhüter Arvid');
+    expect(root?.speakerRole).toContain('Hüter der Schutzhütte');
+
+    // Option 1: Frage nach Arvids Identität und Herkunft
+    const stepArvid = dialogue.selectOption(1);
+    expect(stepArvid.node?.id).toBe('about_arvid');
+    expect(stepArvid.node?.text).toContain('ruheloser Sucher');
+    expect(stepArvid.node?.text).toContain('Vorgänger');
+
+    // Weiter zur Messinglaterne (Option 0)
+    const stepLantern = dialogue.selectOption(0);
+    expect(stepLantern.node?.id).toBe('arvid_lantern');
+    expect(stepLantern.node?.text).toContain('Bergmessing');
+    expect(stepLantern.node?.text).toContain('Bernsteinschein');
+
+    // Weiter zu den Wesen der Pfade (Option 1)
+    const stepBeings = dialogue.selectOption(1);
+    expect(stepBeings.node?.id).toBe('arvid_beings');
+    expect(stepBeings.node?.text).toContain('Graumännchen');
+    expect(stepBeings.node?.text).toContain('Nixe');
+    expect(stepBeings.node?.text).toContain('Riese');
+    expect(stepBeings.node?.text).toContain('Holzweibchen');
+    expect(stepBeings.node?.text).toContain('Jäger');
+
+    // Zurück zur Übersicht (Option 2)
+    const stepBack = dialogue.selectOption(2);
+    expect(stepBack.node?.id).toBe('root');
+
+    // Frage nach der Lebensweisheit / Philosophie (Option 3)
+    const stepPhil = dialogue.selectOption(3);
+    expect(stepPhil.node?.id).toBe('arvid_philosophy');
+    expect(stepPhil.node?.text).toContain('Gewissen');
+  });
+
   it('führt das Gespräch mit dem Graumännchen über Silberader, Licht und Verbot/Versprechen', () => {
     const dialogue = new DialogueSystem();
     const greyRoot = dialogue.startDialogue('grey_root');
@@ -386,5 +469,44 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     const stepIdentity = dialogue.selectOption(0);
     expect(stepIdentity.node?.id).toBe('devil_about_identity');
     expect(stepIdentity.node?.speaker).toBe('Der Teufel');
+  });
+
+  it('führt das Streitgespräch zwischen dem Wilden Jäger und dem Holzweibchen an der Jagdhütte', () => {
+    const dialogue = new DialogueSystem();
+
+    // 1. Gespräch mit dem Wilden Jäger starten
+    const hunterRoot = dialogue.startDialogue('hunter_root');
+    expect(hunterRoot?.speaker).toBe('Der Wilde Jäger');
+    expect(hunterRoot?.text).toContain('Jagdhütte');
+    expect(hunterRoot?.text).toContain('Diebstahl');
+    expect(hunterRoot?.text).toContain('Kräutergarten');
+
+    // Frage nach den gestohlenen Kräutern (Option 0)
+    const stepHerbs = dialogue.selectOption(0);
+    expect(stepHerbs.node?.id).toBe('hunter_herbs');
+    expect(stepHerbs.node?.text).toContain('Mondwurz');
+    expect(stepHerbs.node?.text).toContain('Königs-Salbei');
+
+    // Wechsel zur Gegenseite (Option 1: Das Holzweibchen anhören)
+    const stepSwitchToWood = dialogue.selectOption(1);
+    expect(stepSwitchToWood.node?.id).toBe('wood_lodge_root');
+    expect(stepSwitchToWood.node?.speaker).toBe('Das Holzweibchen');
+    expect(stepSwitchToWood.node?.text).toContain('Hirschkuh');
+    expect(stepSwitchToWood.node?.text).toContain('Wundfieber');
+
+    // Frage nach der Rettung des Tieres (Option 0)
+    const stepLife = dialogue.selectOption(0);
+    expect(stepLife.node?.id).toBe('wood_lodge_life');
+    expect(stepLife.node?.text).toContain('Fieber');
+
+    // Frage nach Verständnis für den Jäger (Option 0)
+    const stepHunterView = dialogue.selectOption(0);
+    expect(stepHunterView.node?.id).toBe('wood_lodge_hunter_view');
+    expect(stepHunterView.node?.text).toContain('Waldminze');
+
+    // Wechsel zurück zum Jäger mit dem Einigungsangebot (Option 0)
+    const stepBackToHunter = dialogue.selectOption(0);
+    expect(stepBackToHunter.node?.id).toBe('hunter_root');
+    expect(stepBackToHunter.node?.speaker).toBe('Der Wilde Jäger');
   });
 });
