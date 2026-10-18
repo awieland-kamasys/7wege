@@ -32,6 +32,7 @@ export class GameApp {
   private pendingTalkToGreyMan = false;
   private pendingTalkToNixie = false;
   private pendingTalkToGiant = false;
+  private pendingTalkToWoodWoman = false;
   private pendingToggleChest = false;
   private stepDistanceAccumulator = 1.15;
 
@@ -96,6 +97,7 @@ export class GameApp {
     this.pendingTalkToGreyMan = false;
     this.pendingTalkToNixie = false;
     this.pendingTalkToGiant = false;
+    this.pendingTalkToWoodWoman = false;
     this.pendingToggleChest = false;
   }
 
@@ -167,6 +169,18 @@ export class GameApp {
     }
   }
 
+  private initiateTalkToWoodWoman(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearWoodWoman()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('wood_woman_root');
+    } else {
+      this.pendingTalkToWoodWoman = true;
+      this.state.setTargetToWoodWoman();
+    }
+  }
+
   private initiateToggleChest(): void {
     this.clearPendingActions();
     this.closeDialogueAndSpeech();
@@ -195,6 +209,8 @@ export class GameApp {
       this.initiateTalkToNixie();
     } else if (action?.type === 'walk_to_giant') {
       this.initiateTalkToGiant();
+    } else if (action?.type === 'walk_to_wood_woman') {
+      this.initiateTalkToWoodWoman();
     }
   }
 
@@ -219,7 +235,9 @@ export class GameApp {
     // Taste F oder Enter: kontextabhängige Interaktion
     if (key === 'f' || event.key === 'Enter') {
       if (!this.dialogue.isOpen()) {
-        if (this.state.isNearGiant()) {
+        if (this.state.isNearWoodWoman()) {
+          this.initiateTalkToWoodWoman();
+        } else if (this.state.isNearGiant()) {
           this.initiateTalkToGiant();
         } else if (this.state.isNearNixie()) {
           this.initiateTalkToNixie();
@@ -231,7 +249,9 @@ export class GameApp {
           this.initiateTalkToNpc();
         } else {
           const selected = this.state.getSelectedPath();
-          if (selected?.id === 3 && this.state.getPlayerPosition().x > 8) {
+          if (selected?.id === 4 && this.state.getPlayerPosition().z > 8) {
+            this.initiateTalkToWoodWoman();
+          } else if (selected?.id === 3 && this.state.getPlayerPosition().x > 8) {
             this.initiateTalkToGiant();
           } else if (selected?.id === 2 && this.state.getPlayerPosition().x > 8) {
             this.initiateTalkToNixie();
@@ -300,6 +320,7 @@ export class GameApp {
       this.scene.setGreyManHovered(false);
       this.scene.setNixieHovered(false);
       this.scene.setGiantHovered(false);
+      this.scene.setWoodWomanHovered(false);
       this.scene.setChestHovered(false);
       this.canvas.style.cursor = 'grab';
       return;
@@ -310,6 +331,7 @@ export class GameApp {
     this.scene.setGreyManHovered(hit.kind === 'grey_man' || hit.kind === 'cave');
     this.scene.setNixieHovered(hit.kind === 'nixie' || hit.kind === 'pond');
     this.scene.setGiantHovered(hit.kind === 'giant' || hit.kind === 'weir');
+    this.scene.setWoodWomanHovered(hit.kind === 'wood_woman' || hit.kind === 'lumber_camp');
     this.scene.setChestHovered(hit.kind === 'chest');
 
     this.canvas.style.cursor = hit.kind === 'ground' ? 'default' : 'pointer';
@@ -349,6 +371,11 @@ export class GameApp {
 
       if (hit.kind === 'giant' || hit.kind === 'weir') {
         this.initiateTalkToGiant();
+        return;
+      }
+
+      if (hit.kind === 'wood_woman' || hit.kind === 'lumber_camp') {
+        this.initiateTalkToWoodWoman();
         return;
       }
 
@@ -428,6 +455,7 @@ export class GameApp {
         !this.state.isNearGreyMan() &&
         !this.state.isNearNixie() &&
         !this.state.isNearGiant() &&
+        !this.state.isNearWoodWoman() &&
         this.dialogue.isOpen()
       ) {
         this.closeDialogueAndSpeech();
@@ -453,6 +481,11 @@ export class GameApp {
         this.pendingTalkToGiant = false;
         this.state.clearTargetPosition();
         this.openDialogueNode('giant_root');
+      }
+      if (this.pendingTalkToWoodWoman && this.state.isNearWoodWoman()) {
+        this.pendingTalkToWoodWoman = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('wood_woman_root');
       }
       if (this.pendingToggleChest && this.state.isNearChest()) {
         this.pendingToggleChest = false;

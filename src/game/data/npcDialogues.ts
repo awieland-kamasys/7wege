@@ -5,6 +5,7 @@ export type DialogueAction =
   | { type: 'walk_to_grey_man' }
   | { type: 'walk_to_nixie' }
   | { type: 'walk_to_giant' }
+  | { type: 'walk_to_wood_woman' }
   | { type: 'close' };
 
 export interface DialogueOption {
@@ -34,6 +35,9 @@ export const NIXIE_NPC_ROLE = 'Wächterin auf dem Stein im Teich';
 export const GIANT_NPC_NAME = 'Der Riese am Wehr';
 export const GIANT_NPC_ROLE = 'Wächter über Stausee und Quellwehr';
 
+export const WOOD_WOMAN_NPC_NAME = 'Das Holzweibchen';
+export const WOOD_WOMAN_NPC_ROLE = 'Hüterin des Waldes im Holzfällerlager';
+
 /**
  * Individuelle Hinweise des Waldhüters zu jedem der sieben Wege.
  */
@@ -41,7 +45,7 @@ const PATH_HINTS: Record<number, string> = {
   1: 'Der 1. Silberstollen-Pfad windet sich in einer langen Kurve hinauf zum alten Bergmassiv. Vor dem Höhleneingang wartet das Graumännchen: Eine neue Silberader könnte dort Mine und Arbeiter retten – doch ihr Auffinden verlangt Licht in einem Stollen, für den ein altes Verbot und Versprechen gilt.',
   2: 'Der 2. Nixenteich-Pfad im Nordosten führt durch den Nebel zu einem stillen Waldteich. Auf einem Felsen im Wasser sitzt die Nixe. Auf dem Grund ihres Teichs funkelt ein verlockender Schatz – doch sei gewarnt: Er ist mit einem dunklen Fluch und drohendem Unglück verbunden.',
   3: 'Der 3. Quellenweg im Südosten führt über eine Brücke, unter der ein Bach hindurchfließt. Ein geschlossenes Wehr an der Brücke staut den Bach zu einem kleinen Stausee zurück. Dort wacht der Riese: Die Quelle versorgt eigentlich das Tal – ihre Freigabe könnte dort eine Dürre lindern, zerstört jedoch die Heimat des Riesen.',
-  4: 'Der Wurzelgrat im Südsüdosten verlangt sicheren Tritt: Knorrige Wurzeln und Felsenstufen prüfen deine Ausdauer, belohnen dich aber mit alter Waldkraft.',
+  4: 'Der 4. Holzfäller-Pfad im Südsüdosten führt auf eine gerodete Waldlichtung zu einem Holzfällerlager. Dort triffst du das Holzweibchen zwischen Baumstümpfen und Holzstapeln: Das geschlagene Brennholz rettet die Dorfbewohner vor der bitteren Kälte – doch zu starke Fällungen gefährden den Wald und seine gesamte Umgebung.',
   5: 'Der Nebeltal-Weg im Südsüdwest senkt sich in eine kühle, stille Mulde. Lass dich vom Dunst nicht täuschen – bleibe dicht bei den Steinmalen.',
   6: 'Die Abendrot-Schneise im Südwesten öffnet den Blick zwischen hohen Kiefern. Besonders wenn das Licht tief steht, erkennst du dort ferne Landmarken.',
   7: 'Der Sternenwald-Pfad im Nordwesten liegt unter einem dichten Blätterdach. Dort leuchten selbst am Tag die Farne – ein Pfad für Entdecker und Rätselsucher.',
@@ -652,6 +656,164 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
         },
       ],
     },
+
+    // === DAS HOLZWEIBCHEN (im Holzfällerlager auf der Waldlichtung am Ende von Weg 4) ===
+    wood_woman_root: {
+      id: 'wood_woman_root',
+      speaker: WOOD_WOMAN_NPC_NAME,
+      speakerRole: WOOD_WOMAN_NPC_ROLE,
+      text: 'Sei gegrüßt auf dieser geschlagenen Lichtung, Wandernde… Siehst du die vielen frischen Baumstümpfe und die hohen Scheitstapel hier im Holzfällerlager? Das Brennholz rettet die Dorfbewohner unten im Tal vor der bitteren Kälte – doch zu starke Fällungen gefährden den Wald und seine gesamte Umgebung!',
+      options: [
+        {
+          id: 'wood-ask-cold',
+          playerText: 'Warum brauchen die Dorfbewohner so dringend so viel Brennholz?',
+          nextNodeId: 'wood_woman_village_cold',
+        },
+        {
+          id: 'wood-ask-forest',
+          playerText: 'Wie gefährden die starken Fällungen den Wald und seine Umgebung?',
+          nextNodeId: 'wood_woman_forest_danger',
+        },
+        {
+          id: 'wood-ask-choice',
+          playerText: 'Wie können wir die Dorfbewohner vor der Kälte schützen, ohne den Wald zu zerstören?',
+          nextNodeId: 'wood_woman_dilemma',
+        },
+        {
+          id: 'wood-bye',
+          playerText: 'Ich sehe mich noch im Holzfällerlager um. (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    wood_woman_village_cold: {
+      id: 'wood_woman_village_cold',
+      speaker: WOOD_WOMAN_NPC_NAME,
+      speakerRole: WOOD_WOMAN_NPC_ROLE,
+      text: 'Ein früher, schneidender Frost zieht aus den Bergen herab. In den Hütten des Dorfes frieren die Alten und die Kinder, und die Vorräte vom Vorjahr sind fast verbrannt. Darum rückten die Holzfäller mit Axt und Schrotsäge aus: Jedes Klafter Brennholz hier auf der Lichtung bedeutet Wärme und Überleben für die Familien im Dorf.',
+      options: [
+        {
+          id: 'to-wood-forest',
+          playerText: 'Und welchen Schaden richten die fortgesetzten Fällungen hier im Wald an?',
+          nextNodeId: 'wood_woman_forest_danger',
+        },
+        {
+          id: 'to-wood-dilemma',
+          playerText: 'Lass uns überlegen, wie viel Holz geschlagen werden darf.',
+          nextNodeId: 'wood_woman_dilemma',
+        },
+        {
+          id: 'back-wood-root',
+          playerText: 'Zurück zum Anfang unseres Gesprächs.',
+          nextNodeId: 'wood_woman_root',
+        },
+      ],
+    },
+
+    wood_woman_forest_danger: {
+      id: 'wood_woman_forest_danger',
+      speaker: WOOD_WOMAN_NPC_NAME,
+      speakerRole: WOOD_WOMAN_NPC_ROLE,
+      text: 'Schau auf die kahlen Stümpfe ringsum! Wenn die alten Schirmbäume alle auf einmal fallen, verliert der Waldboden seinen Halt: Bei Schneeschmelze und Regen rutscht die Erde ins Tal, der eisige Sturm fegt ungebremst durch die Schneisen, die Tiere verlieren ihren Schutz und die Lebensgeister der Bäume schwinden.',
+      options: [
+        {
+          id: 'forest-to-dilemma',
+          playerText: 'Welchen Ausweg gibt es zwischen der Kälte im Dorf und dem Schutz des Waldes?',
+          nextNodeId: 'wood_woman_dilemma',
+        },
+        {
+          id: 'forest-to-root',
+          playerText: 'Zurück zur Übersicht.',
+          nextNodeId: 'wood_woman_root',
+        },
+      ],
+    },
+
+    wood_woman_dilemma: {
+      id: 'wood_woman_dilemma',
+      speaker: WOOD_WOMAN_NPC_NAME,
+      speakerRole: WOOD_WOMAN_NPC_ROLE,
+      text: 'Die Holzfäller warten auf ein Zeichen, wie es auf dieser Lichtung weitergehen soll. Schlagen sie weiter wie bisher, übersteht das Dorf den Winter warm, aber der Wald und die Hänge ringsum nehmen schweren Schaden. Welchen Rat gibst du hier im Holzfällerlager?',
+      options: [
+        {
+          id: 'wood-choice-balance',
+          playerText: 'Nur Bruch- und Dürrholz sowie einzelne Stämme mit Maß entnehmen, die Baumstümpfe segnen und im Frühjahr für jeden Stamm junge Bäume nachpflanzen.',
+          nextNodeId: 'wood_woman_resolution_balance',
+        },
+        {
+          id: 'wood-choice-village',
+          playerText: 'Das Leben der frierenden Dorfbewohner geht vor – es muss so viel Brennholz geschlagen werden, bis alle Öfen versorgt sind.',
+          nextNodeId: 'wood_woman_resolution_village',
+        },
+        {
+          id: 'wood-choice-forest',
+          playerText: 'Die Fällungen müssen sofort gestoppt werden – kein weiterer Baum darf mehr der Axt zum Opfer fallen.',
+          nextNodeId: 'wood_woman_resolution_forest',
+        },
+      ],
+    },
+
+    wood_woman_resolution_balance: {
+      id: 'wood_woman_resolution_balance',
+      speaker: WOOD_WOMAN_NPC_NAME,
+      speakerRole: WOOD_WOMAN_NPC_ROLE,
+      text: 'Hab tausend Dank, du verständige Seele! Wer dem Wald nur nimmt, was er verkraftet, und ihm neues Leben zurückgibt, dem hilft auch das Holzweibchen: Ich lege meinen Moossegen auf die bereits gestapelten Scheite – sie werden im Dorf doppelt so lange glühen und wärmen, ohne dass der Hochwald kahlgeschlagen wird!',
+      options: [
+        {
+          id: 'back-wood-root',
+          playerText: 'Ich möchte dich noch etwas anderes zum Holzfällerlager fragen.',
+          nextNodeId: 'wood_woman_root',
+        },
+        {
+          id: 'close-wood',
+          playerText: 'Mögen Dorf und Wald gemeinsam durch den Winter kommen! (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    wood_woman_resolution_village: {
+      id: 'wood_woman_resolution_village',
+      speaker: WOOD_WOMAN_NPC_NAME,
+      speakerRole: WOOD_WOMAN_NPC_ROLE,
+      text: 'Dein Herz schlägt für die frierenden Menschen im Tal. In diesem Winter wird niemand im Dorf unter der Kälte leiden – doch wenn der Frühling kommt, werden die kahlen Hänge und der verletzte Wald uns alle mahnen, wie teuer diese Wärme erkauft wurde.',
+      options: [
+        {
+          id: 'back-wood-dilemma',
+          playerText: 'Lass mich die anderen Möglichkeiten noch einmal abwägen.',
+          nextNodeId: 'wood_woman_dilemma',
+        },
+        {
+          id: 'close-wood',
+          playerText: 'Leb wohl, Holzweibchen! (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    wood_woman_resolution_forest: {
+      id: 'wood_woman_resolution_forest',
+      speaker: WOOD_WOMAN_NPC_NAME,
+      speakerRole: WOOD_WOMAN_NPC_ROLE,
+      text: 'Die Bäume und die Tiere des Waldes atmen auf, wenn Axt und Säge schweigen. Doch vergiss nicht die Hütten unten im Tal – ganz ohne Brennholz wird die Kälte dort zur bitteren Prüfung werden.',
+      options: [
+        {
+          id: 'back-wood-dilemma',
+          playerText: 'Vielleicht finden wir doch einen Ausgleich für Dorf und Wald.',
+          nextNodeId: 'wood_woman_dilemma',
+        },
+        {
+          id: 'close-wood',
+          playerText: 'Behüte den Wald gut, Holzweibchen! (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
   };
 
   for (const path of SEVEN_PATHS) {
@@ -683,7 +845,16 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
                   action: { type: 'walk_to_giant' },
                 },
               ]
-            : [];
+            : path.id === 4
+              ? [
+                  {
+                    id: 'walk-to-wood-woman-4',
+                    playerText: 'Den gesamten 4. Weg bis zum Holzfällerlager und dem Holzweibchen wandern',
+                    nextNodeId: null,
+                    action: { type: 'walk_to_wood_woman' },
+                  },
+                ]
+              : [];
 
     nodes[`path_${path.id}`] = {
       id: `path_${path.id}`,

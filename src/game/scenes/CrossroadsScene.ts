@@ -3,6 +3,7 @@ import {
   CAVE_ENTRANCE_POS,
   GIANT_NPC_POS,
   GREY_MAN_NPC_POS,
+  LUMBER_CAMP_POS,
   NIXIE_NPC_POS,
   PATH_1_END_CLEARING,
   PATH_1_WAYPOINTS,
@@ -10,21 +11,26 @@ import {
   PATH_2_WAYPOINTS,
   PATH_3_END_CLEARING,
   PATH_3_WAYPOINTS,
+  PATH_4_END_CLEARING,
+  PATH_4_WAYPOINTS,
   PathPoint2D,
   POND_CENTER_POS,
   SEVEN_PATHS,
   WEIR_BRIDGE_POS,
+  WOOD_WOMAN_NPC_POS,
 } from '../data/paths';
 import { createGiantNpc, GiantNpcEntity } from '../entities/GiantNpc';
 import { createGreyManNpc, GreyManNpcEntity } from '../entities/GreyManNpc';
 import { createGuideNpc, GuideNpcEntity } from '../entities/GuideNpc';
 import { createLogCabin } from '../entities/LogCabin';
+import { createLumberjackCamp, LumberjackCampEntity } from '../entities/LumberjackCamp';
 import { createMountainCave } from '../entities/MountainCave';
 import { createNixieNpc, NixieNpcEntity } from '../entities/NixieNpc';
 import { createNixiePond, NixiePondEntity } from '../entities/NixiePond';
 import { createSignpost, SignpostEntity } from '../entities/Signpost';
 import { createTreasureChest, TreasureChestEntity } from '../entities/TreasureChest';
 import { createWeirBridgeScene, WeirBridgeEntity } from '../entities/WeirBridgeScene';
+import { createWoodWomanNpc, WoodWomanNpcEntity } from '../entities/WoodWomanNpc';
 import { Vector2D } from '../systems/CrossroadsState';
 
 export type ScenePickResult =
@@ -32,9 +38,11 @@ export type ScenePickResult =
   | { kind: 'grey_man'; point: Vector2D }
   | { kind: 'nixie'; point: Vector2D }
   | { kind: 'giant'; point: Vector2D }
+  | { kind: 'wood_woman'; point: Vector2D }
   | { kind: 'cave'; point: Vector2D }
   | { kind: 'pond'; point: Vector2D }
   | { kind: 'weir'; point: Vector2D }
+  | { kind: 'lumber_camp'; point: Vector2D }
   | { kind: 'chest'; point: Vector2D }
   | { kind: 'sign'; pathId: number; point: Vector2D }
   | { kind: 'path'; pathId: number; point: Vector2D }
@@ -47,6 +55,7 @@ export type ScenePickResult =
  * - Weg 1: Bergmassiv mit Höhleneingang & Graumännchen
  * - Weg 2: Waldteich mit Stein, Nixe & verfluchtem Schatz
  * - Weg 3: Brücke über Bach mit geschlossenem Wehr, kleinem Stausee & Riese
+ * - Weg 4: Holzfällerlager auf einer Waldlichtung & Holzweibchen
  * - Zentrale Lichtung: Schutzhütte, Schatztruhe, Wegweiser und Waldhüter Arvid
  */
 export class CrossroadsScene {
@@ -63,6 +72,8 @@ export class CrossroadsScene {
   private readonly nixieNpc: NixieNpcEntity;
   private readonly weirBridge: WeirBridgeEntity;
   private readonly giantNpc: GiantNpcEntity;
+  private readonly lumberCamp: LumberjackCampEntity;
+  private readonly woodWomanNpc: WoodWomanNpcEntity;
   private readonly treasureChest: TreasureChestEntity;
   private readonly pathMeshes = new Map<number, THREE.MeshStandardMaterial>();
   private readonly pathGemstones = new Map<
@@ -86,6 +97,7 @@ export class CrossroadsScene {
   private isGreyManHovered = false;
   private isNixieHovered = false;
   private isGiantHovered = false;
+  private isWoodWomanHovered = false;
   private isChestHovered = false;
   private lastPlayerPos: Vector2D = { x: 0, z: 5.2 };
   private elapsedSeconds = 0;
@@ -219,11 +231,32 @@ export class CrossroadsScene {
     });
     this.scene.add(this.giantNpc.group);
 
-    // Bäume rund um die Lichtung, zwischen den 7 Wegen und entlang der Kurven von Weg 1, 2 und 3
+    // Holzfällerlager auf der Waldlichtung am Ende des 4. Weges
+    this.lumberCamp = createLumberjackCamp();
+    this.lumberCamp.group.position.set(LUMBER_CAMP_POS.x, 0, LUMBER_CAMP_POS.z);
+    this.lumberCamp.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.lumberCamp.group);
+
+    // Das Holzweibchen (NPC) im Holzfällerlager am Ende des 4. Weges
+    this.woodWomanNpc = createWoodWomanNpc();
+    this.woodWomanNpc.group.position.set(WOOD_WOMAN_NPC_POS.x, 0, WOOD_WOMAN_NPC_POS.z);
+    this.woodWomanNpc.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.woodWomanNpc.group);
+
+    // Bäume rund um die Lichtung, zwischen den 7 Wegen und entlang der Kurven von Weg 1 bis 4
     this.buildForestRing();
     this.buildCurvedPath1Trees();
     this.buildCurvedPath2Trees();
     this.buildCurvedPath3Trees();
+    this.buildCurvedPath4Trees();
 
     // Zielmarkierung für Maus-Bewegung (Click-to-Move)
     this.targetMarker = this.createTargetMarker();
@@ -256,7 +289,7 @@ export class CrossroadsScene {
   }
 
   private buildTerrainAndPaths(): void {
-    // Weitläufiger Waldboden (umfasst auch die langen Wege 1, 2 und 3)
+    // Weitläufiger Waldboden (umfasst auch die langen Wege 1 bis 4)
     const ground = new THREE.Mesh(
       new THREE.CircleGeometry(110, 48),
       new THREE.MeshStandardMaterial({ color: 0x243827, roughness: 0.96 })
@@ -317,6 +350,19 @@ export class CrossroadsScene {
           3,
           PATH_3_WAYPOINTS,
           { x: PATH_3_END_CLEARING.x, z: PATH_3_END_CLEARING.z, radius: 3.1 },
+          pathData.angleRad,
+          mat,
+          pathData.colorHex
+        );
+        return;
+      }
+
+      if (pathData.id === 4) {
+        // Weg 4: Pfad entlang PATH_4_WAYPOINTS bis zum Holzfällerlager auf der Waldlichtung
+        this.buildCurvedPathMeshes(
+          4,
+          PATH_4_WAYPOINTS,
+          PATH_4_END_CLEARING,
           pathData.angleRad,
           mat,
           pathData.colorHex
@@ -552,6 +598,14 @@ export class CrossroadsScene {
     return this.isNearCurvedCorridor(x, z, PATH_3_WAYPOINTS, PATH_3_END_CLEARING, minDistance);
   }
 
+  private isNearPath4Corridor(x: number, z: number, minDistance = 3.2): boolean {
+    // Auch die gerodete Waldlichtung rund um das Holzfällerlager von hohen Waldbäumen freihalten
+    if (Math.hypot(x - LUMBER_CAMP_POS.x, z - LUMBER_CAMP_POS.z) < LUMBER_CAMP_POS.radius + 1.8) {
+      return true;
+    }
+    return this.isNearCurvedCorridor(x, z, PATH_4_WAYPOINTS, PATH_4_END_CLEARING, minDistance);
+  }
+
   private buildForestRing(): void {
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4f3622, roughness: 0.9 });
     const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 0.85 });
@@ -566,11 +620,12 @@ export class CrossroadsScene {
           const x = Math.sin(angle) * r;
           const z = -Math.cos(angle) * r;
 
-          // Keine Bäume auf die kurvigen Korridore von Weg 1, Weg 2 und Weg 3 setzen
+          // Keine Bäume auf die kurvigen Korridore von Weg 1 bis Weg 4 setzen
           if (
             this.isNearPath1Corridor(x, z, 3.0) ||
             this.isNearPath2Corridor(x, z, 3.0) ||
-            this.isNearPath3Corridor(x, z, 3.0)
+            this.isNearPath3Corridor(x, z, 3.0) ||
+            this.isNearPath4Corridor(x, z, 3.0)
           ) {
             continue;
           }
@@ -616,7 +671,8 @@ export class CrossroadsScene {
           if (
             this.isNearPath1Corridor(tx, tz, 2.7) ||
             this.isNearPath2Corridor(tx, tz, 2.7) ||
-            this.isNearPath3Corridor(tx, tz, 2.7)
+            this.isNearPath3Corridor(tx, tz, 2.7) ||
+            this.isNearPath4Corridor(tx, tz, 2.7)
           ) {
             continue;
           }
@@ -693,7 +749,8 @@ export class CrossroadsScene {
           if (
             this.isNearPath2Corridor(tx, tz, 2.7) ||
             this.isNearPath1Corridor(tx, tz, 2.7) ||
-            this.isNearPath3Corridor(tx, tz, 2.7)
+            this.isNearPath3Corridor(tx, tz, 2.7) ||
+            this.isNearPath4Corridor(tx, tz, 2.7)
           ) {
             continue;
           }
@@ -719,7 +776,11 @@ export class CrossroadsScene {
       for (const ringRadius of [6.8, 9.6]) {
         const tx = POND_CENTER_POS.x + Math.cos(angle + (ringRadius > 8 ? 0.14 : 0)) * ringRadius;
         const tz = POND_CENTER_POS.z + Math.sin(angle + (ringRadius > 8 ? 0.14 : 0)) * ringRadius;
-        if (this.isNearPath2Corridor(tx, tz, 2.6) || this.isNearPath3Corridor(tx, tz, 2.6)) {
+        if (
+          this.isNearPath2Corridor(tx, tz, 2.6) ||
+          this.isNearPath3Corridor(tx, tz, 2.6) ||
+          this.isNearPath4Corridor(tx, tz, 2.6)
+        ) {
           continue;
         }
         const scale = 1.05 + (idx % 3) * 0.16;
@@ -762,7 +823,8 @@ export class CrossroadsScene {
           if (
             this.isNearPath3Corridor(tx, tz, 2.7) ||
             this.isNearPath2Corridor(tx, tz, 2.7) ||
-            this.isNearPath1Corridor(tx, tz, 2.7)
+            this.isNearPath1Corridor(tx, tz, 2.7) ||
+            this.isNearPath4Corridor(tx, tz, 2.7)
           ) {
             continue;
           }
@@ -801,6 +863,74 @@ export class CrossroadsScene {
       tree.position.set(wx, 0, wz);
       this.scene.add(tree);
     }
+  }
+
+  /**
+   * Platziert Bäume entlang von Weg 4 und bildet den verbliebenen Hochwald-Rand rund um die Holzfäller-Lichtung.
+   */
+  private buildCurvedPath4Trees(): void {
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4f3622, roughness: 0.9 });
+    const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 0.85 });
+    const crownMatLight = new THREE.MeshStandardMaterial({ color: 0x335c36, roughness: 0.85 });
+
+    for (let i = 1; i < PATH_4_WAYPOINTS.length - 1; i++) {
+      const prev = PATH_4_WAYPOINTS[i - 1];
+      const curr = PATH_4_WAYPOINTS[i];
+      const next = PATH_4_WAYPOINTS[i + 1];
+
+      const dirX = next.x - prev.x;
+      const dirZ = next.z - prev.z;
+      const len = Math.hypot(dirX, dirZ) || 1;
+      const perpX = -dirZ / len;
+      const perpZ = dirX / len;
+
+      for (const side of [-1, 1]) {
+        for (const dist of [3.4, 6.2]) {
+          const tx = curr.x + perpX * side * dist;
+          const tz = curr.z + perpZ * side * dist;
+          if (
+            this.isNearPath4Corridor(tx, tz, 2.7) ||
+            this.isNearPath3Corridor(tx, tz, 2.7) ||
+            this.isNearPath2Corridor(tx, tz, 2.7) ||
+            this.isNearPath1Corridor(tx, tz, 2.7)
+          ) {
+            continue;
+          }
+          const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
+          const tree = this.createTreeMesh(
+            scale,
+            (i + side) % 2 === 0,
+            trunkMat,
+            crownMatDark,
+            crownMatLight
+          );
+          tree.position.set(tx, 0, tz);
+          this.scene.add(tree);
+        }
+      }
+    }
+
+    // Äußerer Waldrand hinter den Baumstümpfen der Holzfäller-Lichtung
+    const campEdgeAngles = [-0.9, -0.45, 0.0, 0.45, 0.9, 1.35, 1.8, 2.25, 2.7, 3.15, 3.6, 4.0];
+    campEdgeAngles.forEach((angle, idx) => {
+      for (const ringRadius of [8.8, 11.4]) {
+        const tx = LUMBER_CAMP_POS.x + Math.cos(angle + (ringRadius > 10 ? 0.16 : 0)) * ringRadius;
+        const tz = LUMBER_CAMP_POS.z + Math.sin(angle + (ringRadius > 10 ? 0.16 : 0)) * ringRadius;
+        if (this.isNearPath4Corridor(tx, tz, 2.6)) {
+          continue;
+        }
+        const scale = 1.1 + (idx % 3) * 0.15;
+        const tree = this.createTreeMesh(
+          scale,
+          idx % 2 === 0,
+          trunkMat,
+          crownMatDark,
+          crownMatLight
+        );
+        tree.position.set(tx, 0, tz);
+        this.scene.add(tree);
+      }
+    });
   }
 
   private createTargetMarker(): THREE.Mesh {
@@ -873,6 +1003,10 @@ export class CrossroadsScene {
     this.isGiantHovered = hovered;
   }
 
+  public setWoodWomanHovered(hovered: boolean): void {
+    this.isWoodWomanHovered = hovered;
+  }
+
   public setChestHovered(hovered: boolean): void {
     this.isChestHovered = hovered;
   }
@@ -900,6 +1034,12 @@ export class CrossroadsScene {
       const data = hit.object.userData;
       const point: Vector2D = { x: hit.point.x, z: hit.point.z };
 
+      if (data.interactableType === 'wood_woman') {
+        return { kind: 'wood_woman', point };
+      }
+      if (data.interactableType === 'lumber_camp') {
+        return { kind: 'lumber_camp', point };
+      }
       if (data.interactableType === 'giant') {
         return { kind: 'giant', point };
       }
@@ -965,7 +1105,7 @@ export class CrossroadsScene {
     this.lastPlayerPos = { x: playerPos.x, z: playerPos.z };
     this.playerGroup.position.set(playerPos.x, 0, playerPos.z);
 
-    // Alle vier NPCs (Waldhüter Arvid, Graumännchen, Nixe, Riese), Gewässer und Schatztruhe animieren
+    // Alle fünf NPCs (Waldhüter Arvid, Graumännchen, Nixe, Riese, Holzweibchen), Schauplätze und Schatztruhe animieren
     this.guideNpc.update(
       this.elapsedSeconds,
       playerPos,
@@ -987,6 +1127,12 @@ export class CrossroadsScene {
       this.elapsedSeconds,
       playerPos,
       this.isGiantHovered || isDialogueActive
+    );
+    this.lumberCamp.update(this.elapsedSeconds);
+    this.woodWomanNpc.update(
+      this.elapsedSeconds,
+      playerPos,
+      this.isWoodWomanHovered || isDialogueActive
     );
     this.treasureChest.update(dtSeconds, isChestOpen, this.isChestHovered);
 
@@ -1010,10 +1156,10 @@ export class CrossroadsScene {
       }
     });
 
-    // Edelstein am jeweils aktiven Storyweg (Weg 1, 2 & 3 bzw. aktuell gewählter Storyweg) leuchten lassen
+    // Edelstein am jeweils aktiven Storyweg (Weg 1 bis 4 bzw. aktuell gewählter Storyweg) leuchten lassen
     const pulse = 0.5 + 0.5 * Math.sin(this.elapsedSeconds * 3.2);
     this.pathGemstones.forEach((gem, id) => {
-      const isStoryPath = id === 1 || id === 2 || id === 3;
+      const isStoryPath = id >= 1 && id <= 4;
       const isActiveQuestPath =
         selectedPathId !== null ? id === selectedPathId && isStoryPath : isStoryPath;
 

@@ -3,12 +3,14 @@ import {
   GREY_MAN_NPC_NAME,
   GUIDE_NPC_NAME,
   NIXIE_NPC_NAME,
+  WOOD_WOMAN_NPC_NAME,
 } from '../data/npcDialogues';
 import {
   CAVE_ENTRANCE_POS,
   ForestPathData,
   GIANT_NPC_POS,
   GREY_MAN_NPC_POS,
+  LUMBER_CAMP_POS,
   NIXIE_NPC_POS,
   PATH_1_END_CLEARING,
   PATH_1_WAYPOINTS,
@@ -16,10 +18,13 @@ import {
   PATH_2_WAYPOINTS,
   PATH_3_END_CLEARING,
   PATH_3_WAYPOINTS,
+  PATH_4_END_CLEARING,
+  PATH_4_WAYPOINTS,
   PathPoint2D,
   POND_CENTER_POS,
   SEVEN_PATHS,
   WEIR_BRIDGE_POS,
+  WOOD_WOMAN_NPC_POS,
 } from '../data/paths';
 
 export interface Vector2D {
@@ -32,9 +37,11 @@ export type PointOfInterest =
   | { type: 'grey_man'; name: string; label: string }
   | { type: 'nixie'; name: string; label: string }
   | { type: 'giant'; name: string; label: string }
+  | { type: 'wood_woman'; name: string; label: string }
   | { type: 'cave'; label: string }
   | { type: 'pond'; label: string }
   | { type: 'weir'; label: string }
+  | { type: 'lumber_camp'; label: string }
   | { type: 'chest'; isOpen: boolean; label: string }
   | { type: 'signpost'; label: string }
   | { type: 'hut'; label: string }
@@ -45,7 +52,8 @@ export type PointOfInterest =
  * Reine Spiellogik für die Waldkreuzung,
  * - Weg 1 (Silberstollen-Pfad mit Bergmassiv & Graumännchen),
  * - Weg 2 (Nixenteich-Pfad mit Waldteich, Stein & Nixe),
- * - Weg 3 (Quellenweg mit Brücke, Bach, geschlossenem Wehr, kleinem Stausee & Riese).
+ * - Weg 3 (Quellenweg mit Brücke, Bach, geschlossenem Wehr, kleinem Stausee & Riese),
+ * - Weg 4 (Holzfäller-Pfad mit Holzfällerlager auf der Waldlichtung & Holzweibchen).
  * Ohne Three.js-Abhängigkeit direkt mit Vitest testbar.
  */
 export class CrossroadsState {
@@ -89,6 +97,11 @@ export class CrossroadsState {
   private readonly giantPos: Vector2D = { ...GIANT_NPC_POS };
   private readonly giantCollisionRadius = 0.85;
 
+  // Am Ende des 4. Weges: Holzfällerlager auf der Waldlichtung und das Holzweibchen
+  private readonly lumberCampPos: Vector2D = { x: LUMBER_CAMP_POS.x, z: LUMBER_CAMP_POS.z };
+  private readonly woodWomanPos: Vector2D = { ...WOOD_WOMAN_NPC_POS };
+  private readonly woodWomanCollisionRadius = 0.55;
+
   private readonly clearingRadius = 6.5;
   private readonly pathHalfWidth = 0.95;
   private readonly maxRadius = 26;
@@ -128,6 +141,10 @@ export class CrossroadsState {
 
   public getGiantPosition(): Readonly<Vector2D> {
     return { ...this.giantPos };
+  }
+
+  public getWoodWomanPosition(): Readonly<Vector2D> {
+    return { ...this.woodWomanPos };
   }
 
   public getChestPosition(): Readonly<Vector2D> {
@@ -179,6 +196,14 @@ export class CrossroadsState {
     return dist <= this.giantCollisionRadius + 1.45;
   }
 
+  public isNearWoodWoman(): boolean {
+    const dist = Math.hypot(
+      this.playerPos.x - this.woodWomanPos.x,
+      this.playerPos.z - this.woodWomanPos.z
+    );
+    return dist <= this.woodWomanCollisionRadius + 1.45;
+  }
+
   public isNearChest(): boolean {
     const dist = Math.hypot(
       this.playerPos.x - this.chestPos.x,
@@ -221,7 +246,7 @@ export class CrossroadsState {
   }
 
   /**
-   * Berechnet für ein Segment eines Kurvenweges (Weg 1, 2 oder 3) den Zentrumspunkt und den erlaubten Radius.
+   * Berechnet für ein Segment eines Kurvenweges (Weg 1, 2, 3 oder 4) den Zentrumspunkt und den erlaubten Radius.
    * Das letzte Segment bildet zusammen mit dem Vorplatz eine konvexe Tapered Capsule,
    * sodass beim Übergang vom Vorplatz auf den Weg keinerlei Kante oder Tasche entsteht.
    */
@@ -331,6 +356,26 @@ export class CrossroadsState {
   }
 
   /**
+   * Prüft, ob ein Punkt auf dem 4. Weg oder der Waldlichtung des Holzfällerlagers liegt.
+   */
+  public isPointOnPath4(x: number, z: number): boolean {
+    const eps = 1e-4;
+    for (let i = 0; i < PATH_4_WAYPOINTS.length - 1; i++) {
+      const { cx, cz, radius } = this.evaluateCurvedPathSegment(
+        x,
+        z,
+        PATH_4_WAYPOINTS,
+        PATH_4_END_CLEARING.radius,
+        i
+      );
+      if (Math.hypot(x - cx, z - cz) <= radius + eps) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Prüft, ob ein Punkt auf der zentralen Kreuzung oder auf einem der 7 befestigten Waldwege liegt.
    * Grünflächen und Wald außerhalb dieser Geometrie sind nicht begehbar.
    */
@@ -341,11 +386,12 @@ export class CrossroadsState {
       return true;
     }
 
-    // Wege 1, 2 und 3 besitzen eigene ausgebaute Kurvenverläufe bis zu ihren Zielorten
+    // Wege 1 bis 4 besitzen eigene ausgebaute Kurvenverläufe bis zu ihren Zielorten
     if (
       this.isPointOnPath1(x, z) ||
       this.isPointOnPath2(x, z) ||
-      this.isPointOnPath3(x, z)
+      this.isPointOnPath3(x, z) ||
+      this.isPointOnPath4(x, z)
     ) {
       return true;
     }
@@ -354,9 +400,9 @@ export class CrossroadsState {
       return false;
     }
 
-    // Wege 4 bis 7 verlaufen sternförmig
+    // Wege 5 bis 7 verlaufen sternförmig
     for (const path of SEVEN_PATHS) {
-      if (path.id === 1 || path.id === 2 || path.id === 3) {
+      if (path.id <= 4) {
         continue;
       }
       const dirX = Math.sin(path.angleRad);
@@ -394,7 +440,7 @@ export class CrossroadsState {
   }
 
   /**
-   * Prüft, ob ein Punkt mit Schutzhütte, Schatztruhe, Wegweiser, Waldhüter, Graumännchen, Felsen, Waldteich oder Riese kollidiert.
+   * Prüft, ob ein Punkt mit Schutzhütte, Schatztruhe, Wegweiser, Waldhüter, Graumännchen, Felsen, Waldteich, Riese oder Holzweibchen kollidiert.
    */
   public isCollidingWithObstacles(x: number, z: number): boolean {
     const eps = 1e-4;
@@ -454,6 +500,14 @@ export class CrossroadsState {
 
     // Der Riese am Wehr auf Weg 3
     if (Math.hypot(x - this.giantPos.x, z - this.giantPos.z) < this.giantCollisionRadius - eps) {
+      return true;
+    }
+
+    // Das Holzweibchen im Holzfällerlager auf Weg 4
+    if (
+      Math.hypot(x - this.woodWomanPos.x, z - this.woodWomanPos.z) <
+      this.woodWomanCollisionRadius - eps
+    ) {
       return true;
     }
 
@@ -578,6 +632,21 @@ export class CrossroadsState {
         if (dSq3 < bestDistSq) {
           bestDistSq = dSq3;
           bestPoint = p3;
+        }
+        continue;
+      }
+
+      if (path.id === 4) {
+        const p4 = this.projectOntoCurvedPath(
+          x,
+          z,
+          PATH_4_WAYPOINTS,
+          PATH_4_END_CLEARING.radius
+        );
+        const dSq4 = (x - p4.x) ** 2 + (z - p4.z) ** 2;
+        if (dSq4 < bestDistSq) {
+          bestDistSq = dSq4;
+          bestPoint = p4;
         }
         continue;
       }
@@ -726,6 +795,16 @@ export class CrossroadsState {
       resolvedX = afterGiant.x;
       resolvedZ = afterGiant.z;
 
+      // Holzweibchen-Kollision am Ende von Weg 4
+      const afterWoodWoman = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.woodWomanPos,
+        this.woodWomanCollisionRadius
+      );
+      resolvedX = afterWoodWoman.x;
+      resolvedZ = afterWoodWoman.z;
+
       // Schutzhütten-Kollision (AABB um hutPos)
       const relX = resolvedX - this.hutPos.x;
       const relZ = resolvedZ - this.hutPos.z;
@@ -753,6 +832,9 @@ export class CrossroadsState {
     }
     if (this.isPointOnPath3(x, z)) {
       return SEVEN_PATHS[2];
+    }
+    if (this.isPointOnPath4(x, z)) {
+      return SEVEN_PATHS[3];
     }
 
     let playerAngle = Math.atan2(x, -z);
@@ -885,6 +967,14 @@ export class CrossroadsState {
   }
 
   /**
+   * Lässt die Spielfigur entlang des 4. Weges bis auf die Waldlichtung vor das Holzweibchen im Holzfällerlager laufen.
+   */
+  public setTargetToWoodWoman(): Readonly<Vector2D> {
+    this.selectPath(4);
+    return this.setTargetPosition(this.woodWomanPos.x - 0.25, this.woodWomanPos.z - 1.25);
+  }
+
+  /**
    * Berechnet den kontinuierlichen Fortschritt entlang der Segmente eines Kurvenweges.
    */
   private getCurvedPathProgress(
@@ -934,7 +1024,7 @@ export class CrossroadsState {
   }
 
   /**
-   * Ermittelt einen stetig mitgleitenden Lookahead-Punkt entlang der Kurve von Weg 1, 2 oder 3,
+   * Ermittelt einen stetig mitgleitenden Lookahead-Punkt entlang der Kurve von Weg 1, 2, 3 oder 4,
    * damit die Spielfigur beim Auto-Walk vorwärts wie rückwärts völlig ruckelfrei auf dem Pfad bleibt.
    */
   private getNextCurvedWaypoint(
@@ -1002,6 +1092,12 @@ export class CrossroadsState {
           PATH_3_WAYPOINTS,
           (px, pz) => this.isPointOnPath3(px, pz)
         );
+      } else if (playerPath.id === 4) {
+        effectiveTarget = this.getNextCurvedWaypoint(
+          PATH_4_WAYPOINTS[0],
+          PATH_4_WAYPOINTS,
+          (px, pz) => this.isPointOnPath4(px, pz)
+        );
       } else {
         effectiveTarget = {
           x: Math.sin(playerPath.angleRad) * (this.clearingRadius - 0.6),
@@ -1025,6 +1121,12 @@ export class CrossroadsState {
         this.targetPos,
         PATH_3_WAYPOINTS,
         (px, pz) => this.isPointOnPath3(px, pz)
+      );
+    } else if (targetPath && targetPath.id === 4) {
+      effectiveTarget = this.getNextCurvedWaypoint(
+        this.targetPos,
+        PATH_4_WAYPOINTS,
+        (px, pz) => this.isPointOnPath4(px, pz)
       );
     }
 
@@ -1099,6 +1201,27 @@ export class CrossroadsState {
    * Ermittelt, welchem Objekt, NPC oder Weg die spielende Person am nächsten ist.
    */
   public getActivePointOfInterest(): PointOfInterest {
+    if (this.isNearWoodWoman()) {
+      return {
+        type: 'wood_woman',
+        name: WOOD_WOMAN_NPC_NAME,
+        label:
+          'Im Holzfällerlager auf der Waldlichtung – sprich mit dem Holzweibchen über das Brennholz gegen die Kälte und die Gefährdung des Waldes (Klick oder [F]).',
+      };
+    }
+
+    const distToCamp = Math.hypot(
+      this.playerPos.x - this.lumberCampPos.x,
+      this.playerPos.z - this.lumberCampPos.z
+    );
+    if (distToCamp < 4.8) {
+      return {
+        type: 'lumber_camp',
+        label:
+          'Holzfällerlager auf der Waldlichtung – Brennholz rettet das Dorf vor der Kälte, doch die starken Fällungen gefährden den Wald.',
+      };
+    }
+
     if (this.isNearGiant()) {
       return {
         type: 'giant',

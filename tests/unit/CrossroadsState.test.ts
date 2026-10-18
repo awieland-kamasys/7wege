@@ -6,7 +6,9 @@ import {
   PATH_1_WAYPOINTS,
   PATH_2_WAYPOINTS,
   PATH_3_WAYPOINTS,
+  PATH_4_WAYPOINTS,
   SEVEN_PATHS,
+  WOOD_WOMAN_NPC_POS,
 } from '../../src/game/data/paths';
 import { CrossroadsState } from '../../src/game/systems/CrossroadsState';
 import { DialogueSystem } from '../../src/game/systems/DialogueSystem';
@@ -18,7 +20,7 @@ describe('CrossroadsState & 7 Wege', () => {
     expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
-  it('platziert Schutzhütte (0, 0), Schatztruhe (0.85, 2.0), Wegweiser (2.3, 2.4), Waldhüter (-1.85, 2.05), Graumännchen, Nixe und Riese', () => {
+  it('platziert Schutzhütte (0, 0), Schatztruhe (0.85, 2.0), Wegweiser (2.3, 2.4), Waldhüter (-1.85, 2.05), Graumännchen, Nixe, Riese und Holzweibchen', () => {
     const state = new CrossroadsState();
     expect(state.getHutPosition()).toEqual({ x: 0, z: 0 });
     expect(state.getChestPosition()).toEqual({ x: 0.85, z: 2.0 });
@@ -27,6 +29,7 @@ describe('CrossroadsState & 7 Wege', () => {
     expect(state.getGreyManPosition()).toEqual(GREY_MAN_NPC_POS);
     expect(state.getNixiePosition()).toEqual(NIXIE_NPC_POS);
     expect(state.getGiantPosition()).toEqual(GIANT_NPC_POS);
+    expect(state.getWoodWomanPosition()).toEqual(WOOD_WOMAN_NPC_POS);
   });
 
   it('erweitert den 1. Weg mit einer Kurve bis zum Vorplatz vor dem Höhleneingang', () => {
@@ -110,6 +113,36 @@ describe('CrossroadsState & 7 Wege', () => {
     expect(state.isOnClearing()).toBe(true);
   });
 
+  it('führt den 4. Weg in das Holzfällerlager auf der Waldlichtung bis zum Holzweibchen', () => {
+    const state = new CrossroadsState();
+    expect(PATH_4_WAYPOINTS.length).toBeGreaterThanOrEqual(5);
+
+    for (const wp of PATH_4_WAYPOINTS) {
+      expect(state.isPointOnPath4(wp.x, wp.z)).toBe(true);
+      expect(state.isPointOnClearingOrPath(wp.x, wp.z)).toBe(true);
+    }
+
+    // Wandert entlang von Weg 4 bis zum Holzweibchen im Holzfällerlager
+    state.setTargetToWoodWoman();
+    for (let i = 0; i < 120; i++) {
+      state.updateAutoWalk(0.1, 8);
+      const pos = state.getPlayerPosition();
+      expect(state.isWalkable(pos.x, pos.z)).toBe(true);
+    }
+
+    expect(state.isNearWoodWoman()).toBe(true);
+    expect(state.getActivePointOfInterest().type).toBe('wood_woman');
+
+    // Rückweg vom Holzfällerlager zurück zur Kreuzung
+    state.setTargetToClearing();
+    for (let i = 0; i < 120; i++) {
+      state.updateAutoWalk(0.1, 8);
+      const pos = state.getPlayerPosition();
+      expect(state.isWalkable(pos.x, pos.z)).toBe(true);
+    }
+    expect(state.isOnClearing()).toBe(true);
+  });
+
   it('kann zur Schatztruhe vor der Hütte laufen und deren Deckel öffnen und schließen', () => {
     const state = new CrossroadsState();
     expect(state.isChestOpen()).toBe(false);
@@ -153,14 +186,14 @@ describe('CrossroadsState & 7 Wege', () => {
   it('erlaubt Bewegung nur auf der Kreuzung und den 7 Wegen, nicht auf Grünflächen/Wald', () => {
     const state = new CrossroadsState();
 
-    // Ein Punkt mitten im Wald zwischen Weg 4 und Weg 5 ist nicht begehbar
-    const angleBetween4And5 = (SEVEN_PATHS[3].angleRad + SEVEN_PATHS[4].angleRad) / 2;
-    const forestX = Math.sin(angleBetween4And5) * 14;
-    const forestZ = -Math.cos(angleBetween4And5) * 14;
+    // Ein Punkt mitten im Wald zwischen Weg 5 und Weg 6 ist nicht begehbar
+    const angleBetween5And6 = (SEVEN_PATHS[4].angleRad + SEVEN_PATHS[5].angleRad) / 2;
+    const forestX = Math.sin(angleBetween5And6) * 14;
+    const forestZ = -Math.cos(angleBetween5And6) * 14;
     expect(state.isPointOnClearingOrPath(forestX, forestZ)).toBe(false);
 
     for (let i = 0; i < 40; i++) {
-      state.movePlayer(Math.sin(angleBetween4And5) * 0.5, -Math.cos(angleBetween4And5) * 0.5);
+      state.movePlayer(Math.sin(angleBetween5And6) * 0.5, -Math.cos(angleBetween5And6) * 0.5);
       const pos = state.getPlayerPosition();
       expect(state.isPointOnClearingOrPath(pos.x, pos.z)).toBe(true);
     }
@@ -209,7 +242,7 @@ describe('CrossroadsState & 7 Wege', () => {
   });
 });
 
-describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, Nixe & Riese)', () => {
+describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, Nixe, Riese & Holzweibchen)', () => {
   it('öffnet ein Gespräch mit Waldhüter Arvid, navigiert durch die 7 Wege und löst Aktionen aus', () => {
     const dialogue = new DialogueSystem();
     expect(dialogue.isOpen()).toBe(false);
@@ -222,13 +255,13 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(step1.node?.id).toBe('paths_overview');
     expect(step1.node?.options.length).toBeGreaterThanOrEqual(7);
 
-    const step2 = dialogue.selectOption(2);
-    expect(step2.node?.id).toBe('path_3');
+    const step2 = dialogue.selectOption(3);
+    expect(step2.node?.id).toBe('path_4');
 
     const step3 = dialogue.selectOption(0);
     expect(step3.node).toBeNull();
     expect(dialogue.isOpen()).toBe(false);
-    expect(step3.action).toEqual({ type: 'walk_to_giant' });
+    expect(step3.action).toEqual({ type: 'walk_to_wood_woman' });
   });
 
   it('führt das Gespräch mit dem Graumännchen über Silberader, Licht und Verbot/Versprechen', () => {
@@ -282,6 +315,25 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     // Weiter zum Dilemma rund um das Wehr (Option 0)
     const stepDilemma = dialogue.selectOption(0);
     expect(stepDilemma.node?.id).toBe('giant_dilemma');
+    expect(stepDilemma.node?.options.length).toBe(3);
+  });
+
+  it('führt das Gespräch mit dem Holzweibchen im Holzfällerlager über Brennholz gegen Kälte und die Gefährdung des Waldes', () => {
+    const dialogue = new DialogueSystem();
+    const woodWomanRoot = dialogue.startDialogue('wood_woman_root');
+    expect(woodWomanRoot?.speaker).toBe('Das Holzweibchen');
+    expect(woodWomanRoot?.text).toContain('Brennholz');
+    expect(woodWomanRoot?.text).toContain('Kälte');
+    expect(woodWomanRoot?.text).toContain('Fällungen');
+    expect(woodWomanRoot?.text).toContain('Wald');
+
+    // Frage nach der Gefährdung des Waldes (Option 1)
+    const stepForest = dialogue.selectOption(1);
+    expect(stepForest.node?.id).toBe('wood_woman_forest_danger');
+
+    // Weiter zur Abwägung zwischen Dorf und Wald (Option 0)
+    const stepDilemma = dialogue.selectOption(0);
+    expect(stepDilemma.node?.id).toBe('wood_woman_dilemma');
     expect(stepDilemma.node?.options.length).toBe(3);
   });
 });

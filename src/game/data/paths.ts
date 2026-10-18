@@ -138,6 +138,46 @@ export const GIANT_NPC_POS: PathPoint2D = {
 };
 
 /**
+ * Wegpunkte für den 4. Weg (Holzfäller-Pfad):
+ * Startet an der Kreuzung nach Südsüdost, windet sich durch den Hochwald
+ * und mündet auf einer gerodeten Waldlichtung mit einem Holzfällerlager und dem Holzweibchen.
+ */
+export const PATH_4_WAYPOINTS: readonly PathPoint2D[] = [
+  { x: 2.4, z: 5.0 },
+  { x: 5.6, z: 11.7 },
+  { x: 9.2, z: 19.2 },
+  { x: 12.6, z: 27.0 },
+  { x: 15.2, z: 35.0 },
+  { x: 16.5, z: 42.5 },
+];
+
+/**
+ * Begehbare Waldlichtung am Ende von Weg 4 rund um das Holzfällerlager.
+ */
+export const PATH_4_END_CLEARING = {
+  x: 16.5,
+  z: 42.5,
+  radius: 5.4,
+} as const;
+
+/**
+ * Zentrum und Ausrichtung des Holzfällerlagers auf der Waldlichtung am Ende von Weg 4.
+ */
+export const LUMBER_CAMP_POS = {
+  x: 16.5,
+  z: 43.8,
+  radius: 7.2,
+} as const;
+
+/**
+ * Position des Holzweibchens im Holzfällerlager am Ende von Weg 4.
+ */
+export const WOOD_WOMAN_NPC_POS: PathPoint2D = {
+  x: 16.8,
+  z: 44.8,
+};
+
+/**
  * Die sieben Waldwege, die sternförmig von der Waldkreuzung abgehen.
  */
 export const SEVEN_PATHS: readonly ForestPathData[] = [
@@ -167,11 +207,11 @@ export const SEVEN_PATHS: readonly ForestPathData[] = [
   },
   {
     id: 4,
-    name: '4. Wurzelgrat',
+    name: '4. Holzfäller-Pfad',
     directionLabel: 'Südsüdost',
     angleRad: (3 * FULL_CIRCLE) / 7,
-    subtitle: 'Knorrige Baumwurzeln und felsige Stufen.',
-    colorHex: 0x8b6d47,
+    subtitle: 'Führt auf eine Waldlichtung mit einem Holzfällerlager, in dem das Holzweibchen wartet.',
+    colorHex: 0xb87d3e,
   },
   {
     id: 5,

@@ -42,7 +42,11 @@ Eine spielende Person kommt an eine Waldkreuzung mit sieben Wegen und entscheide
    - Die Brücke besitzt ein **geschlossenes Wehr**, welches den Bach zu einem **kleinen Stausee** zurückstaut.
    - Am Ufer hinter der Brücke bewacht **der Riese am Wehr** den Stausee und das Stellrad.
    - **Inhalt & Konflikt:** Eine Quelle versorgt ein Tal. Ihre Freigabe könnte eine Dürre lindern, zerstört jedoch die Heimat des Riesen.
-4. _Weitere vier Wege folgen._
+4. **4. Holzfäller-Pfad (Süd-Südost → Bogen nach Südosten):**
+   - Geschwungener Waldpfad durch den Nebel bis auf eine **gerodete Waldlichtung mit einem Holzfällerlager** (Brennholz-Unterstand, Stammpolter, Sägebock, Hackklotz mit Axt, Wärmefeuerstelle und ein Kranz aus Baumstümpfen).
+   - Im Lager neben einem bemoosten Urwaldstumpf wartet **das Holzweibchen** als NPC.
+   - **Inhalt & Konflikt:** Brennholz rettet Dorfbewohner vor Kälte; zu starke Fällungen gefährden den Wald und seine Umgebung.
+5. _Weitere drei Wege folgen._
 
 ## Steuerung und Geräte
 
