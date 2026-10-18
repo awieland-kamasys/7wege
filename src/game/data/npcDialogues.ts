@@ -6,6 +6,7 @@ export type DialogueAction =
   | { type: 'walk_to_nixie' }
   | { type: 'walk_to_giant' }
   | { type: 'walk_to_wood_woman' }
+  | { type: 'walk_to_devil' }
   | { type: 'close' };
 
 export interface DialogueOption {
@@ -38,6 +39,9 @@ export const GIANT_NPC_ROLE = 'Wächter über Stausee und Quellwehr';
 export const WOOD_WOMAN_NPC_NAME = 'Das Holzweibchen';
 export const WOOD_WOMAN_NPC_ROLE = 'Hüterin des Waldes im Holzfällerlager';
 
+export const DEVIL_NPC_NAME = 'Der Teufel';
+export const DEVIL_NPC_ROLE = 'Herr des Höllenschlundes';
+
 /**
  * Individuelle Hinweise des Waldhüters zu jedem der sieben Wege.
  */
@@ -46,7 +50,7 @@ const PATH_HINTS: Record<number, string> = {
   2: 'Der 2. Nixenteich-Pfad im Nordosten führt durch den Nebel zu einem stillen Waldteich. Auf einem Felsen im Wasser sitzt die Nixe. Auf dem Grund ihres Teichs funkelt ein verlockender Schatz – doch sei gewarnt: Er ist mit einem dunklen Fluch und drohendem Unglück verbunden.',
   3: 'Der 3. Quellenweg im Südosten führt über eine Brücke, unter der ein Bach hindurchfließt. Ein geschlossenes Wehr an der Brücke staut den Bach zu einem kleinen Stausee zurück. Dort wacht der Riese: Die Quelle versorgt eigentlich das Tal – ihre Freigabe könnte dort eine Dürre lindern, zerstört jedoch die Heimat des Riesen.',
   4: 'Der 4. Holzfäller-Pfad im Südsüdosten führt auf eine gerodete Waldlichtung zu einem Holzfällerlager. Dort triffst du das Holzweibchen zwischen Baumstümpfen und Holzstapeln: Das geschlagene Brennholz rettet die Dorfbewohner vor der bitteren Kälte – doch zu starke Fällungen gefährden den Wald und seine gesamte Umgebung.',
-  5: 'Der Nebeltal-Weg im Südsüdwest senkt sich in eine kühle, stille Mulde. Lass dich vom Dunst nicht täuschen – bleibe dicht bei den Steinmalen.',
+  5: 'Der 5. Höllenschlund-Pfad im Südsüdwesten führt an den Rand eines tiefen, glühenden Abgrunds. Inmitten des Feuermeeres und der emporsteigenden Flammen erwartet dich der Teufel auf seinem Obsidianfelsen.',
   6: 'Die Abendrot-Schneise im Südwesten öffnet den Blick zwischen hohen Kiefern. Besonders wenn das Licht tief steht, erkennst du dort ferne Landmarken.',
   7: 'Der Sternenwald-Pfad im Nordwesten liegt unter einem dichten Blätterdach. Dort leuchten selbst am Tag die Farne – ein Pfad für Entdecker und Rätselsucher.',
 };
@@ -814,6 +818,72 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
         },
       ],
     },
+
+    // === DER TEUFEL (inmitten des Höllenschlundes am Ende von Weg 5) ===
+    devil_root: {
+      id: 'devil_root',
+      speaker: DEVIL_NPC_NAME,
+      speakerRole: DEVIL_NPC_ROLE,
+      text: 'Sieh an... Eine sterbliche Seele wagt sich bis an den Rand meines Höllenschlundes. Das Feuer brennt hier seit Anbeginn der Zeiten – und ich beobachte jeden Schritt auf den sieben Wegen.',
+      options: [
+        {
+          id: 'devil-ask-chasm',
+          playerText: 'Was ist das für ein Ort und warum brennt hier alles?',
+          nextNodeId: 'devil_about_chasm',
+        },
+        {
+          id: 'devil-ask-identity',
+          playerText: 'Bist du wahrhaftig der Teufel?',
+          nextNodeId: 'devil_about_identity',
+        },
+        {
+          id: 'devil-bye',
+          playerText: 'Ich sehe mich erst einmal weiter um. (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    devil_about_chasm: {
+      id: 'devil_about_chasm',
+      speaker: DEVIL_NPC_NAME,
+      speakerRole: DEVIL_NPC_ROLE,
+      text: 'Dies ist der Schlund der Glut und der ewigen Prüfungen. Viele suchen Macht, viele fürchten das Feuer. Noch ist deine Stunde nicht gekommen, Wanderer – doch merke dir diesen Ort gut.',
+      options: [
+        {
+          id: 'devil-to-identity',
+          playerText: 'Wer bist du genau?',
+          nextNodeId: 'devil_about_identity',
+        },
+        {
+          id: 'devil-close-chasm',
+          playerText: 'Ich trete vorsichtig vom Kraterrand zurück. (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    devil_about_identity: {
+      id: 'devil_about_identity',
+      speaker: DEVIL_NPC_NAME,
+      speakerRole: DEVIL_NPC_ROLE,
+      text: 'Man nennt mich den Versucher, den Fürsten der Glut, den Teufel. Noch trage ich dir keinen Handel an... doch wenn deine Reise voranschreitet, werden sich unsere Pfade erneut kreuzen.',
+      options: [
+        {
+          id: 'devil-to-chasm',
+          playerText: 'Erzähl mir mehr über diesen flammenden Abgrund.',
+          nextNodeId: 'devil_about_chasm',
+        },
+        {
+          id: 'devil-close-identity',
+          playerText: 'Ich werde wachsam bleiben. (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
   };
 
   for (const path of SEVEN_PATHS) {
@@ -854,7 +924,16 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
                     action: { type: 'walk_to_wood_woman' },
                   },
                 ]
-              : [];
+              : path.id === 5
+                ? [
+                    {
+                      id: 'walk-to-devil-5',
+                      playerText: 'Den gesamten 5. Weg bis zum Höllenschlund und dem Teufel wandern',
+                      nextNodeId: null,
+                      action: { type: 'walk_to_devil' },
+                    },
+                  ]
+                : [];
 
     nodes[`path_${path.id}`] = {
       id: `path_${path.id}`,

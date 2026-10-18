@@ -1,4 +1,5 @@
 import {
+  DEVIL_NPC_NAME,
   GIANT_NPC_NAME,
   GREY_MAN_NPC_NAME,
   GUIDE_NPC_NAME,
@@ -7,9 +8,11 @@ import {
 } from '../data/npcDialogues';
 import {
   CAVE_ENTRANCE_POS,
+  DEVIL_NPC_POS,
   ForestPathData,
   GIANT_NPC_POS,
   GREY_MAN_NPC_POS,
+  HELL_CHASM_POS,
   LUMBER_CAMP_POS,
   NIXIE_NPC_POS,
   PATH_1_END_CLEARING,
@@ -20,6 +23,8 @@ import {
   PATH_3_WAYPOINTS,
   PATH_4_END_CLEARING,
   PATH_4_WAYPOINTS,
+  PATH_5_END_CLEARING,
+  PATH_5_WAYPOINTS,
   PathPoint2D,
   POND_CENTER_POS,
   SEVEN_PATHS,
@@ -38,10 +43,12 @@ export type PointOfInterest =
   | { type: 'nixie'; name: string; label: string }
   | { type: 'giant'; name: string; label: string }
   | { type: 'wood_woman'; name: string; label: string }
+  | { type: 'devil'; name: string; label: string }
   | { type: 'cave'; label: string }
   | { type: 'pond'; label: string }
   | { type: 'weir'; label: string }
   | { type: 'lumber_camp'; label: string }
+  | { type: 'hell_chasm'; label: string }
   | { type: 'chest'; isOpen: boolean; label: string }
   | { type: 'signpost'; label: string }
   | { type: 'hut'; label: string }
@@ -53,7 +60,8 @@ export type PointOfInterest =
  * - Weg 1 (Silberstollen-Pfad mit Bergmassiv & Graumännchen),
  * - Weg 2 (Nixenteich-Pfad mit Waldteich, Stein & Nixe),
  * - Weg 3 (Quellenweg mit Brücke, Bach, geschlossenem Wehr, kleinem Stausee & Riese),
- * - Weg 4 (Holzfäller-Pfad mit Holzfällerlager auf der Waldlichtung & Holzweibchen).
+ * - Weg 4 (Holzfäller-Pfad mit Holzfällerlager auf der Waldlichtung & Holzweibchen),
+ * - Weg 5 (Höllenschlund-Pfad mit feurigem Höllenschlund & Teufel).
  * Ohne Three.js-Abhängigkeit direkt mit Vitest testbar.
  */
 export class CrossroadsState {
@@ -102,6 +110,13 @@ export class CrossroadsState {
   private readonly woodWomanPos: Vector2D = { ...WOOD_WOMAN_NPC_POS };
   private readonly woodWomanCollisionRadius = 0.55;
 
+  // Am Ende des 5. Weges: Feuriger Höllenschlund und der Teufel
+  private readonly hellChasmPos: Vector2D = { x: HELL_CHASM_POS.x, z: HELL_CHASM_POS.z };
+  private readonly hellChasmCollisionRadius = 6.8;
+  private readonly devilPos: Vector2D = { ...DEVIL_NPC_POS };
+  private readonly devilCollisionRadius = 0.85;
+  private readonly devilTalkDistance = 6.2;
+
   private readonly clearingRadius = 6.5;
   private readonly pathHalfWidth = 0.95;
   private readonly maxRadius = 26;
@@ -145,6 +160,10 @@ export class CrossroadsState {
 
   public getWoodWomanPosition(): Readonly<Vector2D> {
     return { ...this.woodWomanPos };
+  }
+
+  public getDevilPosition(): Readonly<Vector2D> {
+    return { ...this.devilPos };
   }
 
   public getChestPosition(): Readonly<Vector2D> {
@@ -202,6 +221,14 @@ export class CrossroadsState {
       this.playerPos.z - this.woodWomanPos.z
     );
     return dist <= this.woodWomanCollisionRadius + 1.45;
+  }
+
+  public isNearDevil(): boolean {
+    const dist = Math.hypot(
+      this.playerPos.x - this.devilPos.x,
+      this.playerPos.z - this.devilPos.z
+    );
+    return dist <= this.devilTalkDistance;
   }
 
   public isNearChest(): boolean {
@@ -376,6 +403,26 @@ export class CrossroadsState {
   }
 
   /**
+   * Prüft, ob ein Punkt auf dem geschwungenen 5. Weg oder dem Basalt-Vorplatz am Höllenschlund liegt.
+   */
+  public isPointOnPath5(x: number, z: number): boolean {
+    const eps = 1e-4;
+    for (let i = 0; i < PATH_5_WAYPOINTS.length - 1; i++) {
+      const { cx, cz, radius } = this.evaluateCurvedPathSegment(
+        x,
+        z,
+        PATH_5_WAYPOINTS,
+        PATH_5_END_CLEARING.radius,
+        i
+      );
+      if (Math.hypot(x - cx, z - cz) <= radius + eps) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Prüft, ob ein Punkt auf der zentralen Kreuzung oder auf einem der 7 befestigten Waldwege liegt.
    * Grünflächen und Wald außerhalb dieser Geometrie sind nicht begehbar.
    */
@@ -386,12 +433,13 @@ export class CrossroadsState {
       return true;
     }
 
-    // Wege 1 bis 4 besitzen eigene ausgebaute Kurvenverläufe bis zu ihren Zielorten
+    // Wege 1 bis 5 besitzen eigene ausgebaute Kurvenverläufe bis zu ihren Zielorten
     if (
       this.isPointOnPath1(x, z) ||
       this.isPointOnPath2(x, z) ||
       this.isPointOnPath3(x, z) ||
-      this.isPointOnPath4(x, z)
+      this.isPointOnPath4(x, z) ||
+      this.isPointOnPath5(x, z)
     ) {
       return true;
     }
@@ -400,9 +448,9 @@ export class CrossroadsState {
       return false;
     }
 
-    // Wege 5 bis 7 verlaufen sternförmig
+    // Wege 6 bis 7 verlaufen sternförmig
     for (const path of SEVEN_PATHS) {
-      if (path.id <= 4) {
+      if (path.id <= 5) {
         continue;
       }
       const dirX = Math.sin(path.angleRad);
@@ -507,6 +555,22 @@ export class CrossroadsState {
     if (
       Math.hypot(x - this.woodWomanPos.x, z - this.woodWomanPos.z) <
       this.woodWomanCollisionRadius - eps
+    ) {
+      return true;
+    }
+
+    // Der Teufel inmitten des Höllenschlundes auf Weg 5
+    if (
+      Math.hypot(x - this.devilPos.x, z - this.devilPos.z) <
+      this.devilCollisionRadius - eps
+    ) {
+      return true;
+    }
+
+    // Der brodelnde Lavaboden im Höllenschlund ist nicht begehbar (Spieler bleibt auf dem Felsplateau)
+    if (
+      Math.hypot(x - this.hellChasmPos.x, z - this.hellChasmPos.z) <
+      this.hellChasmCollisionRadius - eps
     ) {
       return true;
     }
@@ -647,6 +711,21 @@ export class CrossroadsState {
         if (dSq4 < bestDistSq) {
           bestDistSq = dSq4;
           bestPoint = p4;
+        }
+        continue;
+      }
+
+      if (path.id === 5) {
+        const p5 = this.projectOntoCurvedPath(
+          x,
+          z,
+          PATH_5_WAYPOINTS,
+          PATH_5_END_CLEARING.radius
+        );
+        const dSq5 = (x - p5.x) ** 2 + (z - p5.z) ** 2;
+        if (dSq5 < bestDistSq) {
+          bestDistSq = dSq5;
+          bestPoint = p5;
         }
         continue;
       }
@@ -805,6 +884,26 @@ export class CrossroadsState {
       resolvedX = afterWoodWoman.x;
       resolvedZ = afterWoodWoman.z;
 
+      // Teufel-Kollision am Ende von Weg 5
+      const afterDevil = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.devilPos,
+        this.devilCollisionRadius
+      );
+      resolvedX = afterDevil.x;
+      resolvedZ = afterDevil.z;
+
+      // Höllenschlund-/Lavaschlund-Kollision (Spieler bleibt auf dem festen Felsrand)
+      const afterHellChasm = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.hellChasmPos,
+        this.hellChasmCollisionRadius
+      );
+      resolvedX = afterHellChasm.x;
+      resolvedZ = afterHellChasm.z;
+
       // Schutzhütten-Kollision (AABB um hutPos)
       const relX = resolvedX - this.hutPos.x;
       const relZ = resolvedZ - this.hutPos.z;
@@ -835,6 +934,9 @@ export class CrossroadsState {
     }
     if (this.isPointOnPath4(x, z)) {
       return SEVEN_PATHS[3];
+    }
+    if (this.isPointOnPath5(x, z)) {
+      return SEVEN_PATHS[4];
     }
 
     let playerAngle = Math.atan2(x, -z);
@@ -975,6 +1077,14 @@ export class CrossroadsState {
   }
 
   /**
+   * Lässt die Spielfigur entlang des 5. Weges bis auf die Felsplattform vor den Teufel am Höllenschlund laufen.
+   */
+  public setTargetToDevil(): Readonly<Vector2D> {
+    this.selectPath(5);
+    return this.setTargetPosition(this.devilPos.x + 0.9, this.devilPos.z - 5.8);
+  }
+
+  /**
    * Berechnet den kontinuierlichen Fortschritt entlang der Segmente eines Kurvenweges.
    */
   private getCurvedPathProgress(
@@ -1098,6 +1208,12 @@ export class CrossroadsState {
           PATH_4_WAYPOINTS,
           (px, pz) => this.isPointOnPath4(px, pz)
         );
+      } else if (playerPath.id === 5) {
+        effectiveTarget = this.getNextCurvedWaypoint(
+          PATH_5_WAYPOINTS[0],
+          PATH_5_WAYPOINTS,
+          (px, pz) => this.isPointOnPath5(px, pz)
+        );
       } else {
         effectiveTarget = {
           x: Math.sin(playerPath.angleRad) * (this.clearingRadius - 0.6),
@@ -1127,6 +1243,12 @@ export class CrossroadsState {
         this.targetPos,
         PATH_4_WAYPOINTS,
         (px, pz) => this.isPointOnPath4(px, pz)
+      );
+    } else if (targetPath && targetPath.id === 5) {
+      effectiveTarget = this.getNextCurvedWaypoint(
+        this.targetPos,
+        PATH_5_WAYPOINTS,
+        (px, pz) => this.isPointOnPath5(px, pz)
       );
     }
 
@@ -1201,6 +1323,27 @@ export class CrossroadsState {
    * Ermittelt, welchem Objekt, NPC oder Weg die spielende Person am nächsten ist.
    */
   public getActivePointOfInterest(): PointOfInterest {
+    if (this.isNearDevil()) {
+      return {
+        type: 'devil',
+        name: DEVIL_NPC_NAME,
+        label:
+          'Inmitten des Höllenschlundes – sprich mit dem Teufel auf seinem Obsidianfelsen (Klick oder [F]).',
+      };
+    }
+
+    const distToChasm = Math.hypot(
+      this.playerPos.x - this.hellChasmPos.x,
+      this.playerPos.z - this.hellChasmPos.z
+    );
+    if (distToChasm < this.hellChasmCollisionRadius + 2.5) {
+      return {
+        type: 'hell_chasm',
+        label:
+          'Feuriger Höllenschlund – ein loderndes Meer aus Lava und Flammen, in dessen Mitte der Teufel thront.',
+      };
+    }
+
     if (this.isNearWoodWoman()) {
       return {
         type: 'wood_woman',

@@ -178,6 +178,46 @@ export const WOOD_WOMAN_NPC_POS: PathPoint2D = {
 };
 
 /**
+ * Wegpunkte für den 5. Weg (Höllenschlund-Pfad):
+ * Startet an der Kreuzung nach Südsüdwest, windet sich durch schroffe Felsspalten
+ * und mündet auf einem Basalt-Vorplatz am Rande eines gewaltigen, feurigen Höllenschlundes.
+ */
+export const PATH_5_WAYPOINTS: readonly PathPoint2D[] = [
+  { x: -2.4, z: 5.0 },
+  { x: -6.2, z: 12.2 },
+  { x: -10.8, z: 20.0 },
+  { x: -15.5, z: 28.2 },
+  { x: -19.2, z: 36.5 },
+  { x: -21.0, z: 44.0 },
+];
+
+/**
+ * Begehbare Felsplattform am Ende von Weg 5 direkt vor dem feurigen Höllenschlund.
+ */
+export const PATH_5_END_CLEARING = {
+  x: -21.0,
+  z: 44.0,
+  radius: 4.8,
+} as const;
+
+/**
+ * Zentrum und Ausdehnung des feurigen Höllenschlundes am Ende von Weg 5.
+ */
+export const HELL_CHASM_POS = {
+  x: -22.5,
+  z: 52.0,
+  radius: 8.5,
+} as const;
+
+/**
+ * Position des Teufels auf seinem Obsidianfelsen inmitten des Höllenschlundes.
+ */
+export const DEVIL_NPC_POS: PathPoint2D = {
+  x: -22.2,
+  z: 50.8,
+};
+
+/**
  * Die sieben Waldwege, die sternförmig von der Waldkreuzung abgehen.
  */
 export const SEVEN_PATHS: readonly ForestPathData[] = [
@@ -215,11 +255,11 @@ export const SEVEN_PATHS: readonly ForestPathData[] = [
   },
   {
     id: 5,
-    name: '5. Nebeltal-Weg',
+    name: '5. Höllenschlund-Pfad',
     directionLabel: 'Südsüdwest',
     angleRad: (4 * FULL_CIRCLE) / 7,
-    subtitle: 'Führt hinab in eine geheimnisvolle, kühle Senke.',
-    colorHex: 0x67798a,
+    subtitle: 'Führt an den Rand eines flammenden Höllenschlunds, in dessen Mitte der Teufel wartet.',
+    colorHex: 0xd43818,
   },
   {
     id: 6,

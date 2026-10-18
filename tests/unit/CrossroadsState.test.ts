@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEVIL_NPC_POS,
   GIANT_NPC_POS,
   GREY_MAN_NPC_POS,
   NIXIE_NPC_POS,
@@ -7,6 +8,7 @@ import {
   PATH_2_WAYPOINTS,
   PATH_3_WAYPOINTS,
   PATH_4_WAYPOINTS,
+  PATH_5_WAYPOINTS,
   SEVEN_PATHS,
   WOOD_WOMAN_NPC_POS,
 } from '../../src/game/data/paths';
@@ -20,7 +22,7 @@ describe('CrossroadsState & 7 Wege', () => {
     expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
-  it('platziert Schutzhütte (0, 0), Schatztruhe (0.85, 2.0), Wegweiser (2.3, 2.4), Waldhüter (-1.85, 2.05), Graumännchen, Nixe, Riese und Holzweibchen', () => {
+  it('platziert Schutzhütte (0, 0), Schatztruhe (0.85, 2.0), Wegweiser (2.3, 2.4), Waldhüter (-1.85, 2.05), Graumännchen, Nixe, Riese, Holzweibchen und Teufel', () => {
     const state = new CrossroadsState();
     expect(state.getHutPosition()).toEqual({ x: 0, z: 0 });
     expect(state.getChestPosition()).toEqual({ x: 0.85, z: 2.0 });
@@ -30,6 +32,7 @@ describe('CrossroadsState & 7 Wege', () => {
     expect(state.getNixiePosition()).toEqual(NIXIE_NPC_POS);
     expect(state.getGiantPosition()).toEqual(GIANT_NPC_POS);
     expect(state.getWoodWomanPosition()).toEqual(WOOD_WOMAN_NPC_POS);
+    expect(state.getDevilPosition()).toEqual(DEVIL_NPC_POS);
   });
 
   it('erweitert den 1. Weg mit einer Kurve bis zum Vorplatz vor dem Höhleneingang', () => {
@@ -143,6 +146,36 @@ describe('CrossroadsState & 7 Wege', () => {
     expect(state.isOnClearing()).toBe(true);
   });
 
+  it('führt den 5. Weg durch schroffe Felsspalten bis zum Höllenschlund und dem Teufel', () => {
+    const state = new CrossroadsState();
+    expect(PATH_5_WAYPOINTS.length).toBeGreaterThanOrEqual(5);
+
+    for (const wp of PATH_5_WAYPOINTS) {
+      expect(state.isPointOnPath5(wp.x, wp.z)).toBe(true);
+      expect(state.isPointOnClearingOrPath(wp.x, wp.z)).toBe(true);
+    }
+
+    // Wandert entlang von Weg 5 bis auf das Felsplateau vor den Teufel am Höllenschlund
+    state.setTargetToDevil();
+    for (let i = 0; i < 120; i++) {
+      state.updateAutoWalk(0.1, 8);
+      const pos = state.getPlayerPosition();
+      expect(state.isWalkable(pos.x, pos.z)).toBe(true);
+    }
+
+    expect(state.isNearDevil()).toBe(true);
+    expect(state.getActivePointOfInterest().type).toBe('devil');
+
+    // Rückweg vom Höllenschlund zurück zur Kreuzung
+    state.setTargetToClearing();
+    for (let i = 0; i < 120; i++) {
+      state.updateAutoWalk(0.1, 8);
+      const pos = state.getPlayerPosition();
+      expect(state.isWalkable(pos.x, pos.z)).toBe(true);
+    }
+    expect(state.isOnClearing()).toBe(true);
+  });
+
   it('kann zur Schatztruhe vor der Hütte laufen und deren Deckel öffnen und schließen', () => {
     const state = new CrossroadsState();
     expect(state.isChestOpen()).toBe(false);
@@ -186,14 +219,14 @@ describe('CrossroadsState & 7 Wege', () => {
   it('erlaubt Bewegung nur auf der Kreuzung und den 7 Wegen, nicht auf Grünflächen/Wald', () => {
     const state = new CrossroadsState();
 
-    // Ein Punkt mitten im Wald zwischen Weg 5 und Weg 6 ist nicht begehbar
-    const angleBetween5And6 = (SEVEN_PATHS[4].angleRad + SEVEN_PATHS[5].angleRad) / 2;
-    const forestX = Math.sin(angleBetween5And6) * 14;
-    const forestZ = -Math.cos(angleBetween5And6) * 14;
+    // Ein Punkt mitten im Wald zwischen Weg 6 und Weg 7 ist nicht begehbar
+    const angleBetween6And7 = (SEVEN_PATHS[5].angleRad + SEVEN_PATHS[6].angleRad) / 2;
+    const forestX = Math.sin(angleBetween6And7) * 14;
+    const forestZ = -Math.cos(angleBetween6And7) * 14;
     expect(state.isPointOnClearingOrPath(forestX, forestZ)).toBe(false);
 
     for (let i = 0; i < 40; i++) {
-      state.movePlayer(Math.sin(angleBetween5And6) * 0.5, -Math.cos(angleBetween5And6) * 0.5);
+      state.movePlayer(Math.sin(angleBetween6And7) * 0.5, -Math.cos(angleBetween6And7) * 0.5);
       const pos = state.getPlayerPosition();
       expect(state.isPointOnClearingOrPath(pos.x, pos.z)).toBe(true);
     }
@@ -335,5 +368,23 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     const stepDilemma = dialogue.selectOption(0);
     expect(stepDilemma.node?.id).toBe('wood_woman_dilemma');
     expect(stepDilemma.node?.options.length).toBe(3);
+  });
+
+  it('führt das Gespräch mit dem Teufel inmitten des Höllenschlundes', () => {
+    const dialogue = new DialogueSystem();
+    const devilRoot = dialogue.startDialogue('devil_root');
+    expect(devilRoot?.speaker).toBe('Der Teufel');
+    expect(devilRoot?.text).toContain('Höllenschlund');
+    expect(devilRoot?.text).toContain('Feuer');
+
+    // Frage nach dem Höllenschlund (Option 0)
+    const stepChasm = dialogue.selectOption(0);
+    expect(stepChasm.node?.id).toBe('devil_about_chasm');
+    expect(stepChasm.node?.text).toContain('Glut');
+
+    // Frage nach der Identität des Teufels (Option 0)
+    const stepIdentity = dialogue.selectOption(0);
+    expect(stepIdentity.node?.id).toBe('devil_about_identity');
+    expect(stepIdentity.node?.speaker).toBe('Der Teufel');
   });
 });

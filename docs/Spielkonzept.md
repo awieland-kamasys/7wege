@@ -46,7 +46,12 @@ Eine spielende Person kommt an eine Waldkreuzung mit sieben Wegen und entscheide
    - Geschwungener Waldpfad durch den Nebel bis auf eine **gerodete Waldlichtung mit einem Holzfällerlager** (Brennholz-Unterstand, Stammpolter, Sägebock, Hackklotz mit Axt, Wärmefeuerstelle und ein Kranz aus Baumstümpfen).
    - Im Lager neben einem bemoosten Urwaldstumpf wartet **das Holzweibchen** als NPC.
    - **Inhalt & Konflikt:** Brennholz rettet Dorfbewohner vor Kälte; zu starke Fällungen gefährden den Wald und seine Umgebung.
-5. _Weitere drei Wege folgen._
+5. **5. Höllenschlund-Pfad (Süd-Südwest → Bogen durch Felsspalten nach Süden):**
+   - Geschwungener Pfad durch zerklüftete Felsen und verbrannte Nadelbäume bis an den Rand eines tiefen Basaltkraters.
+   - Am Ende des Weges öffnet sich ein gewaltiger **Höllenschlund voller Feuer, züngelnder Flammen und brodelnder Lava**.
+   - Inmitten des Höllenschlundes thront auf einem erhabenen Obsidianfelsen **der Teufel** als NPC mit Hörnern und Dreizack.
+   - **Inhalt & Konflikt:** _Noch keine Story hinterlegt (Platzhalter-Einstiegsdialog vorhanden)._
+6. _Weitere zwei Wege folgen._
 
 ## Steuerung und Geräte
 
