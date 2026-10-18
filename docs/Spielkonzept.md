@@ -33,7 +33,16 @@ Eine spielende Person kommt an eine Waldkreuzung mit sieben Wegen und entscheide
    - Endet auf einem Felsvorplatz vor einem **Bergmassiv mit Höhleneingang (Stollenmundloch)**.
    - Vor dem Höhleneingang wartet **das Graumännchen** als NPC.
    - **Inhalt & Konflikt:** Eine neue Silberader könnte Mine und Arbeiter retten. Ihr Auffinden verlangt Licht in einem Stollen, für den ein altes Verbot beziehungsweise Versprechen gilt.
-2. _Weitere sechs Wege folgen._
+2. **2. Nixenteich-Pfad (Nordosten → Bogen nach Osten):**
+   - Geschwungener Waldpfad durch den Nebel bis zu einem stillen **Waldteich mit Ufersteinen, Seerosen und Schilf**.
+   - Auf einem **Stein im Teich** sitzt **die Nixe vom Spiegelteich** als NPC; unter der Wasseroberfläche funkelt ein Goldhort.
+   - **Inhalt & Konflikt:** Ein verlockender Schatz im Teich ist mit einem Fluch beziehungsweise drohendem Unglück verbunden.
+3. **3. Quellenweg (Osten → Bogen nach Südosten):**
+   - Waldpfad über eine **Holz-/Steinbrücke**, unter der ein **Bach** hindurchfließt.
+   - Die Brücke besitzt ein **geschlossenes Wehr**, welches den Bach zu einem **kleinen Stausee** zurückstaut.
+   - Am Ufer hinter der Brücke bewacht **der Riese am Wehr** den Stausee und das Stellrad.
+   - **Inhalt & Konflikt:** Eine Quelle versorgt ein Tal. Ihre Freigabe könnte eine Dürre lindern, zerstört jedoch die Heimat des Riesen.
+4. _Weitere vier Wege folgen._
 
 ## Steuerung und Geräte
 

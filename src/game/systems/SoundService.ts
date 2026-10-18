@@ -266,8 +266,7 @@ export class SoundService {
   }
 
   /**
-   * Spielt einen kurzen, zauberhaften Schatz-Jingle (angelehnt an klassische Abenteuer-Spiele)
-   * mit aufsteigender lydischer Tonfolge und strahlendem Schlussakkord.
+   * Spielt einen gut hörbaren, ausgewogenen Schatz-Jingle beim Öffnen der Truhe.
    */
   public playChestOpenFanfare(): void {
     const ctx = this.getContext();
@@ -277,37 +276,36 @@ export class SoundService {
 
     const now = ctx.currentTime;
 
-    // 1. Kurzer, sanfter Aufstieg (mystische Ganzton-/Lydische Stufen)
+    // 1. Melodischer Aufstieg (G4 bis F#5 – etwas kräftiger, aber angenehm rund)
     const risingNotes = [
-      { freq: 523.25, start: 0.0, duration: 0.11 }, // C5
-      { freq: 587.33, start: 0.09, duration: 0.11 }, // D5
-      { freq: 659.25, start: 0.18, duration: 0.11 }, // E5
-      { freq: 739.99, start: 0.27, duration: 0.12 }, // F#5
-      { freq: 783.99, start: 0.36, duration: 0.12 }, // G5
-      { freq: 880.0, start: 0.45, duration: 0.14 }, // A5
+      { freq: 392.0, start: 0.0, duration: 0.115 }, // G4
+      { freq: 440.0, start: 0.085, duration: 0.115 }, // A4
+      { freq: 493.88, start: 0.17, duration: 0.115 }, // B4
+      { freq: 587.33, start: 0.255, duration: 0.125 }, // D5
+      { freq: 659.25, start: 0.34, duration: 0.135 }, // E5
+      { freq: 739.99, start: 0.43, duration: 0.145 }, // F#5
     ];
 
     for (const note of risingNotes) {
-      this.scheduleShimmerNote(ctx, note.freq, now + note.start, note.duration, 0.14);
+      this.scheduleShimmerNote(ctx, note.freq, now + note.start, note.duration, 0.058);
     }
 
-    // 2. Strahlender, magischer Zielakkord (B-Dur / G-Dur9 Schimmer: G5 - B5 - D6 - G6)
-    const chordStart = now + 0.58;
+    // 2. Warmer, gut wahrnehmbarer Zielakkord (G-Dur: G4 - B4 - D5 - G5)
+    const chordStart = now + 0.55;
     const chordNotes = [
-      { freq: 587.33, gain: 0.1 }, // D5
-      { freq: 783.99, gain: 0.12 }, // G5
-      { freq: 987.77, gain: 0.15 }, // B5
-      { freq: 1174.66, gain: 0.16 }, // D6 (Hauptmelodieton)
-      { freq: 1567.98, gain: 0.09 }, // G6 (Glitzern)
+      { freq: 392.0, gain: 0.048 }, // G4
+      { freq: 493.88, gain: 0.044 }, // B4
+      { freq: 587.33, gain: 0.042 }, // D5
+      { freq: 783.99, gain: 0.036 }, // G5
     ];
 
     for (const chordNote of chordNotes) {
-      this.scheduleShimmerNote(ctx, chordNote.freq, chordStart, 0.75, chordNote.gain);
+      this.scheduleShimmerNote(ctx, chordNote.freq, chordStart, 0.78, chordNote.gain);
     }
   }
 
   /**
-   * Spielt einen dezenten, dunklen Holzton beim Schließen des Truhendeckels.
+   * Spielt ein kräftiges, satt hörbares Zufallen des schweren Holzdeckels samt Schloss-Einrasten.
    */
   public playChestCloseSound(): void {
     const ctx = this.getContext();
@@ -316,22 +314,80 @@ export class SoundService {
     }
 
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
 
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(190, now);
-    osc.frequency.exponentialRampToValueAtTime(75, now + 0.14);
+    // 1. Satter Holz-Resonanzkörper beim Zufallen des Deckels
+    const bodyOsc = ctx.createOscillator();
+    const bodyGain = ctx.createGain();
+    bodyOsc.type = 'triangle';
+    bodyOsc.frequency.setValueAtTime(255, now);
+    bodyOsc.frequency.exponentialRampToValueAtTime(92, now + 0.19);
 
-    gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.16, now + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    bodyGain.gain.setValueAtTime(0.001, now);
+    bodyGain.gain.linearRampToValueAtTime(0.36, now + 0.01);
+    bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.21);
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    bodyOsc.connect(bodyGain);
+    bodyGain.connect(ctx.destination);
+    bodyOsc.start(now);
+    bodyOsc.stop(now + 0.22);
 
-    osc.start(now);
-    osc.stop(now + 0.16);
+    // 2. Deutlicher Hartholz-Anschlag (Mittenfrequenz, auch auf Handy/Laptop klar hörbar)
+    const knockOsc = ctx.createOscillator();
+    const knockGain = ctx.createGain();
+    knockOsc.type = 'square';
+    const knockFilter = ctx.createBiquadFilter();
+    knockFilter.type = 'lowpass';
+    knockFilter.frequency.setValueAtTime(1100, now);
+
+    knockOsc.frequency.setValueAtTime(560, now);
+    knockOsc.frequency.exponentialRampToValueAtTime(185, now + 0.09);
+
+    knockGain.gain.setValueAtTime(0.001, now);
+    knockGain.gain.linearRampToValueAtTime(0.24, now + 0.006);
+    knockGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+    knockOsc.connect(knockFilter);
+    knockFilter.connect(knockGain);
+    knockGain.connect(ctx.destination);
+    knockOsc.start(now);
+    knockOsc.stop(now + 0.11);
+
+    // 3. Knackiger Impuls-Schlag (Holzkante auf Truhenrand)
+    const noiseSource = ctx.createBufferSource();
+    noiseSource.buffer = this.getNoiseBuffer(ctx);
+
+    const bandpass = ctx.createBiquadFilter();
+    bandpass.type = 'bandpass';
+    bandpass.frequency.setValueAtTime(760, now);
+    bandpass.Q.setValueAtTime(1.6, now);
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.001, now);
+    noiseGain.gain.linearRampToValueAtTime(0.3, now + 0.005);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+
+    noiseSource.connect(bandpass);
+    bandpass.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noiseSource.start(now);
+    noiseSource.stop(now + 0.095);
+
+    // 4. Metallisches Einrasten des Eisenbügels / Truhenschlosses kurz nach dem Aufprall
+    const latchTime = now + 0.022;
+    const latchOsc = ctx.createOscillator();
+    const latchGain = ctx.createGain();
+    latchOsc.type = 'sine';
+    latchOsc.frequency.setValueAtTime(1340, latchTime);
+    latchOsc.frequency.exponentialRampToValueAtTime(860, latchTime + 0.055);
+
+    latchGain.gain.setValueAtTime(0.001, latchTime);
+    latchGain.gain.linearRampToValueAtTime(0.16, latchTime + 0.005);
+    latchGain.gain.exponentialRampToValueAtTime(0.001, latchTime + 0.06);
+
+    latchOsc.connect(latchGain);
+    latchGain.connect(ctx.destination);
+    latchOsc.start(latchTime);
+    latchOsc.stop(latchTime + 0.065);
   }
 
   private scheduleShimmerNote(
@@ -341,34 +397,36 @@ export class SoundService {
     duration: number,
     peakGain: number
   ): void {
-    // Hauptton (warmer Okarina-/Harfen-Grundklang)
+    // 1. Tragender Grundton
     const mainOsc = ctx.createOscillator();
-    mainOsc.type = 'triangle';
+    mainOsc.type = 'sine';
     mainOsc.frequency.setValueAtTime(freq, startTime);
-
-    // Leichter glockenartiger Oberton (eine Oktave höher)
-    const shimmerOsc = ctx.createOscillator();
-    shimmerOsc.type = 'sine';
-    shimmerOsc.frequency.setValueAtTime(freq * 2, startTime);
 
     const mainGain = ctx.createGain();
     mainGain.gain.setValueAtTime(0.0001, startTime);
-    mainGain.gain.linearRampToValueAtTime(peakGain, startTime + 0.018);
-    mainGain.gain.exponentialRampToValueAtTime(0.0008, startTime + duration);
-
-    const shimmerGain = ctx.createGain();
-    shimmerGain.gain.setValueAtTime(0.0001, startTime);
-    shimmerGain.gain.linearRampToValueAtTime(peakGain * 0.35, startTime + 0.015);
-    shimmerGain.gain.exponentialRampToValueAtTime(0.0005, startTime + duration * 0.85);
+    mainGain.gain.linearRampToValueAtTime(peakGain, startTime + 0.016);
+    mainGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
     mainOsc.connect(mainGain);
-    shimmerOsc.connect(shimmerGain);
-    mainOsc.connect(ctx.destination);
-    shimmerGain.connect(ctx.destination);
+    mainGain.connect(ctx.destination);
 
     mainOsc.start(startTime);
-    shimmerOsc.start(startTime);
     mainOsc.stop(startTime + duration + 0.02);
-    shimmerOsc.stop(startTime + duration + 0.02);
+
+    // 2. Dezenter Oberton für bessere Hörbarkeit auf kleineren Lautsprechern
+    const overtoneOsc = ctx.createOscillator();
+    overtoneOsc.type = 'triangle';
+    overtoneOsc.frequency.setValueAtTime(freq * 2, startTime);
+
+    const overtoneGain = ctx.createGain();
+    overtoneGain.gain.setValueAtTime(0.0001, startTime);
+    overtoneGain.gain.linearRampToValueAtTime(peakGain * 0.22, startTime + 0.012);
+    overtoneGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.75);
+
+    overtoneOsc.connect(overtoneGain);
+    overtoneGain.connect(ctx.destination);
+
+    overtoneOsc.start(startTime);
+    overtoneOsc.stop(startTime + duration);
   }
 }

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { GREY_MAN_NPC_POS, PATH_1_WAYPOINTS, SEVEN_PATHS } from '../../src/game/data/paths';
+import {
+  GIANT_NPC_POS,
+  GREY_MAN_NPC_POS,
+  NIXIE_NPC_POS,
+  PATH_1_WAYPOINTS,
+  PATH_2_WAYPOINTS,
+  PATH_3_WAYPOINTS,
+  SEVEN_PATHS,
+} from '../../src/game/data/paths';
 import { CrossroadsState } from '../../src/game/systems/CrossroadsState';
 import { DialogueSystem } from '../../src/game/systems/DialogueSystem';
 
@@ -10,13 +18,15 @@ describe('CrossroadsState & 7 Wege', () => {
     expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
-  it('platziert Schutzhütte (0, 0), Schatztruhe (0.85, 2.0), Wegweiser (2.3, 2.4), Waldhüter (-1.85, 2.05) und Graumännchen am Berg', () => {
+  it('platziert Schutzhütte (0, 0), Schatztruhe (0.85, 2.0), Wegweiser (2.3, 2.4), Waldhüter (-1.85, 2.05), Graumännchen, Nixe und Riese', () => {
     const state = new CrossroadsState();
     expect(state.getHutPosition()).toEqual({ x: 0, z: 0 });
     expect(state.getChestPosition()).toEqual({ x: 0.85, z: 2.0 });
     expect(state.getSignpostPosition()).toEqual({ x: 2.3, z: 2.4 });
     expect(state.getNpcPosition()).toEqual({ x: -1.85, z: 2.05 });
     expect(state.getGreyManPosition()).toEqual(GREY_MAN_NPC_POS);
+    expect(state.getNixiePosition()).toEqual(NIXIE_NPC_POS);
+    expect(state.getGiantPosition()).toEqual(GIANT_NPC_POS);
   });
 
   it('erweitert den 1. Weg mit einer Kurve bis zum Vorplatz vor dem Höhleneingang', () => {
@@ -38,6 +48,66 @@ describe('CrossroadsState & 7 Wege', () => {
 
     expect(state.isNearGreyMan()).toBe(true);
     expect(state.getActivePointOfInterest().type).toBe('grey_man');
+  });
+
+  it('führt den 2. Weg im Bogen zum Waldteich und erlaubt Gespräch mit der Nixe vom Ufer aus', () => {
+    const state = new CrossroadsState();
+    expect(PATH_2_WAYPOINTS.length).toBeGreaterThanOrEqual(5);
+
+    for (const wp of PATH_2_WAYPOINTS) {
+      expect(state.isPointOnPath2(wp.x, wp.z)).toBe(true);
+      expect(state.isPointOnClearingOrPath(wp.x, wp.z)).toBe(true);
+    }
+
+    // Wandert entlang von Weg 2 bis ans Teichufer vor den Stein der Nixe
+    state.setTargetToNixie();
+    for (let i = 0; i < 120; i++) {
+      state.updateAutoWalk(0.1, 8);
+      const pos = state.getPlayerPosition();
+      expect(state.isWalkable(pos.x, pos.z)).toBe(true);
+    }
+
+    expect(state.isNearNixie()).toBe(true);
+    expect(state.getActivePointOfInterest().type).toBe('nixie');
+
+    // Auch der Rückweg vom Teichufer zur Kreuzung läuft ruckelfrei ohne Hängenbleiben
+    state.setTargetToClearing();
+    for (let i = 0; i < 120; i++) {
+      state.updateAutoWalk(0.1, 8);
+      const pos = state.getPlayerPosition();
+      expect(state.isWalkable(pos.x, pos.z)).toBe(true);
+    }
+    expect(state.isOnClearing()).toBe(true);
+  });
+
+  it('führt den 3. Weg über die Brücke mit dem geschlossenen Wehr bis zum Riesen am Stausee', () => {
+    const state = new CrossroadsState();
+    expect(PATH_3_WAYPOINTS.length).toBeGreaterThanOrEqual(5);
+
+    for (const wp of PATH_3_WAYPOINTS) {
+      expect(state.isPointOnPath3(wp.x, wp.z)).toBe(true);
+      expect(state.isPointOnClearingOrPath(wp.x, wp.z)).toBe(true);
+    }
+
+    // Wandert entlang von Weg 3 über die Wehrbrücke bis zum Riesen
+    state.setTargetToGiant();
+    for (let i = 0; i < 120; i++) {
+      state.updateAutoWalk(0.1, 8);
+      const pos = state.getPlayerPosition();
+      expect(state.isWalkable(pos.x, pos.z)).toBe(true);
+    }
+
+    expect(state.isNearGiant()).toBe(true);
+    expect(state.getActivePointOfInterest().type).toBe('giant');
+
+    // Rückweg über die Brücke zurück zur Kreuzung
+    state.setTargetToClearing();
+    for (let i = 0; i < 120; i++) {
+      state.updateAutoWalk(0.1, 8);
+      const pos = state.getPlayerPosition();
+      expect(state.isWalkable(pos.x, pos.z)).toBe(true);
+    }
+    expect(state.isOnClearing()).toBe(true);
   });
 
   it('kann zur Schatztruhe vor der Hütte laufen und deren Deckel öffnen und schließen', () => {
@@ -83,14 +153,14 @@ describe('CrossroadsState & 7 Wege', () => {
   it('erlaubt Bewegung nur auf der Kreuzung und den 7 Wegen, nicht auf Grünflächen/Wald', () => {
     const state = new CrossroadsState();
 
-    // Ein Punkt mitten im Wald zwischen Weg 2 und Weg 3 ist nicht begehbar
-    const angleBetween2And3 = (SEVEN_PATHS[1].angleRad + SEVEN_PATHS[2].angleRad) / 2;
-    const forestX = Math.sin(angleBetween2And3) * 14;
-    const forestZ = -Math.cos(angleBetween2And3) * 14;
+    // Ein Punkt mitten im Wald zwischen Weg 4 und Weg 5 ist nicht begehbar
+    const angleBetween4And5 = (SEVEN_PATHS[3].angleRad + SEVEN_PATHS[4].angleRad) / 2;
+    const forestX = Math.sin(angleBetween4And5) * 14;
+    const forestZ = -Math.cos(angleBetween4And5) * 14;
     expect(state.isPointOnClearingOrPath(forestX, forestZ)).toBe(false);
 
     for (let i = 0; i < 40; i++) {
-      state.movePlayer(Math.sin(angleBetween2And3) * 0.5, -Math.cos(angleBetween2And3) * 0.5);
+      state.movePlayer(Math.sin(angleBetween4And5) * 0.5, -Math.cos(angleBetween4And5) * 0.5);
       const pos = state.getPlayerPosition();
       expect(state.isPointOnClearingOrPath(pos.x, pos.z)).toBe(true);
     }
@@ -139,7 +209,7 @@ describe('CrossroadsState & 7 Wege', () => {
   });
 });
 
-describe('DialogueSystem (Kommunikationssystem für Waldhüter & Graumännchen)', () => {
+describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, Nixe & Riese)', () => {
   it('öffnet ein Gespräch mit Waldhüter Arvid, navigiert durch die 7 Wege und löst Aktionen aus', () => {
     const dialogue = new DialogueSystem();
     expect(dialogue.isOpen()).toBe(false);
@@ -158,7 +228,7 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter & Graumännchen)'
     const step3 = dialogue.selectOption(0);
     expect(step3.node).toBeNull();
     expect(dialogue.isOpen()).toBe(false);
-    expect(step3.action).toEqual({ type: 'select_path', pathId: 3 });
+    expect(step3.action).toEqual({ type: 'walk_to_giant' });
   });
 
   it('führt das Gespräch mit dem Graumännchen über Silberader, Licht und Verbot/Versprechen', () => {
@@ -177,5 +247,41 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter & Graumännchen)'
     const stepLightChoice = dialogue.selectOption(0);
     expect(stepLightChoice.node?.id).toBe('grey_light_choice');
     expect(stepLightChoice.node?.options.length).toBe(3);
+  });
+
+  it('führt das Gespräch mit der Nixe am Teich über den verlockenden Schatz und den Fluch/das Unglück', () => {
+    const dialogue = new DialogueSystem();
+    const nixieRoot = dialogue.startDialogue('nixie_root');
+    expect(nixieRoot?.speaker).toBe('Die Nixe vom Spiegelteich');
+    expect(nixieRoot?.text).toContain('Schatz');
+    expect(nixieRoot?.text).toContain('Fluch');
+    expect(nixieRoot?.text).toContain('Unglück');
+
+    // Frage nach Fluch & Unglück (Option 1)
+    const stepCurse = dialogue.selectOption(1);
+    expect(stepCurse.node?.id).toBe('nixie_curse');
+
+    // Weiter zur Prüfung/Versuchung (Option 0)
+    const stepTemptation = dialogue.selectOption(0);
+    expect(stepTemptation.node?.id).toBe('nixie_temptation');
+    expect(stepTemptation.node?.options.length).toBe(3);
+  });
+
+  it('führt das Gespräch mit dem Riesen am Wehr über Quelle, Dürre im Tal und die bedrohte Heimat des Riesen', () => {
+    const dialogue = new DialogueSystem();
+    const giantRoot = dialogue.startDialogue('giant_root');
+    expect(giantRoot?.speaker).toBe('Der Riese am Wehr');
+    expect(giantRoot?.text).toContain('Bergquelle');
+    expect(giantRoot?.text).toContain('Dürre');
+    expect(giantRoot?.text).toContain('Heimat');
+
+    // Frage nach der Heimat des Riesen (Option 1)
+    const stepHomeland = dialogue.selectOption(1);
+    expect(stepHomeland.node?.id).toBe('giant_homeland');
+
+    // Weiter zum Dilemma rund um das Wehr (Option 0)
+    const stepDilemma = dialogue.selectOption(0);
+    expect(stepDilemma.node?.id).toBe('giant_dilemma');
+    expect(stepDilemma.node?.options.length).toBe(3);
   });
 });

@@ -30,6 +30,8 @@ export class GameApp {
   private lastPointerY = 0;
   private pendingTalkToNpc = false;
   private pendingTalkToGreyMan = false;
+  private pendingTalkToNixie = false;
+  private pendingTalkToGiant = false;
   private pendingToggleChest = false;
   private stepDistanceAccumulator = 1.15;
 
@@ -92,6 +94,8 @@ export class GameApp {
   private clearPendingActions(): void {
     this.pendingTalkToNpc = false;
     this.pendingTalkToGreyMan = false;
+    this.pendingTalkToNixie = false;
+    this.pendingTalkToGiant = false;
     this.pendingToggleChest = false;
   }
 
@@ -139,6 +143,30 @@ export class GameApp {
     }
   }
 
+  private initiateTalkToNixie(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearNixie()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('nixie_root');
+    } else {
+      this.pendingTalkToNixie = true;
+      this.state.setTargetToNixie();
+    }
+  }
+
+  private initiateTalkToGiant(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearGiant()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('giant_root');
+    } else {
+      this.pendingTalkToGiant = true;
+      this.state.setTargetToGiant();
+    }
+  }
+
   private initiateToggleChest(): void {
     this.clearPendingActions();
     this.closeDialogueAndSpeech();
@@ -163,6 +191,10 @@ export class GameApp {
       this.state.setTargetToPathEntrance(action.pathId);
     } else if (action?.type === 'walk_to_grey_man') {
       this.initiateTalkToGreyMan();
+    } else if (action?.type === 'walk_to_nixie') {
+      this.initiateTalkToNixie();
+    } else if (action?.type === 'walk_to_giant') {
+      this.initiateTalkToGiant();
     }
   }
 
@@ -187,16 +219,23 @@ export class GameApp {
     // Taste F oder Enter: kontextabhängige Interaktion
     if (key === 'f' || event.key === 'Enter') {
       if (!this.dialogue.isOpen()) {
-        if (this.state.isNearGreyMan()) {
+        if (this.state.isNearGiant()) {
+          this.initiateTalkToGiant();
+        } else if (this.state.isNearNixie()) {
+          this.initiateTalkToNixie();
+        } else if (this.state.isNearGreyMan()) {
           this.initiateTalkToGreyMan();
         } else if (this.state.isNearChest()) {
           this.initiateToggleChest();
         } else if (this.state.isNearNpc()) {
           this.initiateTalkToNpc();
         } else {
-          // Wenn man auf Weg 1 unterwegs ist, führt F zum Graumännchen, sonst zu Waldhüter Arvid
           const selected = this.state.getSelectedPath();
-          if (selected?.id === 1 && this.state.getPlayerPosition().z < -8) {
+          if (selected?.id === 3 && this.state.getPlayerPosition().x > 8) {
+            this.initiateTalkToGiant();
+          } else if (selected?.id === 2 && this.state.getPlayerPosition().x > 8) {
+            this.initiateTalkToNixie();
+          } else if (selected?.id === 1 && this.state.getPlayerPosition().z < -8) {
             this.initiateTalkToGreyMan();
           } else {
             this.initiateTalkToNpc();
@@ -259,6 +298,8 @@ export class GameApp {
       this.scene.setHoveredPathId(null);
       this.scene.setNpcHovered(false);
       this.scene.setGreyManHovered(false);
+      this.scene.setNixieHovered(false);
+      this.scene.setGiantHovered(false);
       this.scene.setChestHovered(false);
       this.canvas.style.cursor = 'grab';
       return;
@@ -267,6 +308,8 @@ export class GameApp {
     this.scene.setHoveredPathId(hit.kind === 'sign' || hit.kind === 'path' ? hit.pathId : null);
     this.scene.setNpcHovered(hit.kind === 'npc');
     this.scene.setGreyManHovered(hit.kind === 'grey_man' || hit.kind === 'cave');
+    this.scene.setNixieHovered(hit.kind === 'nixie' || hit.kind === 'pond');
+    this.scene.setGiantHovered(hit.kind === 'giant' || hit.kind === 'weir');
     this.scene.setChestHovered(hit.kind === 'chest');
 
     this.canvas.style.cursor = hit.kind === 'ground' ? 'default' : 'pointer';
@@ -296,6 +339,16 @@ export class GameApp {
 
       if (hit.kind === 'grey_man' || hit.kind === 'cave') {
         this.initiateTalkToGreyMan();
+        return;
+      }
+
+      if (hit.kind === 'nixie' || hit.kind === 'pond') {
+        this.initiateTalkToNixie();
+        return;
+      }
+
+      if (hit.kind === 'giant' || hit.kind === 'weir') {
+        this.initiateTalkToGiant();
         return;
       }
 
@@ -370,7 +423,13 @@ export class GameApp {
       const dz = (-Math.cos(angle) * normForward - Math.sin(angle) * normStrafe) * speed;
 
       this.state.movePlayer(dx, dz);
-      if (!this.state.isNearNpc() && !this.state.isNearGreyMan() && this.dialogue.isOpen()) {
+      if (
+        !this.state.isNearNpc() &&
+        !this.state.isNearGreyMan() &&
+        !this.state.isNearNixie() &&
+        !this.state.isNearGiant() &&
+        this.dialogue.isOpen()
+      ) {
         this.closeDialogueAndSpeech();
       }
     } else {
@@ -384,6 +443,16 @@ export class GameApp {
         this.pendingTalkToGreyMan = false;
         this.state.clearTargetPosition();
         this.openDialogueNode('grey_root');
+      }
+      if (this.pendingTalkToNixie && this.state.isNearNixie()) {
+        this.pendingTalkToNixie = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('nixie_root');
+      }
+      if (this.pendingTalkToGiant && this.state.isNearGiant()) {
+        this.pendingTalkToGiant = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('giant_root');
       }
       if (this.pendingToggleChest && this.state.isNearChest()) {
         this.pendingToggleChest = false;

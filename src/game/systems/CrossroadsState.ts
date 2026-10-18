@@ -1,11 +1,25 @@
-import { GREY_MAN_NPC_NAME, GUIDE_NPC_NAME } from '../data/npcDialogues';
+import {
+  GIANT_NPC_NAME,
+  GREY_MAN_NPC_NAME,
+  GUIDE_NPC_NAME,
+  NIXIE_NPC_NAME,
+} from '../data/npcDialogues';
 import {
   CAVE_ENTRANCE_POS,
   ForestPathData,
+  GIANT_NPC_POS,
   GREY_MAN_NPC_POS,
+  NIXIE_NPC_POS,
   PATH_1_END_CLEARING,
   PATH_1_WAYPOINTS,
+  PATH_2_END_CLEARING,
+  PATH_2_WAYPOINTS,
+  PATH_3_END_CLEARING,
+  PATH_3_WAYPOINTS,
+  PathPoint2D,
+  POND_CENTER_POS,
   SEVEN_PATHS,
+  WEIR_BRIDGE_POS,
 } from '../data/paths';
 
 export interface Vector2D {
@@ -16,7 +30,11 @@ export interface Vector2D {
 export type PointOfInterest =
   | { type: 'npc'; name: string; label: string }
   | { type: 'grey_man'; name: string; label: string }
+  | { type: 'nixie'; name: string; label: string }
+  | { type: 'giant'; name: string; label: string }
   | { type: 'cave'; label: string }
+  | { type: 'pond'; label: string }
+  | { type: 'weir'; label: string }
   | { type: 'chest'; isOpen: boolean; label: string }
   | { type: 'signpost'; label: string }
   | { type: 'hut'; label: string }
@@ -24,8 +42,11 @@ export type PointOfInterest =
   | { type: 'clearing'; label: string };
 
 /**
- * Reine Spiellogik für die Waldkreuzung und den erweiterten 1. Weg (Silberstollen-Pfad mit Kurve,
- * Bergmassiv, Höhleneingang und Graumännchen-NPC). Ohne Three.js-Abhängigkeit direkt mit Vitest testbar.
+ * Reine Spiellogik für die Waldkreuzung,
+ * - Weg 1 (Silberstollen-Pfad mit Bergmassiv & Graumännchen),
+ * - Weg 2 (Nixenteich-Pfad mit Waldteich, Stein & Nixe),
+ * - Weg 3 (Quellenweg mit Brücke, Bach, geschlossenem Wehr, kleinem Stausee & Riese).
+ * Ohne Three.js-Abhängigkeit direkt mit Vitest testbar.
  */
 export class CrossroadsState {
   // Schutzhütte im Zentrum (0, 0), Schatztruhe davor (0.85, 2.0),
@@ -56,6 +77,17 @@ export class CrossroadsState {
     { lx: -3.5, lz: -2.1, radius: 3.65 }, // Linke Felsflanke
     { lx: 3.6, lz: -2.2, radius: 3.85 }, // Rechte Felsflanke
   ];
+
+  // Am Ende des 2. Weges: Waldteich und auf einem Stein im Teich die Nixe
+  private readonly pondPos: Vector2D = { x: POND_CENTER_POS.x, z: POND_CENTER_POS.z };
+  private readonly pondCollisionRadius = 4.25;
+  private readonly nixiePos: Vector2D = { ...NIXIE_NPC_POS };
+  private readonly nixieTalkDistance = 3.25;
+
+  // Am Ende des 3. Weges: Brücke mit geschlossenem Wehr, kleinem Stausee und dem Riesen
+  private readonly weirBridgePos: Vector2D = { x: WEIR_BRIDGE_POS.x, z: WEIR_BRIDGE_POS.z };
+  private readonly giantPos: Vector2D = { ...GIANT_NPC_POS };
+  private readonly giantCollisionRadius = 0.85;
 
   private readonly clearingRadius = 6.5;
   private readonly pathHalfWidth = 0.95;
@@ -90,6 +122,14 @@ export class CrossroadsState {
     return { ...this.greyManPos };
   }
 
+  public getNixiePosition(): Readonly<Vector2D> {
+    return { ...this.nixiePos };
+  }
+
+  public getGiantPosition(): Readonly<Vector2D> {
+    return { ...this.giantPos };
+  }
+
   public getChestPosition(): Readonly<Vector2D> {
     return { ...this.chestPos };
   }
@@ -121,6 +161,22 @@ export class CrossroadsState {
       this.playerPos.z - this.greyManPos.z
     );
     return dist <= this.greyManCollisionRadius + 1.25;
+  }
+
+  public isNearNixie(): boolean {
+    const dist = Math.hypot(
+      this.playerPos.x - this.nixiePos.x,
+      this.playerPos.z - this.nixiePos.z
+    );
+    return dist <= this.nixieTalkDistance;
+  }
+
+  public isNearGiant(): boolean {
+    const dist = Math.hypot(
+      this.playerPos.x - this.giantPos.x,
+      this.playerPos.z - this.giantPos.z
+    );
+    return dist <= this.giantCollisionRadius + 1.45;
   }
 
   public isNearChest(): boolean {
@@ -165,17 +221,19 @@ export class CrossroadsState {
   }
 
   /**
-   * Berechnet für ein Segment von Weg 1 den Zentrumspunkt und den erlaubten Radius.
-   * Das letzte Segment bildet zusammen mit dem Vorplatz (Radius 4.2 m) eine konvexe Tapered Capsule,
+   * Berechnet für ein Segment eines Kurvenweges (Weg 1, 2 oder 3) den Zentrumspunkt und den erlaubten Radius.
+   * Das letzte Segment bildet zusammen mit dem Vorplatz eine konvexe Tapered Capsule,
    * sodass beim Übergang vom Vorplatz auf den Weg keinerlei Kante oder Tasche entsteht.
    */
-  private evaluatePath1Segment(
+  private evaluateCurvedPathSegment(
     x: number,
     z: number,
+    waypoints: readonly PathPoint2D[],
+    endClearingRadius: number,
     segmentIndex: number
   ): { cx: number; cz: number; radius: number } {
-    const a = PATH_1_WAYPOINTS[segmentIndex];
-    const b = PATH_1_WAYPOINTS[segmentIndex + 1];
+    const a = waypoints[segmentIndex];
+    const b = waypoints[segmentIndex + 1];
     const abx = b.x - a.x;
     const abz = b.z - a.z;
     const len = Math.hypot(abx, abz);
@@ -189,9 +247,9 @@ export class CrossroadsState {
     const relZ = z - a.z;
     const s = relX * ux + relZ * uz;
 
-    if (segmentIndex === PATH_1_WAYPOINTS.length - 2) {
+    if (segmentIndex === waypoints.length - 2) {
       const rA = this.pathHalfWidth;
-      const rB = PATH_1_END_CLEARING.radius;
+      const rB = endClearingRadius;
       const dr = rB - rA;
       const perpDist = Math.hypot(relX - s * ux, relZ - s * uz);
       const slopeLen = Math.sqrt(Math.max(1e-4, len * len - dr * dr));
@@ -218,7 +276,53 @@ export class CrossroadsState {
   public isPointOnPath1(x: number, z: number): boolean {
     const eps = 1e-4;
     for (let i = 0; i < PATH_1_WAYPOINTS.length - 1; i++) {
-      const { cx, cz, radius } = this.evaluatePath1Segment(x, z, i);
+      const { cx, cz, radius } = this.evaluateCurvedPathSegment(
+        x,
+        z,
+        PATH_1_WAYPOINTS,
+        PATH_1_END_CLEARING.radius,
+        i
+      );
+      if (Math.hypot(x - cx, z - cz) <= radius + eps) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Prüft, ob ein Punkt auf dem geschwungenen 2. Weg oder dem Ufer-Vorplatz am Nixenteich liegt.
+   */
+  public isPointOnPath2(x: number, z: number): boolean {
+    const eps = 1e-4;
+    for (let i = 0; i < PATH_2_WAYPOINTS.length - 1; i++) {
+      const { cx, cz, radius } = this.evaluateCurvedPathSegment(
+        x,
+        z,
+        PATH_2_WAYPOINTS,
+        PATH_2_END_CLEARING.radius,
+        i
+      );
+      if (Math.hypot(x - cx, z - cz) <= radius + eps) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Prüft, ob ein Punkt auf dem geschwungenen 3. Weg (über die Wehrbrücke) oder dem Vorplatz beim Riesen liegt.
+   */
+  public isPointOnPath3(x: number, z: number): boolean {
+    const eps = 1e-4;
+    for (let i = 0; i < PATH_3_WAYPOINTS.length - 1; i++) {
+      const { cx, cz, radius } = this.evaluateCurvedPathSegment(
+        x,
+        z,
+        PATH_3_WAYPOINTS,
+        PATH_3_END_CLEARING.radius,
+        i
+      );
       if (Math.hypot(x - cx, z - cz) <= radius + eps) {
         return true;
       }
@@ -237,8 +341,12 @@ export class CrossroadsState {
       return true;
     }
 
-    // Weg 1 besitzt eine verlängerte Kurve bis zum Bergmassiv
-    if (this.isPointOnPath1(x, z)) {
+    // Wege 1, 2 und 3 besitzen eigene ausgebaute Kurvenverläufe bis zu ihren Zielorten
+    if (
+      this.isPointOnPath1(x, z) ||
+      this.isPointOnPath2(x, z) ||
+      this.isPointOnPath3(x, z)
+    ) {
       return true;
     }
 
@@ -246,9 +354,9 @@ export class CrossroadsState {
       return false;
     }
 
-    // Wege 2 bis 7 verlaufen sternförmig
+    // Wege 4 bis 7 verlaufen sternförmig
     for (const path of SEVEN_PATHS) {
-      if (path.id === 1) {
+      if (path.id === 1 || path.id === 2 || path.id === 3) {
         continue;
       }
       const dirX = Math.sin(path.angleRad);
@@ -286,7 +394,7 @@ export class CrossroadsState {
   }
 
   /**
-   * Prüft, ob ein Punkt mit Schutzhütte, Schatztruhe, Wegweiser, Waldhüter, Graumännchen oder dem Felsen mit Höhleneingang kollidiert.
+   * Prüft, ob ein Punkt mit Schutzhütte, Schatztruhe, Wegweiser, Waldhüter, Graumännchen, Felsen, Waldteich oder Riese kollidiert.
    */
   public isCollidingWithObstacles(x: number, z: number): boolean {
     const eps = 1e-4;
@@ -339,6 +447,16 @@ export class CrossroadsState {
       }
     }
 
+    // Der Waldteich am Ende von Weg 2 ist nicht begehbar (Spieler bleibt am trockenen Ufer)
+    if (Math.hypot(x - this.pondPos.x, z - this.pondPos.z) < this.pondCollisionRadius - eps) {
+      return true;
+    }
+
+    // Der Riese am Wehr auf Weg 3
+    if (Math.hypot(x - this.giantPos.x, z - this.giantPos.z) < this.giantCollisionRadius - eps) {
+      return true;
+    }
+
     return false;
   }
 
@@ -349,12 +467,23 @@ export class CrossroadsState {
     return this.isPointOnClearingOrPath(x, z) && !this.isCollidingWithObstacles(x, z);
   }
 
-  private projectOntoPath1(x: number, z: number): Vector2D {
-    let bestPoint: Vector2D = { x: PATH_1_WAYPOINTS[0].x, z: PATH_1_WAYPOINTS[0].z };
+  private projectOntoCurvedPath(
+    x: number,
+    z: number,
+    waypoints: readonly PathPoint2D[],
+    endClearingRadius: number
+  ): Vector2D {
+    let bestPoint: Vector2D = { x: waypoints[0].x, z: waypoints[0].z };
     let bestSignedDist = Infinity;
 
-    for (let i = 0; i < PATH_1_WAYPOINTS.length - 1; i++) {
-      const { cx, cz, radius } = this.evaluatePath1Segment(x, z, i);
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const { cx, cz, radius } = this.evaluateCurvedPathSegment(
+        x,
+        z,
+        waypoints,
+        endClearingRadius,
+        i
+      );
       const dx = x - cx;
       const dz = z - cz;
       const d = Math.hypot(dx, dz);
@@ -409,11 +538,46 @@ export class CrossroadsState {
 
     for (const path of candidatePaths) {
       if (path.id === 1) {
-        const p1 = this.projectOntoPath1(x, z);
+        const p1 = this.projectOntoCurvedPath(
+          x,
+          z,
+          PATH_1_WAYPOINTS,
+          PATH_1_END_CLEARING.radius
+        );
         const dSq1 = (x - p1.x) ** 2 + (z - p1.z) ** 2;
         if (dSq1 < bestDistSq) {
           bestDistSq = dSq1;
           bestPoint = p1;
+        }
+        continue;
+      }
+
+      if (path.id === 2) {
+        const p2 = this.projectOntoCurvedPath(
+          x,
+          z,
+          PATH_2_WAYPOINTS,
+          PATH_2_END_CLEARING.radius
+        );
+        const dSq2 = (x - p2.x) ** 2 + (z - p2.z) ** 2;
+        if (dSq2 < bestDistSq) {
+          bestDistSq = dSq2;
+          bestPoint = p2;
+        }
+        continue;
+      }
+
+      if (path.id === 3) {
+        const p3 = this.projectOntoCurvedPath(
+          x,
+          z,
+          PATH_3_WAYPOINTS,
+          PATH_3_END_CLEARING.radius
+        );
+        const dSq3 = (x - p3.x) ** 2 + (z - p3.z) ** 2;
+        if (dSq3 < bestDistSq) {
+          bestDistSq = dSq3;
+          bestPoint = p3;
         }
         continue;
       }
@@ -542,6 +706,26 @@ export class CrossroadsState {
       resolvedX = worldAfterRock.x;
       resolvedZ = worldAfterRock.z;
 
+      // Waldteich-Kollision am Ende von Weg 2 (Spieler bleibt am trockenen Ufer)
+      const afterPond = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.pondPos,
+        this.pondCollisionRadius
+      );
+      resolvedX = afterPond.x;
+      resolvedZ = afterPond.z;
+
+      // Riesen-Kollision am Ende von Weg 3
+      const afterGiant = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.giantPos,
+        this.giantCollisionRadius
+      );
+      resolvedX = afterGiant.x;
+      resolvedZ = afterGiant.z;
+
       // Schutzhütten-Kollision (AABB um hutPos)
       const relX = resolvedX - this.hutPos.x;
       const relZ = resolvedZ - this.hutPos.z;
@@ -563,6 +747,12 @@ export class CrossroadsState {
   private getClosestPathAt(x: number, z: number): ForestPathData | null {
     if (this.isPointOnPath1(x, z)) {
       return SEVEN_PATHS[0];
+    }
+    if (this.isPointOnPath2(x, z)) {
+      return SEVEN_PATHS[1];
+    }
+    if (this.isPointOnPath3(x, z)) {
+      return SEVEN_PATHS[2];
     }
 
     let playerAngle = Math.atan2(x, -z);
@@ -679,15 +869,35 @@ export class CrossroadsState {
   }
 
   /**
-   * Berechnet den kontinuierlichen Fortschritt (0 bis PATH_1_WAYPOINTS.length - 1) entlang der Segmente von Weg 1.
+   * Lässt die Spielfigur entlang des 2. Weges bis direkt an das Teichufer vor den Stein der Nixe laufen.
    */
-  private getPath1Progress(x: number, z: number): number {
+  public setTargetToNixie(): Readonly<Vector2D> {
+    this.selectPath(2);
+    return this.setTargetPosition(this.pondPos.x - this.pondCollisionRadius - 0.3, this.nixiePos.z);
+  }
+
+  /**
+   * Lässt die Spielfigur entlang des 3. Weges über die Brücke bis direkt vor den Riesen am Wehr laufen.
+   */
+  public setTargetToGiant(): Readonly<Vector2D> {
+    this.selectPath(3);
+    return this.setTargetPosition(this.giantPos.x - 1.5, this.giantPos.z + 0.8);
+  }
+
+  /**
+   * Berechnet den kontinuierlichen Fortschritt entlang der Segmente eines Kurvenweges.
+   */
+  private getCurvedPathProgress(
+    x: number,
+    z: number,
+    waypoints: readonly PathPoint2D[]
+  ): number {
     let bestProgress = 0;
     let bestDistSq = Infinity;
 
-    for (let i = 0; i < PATH_1_WAYPOINTS.length - 1; i++) {
-      const a = PATH_1_WAYPOINTS[i];
-      const b = PATH_1_WAYPOINTS[i + 1];
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const a = waypoints[i];
+      const b = waypoints[i + 1];
       const abx = b.x - a.x;
       const abz = b.z - a.z;
       const abLenSq = abx * abx + abz * abz;
@@ -707,13 +917,16 @@ export class CrossroadsState {
     return bestProgress;
   }
 
-  private getPointAtPath1Progress(progress: number): Vector2D {
-    const maxSeg = PATH_1_WAYPOINTS.length - 2;
+  private getPointAtCurvedPathProgress(
+    progress: number,
+    waypoints: readonly PathPoint2D[]
+  ): Vector2D {
+    const maxSeg = waypoints.length - 2;
     const clamped = Math.max(0, Math.min(maxSeg + 1, progress));
     const idx = Math.min(maxSeg, Math.floor(clamped));
     const t = clamped - idx;
-    const a = PATH_1_WAYPOINTS[idx];
-    const b = PATH_1_WAYPOINTS[idx + 1];
+    const a = waypoints[idx];
+    const b = waypoints[idx + 1];
     return {
       x: a.x + t * (b.x - a.x),
       z: a.z + t * (b.z - a.z),
@@ -721,19 +934,23 @@ export class CrossroadsState {
   }
 
   /**
-   * Ermittelt einen stetig mitgleitenden Lookahead-Punkt entlang der Kurve von Weg 1,
+   * Ermittelt einen stetig mitgleitenden Lookahead-Punkt entlang der Kurve von Weg 1, 2 oder 3,
    * damit die Spielfigur beim Auto-Walk vorwärts wie rückwärts völlig ruckelfrei auf dem Pfad bleibt.
    */
-  private getNextCurvedWaypointOnPath1(target: Vector2D): Vector2D {
-    const playerOnPath1 = this.isPointOnPath1(this.playerPos.x, this.playerPos.z);
-    const targetOnPath1 = this.isPointOnPath1(target.x, target.z);
+  private getNextCurvedWaypoint(
+    target: Vector2D,
+    waypoints: readonly PathPoint2D[],
+    isOnPathFn: (x: number, z: number) => boolean
+  ): Vector2D {
+    const playerOnPath = isOnPathFn(this.playerPos.x, this.playerPos.z);
+    const targetOnPath = isOnPathFn(target.x, target.z);
 
-    if (!playerOnPath1 && !targetOnPath1) {
+    if (!playerOnPath && !targetOnPath) {
       return target;
     }
 
-    const playerProg = this.getPath1Progress(this.playerPos.x, this.playerPos.z);
-    const targetProg = this.getPath1Progress(target.x, target.z);
+    const playerProg = this.getCurvedPathProgress(this.playerPos.x, this.playerPos.z, waypoints);
+    const targetProg = this.getCurvedPathProgress(target.x, target.z, waypoints);
     const diff = targetProg - playerProg;
 
     if (Math.abs(diff) <= 0.35) {
@@ -746,7 +963,7 @@ export class CrossroadsState {
         ? Math.min(targetProg, playerProg + stepProg)
         : Math.max(targetProg, playerProg + stepProg);
 
-    return this.getPointAtPath1Progress(lookaheadProg);
+    return this.getPointAtCurvedPathProgress(lookaheadProg, waypoints);
   }
 
   /**
@@ -768,7 +985,23 @@ export class CrossroadsState {
 
     if (playerPath && (!targetPath || targetPath.id !== playerPath.id)) {
       if (playerPath.id === 1) {
-        effectiveTarget = this.getNextCurvedWaypointOnPath1(PATH_1_WAYPOINTS[0]);
+        effectiveTarget = this.getNextCurvedWaypoint(
+          PATH_1_WAYPOINTS[0],
+          PATH_1_WAYPOINTS,
+          (px, pz) => this.isPointOnPath1(px, pz)
+        );
+      } else if (playerPath.id === 2) {
+        effectiveTarget = this.getNextCurvedWaypoint(
+          PATH_2_WAYPOINTS[0],
+          PATH_2_WAYPOINTS,
+          (px, pz) => this.isPointOnPath2(px, pz)
+        );
+      } else if (playerPath.id === 3) {
+        effectiveTarget = this.getNextCurvedWaypoint(
+          PATH_3_WAYPOINTS[0],
+          PATH_3_WAYPOINTS,
+          (px, pz) => this.isPointOnPath3(px, pz)
+        );
       } else {
         effectiveTarget = {
           x: Math.sin(playerPath.angleRad) * (this.clearingRadius - 0.6),
@@ -776,7 +1009,23 @@ export class CrossroadsState {
         };
       }
     } else if (targetPath && targetPath.id === 1) {
-      effectiveTarget = this.getNextCurvedWaypointOnPath1(this.targetPos);
+      effectiveTarget = this.getNextCurvedWaypoint(
+        this.targetPos,
+        PATH_1_WAYPOINTS,
+        (px, pz) => this.isPointOnPath1(px, pz)
+      );
+    } else if (targetPath && targetPath.id === 2) {
+      effectiveTarget = this.getNextCurvedWaypoint(
+        this.targetPos,
+        PATH_2_WAYPOINTS,
+        (px, pz) => this.isPointOnPath2(px, pz)
+      );
+    } else if (targetPath && targetPath.id === 3) {
+      effectiveTarget = this.getNextCurvedWaypoint(
+        this.targetPos,
+        PATH_3_WAYPOINTS,
+        (px, pz) => this.isPointOnPath3(px, pz)
+      );
     }
 
     // Falls die direkte Linie auf der Kreuzung durch die zentrale Hütte führt,
@@ -850,6 +1099,48 @@ export class CrossroadsState {
    * Ermittelt, welchem Objekt, NPC oder Weg die spielende Person am nächsten ist.
    */
   public getActivePointOfInterest(): PointOfInterest {
+    if (this.isNearGiant()) {
+      return {
+        type: 'giant',
+        name: GIANT_NPC_NAME,
+        label:
+          'Vor dem geschlossenen Wehr am Stausee – sprich mit dem Riesen über die Quelle, die Dürre im Tal und seine Heimat (Klick oder [F]).',
+      };
+    }
+
+    const distToWeir = Math.hypot(
+      this.playerPos.x - this.weirBridgePos.x,
+      this.playerPos.z - this.weirBridgePos.z
+    );
+    if (distToWeir < 3.6) {
+      return {
+        type: 'weir',
+        label:
+          'Brücke mit geschlossenem Wehr – der Quellbach wird hier zu einem kleinen Stausee zurückgestaut.',
+      };
+    }
+
+    if (this.isNearNixie()) {
+      return {
+        type: 'nixie',
+        name: NIXIE_NPC_NAME,
+        label:
+          'Am Ufer des Spiegelteichs – sprich mit der Nixe auf dem Stein über den verlockenden Schatz und den Fluch (Klick oder [F]).',
+      };
+    }
+
+    const distToPond = Math.hypot(
+      this.playerPos.x - this.pondPos.x,
+      this.playerPos.z - this.pondPos.z
+    );
+    if (distToPond < this.pondCollisionRadius + 1.8) {
+      return {
+        type: 'pond',
+        label:
+          'Stiller Waldteich – unter der Wasseroberfläche funkelt ein verlockender Schatz, auf dem ein dunkler Fluch ruht.',
+      };
+    }
+
     if (this.isNearGreyMan()) {
       return {
         type: 'grey_man',

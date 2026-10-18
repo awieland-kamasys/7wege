@@ -1,5 +1,5 @@
 :root {
-  --bg-dark: rgba(18, 26, 20, 0.88);
+  --bg-dark: rgba(18, 26, 20, 0.85);
   --border-wood: rgba(186, 148, 96, 0.55);
   --text-light: #f3efe6;
   --text-muted: #c5cbbd;
@@ -23,6 +23,7 @@ body,
   background-color: #111a14;
   color: var(--text-light);
   user-select: none;
+  touch-action: none;
 }
 
 #game-canvas {
@@ -41,114 +42,72 @@ body,
   pointer-events: none;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 1.15rem;
+  justify-content: flex-start;
+  padding: 0.75rem;
 }
 
 .hud-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 0.75rem;
   width: 100%;
 }
 
-.hud-card {
+/* Schlankes Badge nur für den aktuell ausgewählten Quest-Pfad */
+.active-path-badge {
   background: var(--bg-dark);
-  border: 1px solid var(--border-wood);
-  border-radius: 10px;
-  padding: 0.85rem 1.1rem;
-  backdrop-filter: blur(6px);
-  pointer-events: auto;
-  max-width: 400px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-}
-
-.hud-title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--accent-gold);
-  margin-bottom: 0.25rem;
-}
-
-.hud-subtitle {
-  font-size: 0.88rem;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-.hud-actions-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-top: 0.65rem;
-}
-
-.talk-btn {
-  background: rgba(65, 95, 68, 0.55);
-  color: var(--text-light);
-  border: 1px solid var(--border-wood);
-  border-radius: 8px;
-  padding: 0.42rem 0.75rem;
-  font-size: 0.82rem;
+  border: 1px solid var(--accent-gold);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.84rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-}
-
-.talk-btn:hover,
-.talk-btn:focus-visible {
-  border-color: var(--accent-gold);
-  background: rgba(108, 168, 112, 0.45);
-  transform: translateY(-1px);
-  outline: none;
-}
-
-.talk-btn.is-emphasized {
-  background: rgba(226, 184, 107, 0.24);
-  border-color: var(--accent-gold);
   color: var(--accent-gold);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
 }
 
-/* Schlankes Kommunikationsfenster am rechten Bildschirmrand (hält die Spielmitte frei) */
+/* Kompaktes Kommunikationsfenster am rechten Bildschirmrand (nur bei aktivem Gespräch sichtbar) */
 .dialogue-panel {
-  width: min(370px, 40vw);
-  max-height: calc(100vh - 6.5rem);
+  width: min(340px, 46vw);
+  max-height: calc(100vh - 1.5rem);
   display: flex;
   flex-direction: column;
-  background: rgba(15, 22, 17, 0.9);
+  background: rgba(15, 22, 17, 0.88);
   border: 1.5px solid var(--accent-gold);
-  border-radius: 12px;
-  padding: 0.9rem 1.05rem;
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
   backdrop-filter: blur(8px);
   pointer-events: auto;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
 }
 
 .dialogue-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 0.75rem;
-  margin-bottom: 0.55rem;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
   border-bottom: 1px solid rgba(186, 148, 96, 0.3);
-  padding-bottom: 0.45rem;
+  padding-bottom: 0.35rem;
 }
 
 .dialogue-speaker {
-  font-size: 1.02rem;
+  font-size: 0.96rem;
   font-weight: 700;
   color: var(--accent-gold);
 }
 
 .dialogue-role {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
 }
 
 .dialogue-header-actions {
   display: flex;
-  gap: 0.35rem;
+  gap: 0.3rem;
   align-items: center;
   flex-shrink: 0;
 }
@@ -158,8 +117,8 @@ body,
   color: var(--text-muted);
   border: 1px solid var(--border-wood);
   border-radius: 6px;
-  padding: 0.22rem 0.5rem;
-  font-size: 0.74rem;
+  padding: 0.18rem 0.45rem;
+  font-size: 0.72rem;
   cursor: pointer;
 }
 
@@ -169,26 +128,26 @@ body,
 }
 
 .dialogue-text {
-  font-size: 0.9rem;
-  line-height: 1.48;
+  font-size: 0.84rem;
+  line-height: 1.42;
   color: var(--text-light);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.55rem;
 }
 
 .dialogue-player-label {
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--accent-gold);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.32rem;
 }
 
 .dialogue-options {
   display: flex;
   flex-direction: column;
-  gap: 0.38rem;
+  gap: 0.32rem;
   overflow-y: auto;
-  padding-right: 0.15rem;
+  padding-right: 0.1rem;
 }
 
 .dialogue-option-btn {
@@ -196,10 +155,10 @@ body,
   background: rgba(34, 48, 37, 0.78);
   color: var(--text-light);
   border: 1px solid var(--border-wood);
-  border-radius: 8px;
-  padding: 0.45rem 0.68rem;
-  font-size: 0.82rem;
-  line-height: 1.35;
+  border-radius: 7px;
+  padding: 0.38rem 0.6rem;
+  font-size: 0.78rem;
+  line-height: 1.3;
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease;
 }
@@ -211,46 +170,34 @@ body,
   outline: none;
 }
 
-.hud-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
+/* Optimierung für Smartphones und kleine Displays */
+@media (max-width: 640px) {
+  #ui-root {
+    padding: 0.5rem;
+  }
 
-.path-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  pointer-events: auto;
-}
+  .active-path-badge {
+    font-size: 0.75rem;
+    padding: 0.28rem 0.68rem;
+  }
 
-.path-btn {
-  background: var(--bg-dark);
-  color: var(--text-light);
-  border: 1px solid var(--border-wood);
-  border-radius: 8px;
-  padding: 0.48rem 0.72rem;
-  font-size: 0.83rem;
-  cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-}
+  .dialogue-panel {
+    width: min(280px, 78vw);
+    max-height: 48vh;
+    padding: 0.6rem 0.7rem;
+  }
 
-.path-btn:hover,
-.path-btn:focus-visible {
-  border-color: var(--accent-gold);
-  transform: translateY(-2px);
-  outline: none;
-}
+  .dialogue-speaker {
+    font-size: 0.88rem;
+  }
 
-.path-btn.is-active {
-  background: rgba(108, 168, 112, 0.32);
-  border-color: var(--accent-gold);
-  font-weight: 600;
-}
+  .dialogue-text {
+    font-size: 0.78rem;
+    margin-bottom: 0.45rem;
+  }
 
-.controls-hint {
-  font-size: 0.78rem;
-  color: var(--text-muted);
+  .dialogue-option-btn {
+    font-size: 0.74rem;
+    padding: 0.32rem 0.5rem;
+  }
 }
