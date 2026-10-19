@@ -1,5 +1,5 @@
 import { DialogueNode } from '../game/data/npcDialogues';
-import { SEVEN_PATHS } from '../game/data/paths';
+import { ForestPathData, SEVEN_PATHS } from '../game/data/paths';
 import { PointOfInterest } from '../game/systems/CrossroadsState';
 
 export interface HudCallbacks {
@@ -23,6 +23,8 @@ export interface HudCallbacks {
  */
 export class HudOverlay {
   private readonly activePathBadgeEl: HTMLElement;
+  private readonly activePathTitleEl: HTMLElement;
+  private readonly returnToClearingBtn: HTMLButtonElement;
   private readonly dialogueModalEl: HTMLElement;
   private readonly dialogueSpeakerEl: HTMLElement;
   private readonly dialogueRoleEl: HTMLElement;
@@ -37,10 +39,26 @@ export class HudOverlay {
     const header = document.createElement('header');
     header.className = 'hud-header';
 
-    // Kompakte Anzeige nur für den aktuell ausgewählten Quest-Pfad (standardmäßig ausgeblendet)
+    // Kompakte Anzeige für den aktuellen Pfad samt Rücksprung zur 7-Wegekreuzung (standardmäßig ausgeblendet)
     this.activePathBadgeEl = document.createElement('div');
     this.activePathBadgeEl.className = 'active-path-badge is-hidden';
     this.activePathBadgeEl.setAttribute('aria-live', 'polite');
+
+    this.activePathTitleEl = document.createElement('span');
+    this.activePathTitleEl.className = 'active-path-title';
+
+    this.returnToClearingBtn = document.createElement('button');
+    this.returnToClearingBtn.type = 'button';
+    this.returnToClearingBtn.className = 'active-path-return-btn';
+    this.returnToClearingBtn.textContent = '↩ Zur 7-Wegekreuzung';
+    this.returnToClearingBtn.title = 'Per Klick zurück zur 7-Wegekreuzung springen';
+    this.returnToClearingBtn.setAttribute('aria-label', 'Zurück zur 7-Wegekreuzung springen');
+    this.returnToClearingBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.callbacks.onReturnToClearing();
+    });
+
+    this.activePathBadgeEl.append(this.activePathTitleEl, this.returnToClearingBtn);
 
     // Kommunikationsmenü: wird ausschließlich eingeblendet, wenn aktive Kommunikation stattfindet
     this.dialogueModalEl = document.createElement('aside');
@@ -108,16 +126,19 @@ export class HudOverlay {
     selectedPathId: number | null,
     activeDialogueNode: DialogueNode | null,
     _isChestOpen = false,
-    _isOnClearing = true
+    isOnClearing = true,
+    currentPath: ForestPathData | null = null
   ): void {
-    // Nur den aktuell ausgewählten Pfad anzeigen; wenn keiner ausgewählt ist, komplett ausblenden
     const selectedPath =
-      selectedPathId !== null
+      currentPath ??
+      (selectedPathId !== null
         ? SEVEN_PATHS.find((p) => p.id === selectedPathId) ?? null
-        : null;
+        : null);
 
-    if (selectedPath) {
-      this.activePathBadgeEl.textContent = `🧭 ${selectedPath.name}`;
+    // Wenn die Spielfigur auf den Wegen unterwegs ist:
+    // Wegnamen und Button zum Rücksprung zur 7-Wegekreuzung anzeigen
+    if (selectedPath && !isOnClearing) {
+      this.activePathTitleEl.textContent = `🧭 ${selectedPath.name}`;
       this.activePathBadgeEl.classList.remove('is-hidden');
     } else {
       this.activePathBadgeEl.classList.add('is-hidden');

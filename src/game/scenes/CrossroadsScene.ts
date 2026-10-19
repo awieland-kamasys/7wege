@@ -20,6 +20,8 @@ import {
   PATH_5_WAYPOINTS,
   PATH_6_END_CLEARING,
   PATH_6_WAYPOINTS,
+  PATH_7_END_CLEARING,
+  PATH_7_WAYPOINTS,
   PathPoint2D,
   POND_CENTER_POS,
   SEVEN_PATHS,
@@ -27,7 +29,9 @@ import {
   WILD_HUNTER_NPC_POS,
   WOOD_WOMAN_LODGE_NPC_POS,
   WOOD_WOMAN_NPC_POS,
+  CLOSED_GATE_POS,
 } from '../data/paths';
+import { createClosedGate, ClosedGateEntity } from '../entities/ClosedGate';
 import { createDevilNpc, DevilNpcEntity } from '../entities/DevilNpc';
 import { createGiantNpc, GiantNpcEntity } from '../entities/GiantNpc';
 import { createGreyManNpc, GreyManNpcEntity } from '../entities/GreyManNpc';
@@ -43,6 +47,12 @@ import { createSignpost, SignpostEntity } from '../entities/Signpost';
 import { createTreasureChest, TreasureChestEntity } from '../entities/TreasureChest';
 import { createWeirBridgeScene, WeirBridgeEntity } from '../entities/WeirBridgeScene';
 import { createWildHunterNpc, WildHunterNpcEntity } from '../entities/WildHunterNpc';
+import { createPathBoulder, PathBoulderEntity } from '../entities/PathBoulder';
+import { createPathPuddle, PathPuddleEntity } from '../entities/PathPuddle';
+import { createPathStream, PathStreamEntity } from '../entities/PathStream';
+import { createPathLog, PathLogEntity } from '../entities/PathLog';
+import { createPathFire, PathFireEntity } from '../entities/PathFire';
+import { createPathHerbs, PathHerbsEntity } from '../entities/PathHerbs';
 import { createWoodWomanNpc, WoodWomanNpcEntity } from '../entities/WoodWomanNpc';
 import { createMushroomCluster, MushroomType } from '../entities/MushroomCluster';
 import { Vector2D } from '../systems/CrossroadsState';
@@ -56,6 +66,14 @@ export type ScenePickResult =
   | { kind: 'devil'; point: Vector2D }
   | { kind: 'wild_hunter'; point: Vector2D }
   | { kind: 'wood_woman_lodge'; point: Vector2D }
+  | { kind: 'gate'; point: Vector2D }
+  | { kind: 'boulder'; point: Vector2D }
+  | { kind: 'puddle'; point: Vector2D }
+  | { kind: 'stream'; point: Vector2D }
+  | { kind: 'log'; point: Vector2D }
+  | { kind: 'fire'; point: Vector2D }
+  | { kind: 'herbs'; point: Vector2D }
+  | { kind: 'gemstone'; pathId: number; point: Vector2D }
   | { kind: 'cave'; point: Vector2D }
   | { kind: 'pond'; point: Vector2D }
   | { kind: 'weir'; point: Vector2D }
@@ -100,6 +118,13 @@ export class CrossroadsScene {
   private readonly huntingLodge: HuntingLodgeEntity;
   private readonly wildHunterNpc: WildHunterNpcEntity;
   private readonly woodWomanLodgeNpc: WoodWomanNpcEntity;
+  private readonly closedGate: ClosedGateEntity;
+  private readonly path1Boulder: PathBoulderEntity;
+  private readonly path2Puddle: PathPuddleEntity;
+  private readonly path3Stream: PathStreamEntity;
+  private readonly path4Log: PathLogEntity;
+  private readonly path5Fire: PathFireEntity;
+  private readonly path6Herbs: PathHerbsEntity;
   private readonly treasureChest: TreasureChestEntity;
   private readonly pathMeshes = new Map<number, THREE.MeshStandardMaterial>();
   private readonly pathGemstones = new Map<
@@ -127,7 +152,15 @@ export class CrossroadsScene {
   private isDevilHovered = false;
   private isWildHunterHovered = false;
   private isWoodWomanLodgeHovered = false;
+  private isGateHovered = false;
+  private isBoulderHovered = false;
+  private isPuddleHovered = false;
+  private isStreamHovered = false;
+  private isLogHovered = false;
+  private isFireHovered = false;
+  private isHerbsHovered = false;
   private isChestHovered = false;
+  private readonly gemstonePulseTimers = new Map<number, number>();
   private lastPlayerPos: Vector2D = { x: 0, z: 5.2 };
   private elapsedSeconds = 0;
 
@@ -189,7 +222,9 @@ export class CrossroadsScene {
     this.scene.add(this.signpost.group);
 
     // Hinweisgeber-NPC (Waldhüter Arvid) direkt links vor der Schutzhütte platzieren
-    this.guideNpc = createGuideNpc();
+    this.guideNpc = createGuideNpc((mesh) => {
+      this.pickableObjects.push(mesh);
+    });
     this.guideNpc.group.position.set(-1.85, 0, 2.05);
     this.guideNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -197,6 +232,7 @@ export class CrossroadsScene {
       }
     });
     this.scene.add(this.guideNpc.group);
+
 
     // Bergmassiv mit Höhleneingang am Ende des 1. Weges
     const mountainCave = createMountainCave();
@@ -337,7 +373,49 @@ export class CrossroadsScene {
     });
     this.scene.add(this.woodWomanLodgeNpc.group);
 
-    // Bäume rund um die Lichtung, zwischen den 7 Wegen und entlang der Kurven von Weg 1 bis 6
+    // Das geschlossene Tor mit flankierenden Steinmauern am Ende des 7. Weges
+    this.closedGate = createClosedGate();
+    this.closedGate.group.position.set(CLOSED_GATE_POS.x, 0, CLOSED_GATE_POS.z);
+    this.closedGate.group.rotation.y = CLOSED_GATE_POS.rotationY;
+    this.closedGate.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.closedGate.group);
+
+    // Magischer Felsbrocken, der Weg 1 (Silberstollen-Pfad) blockiert
+    this.path1Boulder = createPathBoulder();
+    this.scene.add(this.path1Boulder.group);
+    this.pickableObjects.push(...this.path1Boulder.pickableMeshes);
+
+    // Magische Wasserpfütze, die Weg 2 (Nixenteich-Pfad) blockiert
+    this.path2Puddle = createPathPuddle();
+    this.scene.add(this.path2Puddle.group);
+    this.pickableObjects.push(...this.path2Puddle.pickableMeshes);
+
+    // Reißender Gebirgsbach, der Weg 3 (Quellenweg) blockiert
+    this.path3Stream = createPathStream();
+    this.scene.add(this.path3Stream.group);
+    this.pickableObjects.push(...this.path3Stream.pickableMeshes);
+
+    // Magischer Baumstamm, der Weg 4 (Holzfäller-Pfad) blockiert
+    this.path4Log = createPathLog();
+    this.scene.add(this.path4Log.group);
+    this.pickableObjects.push(...this.path4Log.pickableMeshes);
+
+    // Magisches Feuer, das Weg 5 (Höllenschlund-Pfad) blockiert
+    this.path5Fire = createPathFire();
+    this.scene.add(this.path5Fire.group);
+    this.pickableObjects.push(...this.path5Fire.pickableMeshes);
+
+    // Hohe Kräuterpflanzen mit Geländer, die Weg 6 (Jägerpfad) blockieren
+    this.path6Herbs = createPathHerbs();
+    this.scene.add(this.path6Herbs.group);
+    this.pickableObjects.push(...this.path6Herbs.pickableMeshes);
+
+
+    // Bäume rund um die Lichtung, zwischen den 7 Wegen und entlang aller Kurven von Weg 1 bis 7
     this.buildForestRing();
     this.buildCurvedPath1Trees();
     this.buildCurvedPath2Trees();
@@ -345,6 +423,7 @@ export class CrossroadsScene {
     this.buildCurvedPath4Trees();
     this.buildCurvedPath5Trees();
     this.buildCurvedPath6Trees();
+    this.buildCurvedPath7Trees();
     this.buildForestMushrooms();
 
     // Zielmarkierung für Maus-Bewegung (Click-to-Move)
@@ -398,7 +477,6 @@ export class CrossroadsScene {
     this.scene.add(clearing);
     this.pickableObjects.push(clearing);
 
-    const pathLength = 52;
     SEVEN_PATHS.forEach((pathData) => {
       const mat = new THREE.MeshStandardMaterial({
         color: 0x7b654b,
@@ -485,21 +563,18 @@ export class CrossroadsScene {
         return;
       }
 
-      const pivot = new THREE.Group();
-      pivot.rotation.y = -pathData.angleRad;
-
-      const pathMesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.05, pathLength), mat);
-      pathMesh.position.set(0, 0.03, -(pathLength / 2 + 4.5));
-      pathMesh.receiveShadow = true;
-      pathMesh.userData = { interactableType: 'path', pathId: pathData.id };
-      pivot.add(pathMesh);
-      this.pickableObjects.push(pathMesh);
-
-      const gemGroup = this.createPathGemstone(pathData.id, pathData.colorHex);
-      gemGroup.position.set(1.45, 0, -6.8);
-      pivot.add(gemGroup);
-
-      this.scene.add(pivot);
+      if (pathData.id === 7) {
+        // Weg 7: Pfad entlang PATH_7_WAYPOINTS bis zum geschlossenen Tor
+        this.buildCurvedPathMeshes(
+          7,
+          PATH_7_WAYPOINTS,
+          PATH_7_END_CLEARING,
+          pathData.angleRad,
+          mat,
+          pathData.colorHex
+        );
+        return;
+      }
     });
   }
 
@@ -518,7 +593,7 @@ export class CrossroadsScene {
     pedestal.position.y = 0.13;
     pedestal.castShadow = true;
     pedestal.receiveShadow = true;
-    pedestal.userData = { interactableType: 'sign', pathId };
+    pedestal.userData = { interactableType: 'gemstone', pathId };
     group.add(pedestal);
     this.pickableObjects.push(pedestal);
 
@@ -536,7 +611,7 @@ export class CrossroadsScene {
     gemMesh.scale.set(1.0, 1.45, 1.0);
     gemMesh.position.y = 0.62;
     gemMesh.castShadow = true;
-    gemMesh.userData = { interactableType: 'sign', pathId };
+    gemMesh.userData = { interactableType: 'gemstone', pathId };
     group.add(gemMesh);
     this.pickableObjects.push(gemMesh);
 
@@ -737,28 +812,12 @@ export class CrossroadsScene {
     return this.isNearCurvedCorridor(x, z, PATH_6_WAYPOINTS, PATH_6_END_CLEARING, minDistance);
   }
 
-  private isNearStraightPath(
-    x: number,
-    z: number,
-    angleRad: number,
-    startDist = 4.5,
-    endDist = 56.0,
-    minDistance = 2.8
-  ): boolean {
-    const sinA = Math.sin(angleRad);
-    const cosA = -Math.cos(angleRad);
-    const ax = sinA * startDist;
-    const az = cosA * startDist;
-    const bx = sinA * endDist;
-    const bz = cosA * endDist;
-    const abx = bx - ax;
-    const abz = bz - az;
-    const lenSq = abx * abx + abz * abz;
-    if (lenSq < 0.0001) return false;
-    const t = Math.max(0, Math.min(1, ((x - ax) * abx + (z - az) * abz) / lenSq));
-    const cx = ax + t * abx;
-    const cz = az + t * abz;
-    return Math.hypot(x - cx, z - cz) < minDistance;
+  private isNearPath7Corridor(x: number, z: number, minDistance = 3.2): boolean {
+    // Auch den Vorplatz vor dem geschlossenen Tor von hohen Waldbäumen freihalten
+    if (Math.hypot(x - CLOSED_GATE_POS.x, z - CLOSED_GATE_POS.z) < CLOSED_GATE_POS.radius + 1.8) {
+      return true;
+    }
+    return this.isNearCurvedCorridor(x, z, PATH_7_WAYPOINTS, PATH_7_END_CLEARING, minDistance);
   }
 
   /**
@@ -776,20 +835,21 @@ export class CrossroadsScene {
       return false;
     }
 
-    // 2. Ausreichender Abstand zu allen kurvigen Wegen 1 bis 6 und deren Vorplätzen (minDistance 2.8m)
+    // 2. Ausreichender Abstand zu allen kurvigen Wegen 1 bis 7 und deren Vorplätzen (minDistance 2.8m)
     if (
       this.isNearPath1Corridor(x, z, 2.8) ||
       this.isNearPath2Corridor(x, z, 2.8) ||
       this.isNearPath3Corridor(x, z, 2.8) ||
       this.isNearPath4Corridor(x, z, 2.8) ||
       this.isNearPath5Corridor(x, z, 4.0) ||
-      this.isNearPath6Corridor(x, z, 2.8)
+      this.isNearPath6Corridor(x, z, 2.8) ||
+      this.isNearPath7Corridor(x, z, 2.8)
     ) {
       return false;
     }
 
-    // 3. Ausreichender Abstand zum geraden 7. Weg (Nordwest)
-    if (this.isNearStraightPath(x, z, SEVEN_PATHS[6].angleRad, 4.5, 56.0, 2.8)) {
+    // 3. Das geschlossene Tor und die flankierenden Steinmauern
+    if (Math.hypot(x - CLOSED_GATE_POS.x, z - CLOSED_GATE_POS.z) < 7.2) {
       return false;
     }
 
@@ -836,14 +896,15 @@ export class CrossroadsScene {
           const x = Math.sin(angle) * r;
           const z = -Math.cos(angle) * r;
 
-          // Keine Bäume auf die kurvigen Korridore von Weg 1 bis Weg 6 setzen
+          // Keine Bäume auf die kurvigen Korridore von Weg 1 bis Weg 7 setzen
           if (
             this.isNearPath1Corridor(x, z, 3.0) ||
             this.isNearPath2Corridor(x, z, 3.0) ||
             this.isNearPath3Corridor(x, z, 3.0) ||
             this.isNearPath4Corridor(x, z, 3.0) ||
             this.isNearPath5Corridor(x, z, 3.0) ||
-            this.isNearPath6Corridor(x, z, 3.0)
+            this.isNearPath6Corridor(x, z, 3.0) ||
+            this.isNearPath7Corridor(x, z, 3.0)
           ) {
             continue;
           }
@@ -1279,6 +1340,89 @@ export class CrossroadsScene {
   }
 
   /**
+   * Platziert Bäume entlang von Weg 7 (Torweg) und dichten Berg- und Nebelwald
+   * rund um den Vorplatz sowie hinter den Steinmauern des geschlossenen Tores.
+   */
+  private buildCurvedPath7Trees(): void {
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4f3622, roughness: 0.9 });
+    const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 0.85 });
+    const crownMatLight = new THREE.MeshStandardMaterial({ color: 0x335c36, roughness: 0.85 });
+
+    for (let i = 1; i < PATH_7_WAYPOINTS.length - 1; i++) {
+      const prev = PATH_7_WAYPOINTS[i - 1];
+      const curr = PATH_7_WAYPOINTS[i];
+      const next = PATH_7_WAYPOINTS[i + 1];
+
+      const dirX = next.x - prev.x;
+      const dirZ = next.z - prev.z;
+      const len = Math.hypot(dirX, dirZ) || 1;
+      const perpX = -dirZ / len;
+      const perpZ = dirX / len;
+
+      for (const side of [-1, 1]) {
+        for (const dist of [3.4, 6.2]) {
+          const tx = curr.x + perpX * side * dist;
+          const tz = curr.z + perpZ * side * dist;
+          if (
+            this.isNearPath7Corridor(tx, tz, 2.7) ||
+            this.isNearPath6Corridor(tx, tz, 2.7) ||
+            this.isNearPath1Corridor(tx, tz, 2.7)
+          ) {
+            continue;
+          }
+          const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
+          const tree = this.createTreeMesh(
+            scale,
+            (i + side) % 2 === 0,
+            trunkMat,
+            crownMatDark,
+            crownMatLight
+          );
+          tree.position.set(tx, 0, tz);
+          this.scene.add(tree);
+        }
+      }
+    }
+
+    // Dichte Fichten und Bergwaldbäume hinter und seitlich der Steinmauern des Tores
+    const gateCos = Math.cos(CLOSED_GATE_POS.rotationY);
+    const gateSin = Math.sin(CLOSED_GATE_POS.rotationY);
+    const gateTreesLocal: [number, number, number, boolean][] = [
+      // Direkt hinter den Mauern und dem Tor (lokales Z < -2.0)
+      [-10.5, -3.2, 1.35, true],
+      [-7.2, -4.5, 1.4, false],
+      [-3.8, -3.8, 1.3, true],
+      [0.0, -4.2, 1.45, false],
+      [3.8, -3.8, 1.3, true],
+      [7.2, -4.5, 1.4, false],
+      [10.5, -3.2, 1.35, true],
+
+      // Zweite Reihe tiefer im Bergwald dahinter
+      [-9.0, -7.5, 1.45, false],
+      [-4.5, -8.0, 1.5, true],
+      [0.0, -8.2, 1.55, false],
+      [4.5, -8.0, 1.5, true],
+      [9.0, -7.5, 1.45, false],
+
+      // Flankierende Bäume am Rand des Vorplatzes vor den Mauern
+      [-11.5, 2.5, 1.25, false],
+      [-10.2, 6.0, 1.3, true],
+      [11.5, 2.5, 1.25, false],
+      [10.2, 6.0, 1.3, true],
+    ];
+
+    for (const [lx, lz, scale, dark] of gateTreesLocal) {
+      const wx = CLOSED_GATE_POS.x + lx * gateCos + lz * gateSin;
+      const wz = CLOSED_GATE_POS.z - lx * gateSin + lz * gateCos;
+      if (!this.isNearPath7Corridor(wx, wz, 3.0)) {
+        const tree = this.createTreeMesh(scale, dark, trunkMat, crownMatDark, crownMatLight);
+        tree.position.set(wx, 0, wz);
+        this.scene.add(tree);
+      }
+    }
+  }
+
+  /**
    * Verteilt idyllische Waldpilze (Fliegenpilze, Steinpilze, Pfifferlinge und bunte Mischgruppen)
    * ausschließlich auf den grünen Waldboden-Flächen unter den Bäumen – niemals auf braunen Wegen oder Plätzen.
    */
@@ -1363,6 +1507,12 @@ export class CrossroadsScene {
       { x: -24.8, z: 14.5, type: 'bolete', scale: 1.05 },
       { x: -32.5, z: 15.2, type: 'mixed', scale: 0.95 },
       { x: -35.2, z: 28.5, type: 'chanterelle', scale: 0.95 },
+
+      // Weg 7 (Torweg): Im uralten Nebel- und Bergwald vor dem verschlossenen Tor
+      { x: -14.5, z: -16.2, type: 'bolete', scale: 1.0 },
+      { x: -22.2, z: -25.5, type: 'fly_agaric', scale: 0.95 },
+      { x: -30.8, z: -27.8, type: 'mixed', scale: 1.05 },
+      { x: -36.5, z: -37.2, type: 'chanterelle', scale: 0.95 },
     ];
 
     for (const spot of specificMushroomSpots) {
@@ -1431,6 +1581,23 @@ export class CrossroadsScene {
     this.cameraDistance = Math.max(5.5, Math.min(14.5, this.cameraDistance + deltaZoom));
   }
 
+  /**
+   * Setzt die Kamera und Spielfigur nach einem Schnellreise-Sprung sofort auf die Zielposition.
+   */
+  public snapCameraToPlayer(playerPos: Readonly<Vector2D>): void {
+    this.lastPlayerPos = { x: playerPos.x, z: playerPos.z };
+    this.playerGroup.position.set(playerPos.x, 0, playerPos.z);
+    this.playerGroup.rotation.y = 0;
+
+    const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
+    const camHeight = Math.sin(this.cameraPitch) * this.cameraDistance;
+    const targetCamX = playerPos.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
+    const targetCamZ = playerPos.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
+
+    this.camera.position.set(targetCamX, camHeight, targetCamZ);
+    this.camera.lookAt(playerPos.x, 1.0, playerPos.z);
+  }
+
   public setHoveredPathId(pathId: number | null): void {
     this.hoveredPathId = pathId;
   }
@@ -1471,6 +1638,86 @@ export class CrossroadsScene {
     this.isChestHovered = hovered;
   }
 
+  public setGateHovered(hovered: boolean): void {
+    this.isGateHovered = hovered;
+  }
+
+  public setBoulderHovered(hovered: boolean): void {
+    this.isBoulderHovered = hovered;
+  }
+
+  public setPuddleHovered(hovered: boolean): void {
+    this.isPuddleHovered = hovered;
+  }
+
+  public setStreamHovered(hovered: boolean): void {
+    this.isStreamHovered = hovered;
+  }
+
+  public setLogHovered(hovered: boolean): void {
+    this.isLogHovered = hovered;
+  }
+
+  public setFireHovered(hovered: boolean): void {
+    this.isFireHovered = hovered;
+  }
+
+  public setHerbsHovered(hovered: boolean): void {
+    this.isHerbsHovered = hovered;
+  }
+
+  public pulseGemstone(pathId: number): void {
+    this.gemstonePulseTimers.set(pathId, 1.3);
+  }
+
+  public removePath1BoulderVisual(onComplete?: () => void): void {
+    this.path1Boulder.startDissolve(onComplete);
+  }
+
+  public isPath1BoulderRemoved(): boolean {
+    return this.path1Boulder.isRemoved();
+  }
+
+  public removePath2PuddleVisual(onComplete?: () => void): void {
+    this.path2Puddle.startDissolve(onComplete);
+  }
+
+  public isPath2PuddleRemoved(): boolean {
+    return this.path2Puddle.isRemoved();
+  }
+
+  public removePath3StreamVisual(onComplete?: () => void): void {
+    this.path3Stream.startDissolve(onComplete);
+  }
+
+  public isPath3StreamRemoved(): boolean {
+    return this.path3Stream.isRemoved();
+  }
+
+  public removePath4LogVisual(onComplete?: () => void): void {
+    this.path4Log.startDissolve(onComplete);
+  }
+
+  public isPath4LogRemoved(): boolean {
+    return this.path4Log.isRemoved();
+  }
+
+  public removePath5FireVisual(onComplete?: () => void): void {
+    this.path5Fire.startDissolve(onComplete);
+  }
+
+  public isPath5FireRemoved(): boolean {
+    return this.path5Fire.isRemoved();
+  }
+
+  public removePath6HerbsVisual(onComplete?: () => void): void {
+    this.path6Herbs.startDissolve(onComplete);
+  }
+
+  public isPath6HerbsRemoved(): boolean {
+    return this.path6Herbs.isRemoved();
+  }
+
   /**
    * Ermittelt per Raycasting, auf welches 3D-Objekt oder welchen Punkt am Boden die Maus zeigt.
    */
@@ -1494,6 +1741,30 @@ export class CrossroadsScene {
       const data = hit.object.userData;
       const point: Vector2D = { x: hit.point.x, z: hit.point.z };
 
+      if (data.interactableType === 'gate') {
+        return { kind: 'gate', point };
+      }
+      if (data.interactableType === 'boulder') {
+        return { kind: 'boulder', point };
+      }
+      if (data.interactableType === 'puddle') {
+        return { kind: 'puddle', point };
+      }
+      if (data.interactableType === 'stream') {
+        return { kind: 'stream', point };
+      }
+      if (data.interactableType === 'log') {
+        return { kind: 'log', point };
+      }
+      if (data.interactableType === 'fire') {
+        return { kind: 'fire', point };
+      }
+      if (data.interactableType === 'herbs') {
+        return { kind: 'herbs', point };
+      }
+      if (data.interactableType === 'gemstone' && typeof data.pathId === 'number') {
+        return { kind: 'gemstone', pathId: data.pathId, point };
+      }
       if (data.interactableType === 'wild_hunter') {
         return { kind: 'wild_hunter', point };
       }
@@ -1545,6 +1816,7 @@ export class CrossroadsScene {
       if (data.interactableType === 'sign' && typeof data.pathId === 'number') {
         return { kind: 'sign', pathId: data.pathId, point };
       }
+
       if (data.interactableType === 'hut') {
         return { kind: 'hut', point };
       }
@@ -1629,6 +1901,13 @@ export class CrossroadsScene {
       playerPos,
       this.isWoodWomanLodgeHovered || isDialogueActive
     );
+    this.closedGate.update(this.elapsedSeconds, playerPos, this.isGateHovered);
+    this.path1Boulder.update(dtSeconds, this.isBoulderHovered);
+    this.path2Puddle.update(dtSeconds, this.isPuddleHovered);
+    this.path3Stream.update(dtSeconds, this.isStreamHovered);
+    this.path4Log.update(dtSeconds, this.isLogHovered);
+    this.path5Fire.update(dtSeconds, this.isFireHovered);
+    this.path6Herbs.update(dtSeconds, this.isHerbsHovered);
     this.treasureChest.update(dtSeconds, isChestOpen, this.isChestHovered);
 
     // Ziel-Markierung am Boden anzeigen, solange Click-to-Move aktiv ist
@@ -1651,19 +1930,25 @@ export class CrossroadsScene {
       }
     });
 
-    // Edelstein am jeweils aktiven Storyweg (Weg 1 bis 6 bzw. aktuell gewählter Storyweg) leuchten lassen
+    // Edelstein am jeweils aktiven Storyweg (Weg 1 bis 7 bzw. aktuell gewählter Storyweg) leuchten lassen
     const pulse = 0.5 + 0.5 * Math.sin(this.elapsedSeconds * 3.2);
     this.pathGemstones.forEach((gem, id) => {
-      const isStoryPath = id >= 1 && id <= 6;
+      const pulseTimer = this.gemstonePulseTimers.get(id) ?? 0;
+      if (pulseTimer > 0) {
+        this.gemstonePulseTimers.set(id, Math.max(0, pulseTimer - dtSeconds));
+      }
+      const flash = pulseTimer > 0 ? (pulseTimer / 1.3) * 2.8 : 0;
+
+      const isStoryPath = id >= 1 && id <= 7;
       const isActiveQuestPath =
         selectedPathId !== null ? id === selectedPathId && isStoryPath : isStoryPath;
 
-      if (isActiveQuestPath) {
+      if (isActiveQuestPath || flash > 0) {
         gem.material.emissive.setHex(gem.baseColor);
-        gem.material.emissiveIntensity = 1.05 + pulse * 0.65;
-        gem.light.intensity = 1.35 + pulse * 0.75;
+        gem.material.emissiveIntensity = 1.05 + pulse * 0.65 + flash;
+        gem.light.intensity = 1.35 + pulse * 0.75 + flash * 1.8;
         gem.mesh.position.y = 0.65 + Math.sin(this.elapsedSeconds * 2.4 + id) * 0.05;
-        gem.mesh.rotation.y = this.elapsedSeconds * 1.1;
+        gem.mesh.rotation.y = this.elapsedSeconds * (flash > 0 ? 3.6 : 1.1);
       } else if (id === this.hoveredPathId || id === selectedPathId) {
         gem.material.emissive.setHex(gem.baseColor);
         gem.material.emissiveIntensity = 0.35;
@@ -1676,6 +1961,7 @@ export class CrossroadsScene {
         gem.mesh.position.y = 0.62;
       }
     });
+
 
     // Sanfte Verfolgerkamera mit Maus-Orbit, Neigung (Pitch) und Zoom (Distanz)
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;

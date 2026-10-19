@@ -390,6 +390,350 @@ export class SoundService {
     latchOsc.stop(latchTime + 0.065);
   }
 
+  /**
+   * Spielt einen mächtigen, magischen Soundeffekt ab, wenn der Felsbrocken
+   * auf Weg 1 durch Berühren des rotierenden Edelsteins zerbricht und aufgelöst wird:
+   * Kristallines Glöckchen-Aufblitzen, tiefes sonores Grollen der Erde und zersplitterndes Gestein.
+   */
+  public playBoulderBreakSound(): void {
+    const ctx = this.getContext();
+    if (!ctx) {
+      return;
+    }
+
+
+    const now = ctx.currentTime;
+
+    // 1. Magischer Kristallglanz (Edelstein-Resonanz)
+    const crystalNotes = [523.25, 659.25, 783.99, 1046.5]; // C-Dur / Quinte
+    crystalNotes.forEach((freq, idx) => {
+      this.scheduleShimmerNote(ctx, freq, now + idx * 0.05, 0.55, 0.08);
+    });
+
+    // 2. Tiefes, sonores Erd-Grollen (Sub-Bass Rumpeln der bebenden Felsmasse)
+    const subOsc = ctx.createOscillator();
+    subOsc.type = 'sine';
+    subOsc.frequency.setValueAtTime(85, now + 0.1);
+    subOsc.frequency.exponentialRampToValueAtTime(32, now + 0.95);
+
+    const subGain = ctx.createGain();
+    subGain.gain.setValueAtTime(0.001, now + 0.1);
+    subGain.gain.linearRampToValueAtTime(0.38, now + 0.18);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
+
+    subOsc.connect(subGain);
+    subGain.connect(ctx.destination);
+    subOsc.start(now + 0.1);
+    subOsc.stop(now + 1.15);
+
+    // 3. Tiefpass-gefiltertes Rumpeln der Erdmassen
+    const rumbleSource = ctx.createBufferSource();
+    rumbleSource.buffer = this.getNoiseBuffer(ctx);
+
+    const lowpass = ctx.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.setValueAtTime(190, now + 0.1);
+    lowpass.frequency.exponentialRampToValueAtTime(75, now + 1.0);
+
+    const rumbleGain = ctx.createGain();
+    rumbleGain.gain.setValueAtTime(0.001, now + 0.1);
+    rumbleGain.gain.linearRampToValueAtTime(0.32, now + 0.22);
+    rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 1.05);
+
+    rumbleSource.connect(lowpass);
+    lowpass.connect(rumbleGain);
+    rumbleGain.connect(ctx.destination);
+    rumbleSource.start(now + 0.1);
+    rumbleSource.stop(now + 1.1);
+
+    // 4. Zerspringendes, zerbröckelndes Gesteinsknistern (Bandpass-Rauschen)
+    const crackleSource = ctx.createBufferSource();
+    crackleSource.buffer = this.getNoiseBuffer(ctx);
+
+    const bandpass = ctx.createBiquadFilter();
+    bandpass.type = 'bandpass';
+    bandpass.frequency.setValueAtTime(1150, now + 0.15);
+    bandpass.Q.setValueAtTime(2.2, now + 0.15);
+
+    const crackleGain = ctx.createGain();
+    crackleGain.gain.setValueAtTime(0.001, now + 0.15);
+    crackleGain.gain.linearRampToValueAtTime(0.22, now + 0.2);
+    crackleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+
+    crackleSource.connect(bandpass);
+    bandpass.connect(crackleGain);
+    crackleGain.connect(ctx.destination);
+    crackleSource.start(now + 0.15);
+    crackleSource.stop(now + 0.7);
+  }
+
+  /**
+   * Spielt einen magischen Soundeffekt ab, wenn die Wasserpfütze auf Weg 2 versickert:
+   * Kristalliner Glanz, zartes Gluckern und versickerndes Wasser.
+   */
+  public playPuddleDrainSound(): void {
+    const ctx = this.getContext();
+    if (!ctx) {
+      return;
+    }
+
+    const now = ctx.currentTime;
+
+    // 1. Aquamarin-Kristallglanz
+    const crystalNotes = [659.25, 880.0, 1174.66, 1318.51];
+    crystalNotes.forEach((freq, idx) => {
+      this.scheduleShimmerNote(ctx, freq, now + idx * 0.045, 0.6, 0.07);
+    });
+
+    // 2. Gluckerndes, strudelndes Wasser (Frequenzmodulierter Oszillator)
+    const bubbleOsc = ctx.createOscillator();
+    bubbleOsc.type = 'sine';
+    bubbleOsc.frequency.setValueAtTime(320, now + 0.08);
+    bubbleOsc.frequency.exponentialRampToValueAtTime(140, now + 0.85);
+
+    const bubbleGain = ctx.createGain();
+    bubbleGain.gain.setValueAtTime(0.001, now + 0.08);
+    bubbleGain.gain.linearRampToValueAtTime(0.24, now + 0.18);
+    bubbleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+
+    bubbleOsc.connect(bubbleGain);
+    bubbleGain.connect(ctx.destination);
+    bubbleOsc.start(now + 0.08);
+    bubbleOsc.stop(now + 1.0);
+
+    // 3. Rauschendes Versickern im feuchten Erdboden (Bandpass-Rauschen)
+    const drainSource = ctx.createBufferSource();
+    drainSource.buffer = this.getNoiseBuffer(ctx);
+
+    const drainFilter = ctx.createBiquadFilter();
+    drainFilter.type = 'bandpass';
+    drainFilter.frequency.setValueAtTime(750, now + 0.1);
+    drainFilter.frequency.exponentialRampToValueAtTime(260, now + 0.85);
+    drainFilter.Q.setValueAtTime(1.8, now + 0.1);
+
+    const drainGain = ctx.createGain();
+    drainGain.gain.setValueAtTime(0.001, now + 0.1);
+    drainGain.gain.linearRampToValueAtTime(0.26, now + 0.2);
+    drainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+
+    drainSource.connect(drainFilter);
+    drainFilter.connect(drainGain);
+    drainGain.connect(ctx.destination);
+    drainSource.start(now + 0.1);
+    drainSource.stop(now + 0.95);
+  }
+
+  /**
+   * Spielt einen magischen Soundeffekt ab, wenn der Baumstamm auf Weg 4 zerfällt:
+   * Bernstein-Akkord, knackendes Splittern und zerspringendes Holz.
+   */
+  public playLogBreakSound(): void {
+    const ctx = this.getContext();
+    if (!ctx) {
+      return;
+    }
+
+    const now = ctx.currentTime;
+
+    // 1. Bernstein-Kristallklang
+    const amberNotes = [440.0, 554.37, 659.25, 880.0];
+    amberNotes.forEach((freq, idx) => {
+      this.scheduleShimmerNote(ctx, freq, now + idx * 0.045, 0.55, 0.075);
+    });
+
+    // 2. Knackender Holzimpuls (tiefer, trockener Aufschlag)
+    const woodOsc = ctx.createOscillator();
+    woodOsc.type = 'triangle';
+    woodOsc.frequency.setValueAtTime(160, now + 0.1);
+    woodOsc.frequency.exponentialRampToValueAtTime(65, now + 0.35);
+
+    const woodGain = ctx.createGain();
+    woodGain.gain.setValueAtTime(0.001, now + 0.1);
+    woodGain.gain.linearRampToValueAtTime(0.35, now + 0.13);
+    woodGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+    woodOsc.connect(woodGain);
+    woodGain.connect(ctx.destination);
+    woodOsc.start(now + 0.1);
+    woodOsc.stop(now + 0.5);
+
+    // 3. Knisterndes, splitterndes Holz (Bandpass-Rauschen)
+    const crackSource = ctx.createBufferSource();
+    crackSource.buffer = this.getNoiseBuffer(ctx);
+
+    const crackFilter = ctx.createBiquadFilter();
+    crackFilter.type = 'bandpass';
+    crackFilter.frequency.setValueAtTime(1450, now + 0.1);
+    crackFilter.Q.setValueAtTime(2.5, now + 0.1);
+
+    const crackGain = ctx.createGain();
+    crackGain.gain.setValueAtTime(0.001, now + 0.1);
+    crackGain.gain.linearRampToValueAtTime(0.3, now + 0.14);
+    crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+
+    crackSource.connect(crackFilter);
+    crackFilter.connect(crackGain);
+    crackGain.connect(ctx.destination);
+    crackSource.start(now + 0.1);
+    crackSource.stop(now + 0.7);
+  }
+
+  /**
+   * Spielt einen magischen Soundeffekt ab, wenn das Feuer auf Weg 5 erlischt:
+   * Rubinrote Kristalltöne, zischendes Verpuffen und abklingender Dampf.
+   */
+  public playFireExtinguishSound(): void {
+    const ctx = this.getContext();
+    if (!ctx) {
+      return;
+    }
+
+    const now = ctx.currentTime;
+
+    // 1. Rubinkristall-Harmonie
+    const rubyNotes = [392.0, 493.88, 587.33, 783.99];
+    rubyNotes.forEach((freq, idx) => {
+      this.scheduleShimmerNote(ctx, freq, now + idx * 0.045, 0.55, 0.08);
+    });
+
+    // 2. Zischendes Erlöschen der Flammen (Hochpass-Rauschen)
+    const hissSource = ctx.createBufferSource();
+    hissSource.buffer = this.getNoiseBuffer(ctx);
+
+    const hissFilter = ctx.createBiquadFilter();
+    hissFilter.type = 'bandpass';
+    hissFilter.frequency.setValueAtTime(2800, now + 0.1);
+    hissFilter.frequency.exponentialRampToValueAtTime(950, now + 0.75);
+    hissFilter.Q.setValueAtTime(1.5, now + 0.1);
+
+    const hissGain = ctx.createGain();
+    hissGain.gain.setValueAtTime(0.001, now + 0.1);
+    hissGain.gain.linearRampToValueAtTime(0.36, now + 0.16);
+    hissGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+
+    hissSource.connect(hissFilter);
+    hissFilter.connect(hissGain);
+    hissGain.connect(ctx.destination);
+    hissSource.start(now + 0.1);
+    hissSource.stop(now + 0.9);
+
+    // 3. Dumpfer Dampf-Ausstoß
+    const steamOsc = ctx.createOscillator();
+    steamOsc.type = 'sine';
+    steamOsc.frequency.setValueAtTime(120, now + 0.12);
+    steamOsc.frequency.exponentialRampToValueAtTime(45, now + 0.6);
+
+    const steamGain = ctx.createGain();
+    steamGain.gain.setValueAtTime(0.001, now + 0.12);
+    steamGain.gain.linearRampToValueAtTime(0.25, now + 0.2);
+    steamGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+    steamOsc.connect(steamGain);
+    steamGain.connect(ctx.destination);
+    steamOsc.start(now + 0.12);
+    steamOsc.stop(now + 0.75);
+  }
+
+  /**
+   * Spielt einen magischen Soundeffekt ab, wenn der Bachlauf auf Weg 3 versiegt / zur Ruhe kommt:
+   * Saphirblauer Kristallglanz und beruhigendes, sanft abklingendes Wasserrauschen.
+   */
+  public playStreamDrainSound(): void {
+    const ctx = this.getContext();
+    if (!ctx) {
+      return;
+    }
+
+    const now = ctx.currentTime;
+
+    // 1. Saphir-Kristallklang (D-Dur Harmonie)
+    const sapphireNotes = [587.33, 739.99, 880.0, 1174.66];
+    sapphireNotes.forEach((freq, idx) => {
+      this.scheduleShimmerNote(ctx, freq, now + idx * 0.05, 0.65, 0.08);
+    });
+
+    // 2. Abklingendes Wasserrauschen (Bandpass-Rauschen)
+    const rushSource = ctx.createBufferSource();
+    rushSource.buffer = this.getNoiseBuffer(ctx);
+
+    const rushFilter = ctx.createBiquadFilter();
+    rushFilter.type = 'bandpass';
+    rushFilter.frequency.setValueAtTime(1200, now + 0.1);
+    rushFilter.frequency.exponentialRampToValueAtTime(320, now + 0.9);
+    rushFilter.Q.setValueAtTime(1.8, now + 0.1);
+
+    const rushGain = ctx.createGain();
+    rushGain.gain.setValueAtTime(0.001, now + 0.1);
+    rushGain.gain.linearRampToValueAtTime(0.32, now + 0.18);
+    rushGain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+
+    rushSource.connect(rushFilter);
+    rushFilter.connect(rushGain);
+    rushGain.connect(ctx.destination);
+    rushSource.start(now + 0.1);
+    rushSource.stop(now + 1.0);
+  }
+
+  /**
+   * Spielt einen magischen Soundeffekt ab, wenn die Kräutersperre auf Weg 6 weicht:
+   * Amethyst-Glockenakkord, sanftes Knarren des weichenden Holzgeländers und raschelndes Laub.
+   */
+  public playHerbsClearSound(): void {
+    const ctx = this.getContext();
+    if (!ctx) {
+      return;
+    }
+
+    const now = ctx.currentTime;
+
+    // 1. Amethyst-Kristallakkord (E-Moll / C-Dur Sphäre)
+    const amethystNotes = [523.25, 659.25, 783.99, 1046.5];
+    amethystNotes.forEach((freq, idx) => {
+      this.scheduleShimmerNote(ctx, freq, now + idx * 0.045, 0.7, 0.085);
+    });
+
+    // 2. Weichendes, knarrendes Holzgeländer
+    const woodOsc = ctx.createOscillator();
+    woodOsc.type = 'sawtooth';
+    woodOsc.frequency.setValueAtTime(140, now + 0.1);
+    woodOsc.frequency.linearRampToValueAtTime(95, now + 0.45);
+
+    const woodFilter = ctx.createBiquadFilter();
+    woodFilter.type = 'lowpass';
+    woodFilter.frequency.setValueAtTime(450, now + 0.1);
+
+    const woodGain = ctx.createGain();
+    woodGain.gain.setValueAtTime(0.001, now + 0.1);
+    woodGain.gain.linearRampToValueAtTime(0.18, now + 0.15);
+    woodGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+    woodOsc.connect(woodFilter);
+    woodFilter.connect(woodGain);
+    woodGain.connect(ctx.destination);
+    woodOsc.start(now + 0.1);
+    woodOsc.stop(now + 0.55);
+
+    // 3. Raschelndes Laub / welkende Ranken
+    const leafSource = ctx.createBufferSource();
+    leafSource.buffer = this.getNoiseBuffer(ctx);
+
+    const leafFilter = ctx.createBiquadFilter();
+    leafFilter.type = 'highpass';
+    leafFilter.frequency.setValueAtTime(2200, now + 0.12);
+
+    const leafGain = ctx.createGain();
+    leafGain.gain.setValueAtTime(0.001, now + 0.12);
+    leafGain.gain.linearRampToValueAtTime(0.22, now + 0.22);
+    leafGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+
+    leafSource.connect(leafFilter);
+    leafFilter.connect(leafGain);
+    leafGain.connect(ctx.destination);
+    leafSource.start(now + 0.12);
+    leafSource.stop(now + 0.9);
+  }
+
+
   private scheduleShimmerNote(
     ctx: AudioContext,
     freq: number,
@@ -430,3 +774,4 @@ export class SoundService {
     overtoneOsc.stop(startTime + duration);
   }
 }
+

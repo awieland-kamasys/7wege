@@ -36,6 +36,13 @@ export class GameApp {
   private pendingTalkToDevil = false;
   private pendingTalkToWildHunter = false;
   private pendingTalkToWoodWomanLodge = false;
+  private pendingInspectGate = false;
+  private pendingInspectBoulder = false;
+  private pendingInspectPuddle = false;
+  private pendingInspectStream = false;
+  private pendingInspectLog = false;
+  private pendingInspectFire = false;
+  private pendingInspectHerbs = false;
   private pendingToggleChest = false;
   private stepDistanceAccumulator = 1.15;
 
@@ -56,9 +63,7 @@ export class GameApp {
         this.state.setTargetToPathEntrance(pathId);
       },
       onReturnToClearing: () => {
-        this.closeDialogueAndSpeech();
-        this.clearPendingActions();
-        this.state.setTargetToClearing();
+        this.jumpToClearing();
       },
       onTalkToNpc: () => {
         this.initiateTalkToNpc();
@@ -104,6 +109,13 @@ export class GameApp {
     this.pendingTalkToDevil = false;
     this.pendingTalkToWildHunter = false;
     this.pendingTalkToWoodWomanLodge = false;
+    this.pendingInspectGate = false;
+    this.pendingInspectBoulder = false;
+    this.pendingInspectPuddle = false;
+    this.pendingInspectStream = false;
+    this.pendingInspectLog = false;
+    this.pendingInspectFire = false;
+    this.pendingInspectHerbs = false;
     this.pendingToggleChest = false;
   }
 
@@ -126,6 +138,14 @@ export class GameApp {
     } else {
       this.sound.playChestCloseSound();
     }
+  }
+
+  public jumpToClearing(): void {
+    this.closeDialogueAndSpeech();
+    this.clearPendingActions();
+    const pos = this.state.jumpToClearing();
+    this.scene.snapCameraToPlayer(pos);
+    this.sound.playFootstep();
   }
 
   private initiateTalkToNpc(): void {
@@ -223,6 +243,97 @@ export class GameApp {
     }
   }
 
+  private initiateInspectGate(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearGate()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('gate_root');
+    } else {
+      this.pendingInspectGate = true;
+      this.state.setTargetToGate();
+    }
+  }
+
+  private initiateInspectBoulder(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearBoulder()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('boulder_root');
+    } else {
+      this.pendingInspectBoulder = true;
+      const bPos = this.state.getPath1BoulderPosition();
+      this.state.setTargetPosition(bPos.x, bPos.z + 1.85);
+    }
+  }
+
+  private initiateInspectPuddle(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearPuddle()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('puddle_root');
+    } else {
+      this.pendingInspectPuddle = true;
+      const pPos = this.state.getPath2PuddlePosition();
+      this.state.setTargetPosition(pPos.x - 1.3, pPos.z + 1.25);
+    }
+  }
+
+  private initiateInspectStream(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearStream()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('stream_root');
+    } else {
+      this.pendingInspectStream = true;
+      const sPos = this.state.getPath3StreamPosition();
+      this.state.setTargetPosition(sPos.x - 1.6, sPos.z - 0.35);
+    }
+  }
+
+  private initiateInspectLog(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearLog()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('log_root');
+    } else {
+      this.pendingInspectLog = true;
+      const lPos = this.state.getPath4LogPosition();
+      this.state.setTargetPosition(lPos.x, lPos.z - 1.85);
+    }
+  }
+
+  private initiateInspectFire(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearFire()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('fire_root');
+    } else {
+      this.pendingInspectFire = true;
+      const fPos = this.state.getPath5FirePosition();
+      this.state.setTargetPosition(fPos.x + 0.8, fPos.z - 1.7);
+    }
+  }
+
+  private initiateInspectHerbs(): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    if (this.state.isNearHerbs()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('herbs_root');
+    } else {
+      this.pendingInspectHerbs = true;
+      const hPos = this.state.getPath6HerbsPosition();
+      this.state.setTargetPosition(hPos.x + 1.6, hPos.z - 0.35);
+    }
+  }
+
+
   private initiateToggleChest(): void {
     this.clearPendingActions();
     this.closeDialogueAndSpeech();
@@ -257,6 +368,8 @@ export class GameApp {
       this.initiateTalkToDevil();
     } else if (action?.type === 'walk_to_wild_hunter') {
       this.initiateTalkToWildHunter();
+    } else if (action?.type === 'walk_to_gate') {
+      this.initiateInspectGate();
     }
   }
 
@@ -306,22 +419,50 @@ export class GameApp {
           this.initiateTalkToNixie();
         } else if (this.state.isNearGreyMan()) {
           this.initiateTalkToGreyMan();
+        } else if (this.state.isPath1Blocked() && this.state.isNearBoulder()) {
+          this.initiateInspectBoulder();
+        } else if (this.state.isPath2Blocked() && this.state.isNearPuddle()) {
+          this.initiateInspectPuddle();
+        } else if (this.state.isPath3Blocked() && this.state.isNearStream()) {
+          this.initiateInspectStream();
+        } else if (this.state.isPath4Blocked() && this.state.isNearLog()) {
+          this.initiateInspectLog();
+        } else if (this.state.isPath5Blocked() && this.state.isNearFire()) {
+          this.initiateInspectFire();
+        } else if (this.state.isPath6Blocked() && this.state.isNearHerbs()) {
+          this.initiateInspectHerbs();
+        } else if (this.state.isNearGate()) {
+          this.initiateInspectGate();
         } else if (this.state.isNearChest()) {
           this.initiateToggleChest();
         } else if (this.state.isNearNpc()) {
           this.initiateTalkToNpc();
         } else {
           const selected = this.state.getSelectedPath();
-          if (selected?.id === 6 && this.state.getPlayerPosition().x < -8) {
+          if (selected?.id === 7 && this.state.getPlayerPosition().x < -8) {
+            this.initiateInspectGate();
+          } else if (selected?.id === 6 && this.state.isPath6Blocked() && this.state.isNearHerbs()) {
+            this.initiateInspectHerbs();
+          } else if (selected?.id === 6 && this.state.getPlayerPosition().x < -8) {
             this.initiateTalkToWildHunter();
+          } else if (selected?.id === 5 && this.state.isPath5Blocked() && this.state.isNearFire()) {
+            this.initiateInspectFire();
           } else if (selected?.id === 5 && this.state.getPlayerPosition().z > 8) {
             this.initiateTalkToDevil();
+          } else if (selected?.id === 4 && this.state.isPath4Blocked() && this.state.isNearLog()) {
+            this.initiateInspectLog();
           } else if (selected?.id === 4 && this.state.getPlayerPosition().z > 8) {
             this.initiateTalkToWoodWoman();
+          } else if (selected?.id === 3 && this.state.isPath3Blocked() && this.state.isNearStream()) {
+            this.initiateInspectStream();
           } else if (selected?.id === 3 && this.state.getPlayerPosition().x > 8) {
             this.initiateTalkToGiant();
+          } else if (selected?.id === 2 && this.state.isPath2Blocked() && this.state.isNearPuddle()) {
+            this.initiateInspectPuddle();
           } else if (selected?.id === 2 && this.state.getPlayerPosition().x > 8) {
             this.initiateTalkToNixie();
+          } else if (selected?.id === 1 && this.state.isPath1Blocked() && this.state.isNearBoulder()) {
+            this.initiateInspectBoulder();
           } else if (selected?.id === 1 && this.state.getPlayerPosition().z < -8) {
             this.initiateTalkToGreyMan();
           } else {
@@ -339,6 +480,12 @@ export class GameApp {
       const pathId = Number(key);
       this.clearPendingActions();
       this.state.setTargetToPathEntrance(pathId);
+    }
+
+    // Schneller Rücksprung zur 7-Wegekreuzung per Taste 0 oder Backspace (wenn auf Wegen unterwegs und kein Dialog offen)
+    if (!this.dialogue.isOpen() && !this.state.isOnClearing() && (key === '0' || key === 'backspace')) {
+      this.jumpToClearing();
+      return;
     }
   };
 
@@ -391,12 +538,21 @@ export class GameApp {
       this.scene.setDevilHovered(false);
       this.scene.setWildHunterHovered(false);
       this.scene.setWoodWomanLodgeHovered(false);
+      this.scene.setGateHovered(false);
+      this.scene.setBoulderHovered(false);
+      this.scene.setPuddleHovered(false);
+      this.scene.setStreamHovered(false);
+      this.scene.setLogHovered(false);
+      this.scene.setFireHovered(false);
+      this.scene.setHerbsHovered(false);
       this.scene.setChestHovered(false);
       this.canvas.style.cursor = 'grab';
       return;
     }
 
-    this.scene.setHoveredPathId(hit.kind === 'sign' || hit.kind === 'path' ? hit.pathId : null);
+    this.scene.setHoveredPathId(
+      hit.kind === 'sign' || hit.kind === 'path' || hit.kind === 'gemstone' ? hit.pathId : null
+    );
     this.scene.setNpcHovered(hit.kind === 'npc');
     this.scene.setGreyManHovered(hit.kind === 'grey_man' || hit.kind === 'cave');
     this.scene.setNixieHovered(hit.kind === 'nixie' || hit.kind === 'pond');
@@ -405,6 +561,13 @@ export class GameApp {
     this.scene.setDevilHovered(hit.kind === 'devil' || hit.kind === 'hell_chasm');
     this.scene.setWildHunterHovered(hit.kind === 'wild_hunter' || hit.kind === 'hunting_lodge');
     this.scene.setWoodWomanLodgeHovered(hit.kind === 'wood_woman_lodge' || hit.kind === 'herb_garden');
+    this.scene.setGateHovered(hit.kind === 'gate');
+    this.scene.setBoulderHovered(hit.kind === 'boulder');
+    this.scene.setPuddleHovered(hit.kind === 'puddle');
+    this.scene.setStreamHovered(hit.kind === 'stream');
+    this.scene.setLogHovered(hit.kind === 'log');
+    this.scene.setFireHovered(hit.kind === 'fire');
+    this.scene.setHerbsHovered(hit.kind === 'herbs');
     this.scene.setChestHovered(hit.kind === 'chest');
 
     this.canvas.style.cursor = hit.kind === 'ground' ? 'default' : 'pointer';
@@ -467,10 +630,126 @@ export class GameApp {
         return;
       }
 
+      if (hit.kind === 'gate') {
+        this.initiateInspectGate();
+        return;
+      }
+
+      if (hit.kind === 'boulder') {
+        this.initiateInspectBoulder();
+        return;
+      }
+
+      if (hit.kind === 'puddle') {
+        this.initiateInspectPuddle();
+        return;
+      }
+
+      if (hit.kind === 'stream') {
+        this.initiateInspectStream();
+        return;
+      }
+
+      if (hit.kind === 'log') {
+        this.initiateInspectLog();
+        return;
+      }
+
+      if (hit.kind === 'fire') {
+        this.initiateInspectFire();
+        return;
+      }
+
+      if (hit.kind === 'herbs') {
+        this.initiateInspectHerbs();
+        return;
+      }
+
+      if (hit.kind === 'gemstone') {
+        if (hit.pathId === 1 && this.state.isPath1Blocked()) {
+          // Klick auf den rotierenden grünen Smaragd von Weg 1 entfernt den blockierenden Felsbrocken!
+          this.state.removePath1Boulder();
+          this.scene.pulseGemstone(1);
+          this.scene.removePath1BoulderVisual();
+          this.sound.playBoulderBreakSound();
+          this.clearPendingActions();
+          this.closeDialogueAndSpeech();
+          this.state.setTargetToPathEntrance(1);
+          return;
+        }
+
+        if (hit.pathId === 2 && this.state.isPath2Blocked()) {
+          // Klick auf den rotierenden türkisfarbenen Aquamarin von Weg 2 lässt die Wasserpfütze versickern!
+          this.state.removePath2Puddle();
+          this.scene.pulseGemstone(2);
+          this.scene.removePath2PuddleVisual();
+          this.sound.playPuddleDrainSound();
+          this.clearPendingActions();
+          this.closeDialogueAndSpeech();
+          this.state.setTargetToPathEntrance(2);
+          return;
+        }
+
+        if (hit.pathId === 3 && this.state.isPath3Blocked()) {
+          // Klick auf den rotierenden saphirblauen Edelstein von Weg 3 bändigt den Gebirgsbach!
+          this.state.removePath3Stream();
+          this.scene.pulseGemstone(3);
+          this.scene.removePath3StreamVisual();
+          this.sound.playStreamDrainSound();
+          this.clearPendingActions();
+          this.closeDialogueAndSpeech();
+          this.state.setTargetToPathEntrance(3);
+          return;
+        }
+
+        if (hit.pathId === 4 && this.state.isPath4Blocked()) {
+          // Klick auf den rotierenden bernsteinfarbenen Edelstein von Weg 4 lässt den Baumstamm zerbersten!
+          this.state.removePath4Log();
+          this.scene.pulseGemstone(4);
+          this.scene.removePath4LogVisual();
+          this.sound.playLogBreakSound();
+          this.clearPendingActions();
+          this.closeDialogueAndSpeech();
+          this.state.setTargetToPathEntrance(4);
+          return;
+        }
+
+        if (hit.pathId === 5 && this.state.isPath5Blocked()) {
+          // Klick auf den rotierenden roten Rubin von Weg 5 löscht die Flammenwand!
+          this.state.removePath5Fire();
+          this.scene.pulseGemstone(5);
+          this.scene.removePath5FireVisual();
+          this.sound.playFireExtinguishSound();
+          this.clearPendingActions();
+          this.closeDialogueAndSpeech();
+          this.state.setTargetToPathEntrance(5);
+          return;
+        }
+
+        if (hit.pathId === 6 && this.state.isPath6Blocked()) {
+          // Klick auf den rotierenden violetten Amethyst von Weg 6 lässt Geländer und Kräuter weichen!
+          this.state.removePath6Herbs();
+          this.scene.pulseGemstone(6);
+          this.scene.removePath6HerbsVisual();
+          this.sound.playHerbsClearSound();
+          this.clearPendingActions();
+          this.closeDialogueAndSpeech();
+          this.state.setTargetToPathEntrance(6);
+          return;
+        }
+
+        this.scene.pulseGemstone(hit.pathId);
+        this.clearPendingActions();
+        this.closeDialogueAndSpeech();
+        this.state.setTargetToPathEntrance(hit.pathId);
+        return;
+      }
+
       if (hit.kind === 'chest') {
         this.initiateToggleChest();
         return;
       }
+
 
       this.clearPendingActions();
       this.closeDialogueAndSpeech();
@@ -547,6 +826,13 @@ export class GameApp {
         !this.state.isNearDevil() &&
         !this.state.isNearWildHunter() &&
         !this.state.isNearWoodWomanLodge() &&
+        !this.state.isNearGate() &&
+        !this.state.isNearBoulder() &&
+        !this.state.isNearPuddle() &&
+        !this.state.isNearStream() &&
+        !this.state.isNearLog() &&
+        !this.state.isNearFire() &&
+        !this.state.isNearHerbs() &&
         this.dialogue.isOpen()
       ) {
         this.closeDialogueAndSpeech();
@@ -593,11 +879,47 @@ export class GameApp {
         this.state.clearTargetPosition();
         this.openDialogueNode('wood_lodge_root');
       }
+      if (this.pendingInspectGate && this.state.isNearGate()) {
+        this.pendingInspectGate = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('gate_root');
+      }
+      if (this.pendingInspectBoulder && this.state.isNearBoulder()) {
+        this.pendingInspectBoulder = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('boulder_root');
+      }
+      if (this.pendingInspectPuddle && this.state.isNearPuddle()) {
+        this.pendingInspectPuddle = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('puddle_root');
+      }
+      if (this.pendingInspectStream && this.state.isNearStream()) {
+        this.pendingInspectStream = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('stream_root');
+      }
+      if (this.pendingInspectLog && this.state.isNearLog()) {
+        this.pendingInspectLog = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('log_root');
+      }
+      if (this.pendingInspectFire && this.state.isNearFire()) {
+        this.pendingInspectFire = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('fire_root');
+      }
+      if (this.pendingInspectHerbs && this.state.isNearHerbs()) {
+        this.pendingInspectHerbs = false;
+        this.state.clearTargetPosition();
+        this.openDialogueNode('herbs_root');
+      }
       if (this.pendingToggleChest && this.state.isNearChest()) {
         this.pendingToggleChest = false;
         this.state.clearTargetPosition();
         this.toggleChestWithSound();
       }
+
     }
 
     const newPos = this.state.getPlayerPosition();
@@ -622,8 +944,9 @@ export class GameApp {
     this.sound.updateAmbientBirds(dtSeconds, this.dialogue.isOpen());
 
     const poi = this.state.getActivePointOfInterest();
+    const currentPath = this.state.getCurrentOrClosestPath();
     const selectedPath = this.state.getSelectedPath();
-    const selectedId = selectedPath ? selectedPath.id : null;
+    const selectedId = selectedPath ? selectedPath.id : (currentPath ? currentPath.id : null);
 
     this.scene.update(
       this.state.getPlayerPosition(),
@@ -638,7 +961,8 @@ export class GameApp {
       selectedId,
       this.dialogue.getCurrentNode(),
       this.state.isChestOpen(),
-      this.state.isOnClearing()
+      this.state.isOnClearing(),
+      currentPath
     );
 
     this.animationFrameId = requestAnimationFrame(this.loop);

@@ -8,6 +8,7 @@ export type DialogueAction =
   | { type: 'walk_to_wood_woman' }
   | { type: 'walk_to_devil' }
   | { type: 'walk_to_wild_hunter' }
+  | { type: 'walk_to_gate' }
   | { type: 'close' };
 
 export interface DialogueOption {
@@ -56,11 +57,388 @@ const PATH_HINTS: Record<number, string> = {
   4: 'Der 4. Holzfäller-Pfad im Südsüdosten führt auf eine gerodete Waldlichtung zu einem Holzfällerlager. Dort triffst du das Holzweibchen zwischen Baumstümpfen und Holzstapeln: Das geschlagene Brennholz rettet die Dorfbewohner vor der bitteren Kälte – doch zu starke Fällungen gefährden den Wald und seine gesamte Umgebung.',
   5: 'Der 5. Höllenschlund-Pfad im Südsüdwesten führt an den Rand eines tiefen, glühenden Abgrunds. Inmitten des Feuermeeres und der emporsteigenden Flammen erwartet dich der Teufel auf seinem Obsidianfelsen.',
   6: 'Der 6. Jägerpfad im Südwesten führt durch eine Waldschneise zu einer Jagdhütte mit prachtvollem Kräutergarten. Dort steht der Wilde Jäger mit Pferd und Jagdhund und streitet erbittert mit einem Holzweibchen: Er wirft ihr Diebstahl kostbarer Kräuter vor, während sie beteuert, damit leidenden Waldtieren in höchster Not das Leben gerettet zu haben.',
-  7: 'Der Sternenwald-Pfad im Nordwesten liegt unter einem dichten Blätterdach. Dort leuchten selbst am Tag die Farne – ein Pfad für Entdecker und Rätselsucher.',
+  7: 'Der 7. Torweg im Nordwesten führt durch uralten Bergwald zu einem mächtigen, fest verschlossenen Tor. Schwere Eisenbeschläge, ein massiver Riegelbalken und dicke Ketten mit einem gewaltigen Schloss versperren das Weiterkommen – ein Portal, das sich nur wahrer Einsicht und Erkenntnis öffnen wird.',
 };
+
+// === DAS GESCHLOSSENE TOR (am Ende von Weg 7) ===
+export const GATE_NAME = 'Das geschlossene Tor';
+export const GATE_ROLE = 'Uraltes Portal des Wanderlandes';
+
+export function createGateDialogueTree(): Record<string, DialogueNode> {
+  return {
+    gate_root: {
+      id: 'gate_root',
+      speaker: GATE_NAME,
+      speakerRole: GATE_ROLE,
+      text: 'Vor dir ragt ein gewaltiges, zweiflügeliges Holztor empor, eingefasst in uralte, moosüberwachsene Steinpfeiler. Schwere Eisenbeschläge und verrostete Ketten halten die Flügel unnachgiebig zusammen. Ein kunstvoll geschmiedetes Vorhängeschloss mit verblichenen Siegelzeichen sichert den massiven Riegelbalken. Auf dem Torbogen steht in verwitterten Lettern gemeißelt: „Nur wer die Pfade erkannte und das Maß wahrte, tritt ein.“',
+      options: [
+        {
+          id: 'inspect-lock',
+          playerText: 'Das Schloss und die Siegelzeichen genauer untersuchen.',
+          nextNodeId: 'gate_lock_inspect',
+        },
+        {
+          id: 'inspect-chains',
+          playerText: 'Versuchen, an den Eisenketten und dem Riegel zu rütteln.',
+          nextNodeId: 'gate_chain_shake',
+        },
+        {
+          id: 'inspect-runes',
+          playerText: 'Die verwitterte Inschrift auf dem Torbogen betrachten.',
+          nextNodeId: 'gate_inscription',
+        },
+        {
+          id: 'gate-close',
+          playerText: 'Den Blick abwenden und den Rückweg bedenken. (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+    gate_lock_inspect: {
+      id: 'gate_lock_inspect',
+      speaker: GATE_NAME,
+      speakerRole: GATE_ROLE,
+      text: 'Das Vorhängeschloss besitzt kein gewöhnliches Schlüsselloch. Stattdessen sind sieben kreisförmige Vertiefungen in das Metall eingelassen, die den sieben Wegen der Waldkreuzung gleichen. Sie scheinen auf eine Vollendung oder Erkenntnis zu warten, ehe sich der Mechanismus rührt.',
+      options: [
+        {
+          id: 'back-gate-root-lock',
+          playerText: 'Weitere Details des Tors ansehen.',
+          nextNodeId: 'gate_root',
+        },
+        {
+          id: 'close-gate-lock',
+          playerText: 'Die Untersuchung beenden.',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+    gate_chain_shake: {
+      id: 'gate_chain_shake',
+      speaker: GATE_NAME,
+      speakerRole: GATE_ROLE,
+      text: 'Du greifst nach den kalten Eisenketten und rüttelst daran. Ein dumpfer, schwerer Klang hallt durch die stillen Tannen, doch das Tor rührt sich keinen Millimeter. Rohe Kraft vermag hier nichts auszurichten.',
+      options: [
+        {
+          id: 'back-gate-root-chain',
+          playerText: 'Zurück zum Tor.',
+          nextNodeId: 'gate_root',
+        },
+        {
+          id: 'close-gate-chain',
+          playerText: 'Die Untersuchung beenden.',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+    gate_inscription: {
+      id: 'gate_inscription',
+      speaker: GATE_NAME,
+      speakerRole: GATE_ROLE,
+      text: 'Die Schriftzeichen sind tief in den Stein gehauen: „Wer das Gold der Nixe verschmäht, das Wort des Bergmanns ehrt, dem Riesen wie dem Dürstenden Gehör schenkt und das Leben im Wald bewahrt, der wird den Schlüssel in sich tragen.“ Arvids Worte über das Gewissen scheinen hier Gestalt angenommen zu haben.',
+      options: [
+        {
+          id: 'back-gate-root-ins',
+          playerText: 'Zurück zum Tor.',
+          nextNodeId: 'gate_root',
+        },
+        {
+          id: 'close-gate-ins',
+          playerText: 'Die Untersuchung beenden.',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+  };
+}
+
+export const GATE_DIALOGUE_NODES: Readonly<Record<string, DialogueNode>> = createGateDialogueTree();
+
+// === DER MAGISCHE FELSBROCKEN (auf Weg 1) ===
+export const BOULDER_NAME = 'Magischer Felsbrocken';
+export const BOULDER_ROLE = 'Uraltes Hindernis auf dem Silberstollen-Pfad';
+
+export function createBoulderDialogueTree(): Record<string, DialogueNode> {
+  return {
+    boulder_root: {
+      id: 'boulder_root',
+      speaker: BOULDER_NAME,
+      speakerRole: BOULDER_ROLE,
+      text: 'Ein gewaltiger, bemooster Granitfelsen versperrt den gesamten Pfad hinauf zum Silberstollen. Durch den Stein ziehen sich feine, grün schimmernde Adern aus Kristallstaub. Am Fuße des Pfades dreht sich ein leuchtender Edelstein auf einem Steinsockel – eine uralte Resonanz scheint beide miteinander zu verbinden.',
+      options: [
+        {
+          id: 'boulder-inspect-runes',
+          playerText: 'Die grün schimmernden Kristalladern genauer abtasten.',
+          nextNodeId: 'boulder_runes',
+        },
+        {
+          id: 'boulder-clear-hint',
+          playerText: 'Verstehen, wie der Felsen beseitigt werden kann.',
+          nextNodeId: 'boulder_hint',
+        },
+        {
+          id: 'boulder-close',
+          playerText: 'Vom Felsen zurücktreten. (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+    boulder_runes: {
+      id: 'boulder_runes',
+      speaker: BOULDER_NAME,
+      speakerRole: BOULDER_ROLE,
+      text: 'Der Stein summt leise, wenn du deine Hand an die Adern legst. Seine Masse ist durch uralte Erdmagie im Boden verankert. Die Energie fließt geradewegs zum rotierenden grünen Edelstein am Eingang von Weg 1 hinab!',
+      options: [
+        {
+          id: 'boulder-to-hint',
+          playerText: 'Wie lässt sich dieser Bann lösen?',
+          nextNodeId: 'boulder_hint',
+        },
+        {
+          id: 'boulder-close-runes',
+          playerText: 'Ich trete zurück. (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+    boulder_hint: {
+      id: 'boulder_hint',
+      speaker: BOULDER_NAME,
+      speakerRole: BOULDER_ROLE,
+      text: 'Klicke einfach auf den rotierenden grünen Edelstein am Pfadanfang des 1. Weges! Eine Berührung dieses Leitkristalls wird die Resonanz auslösen und den Felsbrocken zerfallen lassen.',
+      options: [
+        {
+          id: 'boulder-close-hint',
+          playerText: 'Alles klar, ich werde den Edelstein berühren! (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+  };
+}
+
+export const BOULDER_DIALOGUE_NODES: Readonly<Record<string, DialogueNode>> = createBoulderDialogueTree();
+
+// === DIE MAGISCHE WASSERPFÜTZE (auf Weg 2) ===
+export const PUDDLE_NAME = 'Tiefe Wasserpfütze';
+export const PUDDLE_ROLE = 'Magische Barriere auf dem Nixenteich-Pfad';
+
+export function createPuddleDialogueTree(): Record<string, DialogueNode> {
+  return {
+    puddle_root: {
+      id: 'puddle_root',
+      speaker: PUDDLE_NAME,
+      speakerRole: PUDDLE_ROLE,
+      text: 'Eine tiefe, schimmernde Wasserpfütze überschwemmt den gesamten Pfad in Richtung des Spiegelteichs. Das Wasser kräuselt sich in magischen Wellen und schimmert im Takt des rotierenden Edelsteins am Pfadanfang.',
+      options: [
+        {
+          id: 'puddle-hint-opt',
+          playerText: 'Erkunden, wie das Wasser abgelassen werden kann.',
+          nextNodeId: 'puddle_hint',
+        },
+        {
+          id: 'puddle-close',
+          playerText: 'Vorsichtig vom Wasserrand zurücktreten. (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+    puddle_hint: {
+      id: 'puddle_hint',
+      speaker: PUDDLE_NAME,
+      speakerRole: PUDDLE_ROLE,
+      text: 'Klicke auf den rotierenden Aquamarin-Edelstein am Eingang des 2. Weges! Eine Berührung des Kristalls entzieht der Pfütze die magische Flut und lässt das Wasser im Erdboden versickern.',
+      options: [
+        {
+          id: 'puddle-close-hint',
+          playerText: 'Ich werde den Aquamarin berühren! (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+  };
+}
+
+// === DER UMGESTÜRZTE BAUMSTAMM (auf Weg 4) ===
+export const LOG_NAME = 'Uralter Baumstamm';
+export const LOG_ROLE = 'Mächtiges Hindernis auf dem Holzfäller-Pfad';
+
+export function createLogDialogueTree(): Record<string, DialogueNode> {
+  return {
+    log_root: {
+      id: 'log_root',
+      speaker: LOG_NAME,
+      speakerRole: LOG_ROLE,
+      text: 'Ein gewaltiger, bemooster Eichenstamm liegt quer über dem Pfad zum Holzfällerlager. Entlang der Bruchkante leuchten feine, bernsteinfarbene Runenrisse, die mit dem Leitkristall am Wegeingang harmonieren.',
+      options: [
+        {
+          id: 'log-hint-opt',
+          playerText: 'Erfahren, wie der Stamm beiseite geräumt werden kann.',
+          nextNodeId: 'log_hint',
+        },
+        {
+          id: 'log-close',
+          playerText: 'Vom Stamm zurücktreten. (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+    log_hint: {
+      id: 'log_hint',
+      speaker: LOG_NAME,
+      speakerRole: LOG_ROLE,
+      text: 'Klicke auf den rotierenden Bernsteinkristall am Eingang des 4. Weges! Die Resonanz des Kristalls löst die Versiegelung, lässt den Stamm zerfallen und gibt den Pfad zur Lichtung frei.',
+      options: [
+        {
+          id: 'log-close-hint',
+          playerText: 'Verstanden, ich berühre den Bernsteinkristall! (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+  };
+}
+
+// === DIE LODERNDE FLAMMENWAND (auf Weg 5) ===
+export const FIRE_NAME = 'Lodernde Flammenwand';
+export const FIRE_ROLE = 'Feurige Barriere auf dem Höllenschlund-Pfad';
+
+export function createFireDialogueTree(): Record<string, DialogueNode> {
+  return {
+    fire_root: {
+      id: 'fire_root',
+      speaker: FIRE_NAME,
+      speakerRole: FIRE_ROLE,
+      text: 'Eine lodernde Wand aus züngelnden Flammen und glühenden Kohlen riegelt den Pfad zum Höllenschlund ab. Die Hitze ist sengend, doch die Flammen pulsieren im Gleichklang mit dem rotierenden Rubinkristall an der Kreuzung.',
+      options: [
+        {
+          id: 'fire-hint-opt',
+          playerText: 'Herausfinden, wie das Feuer gelöscht werden kann.',
+          nextNodeId: 'fire_hint',
+        },
+        {
+          id: 'fire-close',
+          playerText: 'Vor der Hitze zurückweichen. (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+    fire_hint: {
+      id: 'fire_hint',
+      speaker: FIRE_NAME,
+      speakerRole: FIRE_ROLE,
+      text: 'Klicke auf den rotierenden Rubinkristall am Eingang des 5. Weges! Eine Berührung bannt die Höllenglut und lässt die Flammen zischend zu harmloser Asche verpuffen.',
+      options: [
+        {
+          id: 'fire-close-hint',
+          playerText: 'Ich werde den Rubinkristall berühren! (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+  };
+}
+
+// === DER REISSENDE BACHLAUF (auf Weg 3) ===
+export const STREAM_NAME = 'Reißender Gebirgsbach';
+export const STREAM_ROLE = 'Tosende Wasserbarriere auf dem Quellenweg';
+
+export function createStreamDialogueTree(): Record<string, DialogueNode> {
+  return {
+    stream_root: {
+      id: 'stream_root',
+      speaker: STREAM_NAME,
+      speakerRole: STREAM_ROLE,
+      text: 'Ein tosender, ungestümer Gebirgsbach stürzt quer über den Pfad und schneidet den Weg zur Brücke und zum Riesen ab. Weiße Gischtkronen tanzen auf den Wellen und tiefblaues Licht schimmert im Takt des rotierenden Kristalls am Weganfang.',
+      options: [
+        {
+          id: 'stream-hint-opt',
+          playerText: 'Erkunden, wie der Bachlauf gebändigt werden kann.',
+          nextNodeId: 'stream_hint',
+        },
+        {
+          id: 'stream-close',
+          playerText: 'Vom reißenden Wasser zurückweichen. (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+    stream_hint: {
+      id: 'stream_hint',
+      speaker: STREAM_NAME,
+      speakerRole: STREAM_ROLE,
+      text: 'Klicke auf den rotierenden saphirblauen Edelstein am Eingang des 3. Weges! Seine Kraft beruhigt die Fluten, lässt das Wasser im Kiesbett versickern und gibt den Pfad zum Wehr frei.',
+      options: [
+        {
+          id: 'stream-close-hint',
+          playerText: 'Ich berühre den blauen Saphir! (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+  };
+}
+
+// === DIE HOHEN KRÄUTERPFLANZEN MIT GELÄNDER (auf Weg 6) ===
+export const HERBS_NAME = 'Verwunschenes Kräutergeländer';
+export const HERBS_ROLE = 'Zaubersperre auf dem Jägerpfad';
+
+export function createHerbsDialogueTree(): Record<string, DialogueNode> {
+  return {
+    herbs_root: {
+      id: 'herbs_root',
+      speaker: HERBS_NAME,
+      speakerRole: HERBS_ROLE,
+      text: 'Ein massives, gezimmertes Holzgeländer und dahinter wuchernde, mannshohe Zauberkräuter riegeln den Pfad zur Jagdhütte vollständig ab. Violett glühende Knospen schwingen im Gleichklang mit dem rotierenden Amethystkristall am Weganfang.',
+      options: [
+        {
+          id: 'herbs-hint-opt',
+          playerText: 'Herausfinden, wie das Geländer und die Kräuter weichen.',
+          nextNodeId: 'herbs_hint',
+        },
+        {
+          id: 'herbs-close',
+          playerText: 'Vor den dichten Ranken zurücktreten. (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+    herbs_hint: {
+      id: 'herbs_hint',
+      speaker: HERBS_NAME,
+      speakerRole: HERBS_ROLE,
+      text: 'Klicke auf den rotierenden violetten Amethyst-Edelstein am Eingang des 6. Weges! Seine Resonanz entlässt den Zauber, lässt das Geländer zur Seite weichen und die dichten Ranken sanft vergehen.',
+      options: [
+        {
+          id: 'herbs-close-hint',
+          playerText: 'Ich werde den Amethystkristall berühren! (Untersuchung beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+  };
+}
+
 
 function buildDialogueNodes(): Record<string, DialogueNode> {
   const nodes: Record<string, DialogueNode> = {
+
     // === WALDHÜTER ARVID (an der Schutzhütte) ===
     root: {
       id: 'root',
@@ -97,6 +475,11 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
           id: 'ask-recommendation',
           playerText: 'Welchen Weg würdest du mir zuerst empfehlen?',
           nextNodeId: 'recommendation',
+        },
+        {
+          id: 'ask-gate',
+          playerText: 'Was verbirgt sich hinter dem 7. Weg und dem geschlossenen Tor?',
+          nextNodeId: 'arvid_gate',
         },
         {
           id: 'bye',
@@ -194,7 +577,7 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       id: 'arvid_beings',
       speaker: GUIDE_NPC_NAME,
       speakerRole: GUIDE_NPC_ROLE,
-      text: 'Im Norden hütet das treue Graumännchen den Silberstollen – ein ehrlicher Geist, doch gebunden an ein ehernes Versprechen. Im Nordosten sitzt die Nixe auf ihrem Stein im Spiegelteich; ihre Schönheit und ihr funkelndes Gold haben schon manchen ins Verderben gezogen. Im Südosten hadert der Riese am Wehr mit der Dürre des Tals, während im Süden das uralte Holzweibchen für den Atem des Forstes kämpft. Und am Jägerpfad pocht der Wilde Jäger stolz auf sein Revierrecht. Begegne ihnen allen mit Achtung, aber lass dich von Zorn oder Schmeicheln nicht verblenden.',
+      text: 'Im Norden hütet das treue Graumännchen den Silberstollen – ein ehrlicher Geist, doch gebunden an ein ehernes Versprechen. Im Nordosten sitzt die Nixe auf ihrem Stein im Spiegelteich; ihre Schönheit und ihr funkelndes Gold haben schon manchen ins Verderben gezogen. Im Südosten hadert der Riese am Wehr mit der Dürre des Tals, während im Süden das uralte Holzweibchen für den Atem des Forstes kämpft. Und am Jägerpfad pocht der Wilde Jäger stolz auf sein Revierrecht. Doch am 7. Weg im Nordwesten ragt das uralte, verschlossene Tor auf – stumm wartend auf jene, die alle Prüfungen verstanden haben.',
       options: [
         {
           id: 'beings-to-paths',
@@ -209,6 +592,36 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
         {
           id: 'back-root-beings',
           playerText: 'Zurück zum Hauptgespräch.',
+          nextNodeId: 'root',
+        },
+        {
+          id: 'beings-to-gate',
+          playerText: 'Was hat es mit jenem verschlossenen Tor auf sich?',
+          nextNodeId: 'arvid_gate',
+        },
+      ],
+    },
+
+    arvid_gate: {
+      id: 'arvid_gate',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Seit undenklichen Wintern steht jenes Tor am Nordwestrand des Wanderlandes im Fels verankert. Niemand vermag es mit roher Gewalt aufzubrechen. Es hütet die Schwelle zu dem, was hinter all unseren Pfaden liegt. Erst wer die Konflikte und Prüfungen an den anderen Wegen verstanden hat und sein Gewissen rein hält, wird das Geheimnis seines Siegels lüften können. Bis dahin bleibt es fest verriegelt – als stiller Mahner, dass manche Pforten erst dann aufgehen, wenn die Zeit und der Geist reif sind.',
+      options: [
+        {
+          id: 'gate-to-walk',
+          playerText: 'Ich möchte den gesamten 7. Weg bis zum geschlossenen Tor wandern.',
+          nextNodeId: null,
+          action: { type: 'walk_to_gate' },
+        },
+        {
+          id: 'gate-to-paths',
+          playerText: 'Erzähle mir von den anderen Wegen.',
+          nextNodeId: 'paths_overview',
+        },
+        {
+          id: 'back-root-gate',
+          playerText: 'Danke für diesen weisen Rat, Arvid. Zurück zum Anfang.',
           nextNodeId: 'root',
         },
       ],
@@ -1220,7 +1633,16 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
                         action: { type: 'walk_to_wild_hunter' },
                       },
                     ]
-                  : [];
+                  : path.id === 7
+                    ? [
+                        {
+                          id: 'walk-to-gate-7',
+                          playerText: 'Den gesamten 7. Weg bis zum geschlossenen Tor wandern',
+                          nextNodeId: null,
+                          action: { type: 'walk_to_gate' },
+                        },
+                      ]
+                    : [];
 
     nodes[`path_${path.id}`] = {
       id: `path_${path.id}`,
@@ -1250,7 +1672,16 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
     };
   }
 
+  Object.assign(nodes, createGateDialogueTree());
+  Object.assign(nodes, createBoulderDialogueTree());
+  Object.assign(nodes, createPuddleDialogueTree());
+  Object.assign(nodes, createStreamDialogueTree());
+  Object.assign(nodes, createLogDialogueTree());
+  Object.assign(nodes, createFireDialogueTree());
+  Object.assign(nodes, createHerbsDialogueTree());
   return nodes;
+
+
 }
 
 export const GUIDE_DIALOGUE_NODES: Readonly<Record<string, DialogueNode>> = buildDialogueNodes();

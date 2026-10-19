@@ -9,6 +9,7 @@ import {
 } from '../data/npcDialogues';
 import {
   CAVE_ENTRANCE_POS,
+  CLOSED_GATE_POS,
   DEVIL_NPC_POS,
   ForestPathData,
   GIANT_NPC_POS,
@@ -17,18 +18,26 @@ import {
   HUNTING_LODGE_POS,
   LUMBER_CAMP_POS,
   NIXIE_NPC_POS,
+  PATH_1_BOULDER_POS,
   PATH_1_END_CLEARING,
   PATH_1_WAYPOINTS,
   PATH_2_END_CLEARING,
+  PATH_2_PUDDLE_POS,
   PATH_2_WAYPOINTS,
   PATH_3_END_CLEARING,
+  PATH_3_STREAM_POS,
   PATH_3_WAYPOINTS,
   PATH_4_END_CLEARING,
+  PATH_4_LOG_POS,
   PATH_4_WAYPOINTS,
   PATH_5_END_CLEARING,
+  PATH_5_FIRE_POS,
   PATH_5_WAYPOINTS,
   PATH_6_END_CLEARING,
+  PATH_6_HERBS_POS,
   PATH_6_WAYPOINTS,
+  PATH_7_END_CLEARING,
+  PATH_7_WAYPOINTS,
   PathPoint2D,
   POND_CENTER_POS,
   SEVEN_PATHS,
@@ -59,11 +68,19 @@ export type PointOfInterest =
   | { type: 'hell_chasm'; label: string }
   | { type: 'hunting_lodge'; label: string }
   | { type: 'herb_garden'; label: string }
+  | { type: 'gate'; label: string }
+  | { type: 'boulder'; label: string }
+  | { type: 'puddle'; label: string }
+  | { type: 'stream'; label: string }
+  | { type: 'log'; label: string }
+  | { type: 'fire'; label: string }
+  | { type: 'herbs'; label: string }
   | { type: 'chest'; isOpen: boolean; label: string }
   | { type: 'signpost'; label: string }
   | { type: 'hut'; label: string }
   | { type: 'path'; path: ForestPathData }
   | { type: 'clearing'; label: string };
+
 
 /**
  * Reine Spiellogik für die Waldkreuzung,
@@ -104,6 +121,37 @@ export class CrossroadsState {
     { lx: 3.6, lz: -2.2, radius: 3.85 }, // Rechte Felsflanke
   ];
 
+  // Auf Weg 1: Felsbrocken, der den Silberstollen-Pfad blockiert
+  private path1BoulderBlocked = true;
+  private readonly path1BoulderPos: Vector2D = { x: PATH_1_BOULDER_POS.x, z: PATH_1_BOULDER_POS.z };
+  private readonly path1BoulderRadius = PATH_1_BOULDER_POS.radius;
+
+  // Auf Weg 2: Wasserpfütze, die den Nixenteich-Pfad blockiert
+  private path2PuddleBlocked = true;
+  private readonly path2PuddlePos: Vector2D = { x: PATH_2_PUDDLE_POS.x, z: PATH_2_PUDDLE_POS.z };
+  private readonly path2PuddleRadius = PATH_2_PUDDLE_POS.radius;
+
+  // Auf Weg 3: Reißender Gebirgsbach, der den Quellenweg blockiert
+  private path3StreamBlocked = true;
+  private readonly path3StreamPos: Vector2D = { x: PATH_3_STREAM_POS.x, z: PATH_3_STREAM_POS.z };
+  private readonly path3StreamRadius = PATH_3_STREAM_POS.radius;
+
+  // Auf Weg 4: Umgestürzter Baumstamm, der den Holzfäller-Pfad blockiert
+  private path4LogBlocked = true;
+  private readonly path4LogPos: Vector2D = { x: PATH_4_LOG_POS.x, z: PATH_4_LOG_POS.z };
+  private readonly path4LogRadius = PATH_4_LOG_POS.radius;
+
+  // Auf Weg 5: Flammenwand/Feuer, das den Höllenschlund-Pfad blockiert
+  private path5FireBlocked = true;
+  private readonly path5FirePos: Vector2D = { x: PATH_5_FIRE_POS.x, z: PATH_5_FIRE_POS.z };
+  private readonly path5FireRadius = PATH_5_FIRE_POS.radius;
+
+  // Auf Weg 6: Hohe Kräuterpflanzen mit Geländer, die den Jägerpfad blockieren
+  private path6HerbsBlocked = true;
+  private readonly path6HerbsPos: Vector2D = { x: PATH_6_HERBS_POS.x, z: PATH_6_HERBS_POS.z };
+  private readonly path6HerbsRadius = PATH_6_HERBS_POS.radius;
+
+
   // Am Ende des 2. Weges: Waldteich und auf einem Stein im Teich die Nixe
   private readonly pondPos: Vector2D = { x: POND_CENTER_POS.x, z: POND_CENTER_POS.z };
   private readonly pondCollisionRadius = 4.25;
@@ -141,7 +189,11 @@ export class CrossroadsState {
   private readonly horsePos: Vector2D = { x: -43.6, z: 20.4 };
   private readonly horseCollisionRadius = 0.85;
 
+  // Am Ende des 7. Weges: Das geschlossene Tor mit flankierenden Steinmauern
+  private readonly gatePos: Vector2D = { x: CLOSED_GATE_POS.x, z: CLOSED_GATE_POS.z };
+
   private readonly clearingRadius = 6.5;
+
   private readonly pathHalfWidth = 0.95;
   private readonly maxRadius = 26;
 
@@ -198,9 +250,220 @@ export class CrossroadsState {
     return { ...this.woodWomanLodgePos };
   }
 
+  public getGatePosition(): Readonly<Vector2D> {
+    return { ...this.gatePos };
+  }
+
+  public isPath1Blocked(): boolean {
+    return this.path1BoulderBlocked;
+  }
+
+  public setPath1Blocked(blocked: boolean): void {
+    this.path1BoulderBlocked = blocked;
+  }
+
+  public removePath1Boulder(): boolean {
+    if (!this.path1BoulderBlocked) {
+      return false;
+    }
+    this.path1BoulderBlocked = false;
+    return true;
+  }
+
+  public getPath1BoulderPosition(): Readonly<Vector2D> {
+    return { ...this.path1BoulderPos };
+  }
+
+  public getPath1BoulderRadius(): number {
+    return this.path1BoulderRadius;
+  }
+
+  public setPlayerPosition(x: number, z: number): Readonly<Vector2D> {
+    this.playerPos = { x, z };
+    return this.getPlayerPosition();
+  }
+
+  public isNearBoulder(): boolean {
+    if (!this.path1BoulderBlocked) {
+      return false;
+    }
+    const dist = Math.hypot(
+      this.playerPos.x - this.path1BoulderPos.x,
+      this.playerPos.z - this.path1BoulderPos.z
+    );
+    return dist <= this.path1BoulderRadius + 0.65;
+  }
+
+  // --- WEG 2: WASSERPFÜTZE ---
+  public isPath2Blocked(): boolean {
+    return this.path2PuddleBlocked;
+  }
+
+  public setPath2Blocked(blocked: boolean): void {
+    this.path2PuddleBlocked = blocked;
+  }
+
+  public removePath2Puddle(): boolean {
+    this.path2PuddleBlocked = false;
+    return true;
+  }
+
+  public getPath2PuddlePosition(): Readonly<Vector2D> {
+    return { ...this.path2PuddlePos };
+  }
+
+  public getPath2PuddleRadius(): number {
+    return this.path2PuddleRadius;
+  }
+
+  public isNearPuddle(): boolean {
+    if (!this.path2PuddleBlocked) {
+      return false;
+    }
+    const dist = Math.hypot(
+      this.playerPos.x - this.path2PuddlePos.x,
+      this.playerPos.z - this.path2PuddlePos.z
+    );
+    return dist <= this.path2PuddleRadius + 0.65;
+  }
+
+  // --- WEG 3: REISSENDER GEBIRGSBACH ---
+  public isPath3Blocked(): boolean {
+    return this.path3StreamBlocked;
+  }
+
+  public setPath3Blocked(blocked: boolean): void {
+    this.path3StreamBlocked = blocked;
+  }
+
+  public removePath3Stream(): boolean {
+    this.path3StreamBlocked = false;
+    return true;
+  }
+
+  public getPath3StreamPosition(): Readonly<Vector2D> {
+    return { ...this.path3StreamPos };
+  }
+
+  public getPath3StreamRadius(): number {
+    return this.path3StreamRadius;
+  }
+
+  public isNearStream(): boolean {
+    if (!this.path3StreamBlocked) {
+      return false;
+    }
+    const dist = Math.hypot(
+      this.playerPos.x - this.path3StreamPos.x,
+      this.playerPos.z - this.path3StreamPos.z
+    );
+    return dist <= this.path3StreamRadius + 0.65;
+  }
+
+  // --- WEG 4: BAUMSTAMM ---
+  public isPath4Blocked(): boolean {
+    return this.path4LogBlocked;
+  }
+
+  public setPath4Blocked(blocked: boolean): void {
+    this.path4LogBlocked = blocked;
+  }
+
+  public removePath4Log(): boolean {
+    this.path4LogBlocked = false;
+    return true;
+  }
+
+  public getPath4LogPosition(): Readonly<Vector2D> {
+    return { ...this.path4LogPos };
+  }
+
+  public getPath4LogRadius(): number {
+    return this.path4LogRadius;
+  }
+
+  public isNearLog(): boolean {
+    if (!this.path4LogBlocked) {
+      return false;
+    }
+    const dist = Math.hypot(
+      this.playerPos.x - this.path4LogPos.x,
+      this.playerPos.z - this.path4LogPos.z
+    );
+    return dist <= this.path4LogRadius + 0.65;
+  }
+
+  // --- WEG 5: FEUER / FLAMMENWAND ---
+  public isPath5Blocked(): boolean {
+    return this.path5FireBlocked;
+  }
+
+  public setPath5Blocked(blocked: boolean): void {
+    this.path5FireBlocked = blocked;
+  }
+
+  public removePath5Fire(): boolean {
+    this.path5FireBlocked = false;
+    return true;
+  }
+
+  public getPath5FirePosition(): Readonly<Vector2D> {
+    return { ...this.path5FirePos };
+  }
+
+  public getPath5FireRadius(): number {
+    return this.path5FireRadius;
+  }
+
+  public isNearFire(): boolean {
+    if (!this.path5FireBlocked) {
+      return false;
+    }
+    const dist = Math.hypot(
+      this.playerPos.x - this.path5FirePos.x,
+      this.playerPos.z - this.path5FirePos.z
+    );
+    return dist <= this.path5FireRadius + 0.65;
+  }
+
+  // --- WEG 6: HOHES KRÄUTERGELÄNDER ---
+  public isPath6Blocked(): boolean {
+    return this.path6HerbsBlocked;
+  }
+
+  public setPath6Blocked(blocked: boolean): void {
+    this.path6HerbsBlocked = blocked;
+  }
+
+  public removePath6Herbs(): boolean {
+    this.path6HerbsBlocked = false;
+    return true;
+  }
+
+  public getPath6HerbsPosition(): Readonly<Vector2D> {
+    return { ...this.path6HerbsPos };
+  }
+
+  public getPath6HerbsRadius(): number {
+    return this.path6HerbsRadius;
+  }
+
+  public isNearHerbs(): boolean {
+    if (!this.path6HerbsBlocked) {
+      return false;
+    }
+    const dist = Math.hypot(
+      this.playerPos.x - this.path6HerbsPos.x,
+      this.playerPos.z - this.path6HerbsPos.z
+    );
+    return dist <= this.path6HerbsRadius + 0.65;
+  }
+
   public getChestPosition(): Readonly<Vector2D> {
+
     return { ...this.chestPos };
   }
+
 
   public isChestOpen(): boolean {
     return this.chestOpen;
@@ -279,6 +542,14 @@ export class CrossroadsState {
     return dist <= this.woodWomanLodgeCollisionRadius + 1.45;
   }
 
+  public isNearGate(): boolean {
+    const dist = Math.hypot(
+      this.playerPos.x - this.gatePos.x,
+      this.playerPos.z - this.gatePos.z
+    );
+    return dist <= 5.2;
+  }
+
   public isNearChest(): boolean {
     const dist = Math.hypot(
       this.playerPos.x - this.chestPos.x,
@@ -301,6 +572,33 @@ export class CrossroadsState {
   public setTargetToClearing(): Readonly<Vector2D> {
     this.selectedPathId = null;
     return this.setTargetPosition(0, 4.2);
+  }
+
+  /**
+   * Lässt die Spielfigur per Schnellreise sofort zurück auf die zentrale Waldkreuzung springen.
+   */
+  public jumpToClearing(): Readonly<Vector2D> {
+    this.selectedPathId = null;
+    this.targetPos = null;
+    this.playerPos = { x: 0, z: 4.8 };
+    return this.getPlayerPosition();
+  }
+
+  /**
+   * Gibt den aktuell ausgewählten Pfad zurück oder ermittelt anhand der aktuellen Position
+   * den zugehörigen der sieben Waldwege, wenn die Spielfigur auf den Wegen unterwegs ist.
+   */
+  public getCurrentOrClosestPath(): ForestPathData | null {
+    if (this.selectedPathId !== null) {
+      const path = SEVEN_PATHS.find((p) => p.id === this.selectedPathId);
+      if (path) {
+        return path;
+      }
+    }
+    if (!this.isOnClearing()) {
+      return this.getClosestPathAt(this.playerPos.x, this.playerPos.z);
+    }
+    return null;
   }
 
   public getSelectedPath(): ForestPathData | null {
@@ -491,6 +789,26 @@ export class CrossroadsState {
   }
 
   /**
+   * Prüft, ob ein Punkt auf dem 7. Weg (Torweg) oder dem Vorplatz vor dem geschlossenen Tor liegt.
+   */
+  public isPointOnPath7(x: number, z: number): boolean {
+    const eps = 1e-4;
+    for (let i = 0; i < PATH_7_WAYPOINTS.length - 1; i++) {
+      const { cx, cz, radius } = this.evaluateCurvedPathSegment(
+        x,
+        z,
+        PATH_7_WAYPOINTS,
+        PATH_7_END_CLEARING.radius,
+        i
+      );
+      if (Math.hypot(x - cx, z - cz) <= radius + eps) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Prüft, ob ein Punkt auf der zentralen Kreuzung oder auf einem der 7 befestigten Waldwege liegt.
    * Grünflächen und Wald außerhalb dieser Geometrie sind nicht begehbar.
    */
@@ -501,39 +819,16 @@ export class CrossroadsState {
       return true;
     }
 
-    // Wege 1 bis 6 besitzen eigene ausgebaute Kurvenverläufe bis zu ihren Zielorten
-    if (
+    // Alle 7 Wege besitzen eigene ausgebaute Kurvenverläufe bis zu ihren Zielorten
+    return (
       this.isPointOnPath1(x, z) ||
       this.isPointOnPath2(x, z) ||
       this.isPointOnPath3(x, z) ||
       this.isPointOnPath4(x, z) ||
       this.isPointOnPath5(x, z) ||
-      this.isPointOnPath6(x, z)
-    ) {
-      return true;
-    }
-
-    if (distFromCenter > this.maxRadius + eps) {
-      return false;
-    }
-
-    // Weg 7 verläuft sternförmig
-    for (const path of SEVEN_PATHS) {
-      if (path.id <= 6) {
-        continue;
-      }
-      const dirX = Math.sin(path.angleRad);
-      const dirZ = -Math.cos(path.angleRad);
-      const along = x * dirX + z * dirZ;
-      if (along >= this.clearingRadius - 0.5 && along <= this.maxRadius + eps) {
-        const cross = Math.abs(x * -dirZ + z * dirX);
-        if (cross <= this.pathHalfWidth + eps) {
-          return true;
-        }
-      }
-    }
-
-    return false;
+      this.isPointOnPath6(x, z) ||
+      this.isPointOnPath7(x, z)
+    );
   }
 
   private toCaveLocal(x: number, z: number): { lx: number; lz: number } {
@@ -673,6 +968,78 @@ export class CrossroadsState {
       Math.abs(x - this.huntingCabinCenter.x) < this.huntingCabinHalfWidth - eps &&
       Math.abs(z - this.huntingCabinCenter.z) < this.huntingCabinHalfDepth - eps;
     if (inHuntingCabin) {
+      return true;
+    }
+
+    // Felsbrocken auf Weg 1 (blockiert den Pfad, bis er durch den Edelstein entfernt wird)
+    if (this.path1BoulderBlocked) {
+      if (
+        Math.hypot(x - this.path1BoulderPos.x, z - this.path1BoulderPos.z) <
+        this.path1BoulderRadius - eps
+      ) {
+        return true;
+      }
+    }
+
+    // Wasserpfütze auf Weg 2 (blockiert den Nixenteich-Pfad)
+    if (this.path2PuddleBlocked) {
+      if (
+        Math.hypot(x - this.path2PuddlePos.x, z - this.path2PuddlePos.z) <
+        this.path2PuddleRadius - eps
+      ) {
+        return true;
+      }
+    }
+
+    // Reißender Gebirgsbach auf Weg 3 (blockiert den Quellenweg)
+    if (this.path3StreamBlocked) {
+      if (
+        Math.hypot(x - this.path3StreamPos.x, z - this.path3StreamPos.z) <
+        this.path3StreamRadius - eps
+      ) {
+        return true;
+      }
+    }
+
+    // Baumstamm auf Weg 4 (blockiert den Holzfäller-Pfad)
+    if (this.path4LogBlocked) {
+      if (
+        Math.hypot(x - this.path4LogPos.x, z - this.path4LogPos.z) <
+        this.path4LogRadius - eps
+      ) {
+        return true;
+      }
+    }
+
+    // Flammenwand / Feuer auf Weg 5 (blockiert den Höllenschlund-Pfad)
+    if (this.path5FireBlocked) {
+      if (
+        Math.hypot(x - this.path5FirePos.x, z - this.path5FirePos.z) <
+        this.path5FireRadius - eps
+      ) {
+        return true;
+      }
+    }
+
+    // Hohe Kräuterpflanzen mit Geländer auf Weg 6 (blockiert den Jägerpfad)
+    if (this.path6HerbsBlocked) {
+      if (
+        Math.hypot(x - this.path6HerbsPos.x, z - this.path6HerbsPos.z) <
+        this.path6HerbsRadius - eps
+      ) {
+        return true;
+      }
+    }
+
+
+    // Das geschlossene Tor und die flankierenden Steinmauern am Ende von Weg 7
+    const gateDx = x - CLOSED_GATE_POS.x;
+    const gateDz = z - CLOSED_GATE_POS.z;
+    const gateCos = Math.cos(CLOSED_GATE_POS.rotationY);
+    const gateSin = Math.sin(CLOSED_GATE_POS.rotationY);
+    const gateLx = gateDx * gateCos - gateDz * gateSin;
+    const gateLz = gateDx * gateSin + gateDz * gateCos;
+    if (Math.abs(gateLx) < 12.0 && gateLz < 0.75 && gateLz > -4.5) {
       return true;
     }
 
@@ -846,6 +1213,21 @@ export class CrossroadsState {
         continue;
       }
 
+      if (path.id === 7) {
+        const p7 = this.projectOntoCurvedPath(
+          x,
+          z,
+          PATH_7_WAYPOINTS,
+          PATH_7_END_CLEARING.radius
+        );
+        const dSq7 = (x - p7.x) ** 2 + (z - p7.z) ** 2;
+        if (dSq7 < bestDistSq) {
+          bestDistSq = dSq7;
+          bestPoint = p7;
+        }
+        continue;
+      }
+
       const dirX = Math.sin(path.angleRad);
       const dirZ = -Math.cos(path.angleRad);
       const perpX = -dirZ;
@@ -897,7 +1279,8 @@ export class CrossroadsState {
   /**
    * Schiebt eine Position bei Kontakt mit Hindernissen an deren Außenkante.
    */
-  private resolveObstacleCollisions(x: number, z: number): Vector2D {
+  public resolveObstacleCollisions(x: number, z: number): Vector2D {
+
     let resolvedX = x;
     let resolvedZ = z;
 
@@ -1082,6 +1465,92 @@ export class CrossroadsState {
           resolvedZ = this.hutPos.z + (relZ >= 0 ? this.hutHalfDepth : -this.hutHalfDepth);
         }
       }
+
+      // Felsbrocken auf Weg 1 (blockiert den Wegkorridor vollständig)
+      if (this.path1BoulderBlocked) {
+        const afterBoulder = this.pushOutOfCircle(
+          resolvedX,
+          resolvedZ,
+          this.path1BoulderPos,
+          this.path1BoulderRadius
+        );
+        resolvedX = afterBoulder.x;
+        resolvedZ = afterBoulder.z;
+      }
+
+      // Wasserpfütze auf Weg 2
+      if (this.path2PuddleBlocked) {
+        const afterPuddle = this.pushOutOfCircle(
+          resolvedX,
+          resolvedZ,
+          this.path2PuddlePos,
+          this.path2PuddleRadius
+        );
+        resolvedX = afterPuddle.x;
+        resolvedZ = afterPuddle.z;
+      }
+
+      // Reißender Gebirgsbach auf Weg 3
+      if (this.path3StreamBlocked) {
+        const afterStream = this.pushOutOfCircle(
+          resolvedX,
+          resolvedZ,
+          this.path3StreamPos,
+          this.path3StreamRadius
+        );
+        resolvedX = afterStream.x;
+        resolvedZ = afterStream.z;
+      }
+
+      // Baumstamm auf Weg 4
+      if (this.path4LogBlocked) {
+        const afterLog = this.pushOutOfCircle(
+          resolvedX,
+          resolvedZ,
+          this.path4LogPos,
+          this.path4LogRadius
+        );
+        resolvedX = afterLog.x;
+        resolvedZ = afterLog.z;
+      }
+
+      // Flammenwand / Feuer auf Weg 5
+      if (this.path5FireBlocked) {
+        const afterFire = this.pushOutOfCircle(
+          resolvedX,
+          resolvedZ,
+          this.path5FirePos,
+          this.path5FireRadius
+        );
+        resolvedX = afterFire.x;
+        resolvedZ = afterFire.z;
+      }
+
+      // Hohe Kräuterpflanzen mit Geländer auf Weg 6
+      if (this.path6HerbsBlocked) {
+        const afterHerbs = this.pushOutOfCircle(
+          resolvedX,
+          resolvedZ,
+          this.path6HerbsPos,
+          this.path6HerbsRadius
+        );
+        resolvedX = afterHerbs.x;
+        resolvedZ = afterHerbs.z;
+      }
+
+
+      // Tor- und Steinmauer-Kollision am Ende von Weg 7
+      const gateDx = resolvedX - CLOSED_GATE_POS.x;
+      const gateDz = resolvedZ - CLOSED_GATE_POS.z;
+      const gateCos = Math.cos(CLOSED_GATE_POS.rotationY);
+      const gateSin = Math.sin(CLOSED_GATE_POS.rotationY);
+      const gateLx = gateDx * gateCos - gateDz * gateSin;
+      const gateLz = gateDx * gateSin + gateDz * gateCos;
+      if (Math.abs(gateLx) < 12.0 && gateLz < 0.75 && gateLz > -4.5) {
+        const clampedLz = 0.75;
+        resolvedX = CLOSED_GATE_POS.x + gateLx * gateCos + clampedLz * gateSin;
+        resolvedZ = CLOSED_GATE_POS.z - gateLx * gateSin + clampedLz * gateCos;
+      }
     }
 
     return { x: resolvedX, z: resolvedZ };
@@ -1105,6 +1574,9 @@ export class CrossroadsState {
     }
     if (this.isPointOnPath6(x, z)) {
       return SEVEN_PATHS[5];
+    }
+    if (this.isPointOnPath7(x, z)) {
+      return SEVEN_PATHS[6];
     }
 
     let playerAngle = Math.atan2(x, -z);
@@ -1153,7 +1625,7 @@ export class CrossroadsState {
       collisionFree.z,
       currentPath ? currentPath.id : null
     );
-    this.playerPos = this.resolveObstacleCollisions(projectedBack.x, projectedBack.z);
+    this.playerPos = projectedBack;
 
     return this.getPlayerPosition();
   }
@@ -1266,6 +1738,14 @@ export class CrossroadsState {
   public setTargetToWoodWomanLodge(): Readonly<Vector2D> {
     this.selectPath(6);
     return this.setTargetPosition(this.woodWomanLodgePos.x + 0.75, this.woodWomanLodgePos.z - 0.5);
+  }
+
+  /**
+   * Lässt die Spielfigur entlang des 7. Weges bis direkt auf den Vorplatz vor das geschlossene Tor laufen.
+   */
+  public setTargetToGate(): Readonly<Vector2D> {
+    this.selectPath(7);
+    return this.setTargetPosition(PATH_7_END_CLEARING.x, PATH_7_END_CLEARING.z);
   }
 
   /**
@@ -1404,6 +1884,12 @@ export class CrossroadsState {
           PATH_6_WAYPOINTS,
           (px, pz) => this.isPointOnPath6(px, pz)
         );
+      } else if (playerPath.id === 7) {
+        effectiveTarget = this.getNextCurvedWaypoint(
+          PATH_7_WAYPOINTS[0],
+          PATH_7_WAYPOINTS,
+          (px, pz) => this.isPointOnPath7(px, pz)
+        );
       } else {
         effectiveTarget = {
           x: Math.sin(playerPath.angleRad) * (this.clearingRadius - 0.6),
@@ -1445,6 +1931,12 @@ export class CrossroadsState {
         this.targetPos,
         PATH_6_WAYPOINTS,
         (px, pz) => this.isPointOnPath6(px, pz)
+      );
+    } else if (targetPath && targetPath.id === 7) {
+      effectiveTarget = this.getNextCurvedWaypoint(
+        this.targetPos,
+        PATH_7_WAYPOINTS,
+        (px, pz) => this.isPointOnPath7(px, pz)
       );
     }
 
@@ -1519,6 +2011,67 @@ export class CrossroadsState {
    * Ermittelt, welchem Objekt, NPC oder Weg die spielende Person am nächsten ist.
    */
   public getActivePointOfInterest(): PointOfInterest {
+    const distToGate = Math.hypot(
+      this.playerPos.x - this.gatePos.x,
+      this.playerPos.z - this.gatePos.z
+    );
+    if (distToGate < 5.2) {
+      return {
+        type: 'gate',
+        label:
+          'Geschlossenes Tor – ein uraltes, mit schweren Eisenketten versiegeltes Portal versperrt den weiteren Weg (Klick oder [F]).',
+      };
+    }
+
+    if (this.isNearBoulder()) {
+      return {
+        type: 'boulder',
+        label:
+          'Ein gewaltiger Felsbrocken versperrt den 1. Weg. Klicke auf den rotierenden Edelstein am Pfadanfang, um den Weg freizuräumen.',
+      };
+    }
+
+    if (this.isNearPuddle()) {
+      return {
+        type: 'puddle',
+        label:
+          'Eine tiefe, magische Wasserpfütze versperrt den 2. Weg zum Spiegelteich. Klicke auf den rotierenden Aquamarin am Pfadanfang, um das Wasser versickern zu lassen.',
+      };
+    }
+
+    if (this.isNearStream()) {
+      return {
+        type: 'stream',
+        label:
+          'Ein tosender Gebirgsbach stürzt quer über den 3. Weg zum Wehr. Klicke auf den rotierenden Saphirkristall am Pfadanfang, um das Wasser zu bändigen.',
+      };
+    }
+
+    if (this.isNearLog()) {
+      return {
+        type: 'log',
+        label:
+          'Ein riesiger Baumstamm liegt quer über dem 4. Weg zum Holzfällerlager. Klicke auf den rotierenden Bernsteinkristall am Pfadanfang, um den Stamm zu beseitigen.',
+      };
+    }
+
+    if (this.isNearFire()) {
+      return {
+        type: 'fire',
+        label:
+          'Eine lodernde Flammenwand versperrt den 5. Weg zum Höllenschlund. Klicke auf den rotierenden Rubinkristall am Pfadanfang, um das Feuer zu löschen.',
+      };
+    }
+
+    if (this.isNearHerbs()) {
+      return {
+        type: 'herbs',
+        label:
+          'Ein massives Holzgeländer und dichte Zauberkräuter versperren den 6. Weg zur Jagdhütte. Klicke auf den rotierenden Amethystkristall am Pfadanfang, um den Weg zu öffnen.',
+      };
+    }
+
+
     const nearHunter = this.isNearWildHunter();
     const nearWoodLodge = this.isNearWoodWomanLodge();
 

@@ -30,6 +30,16 @@ export const PATH_1_WAYPOINTS: readonly PathPoint2D[] = [
 ];
 
 /**
+ * Position und Kollisionsradius des Felsbrockens, der Weg 1 versperrt.
+ * Lässt sich durch Anklicken des rotierenden Edelsteins am Pfadanfang entfernen.
+ */
+export const PATH_1_BOULDER_POS = {
+  x: 0,
+  z: -11.5,
+  radius: 1.55,
+} as const;
+
+/**
  * Vorplatz am Ende von Weg 1 direkt vor dem Bergmassiv und dem Stolleneingang.
  */
 export const PATH_1_END_CLEARING = {
@@ -71,7 +81,18 @@ export const PATH_2_WAYPOINTS: readonly PathPoint2D[] = [
 ];
 
 /**
+ * Position und Kollisionsradius der Wasserpfütze, die Weg 2 (Nixenteich-Pfad) versperrt.
+ * Lässt sich durch Anklicken des rotierenden Edelsteins am Pfadanfang entfernen.
+ */
+export const PATH_2_PUDDLE_POS = {
+  x: 7.5,
+  z: -6.0,
+  radius: 1.5,
+} as const;
+
+/**
  * Ufer-Vorplatz am Ende von Weg 2 direkt am westlichen Rand des Waldteichs.
+
  */
 export const PATH_2_END_CLEARING = {
   x: 41.0,
@@ -138,6 +159,17 @@ export const GIANT_NPC_POS: PathPoint2D = {
 };
 
 /**
+ * Position, Ausrichtung und Kollisionsradius des reißenden Bachlaufs, der Weg 3 (Quellenweg) versperrt.
+ * Lässt sich durch Anklicken des rotierenden Saphir-Edelsteins am Pfadanfang beseitigen.
+ */
+export const PATH_3_STREAM_POS = {
+  x: 9.2,
+  z: 2.1,
+  radius: 1.55,
+  rotationY: Math.atan2(7.3, 1.7),
+} as const;
+
+/**
  * Wegpunkte für den 4. Weg (Holzfäller-Pfad):
  * Startet an der Kreuzung nach Südsüdost, windet sich durch den Hochwald
  * und mündet auf einer gerodeten Waldlichtung mit einem Holzfällerlager und dem Holzweibchen.
@@ -150,6 +182,17 @@ export const PATH_4_WAYPOINTS: readonly PathPoint2D[] = [
   { x: 15.2, z: 35.0 },
   { x: 16.5, z: 42.5 },
 ];
+
+/**
+ * Position, Ausrichtung und Kollisionsradius des Baumstamms, der Weg 4 (Holzfäller-Pfad) versperrt.
+ * Liegt quer über dem Pfad und lässt sich durch Anklicken des rotierenden Edelsteins am Pfadanfang entfernen.
+ */
+export const PATH_4_LOG_POS = {
+  x: 4.0,
+  z: 8.4,
+  radius: 1.55,
+  rotationY: Math.atan2(3.2, 6.7),
+} as const;
 
 /**
  * Begehbare Waldlichtung am Ende von Weg 4 rund um das Holzfällerlager.
@@ -192,6 +235,17 @@ export const PATH_5_WAYPOINTS: readonly PathPoint2D[] = [
 ];
 
 /**
+ * Position und Kollisionsradius der Flammenwand/des Feuers, das Weg 5 (Höllenschlund-Pfad) versperrt.
+ * Sitzt weiter hinten im Pfad und lässt sich durch Anklicken des rotierenden Edelsteins am Pfadanfang löschen.
+ */
+export const PATH_5_FIRE_POS = {
+  x: -7.5,
+  z: 14.5,
+  radius: 1.55,
+} as const;
+
+
+/**
  * Begehbare Felsplattform am Ende von Weg 5 direkt vor dem feurigen Höllenschlund.
  */
 export const PATH_5_END_CLEARING = {
@@ -232,6 +286,17 @@ export const PATH_6_WAYPOINTS: readonly PathPoint2D[] = [
 ];
 
 /**
+ * Position, Ausrichtung und Kollisionsradius der hohen Kräuterpflanzen mit Geländer auf Weg 6 (Jägerpfad).
+ * Lässt sich durch Anklicken des rotierenden Amethyst-Edelsteins am Pfadanfang beseitigen.
+ */
+export const PATH_6_HERBS_POS = {
+  x: -9.1,
+  z: 2.0,
+  radius: 1.55,
+  rotationY: Math.atan2(-7.4, 1.6),
+} as const;
+
+/**
  * Begehbare Waldlichtung am Ende von Weg 6 vor der Jagdhütte und dem Kräutergarten.
  */
 export const PATH_6_END_CLEARING = {
@@ -264,6 +329,39 @@ export const WOOD_WOMAN_LODGE_NPC_POS: PathPoint2D = {
   x: -42.6,
   z: 23.2,
 };
+
+/**
+ * Wegpunkte für den 7. Weg (Torweg):
+ * Startet an der Kreuzung nach Nordwesten, zieht durch dichten, uralten Nebelwald
+ * und mündet auf einem steinigen Waldvorplatz vor einem mächtigen, fest geschlossenen Tor.
+ */
+export const PATH_7_WAYPOINTS: readonly PathPoint2D[] = [
+  { x: -4.3, z: -3.4 },
+  { x: -11.5, z: -9.5 },
+  { x: -18.8, z: -16.2 },
+  { x: -26.0, z: -23.4 },
+  { x: -33.2, z: -30.8 },
+  { x: -40.5, z: -38.5 },
+];
+
+/**
+ * Begehbarer Vorplatz am Ende von Weg 7 vor dem geschlossenen Tor.
+ */
+export const PATH_7_END_CLEARING = {
+  x: -40.5,
+  z: -38.5,
+  radius: 4.8,
+} as const;
+
+/**
+ * Position und Ausrichtung des geschlossenen Tors am Ende von Weg 7.
+ */
+export const CLOSED_GATE_POS = {
+  x: -42.8,
+  z: -41.0,
+  rotationY: 0.76,
+  radius: 5.5,
+} as const;
 
 /**
  * Die sieben Waldwege, die sternförmig von der Waldkreuzung abgehen.
@@ -319,10 +417,10 @@ export const SEVEN_PATHS: readonly ForestPathData[] = [
   },
   {
     id: 7,
-    name: '7. Sternenwald-Pfad',
+    name: '7. Torweg',
     directionLabel: 'Nordwest',
     angleRad: (6 * FULL_CIRCLE) / 7,
-    subtitle: 'Dichtes Blätterdach mit leuchtenden Farnen.',
-    colorHex: 0x625a8c,
+    subtitle: 'Führt durch dichten Bergwald zu einem massiven, fest verschlossenen Tor.',
+    colorHex: 0x6e5c8a,
   },
 ];
