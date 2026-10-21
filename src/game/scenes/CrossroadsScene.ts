@@ -54,8 +54,19 @@ import { createPathStream, PathStreamEntity } from '../entities/PathStream';
 import { createPathLog, PathLogEntity } from '../entities/PathLog';
 import { createPathFire, PathFireEntity } from '../entities/PathFire';
 import { createPathHerbs, PathHerbsEntity } from '../entities/PathHerbs';
+import {
+  createGrassTexture,
+  createPathTexture,
+  createBarkTexture,
+  createPineFoliageTexture,
+  createStoneTexture,
+  createVeinedLavaRockTexture,
+  createBrickTexture,
+} from '../textures/GroundTextures';
 import { createWoodWomanNpc, WoodWomanNpcEntity } from '../entities/WoodWomanNpc';
 import { createMushroomCluster, MushroomType } from '../entities/MushroomCluster';
+import { createBirdhouse } from '../entities/Birdhouse';
+import { createFlowerCluster, FlowerType } from '../entities/ForestFlowers';
 import { Vector2D } from '../systems/CrossroadsState';
 
 export type ScenePickResult =
@@ -164,6 +175,11 @@ export class CrossroadsScene {
   private readonly gemstonePulseTimers = new Map<number, number>();
   private lastPlayerPos: Vector2D = { ...START_PLAYER_POS };
   private elapsedSeconds = 0;
+  private treeCounter = 0;
+  private hellGroundOuterMat: THREE.MeshStandardMaterial | null = null;
+  private hellGroundInnerMat: THREE.MeshStandardMaterial | null = null;
+  private hellMeadowGlowMat: THREE.MeshStandardMaterial | null = null;
+  private path5SegmentMats: THREE.MeshStandardMaterial[] = [];
 
   // Nebelfarben: Heller Waldnebel auf der Lichtung und finster-dunkelroter Nebel im Höllenschlund
   private readonly defaultFogColor = new THREE.Color(0xdce2e0);
@@ -265,8 +281,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.nixiePond.group);
 
-    // Die Nixe (NPC) auf dem Stein im Teich am Ende des 2. Weges
-    this.nixieNpc = createNixieNpc();
+    // Die Nixe / Meerjungfrau (NPC) im Waldteich am Ende des 2. Weges
+    this.nixieNpc = createNixieNpc((mesh) => {
+      this.pickableObjects.push(mesh);
+    });
     this.nixieNpc.group.position.set(NIXIE_NPC_POS.x, 0, NIXIE_NPC_POS.z);
     this.nixieNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -422,7 +440,9 @@ export class CrossroadsScene {
     this.buildCurvedPath5Trees();
     this.buildCurvedPath6Trees();
     this.buildCurvedPath7Trees();
+    this.buildPath7Wildflowers();
     this.buildForestMushrooms();
+    this.buildHellChasmBackdropRocks();
 
     // Zielmarkierung für Maus-Bewegung (Click-to-Move)
     this.targetMarker = this.createTargetMarker();
@@ -435,12 +455,13 @@ export class CrossroadsScene {
     this.scene.add(this.playerGroup);
 
     // Initiale Kamera-Ausrichtung hinter dem Spieler mit Blickrichtung zur Kreuzung
+    const targetY = 1.1;
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
-    const camHeight = Math.sin(this.cameraPitch) * this.cameraDistance;
+    const camHeight = Math.max(0.55, targetY + Math.sin(this.cameraPitch) * this.cameraDistance);
     const initCamX = START_PLAYER_POS.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
     const initCamZ = START_PLAYER_POS.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
     this.camera.position.set(initCamX, camHeight, initCamZ);
-    this.camera.lookAt(START_PLAYER_POS.x, 1.0, START_PLAYER_POS.z);
+    this.camera.lookAt(START_PLAYER_POS.x, targetY, START_PLAYER_POS.z);
 
     window.addEventListener('resize', this.onResize);
   }
@@ -465,46 +486,131 @@ export class CrossroadsScene {
   }
 
   private buildTerrainAndPaths(): void {
-    // Weitläufiger Waldboden (umfasst auch die langen Wege 1 bis 4)
+    // 1. Texturen für Waldboden und Wegestrukturen generieren
+    const grassTex = createGrassTexture();
+    if (grassTex.map) {
+      grassTex.map.repeat.set(55, 55);
+    }
+    if (grassTex.bumpMap) {
+      grassTex.bumpMap.repeat.set(55, 55);
+    }
+
+    const pathTex = createPathTexture();
+    if (pathTex.map) {
+      pathTex.map.repeat.set(2, 6);
+    }
+    if (pathTex.bumpMap) {
+      pathTex.bumpMap.repeat.set(2, 6);
+    }
+
+    const clearingTex = createPathTexture();
+    if (clearingTex.map) {
+      clearingTex.map.repeat.set(6, 6);
+    }
+    if (clearingTex.bumpMap) {
+      clearingTex.bumpMap.repeat.set(6, 6);
+    }
+
+    const endClearingTex = createPathTexture();
+    if (endClearingTex.map) {
+      endClearingTex.map.repeat.set(4, 4);
+    }
+    if (endClearingTex.bumpMap) {
+      endClearingTex.bumpMap.repeat.set(4, 4);
+    }
+
+    // Weitläufiger Waldboden mit natürlicher Wiesentextur und plastischem Relief
     const ground = new THREE.Mesh(
       new THREE.CircleGeometry(110, 48),
-      new THREE.MeshStandardMaterial({ color: 0x243827, roughness: 0.96 })
+      new THREE.MeshStandardMaterial({
+        color: 0x3d6842,
+        map: grassTex.map ?? undefined,
+        bumpMap: grassTex.bumpMap ?? undefined,
+        bumpScale: 0.045,
+        roughness: 0.92,
+      })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     this.scene.add(ground);
 
-    // Aschgrauer Brandboden im Bereich des Höllenschlunds (Weg 5 / Teufel)
-    // Äußerer Ausläufer der Brandzone (weicher Übergang von der grünen Wiese zu Aschland)
-    const ashGroundOuter = new THREE.Mesh(
-      new THREE.CircleGeometry(26, 36),
-      new THREE.MeshStandardMaterial({
-        color: 0x3d3835, // Dunkles Aschgrau mit leichtem Erdton
-        roughness: 0.98,
-      })
+    // Glühende Wiese & feuriger Magmaboden im Bereich des Höllenschlunds / Lavasees (Weg 5 / Teufel)
+    const lavaRockTex = createVeinedLavaRockTexture();
+    if (lavaRockTex.map) lavaRockTex.map.repeat.set(2.5, 2.5);
+    if (lavaRockTex.emissiveMap) lavaRockTex.emissiveMap.repeat.set(2.5, 2.5);
+    if (lavaRockTex.bumpMap) lavaRockTex.bumpMap.repeat.set(2.5, 2.5);
+
+    // 1. Äußerer weicher Glüh-Saum der Wiese (großflächiges Glühen im Gras)
+    this.hellMeadowGlowMat = new THREE.MeshStandardMaterial({
+      color: 0x423424, // Feurig getönte Waldwiese
+      map: grassTex.map ?? undefined,
+      emissive: new THREE.Color(0x661802),
+      emissiveIntensity: 0.4,
+      bumpMap: grassTex.bumpMap ?? undefined,
+      bumpScale: 0.035,
+      roughness: 0.94,
+    });
+    const ashGroundMeadowGlow = new THREE.Mesh(
+      new THREE.CircleGeometry(36, 40),
+      this.hellMeadowGlowMat
     );
-    ashGroundOuter.position.set(HELL_CHASM_POS.x, 0.012, HELL_CHASM_POS.z - 2.0);
+    ashGroundMeadowGlow.position.set(HELL_CHASM_POS.x, 0.007, HELL_CHASM_POS.z - 2.5);
+    ashGroundMeadowGlow.rotation.x = -Math.PI / 2;
+    ashGroundMeadowGlow.receiveShadow = true;
+    this.scene.add(ashGroundMeadowGlow);
+
+    // 2. Glühende Brandwiese (starker Glut-Schein in den Gräsern)
+    this.hellGroundOuterMat = new THREE.MeshStandardMaterial({
+      color: 0x5a2012, // Kräftig feuerrotes, sengendes Brandgras
+      map: grassTex.map ?? undefined,
+      emissiveMap: lavaRockTex.emissiveMap ?? undefined,
+      emissive: new THREE.Color(0xb52c04),
+      emissiveIntensity: 0.72,
+      bumpMap: grassTex.bumpMap ?? undefined,
+      bumpScale: 0.04,
+      roughness: 0.9,
+    });
+    const ashGroundOuter = new THREE.Mesh(
+      new THREE.CircleGeometry(28, 40),
+      this.hellGroundOuterMat
+    );
+    ashGroundOuter.position.set(HELL_CHASM_POS.x, 0.012, HELL_CHASM_POS.z - 1.8);
     ashGroundOuter.rotation.x = -Math.PI / 2;
     ashGroundOuter.receiveShadow = true;
     this.scene.add(ashGroundOuter);
 
-    // Innerer verkohlter Asche- und Rußboden direkt um den Lavakrater
+    // 3. Innerer feurig glühender Magma- und Vulkanboden direkt um den Lavasee
+    // Als Ring ausgeführt (Innenradius 7.6m), damit das Kraterbecken und die Lava frei bleiben
+    // und der Magmaboden nahtlos unter den Felsen des Kraterrandes anschließt.
+    this.hellGroundInnerMat = new THREE.MeshStandardMaterial({
+      color: 0x6e1806, // Tief feuerroter Vulkangrund mit Magma-Adern
+      map: lavaRockTex.map ?? undefined,
+      emissiveMap: lavaRockTex.emissiveMap ?? undefined,
+      emissive: new THREE.Color(0xff3300),
+      emissiveIntensity: 1.4,
+      bumpMap: lavaRockTex.bumpMap ?? undefined,
+      bumpScale: 0.06,
+      roughness: 0.82,
+    });
     const ashGroundInner = new THREE.Mesh(
-      new THREE.CircleGeometry(18, 36),
-      new THREE.MeshStandardMaterial({
-        color: 0x221f1d, // Tiefes Verkohlt-Aschgrau / Rußschwarz
-        roughness: 0.96,
-      })
+      new THREE.RingGeometry(7.6, 18.5, 48),
+      this.hellGroundInnerMat
     );
     ashGroundInner.position.set(HELL_CHASM_POS.x, 0.018, HELL_CHASM_POS.z);
     ashGroundInner.rotation.x = -Math.PI / 2;
     ashGroundInner.receiveShadow = true;
     this.scene.add(ashGroundInner);
 
-    // Zentrale Waldkreuzung (begehbare Lichtung)
+    // Zentrale Waldkreuzung mit Schotter-/Kieselstruktur (begehbare Lichtung)
     const clearing = new THREE.Mesh(
       new THREE.CylinderGeometry(6.8, 7.0, 0.06, 36),
-      new THREE.MeshStandardMaterial({ color: 0x6b5842, roughness: 0.92 })
+      new THREE.MeshStandardMaterial({
+        color: 0x826d55,
+        map: clearingTex.map ?? undefined,
+        bumpMap: clearingTex.bumpMap ?? undefined,
+        bumpScale: 0.035,
+        roughness: 0.88,
+      })
     );
     clearing.position.y = 0.03;
     clearing.receiveShadow = true;
@@ -513,14 +619,27 @@ export class CrossroadsScene {
     this.pickableObjects.push(clearing);
 
     SEVEN_PATHS.forEach((pathData) => {
+      // Standard-Wegmaterial mit Kiesel-/Sandstruktur
       const mat = new THREE.MeshStandardMaterial({
-        color: 0x7b654b,
-        roughness: 0.9,
+        color: 0x826d55,
+        map: pathTex.map ?? undefined,
+        bumpMap: pathTex.bumpMap ?? undefined,
+        bumpScale: 0.035,
+        roughness: 0.88,
+        emissive: 0x000000,
+      });
+
+      const defaultClearingMat = new THREE.MeshStandardMaterial({
+        color: 0x826d55,
+        map: endClearingTex.map ?? undefined,
+        bumpMap: endClearingTex.bumpMap ?? undefined,
+        bumpScale: 0.035,
+        roughness: 0.88,
         emissive: 0x000000,
       });
 
       if (pathData.id === 1) {
-        this.pathMeshes.set(1, [mat]);
+        this.pathMeshes.set(1, [mat, defaultClearingMat]);
         // Weg 1: Verlängerter Weg mit Rechtskurve entlang PATH_1_WAYPOINTS bis zum Berg
         this.buildCurvedPathMeshes(
           1,
@@ -528,13 +647,15 @@ export class CrossroadsScene {
           PATH_1_END_CLEARING,
           pathData.angleRad,
           mat,
-          pathData.colorHex
+          pathData.colorHex,
+          undefined,
+          defaultClearingMat
         );
         return;
       }
 
       if (pathData.id === 2) {
-        this.pathMeshes.set(2, [mat]);
+        this.pathMeshes.set(2, [mat, defaultClearingMat]);
         // Weg 2: Geschwungener Pfad entlang PATH_2_WAYPOINTS bis zum Waldteich mit der Nixe
         this.buildCurvedPathMeshes(
           2,
@@ -542,13 +663,15 @@ export class CrossroadsScene {
           PATH_2_END_CLEARING,
           pathData.angleRad,
           mat,
-          pathData.colorHex
+          pathData.colorHex,
+          undefined,
+          defaultClearingMat
         );
         return;
       }
 
       if (pathData.id === 3) {
-        this.pathMeshes.set(3, [mat]);
+        this.pathMeshes.set(3, [mat, defaultClearingMat]);
         // Weg 3: Pfad entlang PATH_3_WAYPOINTS über die Wehrbrücke bis zum Riesen
         this.buildCurvedPathMeshes(
           3,
@@ -556,13 +679,15 @@ export class CrossroadsScene {
           { x: PATH_3_END_CLEARING.x, z: PATH_3_END_CLEARING.z, radius: 3.1 },
           pathData.angleRad,
           mat,
-          pathData.colorHex
+          pathData.colorHex,
+          undefined,
+          defaultClearingMat
         );
         return;
       }
 
       if (pathData.id === 4) {
-        this.pathMeshes.set(4, [mat]);
+        this.pathMeshes.set(4, [mat, defaultClearingMat]);
         // Weg 4: Pfad entlang PATH_4_WAYPOINTS bis zum Holzfällerlager auf der Waldlichtung
         this.buildCurvedPathMeshes(
           4,
@@ -570,27 +695,53 @@ export class CrossroadsScene {
           PATH_4_END_CLEARING,
           pathData.angleRad,
           mat,
-          pathData.colorHex
+          pathData.colorHex,
+          undefined,
+          defaultClearingMat
         );
         return;
       }
 
       if (pathData.id === 5) {
-        // Weg 5: Pfad entlang PATH_5_WAYPOINTS bis zum Höllenschlund
-        // Farbverlauf von Sandfarben an der Kreuzung bis zu tiefem Dunkelgrau am Höllenschlund
-        const path5Colors = [0x7b654b, 0x6a5845, 0x52453a, 0x38322e, 0x221f1d];
-        const segMats = path5Colors.map(
-          (c) =>
+        // Weg 5: Pfad entlang PATH_5_WAYPOINTS bis zum Lavasee / Höllenschlund
+        // Feuerroter Farbverlauf von feurigem Glut-Terrakotta an der Kreuzung bis zu loderndem Magma-Feuerrot am Lavasee
+        const lavaRockTex = createVeinedLavaRockTexture();
+        if (lavaRockTex.map) lavaRockTex.map.repeat.set(1.5, 3.0);
+        if (lavaRockTex.emissiveMap) lavaRockTex.emissiveMap.repeat.set(1.5, 3.0);
+        if (lavaRockTex.bumpMap) lavaRockTex.bumpMap.repeat.set(1.5, 3.0);
+
+        const path5Configs = [
+          { color: 0xba4420, emissive: 0x661400, intensity: 0.4 },  // Nahe Kreuzung: Feuriges Rost-/Glutrot
+          { color: 0xcd3412, emissive: 0x881a00, intensity: 0.62 }, // Erste Kurve: Kräftiges Feuerrot
+          { color: 0xdf2808, emissive: 0xaa2000, intensity: 0.85 }, // Pfadmitte: Intensives Magmarot
+          { color: 0xee2200, emissive: 0xcc2600, intensity: 1.08 }, // Ausläufer: Loderndes Karminrot
+          { color: 0xf82400, emissive: 0xee2c00, intensity: 1.3 },  // Kraterrand: Glühendes Höllenfeuerrot
+        ];
+
+        const segMats = path5Configs.map(
+          (cfg) =>
             new THREE.MeshStandardMaterial({
-              color: c,
-              roughness: 0.9,
-              emissive: 0x000000,
+              color: cfg.color,
+              map: pathTex.map ?? undefined,
+              emissiveMap: lavaRockTex.emissiveMap ?? undefined,
+              emissive: new THREE.Color(cfg.emissive),
+              emissiveIntensity: cfg.intensity,
+              bumpMap: pathTex.bumpMap ?? undefined,
+              bumpScale: 0.04,
+              roughness: 0.8,
             })
         );
+        this.path5SegmentMats = segMats;
+
         const endClearingMat = new THREE.MeshStandardMaterial({
-          color: 0x1e1b19,
-          roughness: 0.9,
-          emissive: 0x000000,
+          color: 0xee2000,
+          map: lavaRockTex.map ?? undefined,
+          emissiveMap: lavaRockTex.emissiveMap ?? undefined,
+          emissive: new THREE.Color(0xdd2800),
+          emissiveIntensity: 1.25,
+          bumpMap: lavaRockTex.bumpMap ?? undefined,
+          bumpScale: 0.05,
+          roughness: 0.8,
         });
 
         this.pathMeshes.set(5, [...segMats, endClearingMat]);
@@ -609,7 +760,7 @@ export class CrossroadsScene {
       }
 
       if (pathData.id === 6) {
-        this.pathMeshes.set(6, [mat]);
+        this.pathMeshes.set(6, [mat, defaultClearingMat]);
         // Weg 6: Pfad entlang PATH_6_WAYPOINTS bis zur Jagdhütte und dem Kräutergarten
         this.buildCurvedPathMeshes(
           6,
@@ -617,13 +768,28 @@ export class CrossroadsScene {
           PATH_6_END_CLEARING,
           pathData.angleRad,
           mat,
-          pathData.colorHex
+          pathData.colorHex,
+          undefined,
+          defaultClearingMat
         );
         return;
       }
 
       if (pathData.id === 7) {
-        this.pathMeshes.set(7, [mat]);
+        // Runder Vorplatz vor dem Steintor mit Backstein-Pflastertextur
+        const brickTex = createBrickTexture();
+        if (brickTex.map) brickTex.map.repeat.set(5.5, 5.5);
+        if (brickTex.bumpMap) brickTex.bumpMap.repeat.set(5.5, 5.5);
+
+        const brickClearingMat = new THREE.MeshStandardMaterial({
+          color: 0xa44a2b, // Warmer Backstein- und Klinkerton
+          map: brickTex.map ?? undefined,
+          bumpMap: brickTex.bumpMap ?? undefined,
+          bumpScale: 0.06,
+          roughness: 0.82,
+        });
+
+        this.pathMeshes.set(7, [mat, brickClearingMat]);
         // Weg 7: Pfad entlang PATH_7_WAYPOINTS bis zum geschlossenen Tor
         this.buildCurvedPathMeshes(
           7,
@@ -631,7 +797,9 @@ export class CrossroadsScene {
           PATH_7_END_CLEARING,
           pathData.angleRad,
           mat,
-          pathData.colorHex
+          pathData.colorHex,
+          undefined,
+          brickClearingMat
         );
         return;
       }
@@ -641,14 +809,10 @@ export class CrossroadsScene {
   private createPathGemstone(pathId: number, colorHex: number): THREE.Group {
     const group = new THREE.Group();
 
-    // Kleiner steinerner Sockel unter dem Edelstein
+    // Kleiner steinerner Sockel unter dem Edelstein mit natürlicher Steintextur
     const pedestal = new THREE.Mesh(
       new THREE.CylinderGeometry(0.28, 0.36, 0.26, 8),
-      new THREE.MeshStandardMaterial({
-        color: 0x4d5459,
-        roughness: 0.9,
-        flatShading: true,
-      })
+      this.getStonePedestalMaterial()
     );
     pedestal.position.y = 0.13;
     pedestal.castShadow = true;
@@ -743,21 +907,24 @@ export class CrossroadsScene {
       this.pickableObjects.push(jointMesh);
     }
 
-    // Vorplatz am Ende des Kurvenweges (vor dem Stollen, am Teichufer bzw. hinter der Wehrbrücke)
-    const endClearing = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        clearing.radius,
-        clearing.radius + 0.2,
-        0.06,
-        28
-      ),
-      clearingMat ?? mat
-    );
-    endClearing.position.set(clearing.x, 0.03, clearing.z);
-    endClearing.receiveShadow = true;
-    endClearing.userData = { interactableType: 'path', pathId };
-    this.scene.add(endClearing);
-    this.pickableObjects.push(endClearing);
+    // Vorplatz am Ende des Kurvenweges (falls für diesen Weg vorgesehen)
+    // Weg 2 (Nixenteich) und Weg 5 (Lavateich des Teufels) führen direkt an ihr Ziel ohne runden Vorplatz
+    if (pathId !== 2 && pathId !== 5) {
+      const endClearing = new THREE.Mesh(
+        new THREE.CylinderGeometry(
+          clearing.radius,
+          clearing.radius + 0.2,
+          0.06,
+          28
+        ),
+        clearingMat ?? mat
+      );
+      endClearing.position.set(clearing.x, 0.03, clearing.z);
+      endClearing.receiveShadow = true;
+      endClearing.userData = { interactableType: 'path', pathId };
+      this.scene.add(endClearing);
+      this.pickableObjects.push(endClearing);
+    }
 
     // Edelstein auf Sockel rechts am Wegeingang an der Kreuzung
     const entrancePivot = new THREE.Group();
@@ -768,12 +935,139 @@ export class CrossroadsScene {
     this.scene.add(entrancePivot);
   }
 
+  private defaultTrunkMat: THREE.MeshStandardMaterial | null = null;
+  private burnedTrunkMat: THREE.MeshStandardMaterial | null = null;
+
+  /**
+   * Liefert das detailreich texturierte Rindenmaterial für Baumstämme (mit vertikaler Rindenstruktur und Relief-Bump-Map).
+   */
+  private getTrunkMaterial(burned = false): THREE.MeshStandardMaterial {
+    if (burned) {
+      if (!this.burnedTrunkMat) {
+        const barkTex = createBarkTexture();
+        if (barkTex.map) {
+          barkTex.map.repeat.set(1.5, 2.5);
+        }
+        if (barkTex.bumpMap) {
+          barkTex.bumpMap.repeat.set(1.5, 2.5);
+        }
+        this.burnedTrunkMat = new THREE.MeshStandardMaterial({
+          color: 0x221a18,
+          map: barkTex.map ?? undefined,
+          bumpMap: barkTex.bumpMap ?? undefined,
+          bumpScale: 0.1,
+          roughness: 0.95,
+        });
+      }
+      return this.burnedTrunkMat;
+    }
+
+    if (!this.defaultTrunkMat) {
+      const barkTex = createBarkTexture();
+      if (barkTex.map) {
+        barkTex.map.repeat.set(1.5, 2.5);
+      }
+      if (barkTex.bumpMap) {
+        barkTex.bumpMap.repeat.set(1.5, 2.5);
+      }
+      this.defaultTrunkMat = new THREE.MeshStandardMaterial({
+        color: 0x4f3622,
+        map: barkTex.map ?? undefined,
+        bumpMap: barkTex.bumpMap ?? undefined,
+        bumpScale: 0.08,
+        roughness: 0.9,
+      });
+    }
+    return this.defaultTrunkMat;
+  }
+
+  private stonePedestalMat: THREE.MeshStandardMaterial | null = null;
+
+  /**
+   * Liefert das detailreich texturierte Steinmaterial für die Sockel der 7 Edelsteine.
+   */
+  private getStonePedestalMaterial(): THREE.MeshStandardMaterial {
+    if (!this.stonePedestalMat) {
+      const stoneTex = createStoneTexture();
+      if (stoneTex.map) {
+        stoneTex.map.repeat.set(1.5, 1.2);
+      }
+      if (stoneTex.bumpMap) {
+        stoneTex.bumpMap.repeat.set(1.5, 1.2);
+      }
+      this.stonePedestalMat = new THREE.MeshStandardMaterial({
+        color: 0x62686b,
+        map: stoneTex.map ?? undefined,
+        bumpMap: stoneTex.bumpMap ?? undefined,
+        bumpScale: 0.08,
+        roughness: 0.9,
+        flatShading: true,
+      });
+    }
+    return this.stonePedestalMat;
+  }
+
+  private defaultCrownDarkMat: THREE.MeshStandardMaterial | null = null;
+  private defaultCrownLightMat: THREE.MeshStandardMaterial | null = null;
+  private burnedCrownDarkMat: THREE.MeshStandardMaterial | null = null;
+  private burnedCrownLightMat: THREE.MeshStandardMaterial | null = null;
+
+  /**
+   * Liefert die detailreichen Nadelbaum-Materialien für die Baumkronen (mit Nadelbaum-Foliage-Textur und Bump-Map).
+   */
+  private getCrownMaterials(burned = false): { dark: THREE.MeshStandardMaterial; light: THREE.MeshStandardMaterial } {
+    if (burned) {
+      if (!this.burnedCrownDarkMat || !this.burnedCrownLightMat) {
+        const foliageTex = createPineFoliageTexture();
+        if (foliageTex.map) foliageTex.map.repeat.set(2.5, 2.5);
+        if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(2.5, 2.5);
+        this.burnedCrownDarkMat = new THREE.MeshStandardMaterial({
+          color: 0x1c1a17,
+          map: foliageTex.map ?? undefined,
+          bumpMap: foliageTex.bumpMap ?? undefined,
+          bumpScale: 0.08,
+          roughness: 0.92,
+        });
+        this.burnedCrownLightMat = new THREE.MeshStandardMaterial({
+          color: 0x2c241e,
+          map: foliageTex.map ?? undefined,
+          bumpMap: foliageTex.bumpMap ?? undefined,
+          bumpScale: 0.08,
+          roughness: 0.92,
+        });
+      }
+      return { dark: this.burnedCrownDarkMat, light: this.burnedCrownLightMat };
+    }
+
+    if (!this.defaultCrownDarkMat || !this.defaultCrownLightMat) {
+      const foliageTex = createPineFoliageTexture();
+      if (foliageTex.map) foliageTex.map.repeat.set(2.5, 2.5);
+      if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(2.5, 2.5);
+      this.defaultCrownDarkMat = new THREE.MeshStandardMaterial({
+        color: 0x24472b,
+        map: foliageTex.map ?? undefined,
+        bumpMap: foliageTex.bumpMap ?? undefined,
+        bumpScale: 0.09,
+        roughness: 0.85,
+      });
+      this.defaultCrownLightMat = new THREE.MeshStandardMaterial({
+        color: 0x335c36,
+        map: foliageTex.map ?? undefined,
+        bumpMap: foliageTex.bumpMap ?? undefined,
+        bumpScale: 0.09,
+        roughness: 0.85,
+      });
+    }
+    return { dark: this.defaultCrownDarkMat, light: this.defaultCrownLightMat };
+  }
+
   private createTreeMesh(
     scale: number,
     useDarkCrown: boolean,
     trunkMat: THREE.Material,
     crownMatDark: THREE.Material,
-    crownMatLight: THREE.Material
+    crownMatLight: THREE.Material,
+    birdhouseFacingAngle?: number
   ): THREE.Group {
     const tree = new THREE.Group();
     const trunk = new THREE.Mesh(
@@ -802,6 +1096,28 @@ export class CrossroadsScene {
     crown2.castShadow = true;
     tree.add(crown2);
 
+    // An jedem 10. lebenden Baum einen Nistkasten montieren
+    const isBurnedTree = this.burnedTrunkMat !== null && trunkMat === this.burnedTrunkMat;
+    if (!isBurnedTree) {
+      this.treeCounter++;
+      if (this.treeCounter % 10 === 0) {
+        const birdhouse = createBirdhouse(scale);
+        // Nistkasten auf gut sichtbarer Stammhöhe unterhalb der Baumkrone anbringen (ca. 0.82 * scale)
+        const trunkRadiusAtHeight = 0.274 * scale;
+        const angle =
+          birdhouseFacingAngle !== undefined
+            ? birdhouseFacingAngle
+            : (this.treeCounter * 1.618) % (Math.PI * 2);
+
+        const bx = Math.sin(angle) * trunkRadiusAtHeight;
+        const bz = Math.cos(angle) * trunkRadiusAtHeight;
+
+        birdhouse.position.set(bx, 0.82 * scale, bz);
+        birdhouse.rotation.y = angle;
+        tree.add(birdhouse);
+      }
+    }
+
     return tree;
   }
 
@@ -809,10 +1125,10 @@ export class CrossroadsScene {
     x: number,
     z: number,
     waypoints: readonly PathPoint2D[],
-    endClearing: { x: number; z: number; radius: number },
+    endClearing?: { x: number; z: number; radius: number },
     minDistance = 3.2
   ): boolean {
-    if (Math.hypot(x - endClearing.x, z - endClearing.z) < endClearing.radius + 2.8) {
+    if (endClearing && Math.hypot(x - endClearing.x, z - endClearing.z) < endClearing.radius + 2.8) {
       return true;
     }
     for (let i = 0; i < waypoints.length - 1; i++) {
@@ -838,10 +1154,10 @@ export class CrossroadsScene {
   }
 
   private isNearPath2Corridor(x: number, z: number, minDistance = 3.2): boolean {
-    if (Math.hypot(x - POND_CENTER_POS.x, z - POND_CENTER_POS.z) < POND_CENTER_POS.radius + 2.5) {
+    if (Math.hypot(x - POND_CENTER_POS.x, z - POND_CENTER_POS.z) < POND_CENTER_POS.radius + 0.3) {
       return true;
     }
-    return this.isNearCurvedCorridor(x, z, PATH_2_WAYPOINTS, PATH_2_END_CLEARING, minDistance);
+    return this.isNearCurvedCorridor(x, z, PATH_2_WAYPOINTS, undefined, minDistance);
   }
 
   private isNearPath3Corridor(x: number, z: number, minDistance = 3.2): boolean {
@@ -865,7 +1181,7 @@ export class CrossroadsScene {
     if (Math.hypot(x - HELL_CHASM_POS.x, z - HELL_CHASM_POS.z) < HELL_CHASM_POS.radius + 1.8) {
       return true;
     }
-    return this.isNearCurvedCorridor(x, z, PATH_5_WAYPOINTS, PATH_5_END_CLEARING, minDistance);
+    return this.isNearCurvedCorridor(x, z, PATH_5_WAYPOINTS, undefined, minDistance);
   }
 
   private isNearPath6Corridor(x: number, z: number, minDistance = 3.2): boolean {
@@ -947,9 +1263,8 @@ export class CrossroadsScene {
   }
 
   private buildForestRing(): void {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4f3622, roughness: 0.9 });
-    const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 0.85 });
-    const crownMatLight = new THREE.MeshStandardMaterial({ color: 0x335c36, roughness: 0.85 });
+    const trunkMat = this.getTrunkMaterial();
+    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
 
     for (let i = 0; i < SEVEN_PATHS.length; i++) {
       const baseAngle = SEVEN_PATHS[i].angleRad + Math.PI / 7;
@@ -992,9 +1307,8 @@ export class CrossroadsScene {
    * Platziert Bäume beidseitig entlang der Kurve von Weg 1 bis zum Bergmassiv.
    */
   private buildCurvedPath1Trees(): void {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4f3622, roughness: 0.9 });
-    const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 0.85 });
-    const crownMatLight = new THREE.MeshStandardMaterial({ color: 0x335c36, roughness: 0.85 });
+    const trunkMat = this.getTrunkMaterial();
+    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
 
     for (let i = 1; i < PATH_1_WAYPOINTS.length - 1; i++) {
       const prev = PATH_1_WAYPOINTS[i - 1];
@@ -1020,12 +1334,15 @@ export class CrossroadsScene {
             continue;
           }
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
+          // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
+          const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
           const tree = this.createTreeMesh(
             scale,
             (i + side) % 2 === 0,
             trunkMat,
             crownMatDark,
-            crownMatLight
+            crownMatLight,
+            angleToPath
           );
           tree.position.set(tx, 0, tz);
           this.scene.add(tree);
@@ -1070,9 +1387,8 @@ export class CrossroadsScene {
    * Platziert Bäume beidseitig entlang von Weg 2 und als malerische Waldkulisse rund um den Nixenteich.
    */
   private buildCurvedPath2Trees(): void {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4f3622, roughness: 0.9 });
-    const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 0.85 });
-    const crownMatLight = new THREE.MeshStandardMaterial({ color: 0x335c36, roughness: 0.85 });
+    const trunkMat = this.getTrunkMaterial();
+    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
 
     for (let i = 1; i < PATH_2_WAYPOINTS.length - 1; i++) {
       const prev = PATH_2_WAYPOINTS[i - 1];
@@ -1098,12 +1414,15 @@ export class CrossroadsScene {
             continue;
           }
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
+          // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
+          const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
           const tree = this.createTreeMesh(
             scale,
             (i + side) % 2 === 0,
             trunkMat,
             crownMatDark,
-            crownMatLight
+            crownMatLight,
+            angleToPath
           );
           tree.position.set(tx, 0, tz);
           this.scene.add(tree);
@@ -1111,16 +1430,16 @@ export class CrossroadsScene {
       }
     }
 
-    // Malerischer Baumkranz um das Nord-, Ost- und Südufer des Teichs (Westufer ist der Wegzugang)
+    // Malerischer Baumkranz nah um das Nord-, Ost- und Südufer des Teichs (Westufer ist der Wegzugang)
     const pondTreeAngles = [
       -1.85, -1.45, -1.05, -0.65, -0.25, 0.15, 0.55, 0.95, 1.35, 1.75, 2.1,
     ];
     pondTreeAngles.forEach((angle, idx) => {
-      for (const ringRadius of [6.8, 9.6]) {
-        const tx = POND_CENTER_POS.x + Math.cos(angle + (ringRadius > 8 ? 0.14 : 0)) * ringRadius;
-        const tz = POND_CENTER_POS.z + Math.sin(angle + (ringRadius > 8 ? 0.14 : 0)) * ringRadius;
+      for (const ringRadius of [5.2, 7.2]) {
+        const tx = POND_CENTER_POS.x + Math.cos(angle + (ringRadius > 6.5 ? 0.14 : 0)) * ringRadius;
+        const tz = POND_CENTER_POS.z + Math.sin(angle + (ringRadius > 6.5 ? 0.14 : 0)) * ringRadius;
         if (
-          this.isNearPath2Corridor(tx, tz, 2.6) ||
+          this.isNearCurvedCorridor(tx, tz, PATH_2_WAYPOINTS, undefined, 2.2) ||
           this.isNearPath3Corridor(tx, tz, 2.6) ||
           this.isNearPath4Corridor(tx, tz, 2.6)
         ) {
@@ -1144,9 +1463,8 @@ export class CrossroadsScene {
    * Platziert Bäume beidseitig entlang von Weg 3 und rund um den Stausee und den Platz des Riesen.
    */
   private buildCurvedPath3Trees(): void {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4f3622, roughness: 0.9 });
-    const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 0.85 });
-    const crownMatLight = new THREE.MeshStandardMaterial({ color: 0x335c36, roughness: 0.85 });
+    const trunkMat = this.getTrunkMaterial();
+    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
 
     for (let i = 1; i < PATH_3_WAYPOINTS.length - 2; i++) {
       const prev = PATH_3_WAYPOINTS[i - 1];
@@ -1172,12 +1490,15 @@ export class CrossroadsScene {
             continue;
           }
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
+          // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
+          const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
           const tree = this.createTreeMesh(
             scale,
             (i + side) % 2 === 0,
             trunkMat,
             crownMatDark,
-            crownMatLight
+            crownMatLight,
+            angleToPath
           );
           tree.position.set(tx, 0, tz);
           this.scene.add(tree);
@@ -1212,9 +1533,8 @@ export class CrossroadsScene {
    * Platziert Bäume entlang von Weg 4 und bildet den verbliebenen Hochwald-Rand rund um die Holzfäller-Lichtung.
    */
   private buildCurvedPath4Trees(): void {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4f3622, roughness: 0.9 });
-    const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 0.85 });
-    const crownMatLight = new THREE.MeshStandardMaterial({ color: 0x335c36, roughness: 0.85 });
+    const trunkMat = this.getTrunkMaterial();
+    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
 
     for (let i = 1; i < PATH_4_WAYPOINTS.length - 1; i++) {
       const prev = PATH_4_WAYPOINTS[i - 1];
@@ -1240,12 +1560,15 @@ export class CrossroadsScene {
             continue;
           }
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
+          // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
+          const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
           const tree = this.createTreeMesh(
             scale,
             (i + side) % 2 === 0,
             trunkMat,
             crownMatDark,
-            crownMatLight
+            crownMatLight,
+            angleToPath
           );
           tree.position.set(tx, 0, tz);
           this.scene.add(tree);
@@ -1280,13 +1603,25 @@ export class CrossroadsScene {
    * Platziert aschige, verbrannte Nadelbäume und schroffe Basaltfelsen entlang von Weg 5 zum Höllenschlund.
    */
   private buildCurvedPath5Trees(): void {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x221a18, roughness: 0.95 });
-    const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x1c1a17, roughness: 0.9 });
-    const crownMatLight = new THREE.MeshStandardMaterial({ color: 0x2c241e, roughness: 0.9 });
+    const trunkMat = this.getTrunkMaterial(true);
+    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials(true);
+
+    // Glühende, spitze Lavasteine mit Adern entlang des Pfades
+    const lavaRockTex = createVeinedLavaRockTexture();
+    if (lavaRockTex.map) lavaRockTex.map.repeat.set(1.2, 2.0);
+    if (lavaRockTex.emissiveMap) lavaRockTex.emissiveMap.repeat.set(1.2, 2.0);
+    if (lavaRockTex.bumpMap) lavaRockTex.bumpMap.repeat.set(1.2, 2.0);
 
     const basaltMat = new THREE.MeshStandardMaterial({
       color: 0x161313,
-      roughness: 0.9,
+      map: lavaRockTex.map ?? undefined,
+      emissiveMap: lavaRockTex.emissiveMap ?? undefined,
+      emissive: new THREE.Color(0xff3300),
+      emissiveIntensity: 1.6,
+      bumpMap: lavaRockTex.bumpMap ?? undefined,
+      bumpScale: 0.1,
+      roughness: 0.88,
+      metalness: 0.22,
       flatShading: true,
     });
 
@@ -1341,9 +1676,8 @@ export class CrossroadsScene {
    * Platziert Bäume beidseitig entlang des 6. Weges (Jägerpfad) bis zur Lichtung mit der Jagdhütte.
    */
   private buildCurvedPath6Trees(): void {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4f3622, roughness: 0.9 });
-    const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 0.85 });
-    const crownMatLight = new THREE.MeshStandardMaterial({ color: 0x335c36, roughness: 0.85 });
+    const trunkMat = this.getTrunkMaterial();
+    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
 
     for (let i = 1; i < PATH_6_WAYPOINTS.length - 1; i++) {
       const prev = PATH_6_WAYPOINTS[i - 1];
@@ -1368,12 +1702,15 @@ export class CrossroadsScene {
             continue;
           }
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
+          // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
+          const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
           const tree = this.createTreeMesh(
             scale,
             (i + side) % 2 === 0,
             trunkMat,
             crownMatDark,
-            crownMatLight
+            crownMatLight,
+            angleToPath
           );
           tree.position.set(tx, 0, tz);
           this.scene.add(tree);
@@ -1408,9 +1745,8 @@ export class CrossroadsScene {
    * rund um den Vorplatz sowie hinter den Steinmauern des geschlossenen Tores.
    */
   private buildCurvedPath7Trees(): void {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4f3622, roughness: 0.9 });
-    const crownMatDark = new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 0.85 });
-    const crownMatLight = new THREE.MeshStandardMaterial({ color: 0x335c36, roughness: 0.85 });
+    const trunkMat = this.getTrunkMaterial();
+    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
 
     for (let i = 1; i < PATH_7_WAYPOINTS.length - 1; i++) {
       const prev = PATH_7_WAYPOINTS[i - 1];
@@ -1435,12 +1771,15 @@ export class CrossroadsScene {
             continue;
           }
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
+          // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
+          const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
           const tree = this.createTreeMesh(
             scale,
             (i + side) % 2 === 0,
             trunkMat,
             crownMatDark,
-            crownMatLight
+            crownMatLight,
+            angleToPath
           );
           tree.position.set(tx, 0, tz);
           this.scene.add(tree);
@@ -1482,6 +1821,130 @@ export class CrossroadsScene {
         const tree = this.createTreeMesh(scale, dark, trunkMat, crownMatDark, crownMatLight);
         tree.position.set(wx, 0, wz);
         this.scene.add(tree);
+      }
+    }
+  }
+
+  /**
+   * Verteilt farbenfrohe Waldblumen (Buschwindröschen, Vergissmeinnicht, Waldglockenblumen,
+   * Goldhahnenfuß und Waldnelken) auf den Waldwiesen links und rechts von Weg 7.
+   */
+  private buildPath7Wildflowers(): void {
+    const waypoints = PATH_7_WAYPOINTS;
+    const availableTypes: FlowerType[] = [
+      'anemone',
+      'forget_me_not',
+      'bellflower',
+      'buttercup',
+      'campion',
+      'mixed',
+    ];
+
+    // 1. Entlang der Segmente von Weg 7 auf den Waldwiesen beidseitig
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const a = waypoints[i];
+      const b = waypoints[i + 1];
+      const dx = b.x - a.x;
+      const dz = b.z - a.z;
+      const len = Math.hypot(dx, dz);
+      if (len < 0.001) continue;
+
+      const ux = dx / len;
+      const uz = dz / len;
+      const perpX = -uz;
+      const perpZ = ux;
+
+      const tSteps = [0.15, 0.35, 0.55, 0.75, 0.92];
+
+      for (const t of tSteps) {
+        const segX = a.x + dx * t;
+        const segZ = a.z + dz * t;
+
+        for (const side of [-1, 1]) {
+          // Verschiedene Abstände auf der Wiese (ab 1.6m bis ca. 7.5m)
+          const distOptions = [1.65, 2.8, 4.2, 5.8, 7.2];
+          for (let dIdx = 0; dIdx < distOptions.length; dIdx++) {
+            // Natürliche Tuff-Gruppierung
+            if ((i * 3 + Math.round(t * 10) + dIdx + (side > 0 ? 1 : 0)) % 2 !== 0) {
+              continue;
+            }
+
+            const baseDist = distOptions[dIdx];
+            const jitterDist = baseDist + Math.sin(t * 11.0 + side * 4.0) * 0.35;
+            const jitterAlong = Math.cos(t * 9.0 + dIdx * 2.5) * 0.4;
+
+            const fx = segX + ux * jitterAlong + perpX * side * jitterDist;
+            const fz = segZ + uz * jitterAlong + perpZ * side * jitterDist;
+
+            // Nicht auf dem Weg selbst
+            if (this.isNearCurvedCorridor(fx, fz, PATH_7_WAYPOINTS, undefined, 1.45)) {
+              continue;
+            }
+
+            // Nicht auf der zentralen Kreuzungslichtung
+            if (Math.hypot(fx, fz) < 8.2) {
+              continue;
+            }
+
+            // Nicht im Korridor von Weg 6 oder Weg 1
+            if (this.isNearPath6Corridor(fx, fz, 2.6) || this.isNearPath1Corridor(fx, fz, 2.6)) {
+              continue;
+            }
+
+            // Nicht auf dem Vorplatz des Tores
+            if (Math.hypot(fx - CLOSED_GATE_POS.x, fz - CLOSED_GATE_POS.z) < CLOSED_GATE_POS.radius + 0.4) {
+              continue;
+            }
+
+            // Strikte Prüfung: muss sich auf dem kreisförmigen grünen Waldboden befinden
+            if (Math.hypot(fx, fz) > 105) {
+              continue;
+            }
+
+            const typeIdx = (i * 3 + Math.round(t * 7) + dIdx + (side > 0 ? 2 : 0)) % availableTypes.length;
+            const type = availableTypes[typeIdx];
+            const scale = 0.88 + ((i + dIdx) % 3) * 0.12;
+            const rotationY = (i * 1.5 + t * 4 + side) * 1.2;
+
+            const cluster = createFlowerCluster({ type, scale, rotationY });
+            cluster.group.position.set(fx, 0, fz);
+            this.scene.add(cluster.group);
+          }
+        }
+      }
+    }
+
+    // 2. Zusätzliche idyllische Blumeninseln auf den Wiesen rund um den Vorplatz des geschlossenen Tores
+    const gateClearingFlowers: Array<{ lx: number; lz: number; type: FlowerType; scale: number }> = [
+      { lx: -8.5, lz: 4.5, type: 'anemone', scale: 1.05 },
+      { lx: -6.2, lz: 7.2, type: 'bellflower', scale: 0.95 },
+      { lx: -9.8, lz: 1.5, type: 'forget_me_not', scale: 1.1 },
+      { lx: 8.5, lz: 4.8, type: 'buttercup', scale: 1.0 },
+      { lx: 6.8, lz: 7.5, type: 'campion', scale: 1.05 },
+      { lx: 9.6, lz: 1.8, type: 'mixed', scale: 0.95 },
+      { lx: -4.5, lz: 8.2, type: 'forget_me_not', scale: 1.0 },
+      { lx: 4.8, lz: 8.0, type: 'anemone', scale: 1.05 },
+    ];
+
+    const gateCos = Math.cos(CLOSED_GATE_POS.rotationY);
+    const gateSin = Math.sin(CLOSED_GATE_POS.rotationY);
+
+    for (const spot of gateClearingFlowers) {
+      const wx = CLOSED_GATE_POS.x + spot.lx * gateCos + spot.lz * gateSin;
+      const wz = CLOSED_GATE_POS.z - spot.lx * gateSin + spot.lz * gateCos;
+
+      if (
+        Math.hypot(wx, wz) >= 8.2 &&
+        Math.hypot(wx - CLOSED_GATE_POS.x, wz - CLOSED_GATE_POS.z) >= CLOSED_GATE_POS.radius + 0.3 &&
+        !this.isNearCurvedCorridor(wx, wz, PATH_7_WAYPOINTS, undefined, 2.2)
+      ) {
+        const cluster = createFlowerCluster({
+          type: spot.type,
+          scale: spot.scale,
+          rotationY: Math.random() * Math.PI * 2,
+        });
+        cluster.group.position.set(wx, 0, wz);
+        this.scene.add(cluster.group);
       }
     }
   }
@@ -1595,6 +2058,111 @@ export class CrossroadsScene {
     }
   }
 
+  /**
+   * Errichtet eine monumentale, schroffe Felsenkulisse aus spitzen, hohen, dunklen Basalt- und Obsidianzacken
+   * direkt hinter dem feurigen Höllenschlund am Ende von Weg 5.
+   */
+  private buildHellChasmBackdropRocks(): void {
+    const rockGroup = new THREE.Group();
+    rockGroup.name = 'HellChasmBackdropRocks';
+
+    // Prozedurale Basalt- und Obsidianfels-Textur mit hellen roten, glühenden Magma-Adern
+    const lavaRockTex = createVeinedLavaRockTexture();
+    if (lavaRockTex.map) {
+      lavaRockTex.map.repeat.set(1.5, 3.2);
+    }
+    if (lavaRockTex.emissiveMap) {
+      lavaRockTex.emissiveMap.repeat.set(1.5, 3.2);
+    }
+    if (lavaRockTex.bumpMap) {
+      lavaRockTex.bumpMap.repeat.set(1.5, 3.2);
+    }
+
+    const rockMats = [
+      new THREE.MeshStandardMaterial({
+        color: 0x161312,
+        map: lavaRockTex.map ?? undefined,
+        emissiveMap: lavaRockTex.emissiveMap ?? undefined,
+        emissive: new THREE.Color(0xff3300),
+        emissiveIntensity: 2.0,
+        bumpMap: lavaRockTex.bumpMap ?? undefined,
+        bumpScale: 0.12,
+        roughness: 0.88,
+        metalness: 0.22,
+        flatShading: true,
+      }),
+      new THREE.MeshStandardMaterial({
+        color: 0x221a17,
+        map: lavaRockTex.map ?? undefined,
+        emissiveMap: lavaRockTex.emissiveMap ?? undefined,
+        emissive: new THREE.Color(0xff4408),
+        emissiveIntensity: 1.8,
+        bumpMap: lavaRockTex.bumpMap ?? undefined,
+        bumpScale: 0.1,
+        roughness: 0.9,
+        metalness: 0.18,
+        flatShading: true,
+      }),
+      new THREE.MeshStandardMaterial({
+        color: 0x2a1e1a,
+        map: lavaRockTex.map ?? undefined,
+        emissiveMap: lavaRockTex.emissiveMap ?? undefined,
+        emissive: new THREE.Color(0xff2200),
+        emissiveIntensity: 1.6,
+        bumpMap: lavaRockTex.bumpMap ?? undefined,
+        bumpScale: 0.1,
+        roughness: 0.86,
+        metalness: 0.24,
+        flatShading: true,
+      }),
+    ];
+
+    // Felsformationen: [relX, relZ, baseRadius, height, rotY, tiltX, tiltZ, matIndex]
+    // Relativ zum Kraterzentrum HELL_CHASM_POS (-22.5, 52.0)
+    const rockConfigs: [number, number, number, number, number, number, number, number][] = [
+      // Zentrale gewaltige Felszacken direkt hinter dem Krater
+      [0.0, 10.8, 3.8, 19.5, 0.4, 0.08, 0.02, 0],
+      [-3.2, 11.6, 3.2, 16.8, 1.2, 0.06, -0.07, 1],
+      [3.5, 11.2, 3.4, 17.4, 2.1, 0.07, 0.06, 2],
+      // Linke Felsflanke (Westen)
+      [-6.5, 9.8, 2.9, 14.2, 0.8, 0.05, -0.1, 0],
+      [-9.8, 8.2, 2.6, 12.5, 1.6, 0.04, -0.12, 1],
+      [-12.4, 5.8, 2.4, 10.8, 2.4, 0.03, -0.09, 2],
+      // Rechte Felsflanke (Osten)
+      [6.8, 9.6, 3.0, 15.0, 1.1, 0.05, 0.09, 1],
+      [10.2, 7.8, 2.7, 13.0, 2.3, 0.04, 0.11, 2],
+      [12.8, 5.2, 2.3, 11.2, 0.6, 0.03, 0.08, 0],
+      // Hoher Gebirgsgrat in der zweiten Reihe dahinter
+      [-1.8, 15.2, 4.5, 23.0, 0.3, 0.06, -0.03, 0],
+      [2.2, 15.8, 4.2, 21.5, 1.7, 0.07, 0.04, 1],
+      [-5.8, 14.5, 3.6, 18.5, 2.8, 0.05, -0.06, 2],
+      [6.2, 14.0, 3.8, 19.0, 0.9, 0.06, 0.05, 0],
+      [-10.2, 12.8, 3.3, 15.5, 1.9, 0.04, -0.08, 1],
+      [10.6, 12.2, 3.4, 16.0, 2.5, 0.05, 0.07, 2],
+      // Vorgelagerte scharfe Felsnadeln
+      [-1.2, 8.2, 1.8, 9.5, 0.5, 0.04, 0.03, 1],
+      [2.0, 8.6, 1.9, 10.2, 1.8, 0.05, -0.04, 0],
+    ];
+
+    for (const [rx, rz, baseRadius, height, rotY, tiltX, tiltZ, matIdx] of rockConfigs) {
+      const rockMesh = new THREE.Mesh(
+        new THREE.ConeGeometry(baseRadius, height, 6),
+        rockMats[matIdx]
+      );
+      rockMesh.position.set(
+        HELL_CHASM_POS.x + rx,
+        height / 2 - 0.4,
+        HELL_CHASM_POS.z + rz
+      );
+      rockMesh.rotation.set(tiltX, rotY, tiltZ);
+      rockMesh.castShadow = true;
+      rockMesh.receiveShadow = true;
+      rockGroup.add(rockMesh);
+    }
+
+    this.scene.add(rockGroup);
+  }
+
   private createTargetMarker(): THREE.Mesh {
     const geometry = new THREE.RingGeometry(0.28, 0.42, 24);
     geometry.rotateX(-Math.PI / 2);
@@ -1638,7 +2206,8 @@ export class CrossroadsScene {
 
   public rotateCamera(deltaYaw: number, deltaPitch = 0): void {
     this.cameraOrbitAngle += deltaYaw;
-    this.cameraPitch = Math.max(0.25, Math.min(1.15, this.cameraPitch + deltaPitch));
+    // Ermöglicht vollen Kamerablick: von horizontal nach vorn (0 Rad) bis zu 90 Grad (Vogelperspektive)
+    this.cameraPitch = Math.max(-0.06, Math.min(Math.PI / 2 - 0.03, this.cameraPitch + deltaPitch));
   }
 
   public zoomCamera(deltaZoom: number): void {
@@ -1654,13 +2223,14 @@ export class CrossroadsScene {
     this.playerGroup.rotation.y = 0;
     this.cameraOrbitAngle = 0;
 
+    const targetY = 1.1;
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
-    const camHeight = Math.sin(this.cameraPitch) * this.cameraDistance;
+    const camHeight = Math.max(0.55, targetY + Math.sin(this.cameraPitch) * this.cameraDistance);
     const targetCamX = playerPos.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
     const targetCamZ = playerPos.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
 
     this.camera.position.set(targetCamX, camHeight, targetCamZ);
-    this.camera.lookAt(playerPos.x, 1.0, playerPos.z);
+    this.camera.lookAt(playerPos.x, targetY, playerPos.z);
   }
 
   public setHoveredPathId(pathId: number | null): void {
@@ -1940,7 +2510,8 @@ export class CrossroadsScene {
     this.devilNpc.update(
       this.elapsedSeconds,
       playerPos,
-      this.isDevilHovered || isDialogueActive
+      this.isDevilHovered || isDialogueActive,
+      dtSeconds
     );
     this.huntingLodge.update(this.elapsedSeconds);
     this.wildHunterNpc.update(
@@ -1973,12 +2544,29 @@ export class CrossroadsScene {
     // Wegweiser und ausgewählten/gehoverten Pfad optisch hervorheben
     this.signpost.highlightSign(selectedPathId, this.hoveredPathId);
     this.pathMeshes.forEach((mats, id) => {
+      if (id === 5) return; // Weg 5 behält sein intensives feuerrotes Glut-Emissive
       const emColor =
         id === selectedPathId ? 0x2c220c : id === this.hoveredPathId ? 0x1b1507 : 0x000000;
       for (const m of mats) {
         m.emissive.setHex(emColor);
       }
     });
+
+    // Dynamisches Glühen der Wiese und des feuerroten Weges im Bereich des Lavasees
+    const groundPulse = 0.88 + 0.22 * Math.sin(this.elapsedSeconds * 2.8) + 0.1 * Math.cos(this.elapsedSeconds * 4.6);
+    if (this.hellGroundInnerMat) {
+      this.hellGroundInnerMat.emissiveIntensity = 1.4 * groundPulse;
+    }
+    if (this.hellGroundOuterMat) {
+      this.hellGroundOuterMat.emissiveIntensity = 0.72 * groundPulse;
+    }
+    if (this.hellMeadowGlowMat) {
+      this.hellMeadowGlowMat.emissiveIntensity = 0.4 * groundPulse;
+    }
+    for (let p = 0; p < this.path5SegmentMats.length; p++) {
+      const baseInt = 0.4 + p * 0.22;
+      this.path5SegmentMats[p].emissiveIntensity = baseInt * groundPulse;
+    }
 
     // Edelstein am jeweils aktiven Storyweg (Weg 1 bis 7 bzw. aktuell gewählter Storyweg) leuchten lassen
     const pulse = 0.5 + 0.5 * Math.sin(this.elapsedSeconds * 3.2);
@@ -2031,13 +2619,14 @@ export class CrossroadsScene {
     }
 
     // Sanfte Verfolgerkamera mit Maus-Orbit, Neigung (Pitch) und Zoom (Distanz)
+    const targetY = 1.1;
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
-    const camHeight = Math.sin(this.cameraPitch) * this.cameraDistance;
+    const camHeight = Math.max(0.55, targetY + Math.sin(this.cameraPitch) * this.cameraDistance);
     const targetCamX = playerPos.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
     const targetCamZ = playerPos.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
 
     this.camera.position.lerp(new THREE.Vector3(targetCamX, camHeight, targetCamZ), 0.14);
-    this.camera.lookAt(playerPos.x, 1.0, playerPos.z);
+    this.camera.lookAt(playerPos.x, targetY, playerPos.z);
 
     this.renderer.render(this.scene, this.camera);
   }

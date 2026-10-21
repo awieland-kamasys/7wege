@@ -658,6 +658,12 @@ export class GameApp {
     if (this.pressedKeys.has('e')) {
       this.scene.rotateCamera(1.6 * dtSeconds);
     }
+    if (this.pressedKeys.has('r') || this.pressedKeys.has('pageup')) {
+      this.scene.rotateCamera(0, -1.3 * dtSeconds);
+    }
+    if (this.pressedKeys.has('f') || this.pressedKeys.has('pagedown')) {
+      this.scene.rotateCamera(0, 1.3 * dtSeconds);
+    }
 
     const prevPos = this.state.getPlayerPosition();
 

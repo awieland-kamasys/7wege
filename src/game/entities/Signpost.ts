@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { SEVEN_PATHS } from '../data/paths';
+import { createStoneTexture, createWoodGrainTexture } from '../textures/GroundTextures';
 
 export interface SignpostEntity {
   group: THREE.Group;
@@ -13,15 +14,42 @@ export function createSignpost(): SignpostEntity {
   const group = new THREE.Group();
   group.name = 'Signpost';
 
+  // Detailreiche Holzmaserung für den Holzpfosten / Stamm des Wegweisers
+  const woodGrainTex = createWoodGrainTexture();
+  if (woodGrainTex.map) {
+    woodGrainTex.map.repeat.set(1.0, 3.0);
+  }
+  if (woodGrainTex.bumpMap) {
+    woodGrainTex.bumpMap.repeat.set(1.0, 3.0);
+  }
+
   const postMaterial = new THREE.MeshStandardMaterial({
-    color: 0x5c3e26,
-    roughness: 0.9,
+    color: 0x6e482b,
+    map: woodGrainTex.map ?? undefined,
+    bumpMap: woodGrainTex.bumpMap ?? undefined,
+    bumpScale: 0.08,
+    roughness: 0.85,
   });
 
-  // Steinernes Fundament
+  const stoneTex = createStoneTexture();
+  if (stoneTex.map) {
+    stoneTex.map.repeat.set(1.5, 1.0);
+  }
+  if (stoneTex.bumpMap) {
+    stoneTex.bumpMap.repeat.set(1.5, 1.0);
+  }
+
+  // Steinernes Fundament mit authentischer Steintextur und Relief-Bump-Map
   const base = new THREE.Mesh(
     new THREE.CylinderGeometry(0.45, 0.58, 0.35, 10),
-    new THREE.MeshStandardMaterial({ color: 0x6f7370, roughness: 0.95 })
+    new THREE.MeshStandardMaterial({
+      color: 0x767a78,
+      map: stoneTex.map ?? undefined,
+      bumpMap: stoneTex.bumpMap ?? undefined,
+      bumpScale: 0.08,
+      roughness: 0.92,
+      flatShading: true,
+    })
   );
   base.position.y = 0.175;
   base.receiveShadow = true;

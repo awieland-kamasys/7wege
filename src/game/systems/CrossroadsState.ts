@@ -157,7 +157,7 @@ export class CrossroadsState {
   private readonly pondPos: Vector2D = { x: POND_CENTER_POS.x, z: POND_CENTER_POS.z };
   private readonly pondCollisionRadius = 4.25;
   private readonly nixiePos: Vector2D = { ...NIXIE_NPC_POS };
-  private readonly nixieTalkDistance = 3.25;
+  private readonly nixieTalkDistance = 4.8;
 
   // Am Ende des 3. Weges: Brücke mit geschlossenem Wehr, kleinem Stausee und dem Riesen
   private readonly weirBridgePos: Vector2D = { x: WEIR_BRIDGE_POS.x, z: WEIR_BRIDGE_POS.z };
@@ -171,10 +171,10 @@ export class CrossroadsState {
 
   // Am Ende des 5. Weges: Feuriger Höllenschlund und der Teufel
   private readonly hellChasmPos: Vector2D = { x: HELL_CHASM_POS.x, z: HELL_CHASM_POS.z };
-  private readonly hellChasmCollisionRadius = 5.6;
+  private readonly hellChasmCollisionRadius = 7.2;
   private readonly devilPos: Vector2D = { ...DEVIL_NPC_POS };
   private readonly devilCollisionRadius = 1.35;
-  private readonly devilTalkDistance = 6.2;
+  private readonly devilTalkDistance = 7.8;
 
   // Am Ende des 6. Weges: Jagdhütte mit Kräutergarten, Wilder Jäger, Pferd und Holzweibchen
   private readonly huntingLodgePos: Vector2D = { x: HUNTING_LODGE_POS.x, z: HUNTING_LODGE_POS.z };
@@ -1704,13 +1704,15 @@ export class CrossroadsState {
         }
       }
 
-      // Schutzhütten-Kollision (AABB um hutPos)
+      // Schutzhütten-Kollision (AABB um hutPos mit tangentialem Wand-Gleiten)
       const relX = resolvedX - this.hutPos.x;
       const relZ = resolvedZ - this.hutPos.z;
-      if (Math.abs(relX) < this.hutHalfWidth && Math.abs(relZ) < this.hutHalfDepth) {
-        const penX = this.hutHalfWidth - Math.abs(relX);
-        const penZ = this.hutHalfDepth - Math.abs(relZ);
+      const absRelX = Math.abs(relX);
+      const absRelZ = Math.abs(relZ);
 
+      if (absRelX < this.hutHalfWidth && absRelZ < this.hutHalfDepth) {
+        const penX = this.hutHalfWidth - absRelX;
+        const penZ = this.hutHalfDepth - absRelZ;
         if (penX < penZ) {
           resolvedX = this.hutPos.x + (relX >= 0 ? this.hutHalfWidth : -this.hutHalfWidth);
         } else {
@@ -1997,7 +1999,7 @@ export class CrossroadsState {
    */
   public setTargetToNixie(): Readonly<Vector2D> {
     this.selectPath(2);
-    return this.setTargetPosition(this.pondPos.x - this.pondCollisionRadius - 0.3, this.nixiePos.z);
+    return this.setTargetPosition(41.9, -14.2);
   }
 
   /**
@@ -2017,11 +2019,11 @@ export class CrossroadsState {
   }
 
   /**
-   * Lässt die Spielfigur entlang des 5. Weges bis auf die Felsplattform vor den Teufel am Höllenschlund laufen.
+   * Lässt die Spielfigur entlang des 5. Weges bis an den Kraterrand vor den Teufel am Höllenschlund laufen.
    */
   public setTargetToDevil(): Readonly<Vector2D> {
     this.selectPath(5);
-    return this.setTargetPosition(this.devilPos.x + 0.9, this.devilPos.z - 5.8);
+    return this.setTargetPosition(-21.2, 44.8);
   }
 
   /**
@@ -2241,18 +2243,43 @@ export class CrossroadsState {
     }
 
     // Falls die direkte Linie auf der Kreuzung durch die vergrößerte Schutzhütte führt,
-    // nutze einen seitlichen Wegpunkt links oder rechts neben der Hütte
+    // nutze einen seitlichen Wegpunkt links/rechts oder vorn/hinten neben der Hütte
+    const hutMinX = this.hutPos.x - this.hutHalfWidth;
+    const hutMaxX = this.hutPos.x + this.hutHalfWidth;
     const hutMinZ = this.hutPos.z - this.hutHalfDepth;
     const hutMaxZ = this.hutPos.z + this.hutHalfDepth;
-    const crossesHutZ =
-      (this.playerPos.z < hutMinZ && effectiveTarget.z > hutMinZ) ||
-      (this.playerPos.z > hutMaxZ && effectiveTarget.z < hutMaxZ) ||
-      (this.playerPos.z >= hutMinZ && this.playerPos.z <= hutMaxZ);
 
-    if (crossesHutZ && Math.abs(this.playerPos.x) <= this.hutHalfWidth + 0.5 && playerDist <= this.clearingRadius + 0.5) {
-      const sideMargin = this.hutHalfWidth + 0.85;
-      const sideX = this.playerPos.x + effectiveTarget.x > 0 ? sideMargin : -sideMargin;
-      effectiveTarget = { x: sideX, z: this.hutPos.z };
+    // Kreuzt der Weg die Hütte in Z (von hinten nach vorn oder umgekehrt)?
+    const crossesZ =
+      (this.playerPos.z < hutMinZ && effectiveTarget.z > hutMinZ) ||
+      (this.playerPos.z > hutMaxZ && effectiveTarget.z < hutMaxZ);
+
+    // Kreuzt der Weg die Hütte in X (von links nach rechts oder umgekehrt)?
+    const crossesX =
+      (this.playerPos.x < hutMinX && effectiveTarget.x > hutMinX) ||
+      (this.playerPos.x > hutMaxX && effectiveTarget.x < hutMaxX);
+
+    // Befindet sich der Spieler an der seitlichen Flanke der Hütte?
+    const stuckAtSide =
+      Math.abs(this.playerPos.x) <= this.hutHalfWidth + 0.65 &&
+      this.playerPos.z >= hutMinZ - 0.2 &&
+      this.playerPos.z <= hutMaxZ + 0.2;
+
+    if (playerDist <= this.clearingRadius + 0.5) {
+      if (crossesZ && Math.abs(this.playerPos.x) <= this.hutHalfWidth + 0.65) {
+        // Von vorn nach hinten oder umgekehrt: seitlich an der Hütte vorbei
+        const sideMargin = this.hutHalfWidth + 0.85;
+        const sideX = this.playerPos.x + effectiveTarget.x >= 0 ? sideMargin : -sideMargin;
+        effectiveTarget = { x: sideX, z: this.hutPos.z };
+      } else if (crossesX && stuckAtSide) {
+        // Von links nach rechts (oder umgekehrt) durch die Hütte:
+        // Vor oder hinter der Hütte vorbei, je nachdem in welchem Z-Halbraum das Ziel liegt
+        const targetInFront = effectiveTarget.z >= this.hutPos.z;
+        const detourZ = targetInFront ? hutMaxZ + 0.65 : hutMinZ - 0.65;
+        const currentSideX =
+          this.playerPos.x >= 0 ? this.hutHalfWidth + 0.85 : -(this.hutHalfWidth + 0.85);
+        effectiveTarget = { x: currentSideX, z: detourZ };
+      }
     }
 
     const dx = effectiveTarget.x - this.playerPos.x;

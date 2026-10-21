@@ -45,9 +45,9 @@ Alle temporären Wegsperren der Pfade 1 bis 6 sind auf **exakt die gleiche Dista
    - Vor dem Höhleneingang wartet **das Graumännchen** als NPC.
    - **Inhalt & Konflikt:** Eine neue Silberader könnte Mine und Arbeiter retten. Ihr Auffinden verlangt Licht in einem Stollen, für den ein altes Verbot beziehungsweise Versprechen gilt.
 2. **2. Nixenteich-Pfad (Nordosten → Bogen nach Osten):**
-   - Geschwungener Waldpfad durch den Nebel bis zu einem stillen **Waldteich mit Ufersteinen, Seerosen und Schilf**; das tiefe Wasserbecken besitzt feste Uferkollision.
+   - Geschwungener Waldpfad durch den Nebel, der direkt und ohne störenden runden Vorplatz an das Ufer des stillen **Waldteichs mit Ufersteinen, Seerosen und Schilf** führt; das Teichmodell ist um 45° im Uhrzeigersinn gedreht, in doppelter Höhe dargestellt und das tiefe Wasserbecken besitzt feste Uferkollision. Die umgebenden Waldbäume rücken nah an das Nord-, Ost- und Südufer heran und spiegeln sich im Wasser.
    - **Magische Wasserpfützen-Blockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 2 in 16,3 m Entfernung von der Kreuzung (`x: 13.2, z: -9.6`) durch eine tiefe, türkisfarben schimmernde Wasserpfütze mit magischem Wellenschlag und Barriere-Kollision versperrt. Ein Klick auf den rotierenden türkisfarbenen Edelstein (Aquamarin) am Pfadanfang lässt den Kristall aufleuchten, spielt gluckerndes Wasserversickern und Kristallglanz ab und lässt die Pfütze im Waldboden versickern.
-   - Auf einem **Stein im Teich** sitzt **die Nixe vom Spiegelteich** als NPC; unter der Wasseroberfläche funkelt ein Goldhort.
+   - Auf einem **Stein im Teich** sitzt **die Nixe vom Spiegelteich** als NPC (auf verdoppelter Sitzhöhe $y \approx 1{,}18\text{ m}$); unter der Wasseroberfläche funkelt ein Goldhort. Das Gespräch mit der Nixe lässt sich bequem vom befestigten Ufer aus führen.
    - **Inhalt & Konflikt:** Ein verlockender Schatz im Teich ist mit einem Fluch beziehungsweise drohendem Unglück verbunden.
 3. **3. Quellenweg (Osten → Bogen nach Südosten):**
    - Waldpfad über eine **Holz-/Steinbrücke**, unter der ein **Bach** hindurchfließt. Die Brücke selbst ist vollkommen frei begehbar, während die seitlichen Geländer und das Stauseebecken feste Kollision besitzen.
@@ -61,10 +61,12 @@ Alle temporären Wegsperren der Pfade 1 bis 6 sind auf **exakt die gleiche Dista
    - Im Lager neben einem bemoosten Urwaldstumpf wartet **das Holzweibchen** als NPC.
    - **Inhalt & Konflikt:** Brennholz rettet Dorfbewohner vor Kälte; zu starke Fällungen gefährden den Wald und seine Umgebung.
 5. **5. Höllenschlund-Pfad (Süd-Südwest → Bogen durch Felsspalten nach Süden):**
-   - Geschwungener Pfad durch zerklüftete Felsen und verbrannte Nadelbäume bis an den Rand eines tiefen Basaltkraters mit Lava-Kollision.
+   - Geschwungener Pfad durch zerklüftete Felsen und verbrannte Nadelbäume, der direkt und ohne runden Vorplatz an den Kraterrand des feurigen Höllenschlundes führt. Der Krater besitzt lückenlose Kollision, sodass die Spielfigur nicht in die glühende Lava laufen kann.
+   - **Feuerroter Pfad & Glühende Wiesenlandschaft:** Der Weg selbst leuchtet in sattem Feuerrot mit glimmenden Magma-Adern (ansteigend von Glut-Terrakotta an der Kreuzung bis zu loderndem Höllenrot am Kraterrand). Die umliegende Wiese und der Boden im weiten Umkreis des Lavasees glühen feuerrot mit sichtbaren Magma-Adern und pulsierender Glut im Rhythmus des Höllenfeuers.
    - **Magische Flammenwand-Blockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 5 in 16,3 m Entfernung von der Kreuzung (`x: -7.5, z: 14.5`) zwischen den ersten Felsspalten durch eine lodernde Flammenwand mit sengender Glut, aufsteigenden Funken und Barriere-Kollision versperrt. Ein Klick auf den rotierenden roten Rubin am Pfadanfang bannt das Höllenfeuer, spielt ein zischendes Verlöschen mit aufsteigenden Rauchwolken ab und räumt den Weg frei.
    - Am Ende des Weges öffnet sich ein gewaltiger **Höllenschlund (3D-Lavakrater aus zerklüftetem Basalt und brodelnder Lava, um 45° im Uhrzeigersinn gedreht)**.
-   - Inmitten des Höllenschlundes thront auf der zentralen Felsspitze **der Dämonenkrieger / Teufel** als monumentaler 3D-NPC (~5,2 m Höhe) mit lebendiger Mixamo-Rig-Animation (tiefe Atmung, lauernde Kopfbewegung, drohend angewinkelte Klauenarme) und feurigem Interaktions-Kristall.
+   - Hinter dem Lavateich ragt eine monumentale, spitze, dunkle Felsenkulisse aus schroffen Basalt- und Obsidiannadeln (bis zu 23 m Höhe) empor, durchzogen von leuchtenden, hellen roten Magmaadern und pulsierender Glut.
+   - Inmitten des Höllenschlundes thront auf der zentralen Felsspitze **der Dämonenkrieger / Teufel** als monumentaler 3D-NPC (~5,2 m Höhe) mit lebendiger Mixamo-Rig-Animation (tiefe Atmung, lauernde Kopfbewegung, drohend angewinkelte Klauenarme), intensiv feurig glühenden, unheilschwanger flackernden Dämonenaugen mit eigenem Lichtschein und feurigem Interaktions-Kristall.
    - **Atmosphärische Verfinsterung:** Nähert sich die Spielfigur dem Höllenschlund, färbt sich der hellgraue Waldnebel stufenlos in eine bedrohlich-dunkle, aschig-rote Rauch- und Feuernacht ein.
    - **Inhalt & Konflikt:** _Noch keine Story hinterlegt (Platzhalter-Einstiegsdialog vorhanden)._
 6. **6. Jägerpfad (Südwesten → Kurve durch weite Waldschneise):**
@@ -77,10 +79,12 @@ Alle temporären Wegsperren der Pfade 1 bis 6 sind auf **exakt die gleiche Dista
    - Am Gartenzaun steht **der Wilde Jäger (mit edlem Jagdpferd und aufmerksamem Jagdhund)** und diskutiert hitzig mit dem **Holzweibchen**.
    - **Inhalt & Konflikt:** Der Jäger verfolgt das Holzweibchen und wirft ihr den Diebstahl seltener Heilkräuter (Mondwurz & Königs-Salbei) aus seinem gehegten Kräutergarten vor. Das Holzweibchen entgegnet, sie habe die Wurzeln in höchster Not genommen, um einer im Brombeerdickicht schwer verletzten jungen Hirschkuh vor dem Erfrierungs- und Wundfiebertod das Leben zu retten. Beide Seiten erzählen ihre Sicht der Dinge und eröffnen eine Debatte über Revier- und Eigentumsordnung versus Lebensrettung in der Natur.
 7. **7. Torweg (Nordwesten → Kurve durch uralten Nebelwald):**
-   - Malerisch gewundener Waldpfad durch dichten, urwüchsigen Fichten- und Nebelwald bis auf einen steinernen Vorplatz vor einem mächtigen Gebirgsriegel.
-   - Am Ende des Weges riegelt ein **mächtiges, geschlossenes Tor mit flankierenden alten Bruchsteinmauern und Zinnen** das gesamte Tal ab.
+   - Malerisch gewundener Waldpfad durch dichten, urwüchsigen Fichten- und Nebelwald bis auf einen runden, mit Backsteintextur gepflasterten Vorplatz vor einem mächtigen Gebirgsriegel.
+   - **Flora & Waldwiesen:** Die Waldwiesen links und rechts des Pfades sind mit bunten Teppichen heimischer Waldblumen bewachsen (weiße Buschwindröschen, himmelblaue Wald-Vergissmeinnicht, violette Wald-Glockenblumen, sonnengelber Gold-Hahnenfuß und karminrosa Waldnelken).
+   - **Nistkästen:** An jedem 10. Baum im Wald (und mit Blick zum Weg entlang Pfad 7) hängt ein hölzerner Meisen-Nistkasten mit Einflugloch, Schrägdach und Sitzstange am Stamm.
+   - Am Ende des Weges riegelt ein **mächtiges, geschlossenes Tor mit flankierenden alten Quadersteinmauern (breite Mauerstruktur mit Zinnen)** das gesamte Tal ab.
    - **Feste Barriere & Kollisionssystem:** Das zweiflügelige Tor und die beidseitigen Bruchsteinmauern sperren die gesamte Talbreite als unüberwindbare Barriere ab. Die Kollisionserkennung verhindert jegliches Hindurchlaufen, sowohl bei Tastatur- als auch bei Maus-Bewegung.
-   - Zwei massive Steinpfeiler mit Kapitellen, Kugelspitzen und schmiedeeisernen Wandlaternen fassen ein schweres, zweiflügeliges Eichenholztor mit Eisenbeschlägen ein.
+   - Zwei massive Steinpfeiler mit Kapitellen, Kugelspitzen und schmiedeeisernen Wandlaternen fassen ein schweres, zweiflügeliges Eichenholztor mit feiner Holzmaserung und Eisenbeschlägen ein.
    - Ein dicker Eisen-Riegelbalken und verrostete Eisenketten mit einem riesigen, siegelförmigen Vorhängeschloss sichern das Tor; auf dem Torbogen leuchtet eine geheimnisvolle Runenglyphe.
    - **Inhalt & Interaktion:** Das Tor lässt sich nicht mit roher Kraft aufbrechen. Seine Untersuchung offenbart ein Schloss mit sieben kreisförmigen Vertiefungen, die den sieben Wegen der Kreuzung entsprechen. Eine alte Steinmetz-Inschrift mahnt: *„Nur wer die Pfade erkannte und das Maß wahrte, tritt ein.“* Erst wer die moralischen Prüfungen der anderen Pfade verstanden hat, wird den Weg hindurch finden.
 
@@ -107,9 +111,9 @@ Alle temporären Wegsperren der Pfade 1 bis 6 sind auf **exakt die gleiche Dista
 
 - Tastatur/Maus:
   - Linksklick auf Kreuzung, Wege, Schilder, Wegweiser, Schutzhütte oder NPC = Hingehen / Sprechen / Auswählen (Click-to-Move mit Hindernisumgehung)
-  - Gedrückte Maustaste ziehen = Kamera frei drehen und neigen
+  - Gedrückte Maustaste ziehen = Kamera frei drehen und neigen (stufenlos vom waagerechten Blick nach vorn bis zu 90° Draufsicht)
   - Mausrad = Kamera-Zoom
-  - WASD / Pfeiltasten = Gehen relativ zur Kamerablickrichtung, Q / E = Kamera drehen, F / Enter = Gespräch mit NPC starten, Tasten 1–7 = Weg bzw. Dialogantwort direkt wählen, Esc = Dialog schließen, Taste 0 / Backspace = Schneller Rücksprung zur 7-Wegekreuzung
+  - WASD / Pfeiltasten = Gehen relativ zur Kamerablickrichtung, Q / E = Kamera drehen, R / F = Kamera neigen (Blick nach vorn / nach oben), Enter = Gespräch mit NPC starten, Tasten 1–7 = Weg bzw. Dialogantwort direkt wählen, Esc = Dialog schließen, Taste 0 / Backspace = Schneller Rücksprung zur 7-Wegekreuzung
   - HUD-Schnellreise: Das HUD zeigt dauerhaft links unten den aktuellen Standort bzw. Wegnamen sowie den Button „↩ Zur 7-Wegekreuzung“, über den per Mausklick oder Touch sofort zurück auf die zentrale Waldkreuzung gesprungen werden kann.
 - Touch: Volle Touch-Bedienung für Bewegung, Kameraschwenk und HUD-Rücksprung.
 - Barrierearme Alternativen: DOM-Schaltflächen für alle sieben Wege, Dialogantworten und Schnellreise-Rücksprung zur Kreuzung.
@@ -118,8 +122,8 @@ Alle temporären Wegsperren der Pfade 1 bis 6 sind auf **exakt die gleiche Dista
 
 - Referenzen: Märchenhafter, uriger Mittelgebirgs- und Zauberwald (Thüringer Wald / Schwarzwald).
 - Farbwelt: Tannengrün, warmes Erdbraun, weicher hellgrauer Nebel, herbstliche Farbakzente.
-- Wald-Flora & Details: Unter den Bäumen und an den Waldrändern sprießen idyllische Pilzgruppen auf kleinen Moospolstern (rote Fliegenpilze mit weißen Tupfen, kastanienbraune Steinpilze mit dickem Stiel und goldgelbe Pfifferlinge).
-- Kamera/Perspektive:
+- Wald-Flora & Details: Unter den Bäumen und an den Waldrändern sprießen idyllische Pilzgruppen auf kleinen Moospolstern (rote Fliegenpilze mit weißen Tupfen, kastanienbraune Steinpilze mit dickem Stiel und goldgelbe Pfifferlinge). Alle Baumstämme im Wald und entlang der Pfade besitzen eine detailreiche, organische Rindentextur und alle Baumkronen sind mit natürlicher Nadelbaum-Textur (feine Nadelbüschel, Schattierungen und Relief-Bump-Map) versehen. Die Sockel der 7 Edelsteine sowie das Fundament des zentralen Wegweisers tragen eine antike, plastisch reliefierte Bruchstein- und Schiefertextur. Der Stamm des Wegweisers und die Torflügel des Steintores sind mit edler Holzmaserung texturiert. Die Mauern und Pfeiler des Steintores weisen eine breite Großquader-Mauerstruktur auf und der runde Vorplatz davor ist mit warmem Klinker-/Backsteinpflaster gestaltet.
+- Kamera/Perspektive: Dynamische Third-Person-Verfolgerkamera mit vollem Neigungsbereich von 0° (waagerechter Blick nach vorn in Augenhöhe) bis 90° (Vogelperspektive senkrecht von oben) und 360°-Orbit-Drehung.
 - Audio:
 
 ## Erster spielbarer Prototyp

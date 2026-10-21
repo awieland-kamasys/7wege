@@ -172,7 +172,7 @@ export function createGuideNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
     indicator.position.y = 2.08 + Math.sin(timeSeconds * 2.6) * 0.06;
     indicator.rotation.y = timeSeconds * 1.3;
 
-    // Arvid wendet sich der spielenden Person zu, wenn diese in der Nähe ist
+    // Arvid wendet sich ruhig der spielenden Person zu, wenn diese in der Nähe ist
     const dx = playerPos.x - group.position.x;
     const dz = playerPos.z - group.position.z;
     const dist = Math.hypot(dx, dz);
@@ -181,61 +181,24 @@ export function createGuideNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
       group.rotation.y = targetAngle;
     }
 
-    // 1. Lebendige prozedurale Ganzkörper-Animation (Atmung, Gewichtsverlagerung, Zuprosten)
-    const breath = Math.sin(timeSeconds * 2.1);
-    const sway = Math.cos(timeSeconds * 1.05);
-
+    // Animation entfernt: Arvid steht vollkommen ruhig, stabil und standfest auf dem Boden
     if (loadedModel) {
-      // Natürlicher Atemhub (Auf- und Abfedern des Körpers)
-      let targetY = baseModelY + breath * 0.024;
-      let targetRotX = breath * 0.026;
-      let targetRotZ = sway * 0.03;
-
-      // Blickkontakt & Zunicken bei Annäherung / Dialog
-      if (dist < 6.5) {
-        const nod = Math.sin(timeSeconds * 1.6) * 0.018 + (highlighted ? 0.048 : 0.022);
-        targetRotX += nod;
-      }
-
-      // Zuprosten-Trigger (Schwungvolle Begrüßung mit Flasche bei Klick oder [F])
-      if (cheersTimer > 0) {
-        const progress = 1.0 - cheersTimer / cheersDuration;
-        const toastHop = Math.sin(progress * Math.PI); // Glatte Sinuskurve
-        targetY += toastHop * 0.065; // Richtet sich schwungvoll um 6,5 cm auf
-        targetRotX -= toastHop * 0.085; // Neigt sich freundlich dem Spieler zu
-        targetRotZ += Math.sin(progress * Math.PI * 2) * 0.045; // Heiteres Anstoßen
-      }
-
-      loadedModel.position.y = targetY;
-      loadedModel.rotation.x = targetRotX;
-      loadedModel.rotation.z = targetRotZ;
+      loadedModel.position.set(0, baseModelY, 0);
+      loadedModel.rotation.set(0, 0, 0);
     }
 
-    // 2. Knochen-Animation (für Rigs mit aktiven Gliedmaßen-Gewichten)
+    // Knochen bleiben in ihrer natürlichen Ursprungsausrichtung
     if (spineBone) {
-      spineBone.rotation.x = initialSpineRot.x + breath * 0.05;
-      spineBone.rotation.z = initialSpineRot.z + sway * 0.025;
+      spineBone.rotation.copy(initialSpineRot);
     }
     if (headBone) {
-      const headNod = Math.sin(timeSeconds * 2.1 + 0.3) * 0.03;
-      const greetDip = highlighted ? 0.08 : 0.03;
-      headBone.rotation.x = initialHeadRot.x + 0.08 + headNod + greetDip;
-      headBone.rotation.y = initialHeadRot.y + Math.sin(timeSeconds * 0.8) * 0.04;
+      headBone.rotation.copy(initialHeadRot);
     }
-    if (rightArmBone && rightForeArmBone) {
-      if (cheersTimer > 0) {
-        const progress = 1.0 - cheersTimer / cheersDuration;
-        const lift = Math.sin(progress * Math.PI);
-        rightArmBone.rotation.x = initialRightArmRot.x - lift * 0.75;
-        rightArmBone.rotation.y = initialRightArmRot.y + lift * 0.2;
-        rightArmBone.rotation.z = initialRightArmRot.z + lift * 0.35;
-        rightForeArmBone.rotation.z = initialRightForeArmRot.z + lift * 0.5;
-      } else {
-        rightArmBone.rotation.x = initialRightArmRot.x + breath * 0.02;
-        rightArmBone.rotation.y = initialRightArmRot.y;
-        rightArmBone.rotation.z = initialRightArmRot.z;
-        rightForeArmBone.rotation.z = initialRightForeArmRot.z;
-      }
+    if (rightArmBone) {
+      rightArmBone.rotation.copy(initialRightArmRot);
+    }
+    if (rightForeArmBone) {
+      rightForeArmBone.rotation.copy(initialRightForeArmRot);
     }
 
     // Hervorhebung bei Mouseover / Dialogaktivität

@@ -4,30 +4,35 @@ import { Vector2D } from '../systems/CrossroadsState';
 
 export interface DevilNpcEntity {
   group: THREE.Group;
-  update: (elapsedSeconds: number, playerPos: Readonly<Vector2D>, isHoveredOrActive: boolean) => void;
+  update: (
+    elapsedSeconds: number,
+    playerPos: Readonly<Vector2D>,
+    isHoveredOrActive: boolean,
+    dtSeconds?: number
+  ) => void;
 }
 
 /**
  * Erstellt die 3D-Figur „Der Teufel / Dämonenkrieger“ am Ende des 5. Weges:
- * Lädt das detaillierte Modell `demon warrior 3d model.glb` (`demon-warrior.glb`),
- * skaliert ihn auf monumentale doppelte Dämonengröße (~5.2m Höhe) und stellt ihn
- * mit seinen Klauenfüßen erhaben auf die Oberfläche des zentralen Felsplateaus (Fußhöhe y = 2.35m).
- * Vollständig animiert über sein 52-Bone Mixamo-Rig (schwere Dämonenatmung,
- * lauernde Kopfbewegungen, drohend angewinkelte Klauenarme und Drohhaltung bei Interaktion).
+ * Lädt das Modell `demon+warrior+3d+model_ohne_Dreizack.glb` (ohne Dreizack),
+ * skaliert ihn auf imposante Dämonengröße (~5.2m Höhe) und stellt ihn erhaben
+ * auf die Oberfläche des zentralen Felsplateaus.
+ * Spielt die integrierte 6-Sekunden-Animation ("wait.001") dauerhaft als Schleife ab
+ * und richtet den Teufel bei Annäherung auf die Spielfigur aus.
  */
 export function createDevilNpc(onMeshLoaded?: (object: THREE.Object3D) => void): DevilNpcEntity {
   const group = new THREE.Group();
   group.name = 'DevilNpc';
   group.userData = { interactableType: 'devil' };
 
-  // Unsichtbare Zylinder-Hitbox für verlässliches Raycasting und Klickbarkeit (angepasst an 5.2m Größe und erhöhte Standposition)
+  // Unsichtbare Zylinder-Hitbox für verlässliches Raycasting und Klickbarkeit
   const hitMat = new THREE.MeshBasicMaterial({
     transparent: true,
     opacity: 0,
     depthWrite: false,
   });
-  const hitbox = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 7.2, 12), hitMat);
-  hitbox.position.y = 4.8;
+  const hitbox = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 8.0, 12), hitMat);
+  hitbox.position.y = 4.75;
   hitbox.userData = { interactableType: 'devil' };
   group.add(hitbox);
 
@@ -39,12 +44,12 @@ export function createDevilNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
     metalness: 0.2,
   });
   const fallbackBody = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 4.4, 10), fallbackMat);
-  fallbackBody.position.y = 4.2;
+  fallbackBody.position.y = 4.75;
   fallbackBody.castShadow = true;
   fallback.add(fallbackBody);
   group.add(fallback);
 
-  // Über dem Kopf schwebender Interaktions-Kristall (feurig rot-orange, ca. 7.0m Höhe)
+  // Über dem Kopf schwebender Interaktions-Kristall (feurig rot-orange, ca. 7.50m Höhe)
   const gemMat = new THREE.MeshStandardMaterial({
     color: 0xff3300,
     emissive: 0xff4400,
@@ -56,81 +61,141 @@ export function createDevilNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
 
   const talkGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.48, 0), gemMat);
   talkGem.scale.set(0.9, 1.45, 0.9);
-  talkGem.position.y = 6.95;
+  talkGem.position.y = 7.5;
   talkGem.userData = { interactableType: 'devil' };
   group.add(talkGem);
 
   const gemLight = new THREE.PointLight(0xff4400, 2.2, 9.5);
-  gemLight.position.y = 6.95;
+  gemLight.position.y = 7.5;
   group.add(gemLight);
 
-  // Knochen des Mixamo-Rigs für lebendige prozedurale Animationen erfassen
-  let spineBone: THREE.Bone | null = null;
-  let spine1Bone: THREE.Bone | null = null;
-  let spine2Bone: THREE.Bone | null = null;
-  let neckBone: THREE.Bone | null = null;
-  let headBone: THREE.Bone | null = null;
-  let leftArmBone: THREE.Bone | null = null;
-  let rightArmBone: THREE.Bone | null = null;
-  let leftForeArmBone: THREE.Bone | null = null;
-  let rightForeArmBone: THREE.Bone | null = null;
+  // AnimationMixer für die integrierte Dämonenanimation ("wait.001")
+  let mixer: THREE.AnimationMixer | null = null;
+  let animAction: THREE.AnimationAction | null = null;
+  let lastElapsedSeconds = 0;
 
-  const modelMaterials: THREE.MeshStandardMaterial[] = [];
+  // Referenzen für die dämonisch glühenden Augen des Teufels
+  let eyeCoreMat: THREE.MeshStandardMaterial | null = null;
+  let eyeAuraMat: THREE.MeshBasicMaterial | null = null;
+  let eyeLight: THREE.PointLight | null = null;
 
-  // Lade das Dämonenkrieger-Modell
+  /**
+   * Statte den Kopf des Dämons mit intensiv glühenden roten Dämonenaugen
+   * und einem unheimlich flackernden Punktlicht aus.
+   */
+  function attachGlowingEyes(model: THREE.Object3D) {
+    if (eyeCoreMat) return;
+
+    eyeCoreMat = new THREE.MeshStandardMaterial({
+      color: 0xffea00,
+      emissive: new THREE.Color(0xff2200),
+      emissiveIntensity: 4.2,
+      roughness: 0.15,
+      metalness: 0.1,
+      toneMapped: false,
+    });
+
+    eyeAuraMat = new THREE.MeshBasicMaterial({
+      color: 0xff3300,
+      transparent: true,
+      opacity: 0.45,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      toneMapped: false,
+    });
+
+    const eyeGeo = new THREE.SphereGeometry(0.009, 12, 12);
+    const auraGeo = new THREE.SphereGeometry(0.0135, 10, 10);
+
+    const headBone =
+      model.getObjectByName('mixamorigHead') || model.getObjectByName('mixamorig:Head');
+
+    if (headBone) {
+      // Exakte Positionierung im lokalen Koordinatenraum des Kopf-Knochens:
+      // Dadurch bewegen sich die Augen 100% synchron mit Kopfbewegung und Atmung mit.
+      const leftEyePos = new THREE.Vector3(0.036, 0.0712, 0.0228);
+      const rightEyePos = new THREE.Vector3(0.022, 0.0712, -0.0334);
+
+      // Linkes Auge (Kern + Glüh-Aura)
+      const leftEyeCore = new THREE.Mesh(eyeGeo, eyeCoreMat);
+      leftEyeCore.position.copy(leftEyePos);
+      const leftEyeAura = new THREE.Mesh(auraGeo, eyeAuraMat);
+      leftEyeCore.add(leftEyeAura);
+      headBone.add(leftEyeCore);
+
+      // Rechtes Auge (Kern + Glüh-Aura)
+      const rightEyeCore = new THREE.Mesh(eyeGeo, eyeCoreMat);
+      rightEyeCore.position.copy(rightEyePos);
+      const rightEyeAura = new THREE.Mesh(auraGeo, eyeAuraMat);
+      rightEyeCore.add(rightEyeAura);
+      headBone.add(rightEyeCore);
+
+      // Rotes Punktlicht vor den Augen, das die Stirnknochen und Hörner teuflisch beleuchtet
+      eyeLight = new THREE.PointLight(0xff3300, 1.8, 6.0);
+      eyeLight.position.set(0.04, 0.073, -0.005);
+      headBone.add(eyeLight);
+    } else {
+      // Ausweichlösung, falls kein Kopfknochen vorhanden sein sollte (an Modellgruppe geheftet)
+      const leftEyeGroup = new THREE.Group();
+      leftEyeGroup.scale.setScalar(5.2);
+      leftEyeGroup.position.set(-0.151, 4.493, 0.55);
+      leftEyeGroup.add(new THREE.Mesh(eyeGeo, eyeCoreMat));
+      leftEyeGroup.add(new THREE.Mesh(auraGeo, eyeAuraMat));
+      model.add(leftEyeGroup);
+
+      const rightEyeGroup = new THREE.Group();
+      rightEyeGroup.scale.setScalar(5.2);
+      rightEyeGroup.position.set(0.151, 4.493, 0.55);
+      rightEyeGroup.add(new THREE.Mesh(eyeGeo, eyeCoreMat));
+      rightEyeGroup.add(new THREE.Mesh(auraGeo, eyeAuraMat));
+      model.add(rightEyeGroup);
+
+      eyeLight = new THREE.PointLight(0xff3300, 2.0, 7.0);
+      eyeLight.position.set(0, 4.5, 0.6);
+      model.add(eyeLight);
+    }
+  }
+
+  // Lade das Dämonenkrieger-Modell ohne Dreizack
+  const modelUrl = '/assets/models/demon+warrior+3d+model_ohne_Dreizack.glb';
   const loader = new GLTFLoader();
   loader.load(
-    '/assets/models/demon-warrior.glb',
+    modelUrl,
     (gltf) => {
       const model = gltf.scene;
 
-      // 1. Skalierung: Doppelt so groß (5.2 statt 2.6, Gesamthöhe ~5.20m)
+      // 1. Skalierung: 5.2x (ergibt ca. 5.17m Gesamthöhe)
       model.scale.setScalar(5.2);
 
-      // 2. Anhebung auf den Felsen des Kraters:
-      // Das Modell hat seinen Ursprung in der Hüfte (min.y = -1.88m bei Skalierung 5.2).
-      // Das Kraterplateau liegt bei y = 0.90m bis 1.00m.
-      // Mit y = 2.88m stehen die Klauenbeine genau bei y = 1.00m und thronen
-      // vollständig sichtbar oben auf der runden Felsplatte, ohne zu versinken.
-      model.position.set(0, 2.88, 0);
+      // 2. Positionierung auf der Felsenplattform des Lavakraters (Plattformhöhe 1.80m):
+      // Die Klauensohlen stehen exakt bündig oben auf den Felsplatten.
+      model.position.set(0, 1.80, 0);
+
+      // 3. Animation aktivieren
+      if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(model);
+        // Bevorzuge die Animation "wait.001" oder den ersten Clip
+        const clip = gltf.animations.find((a) => a.name.includes('wait')) ?? gltf.animations[0];
+        animAction = mixer.clipAction(clip);
+        animAction.setLoop(THREE.LoopRepeat, Infinity);
+        animAction.clampWhenFinished = false;
+        animAction.play();
+      }
 
       model.traverse((child) => {
-        // Skelettknochen erfassen
-        if ((child as THREE.Bone).isBone) {
-          const bone = child as THREE.Bone;
-          const lower = bone.name.toLowerCase();
-          if (lower.includes('spine2') && !spine2Bone) {
-            spine2Bone = bone;
-          } else if (lower.includes('spine1') && !spine1Bone) {
-            spine1Bone = bone;
-          } else if (lower.includes('spine') && !spineBone) {
-            spineBone = bone;
-          } else if (lower.includes('neck') && !neckBone) {
-            neckBone = bone;
-          } else if (lower.includes('head') && !headBone) {
-            headBone = bone;
-          } else if ((lower.includes('leftarm') || lower.includes('left_arm')) && !leftArmBone) {
-            leftArmBone = bone;
-          } else if ((lower.includes('rightarm') || lower.includes('right_arm')) && !rightArmBone) {
-            rightArmBone = bone;
-          } else if ((lower.includes('leftforearm') || lower.includes('left_forearm')) && !leftForeArmBone) {
-            leftForeArmBone = bone;
-          } else if ((lower.includes('rightforearm') || lower.includes('right_forearm')) && !rightForeArmBone) {
-            rightForeArmBone = bone;
-          }
-        }
-
         const mesh = child as THREE.Mesh;
         if (mesh.isMesh) {
           mesh.castShadow = true;
           mesh.receiveShadow = true;
           mesh.userData = { interactableType: 'devil' };
 
-          if (mesh.material && 'roughness' in mesh.material) {
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            modelMaterials.push(mat);
-            mat.roughness = 0.65;
-            mat.metalness = 0.25;
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const mat of mats) {
+            if (mat && 'roughness' in mat) {
+              const stdMat = mat as THREE.MeshStandardMaterial;
+              stdMat.roughness = 0.75;
+              stdMat.metalness = 0.15;
+            }
           }
 
           if (onMeshLoaded) {
@@ -139,19 +204,55 @@ export function createDevilNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
         }
       });
 
+      // Dämonisch glühende Augen und Gesichtsschein befestigen
+      attachGlowingEyes(model);
+
       // Platzhalter durch das fertige Modell ersetzen
       group.remove(fallback);
       group.add(model);
     },
     undefined,
     (err) => {
-      console.warn('Dämonenkrieger-Modell demon-warrior.glb konnte nicht geladen werden, nutze Platzhalter:', err);
+      console.warn('Dämonenkrieger-Modell konnte nicht geladen werden, versuche Ausweichpfad:', err);
+      // Fallback-Versuch mit Alternativ-Dateinamen
+      loader.load('/assets/models/demon-warrior-no-trident.glb', (fallbackGltf) => {
+        const model = fallbackGltf.scene;
+        model.scale.setScalar(5.2);
+        model.position.set(0, 1.80, 0);
+
+        if (fallbackGltf.animations && fallbackGltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(model);
+          animAction = mixer.clipAction(fallbackGltf.animations[0]);
+          animAction.play();
+        }
+
+        attachGlowingEyes(model);
+        group.remove(fallback);
+        group.add(model);
+      });
     }
   );
 
   return {
     group,
-    update: (elapsedSeconds: number, playerPos: Readonly<Vector2D>, isHoveredOrActive: boolean) => {
+    update: (
+      elapsedSeconds: number,
+      playerPos: Readonly<Vector2D>,
+      isHoveredOrActive: boolean,
+      dtSeconds?: number
+    ) => {
+      // Delta-Zeit für den AnimationMixer berechnen
+      const delta =
+        dtSeconds !== undefined
+          ? dtSeconds
+          : Math.max(0.001, Math.min(0.1, elapsedSeconds - lastElapsedSeconds));
+      lastElapsedSeconds = elapsedSeconds;
+
+      // Integrierte Skelettanimation abspielen
+      if (mixer) {
+        mixer.update(delta);
+      }
+
       // Blickwinkel zur Spielfigur berechnen und sanft ausrichten
       const worldPos = new THREE.Vector3();
       group.getWorldPosition(worldPos);
@@ -159,63 +260,15 @@ export function createDevilNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
       const dz = playerPos.z - worldPos.z;
       const dist = Math.hypot(dx, dz);
 
-      if (dist < 34.0) {
+      if (dist < 34.0 && dist > 0.5) {
         const targetRotY = Math.atan2(dx, dz);
         group.rotation.y = THREE.MathUtils.lerp(group.rotation.y, targetRotY, 0.05);
       }
 
-      // Prozedurale Dämonenanimation über das Mixamo-Skelett
+      // Schwebender Interaktions-Kristall über dem Kopf (bei ca. 7.95m Höhe)
       const t = elapsedSeconds;
-      const breathe = Math.sin(t * 1.6);
-      const chestSway = Math.cos(t * 0.9);
-
-      // Torso & Wirbelsäule: tiefe Atmung und leichtes Vor-/Zurückwiegen
-      if (spineBone) {
-        const threatLean = isHoveredOrActive ? -0.06 : 0;
-        spineBone.rotation.x = breathe * 0.045 + threatLean;
-        spineBone.rotation.y = chestSway * 0.03;
-      }
-      if (spine1Bone) {
-        spine1Bone.rotation.x = Math.sin(t * 1.6 + 0.3) * 0.035;
-      }
-      if (spine2Bone) {
-        spine2Bone.rotation.x = Math.sin(t * 1.6 + 0.6) * 0.03;
-      }
-
-      // Kopf & Nacken: drohendes Neigen und lauerndes Umschauen
-      if (headBone) {
-        const threatHead = isHoveredOrActive ? 0.08 : 0;
-        headBone.rotation.x = Math.sin(t * 1.4) * 0.055 + threatHead;
-        headBone.rotation.y = Math.sin(t * 0.7) * 0.075;
-      }
-      if (neckBone) {
-        neckBone.rotation.x = Math.sin(t * 1.4) * 0.02;
-      }
-
-      // Mächtige Klauenarme: kraftvoll angewinkelt und drohend atmend
-      const armThreat = isHoveredOrActive ? 0.18 : 0;
-      if (leftArmBone) {
-        leftArmBone.rotation.z = 0.26 + breathe * 0.04 + armThreat;
-        leftArmBone.rotation.x = 0.10 + Math.cos(t * 1.2) * 0.03;
-        leftArmBone.rotation.y = -0.08;
-      }
-      if (leftForeArmBone) {
-        leftForeArmBone.rotation.z = 0.32 + armThreat * 0.5;
-        leftForeArmBone.rotation.x = 0.12;
-      }
-      if (rightArmBone) {
-        rightArmBone.rotation.z = -0.26 - breathe * 0.04 - armThreat;
-        rightArmBone.rotation.x = 0.10 + Math.cos(t * 1.2) * 0.03;
-        rightArmBone.rotation.y = 0.08;
-      }
-      if (rightForeArmBone) {
-        rightForeArmBone.rotation.z = -0.32 - armThreat * 0.5;
-        rightForeArmBone.rotation.x = 0.12;
-      }
-
-      // Schwebender Interaktions-Kristall über dem Kopf
       const pulse = Math.sin(t * 4.0);
-      talkGem.position.y = 8.05 + Math.sin(t * 2.8) * 0.12;
+      talkGem.position.y = 7.95 + Math.sin(t * 2.8) * 0.12;
       talkGem.rotation.y += 0.025;
 
       if (isHoveredOrActive) {
@@ -224,6 +277,24 @@ export function createDevilNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
       } else {
         gemMat.emissiveIntensity = 0.9 + pulse * 0.35;
         gemLight.intensity = 2.0 + pulse * 0.5;
+      }
+
+      // Dämonisch lodernde Augen mit unheilschwangerem Flackern
+      if (eyeCoreMat && eyeLight && eyeAuraMat) {
+        const eyeFlicker =
+          Math.sin(t * 6.2) * 0.18 +
+          Math.sin(t * 13.7) * 0.1 +
+          Math.cos(t * 2.5) * 0.06;
+
+        if (isHoveredOrActive) {
+          eyeCoreMat.emissiveIntensity = 5.6 + eyeFlicker * 1.5;
+          eyeLight.intensity = 2.8 + eyeFlicker * 0.8;
+          eyeAuraMat.opacity = 0.65;
+        } else {
+          eyeCoreMat.emissiveIntensity = 4.2 + eyeFlicker * 1.0;
+          eyeLight.intensity = 1.8 + eyeFlicker * 0.5;
+          eyeAuraMat.opacity = 0.45;
+        }
       }
     },
   };

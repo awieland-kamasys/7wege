@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { createVeinedLavaRockTexture } from '../textures/GroundTextures';
 
 export interface HellChasmEntity {
   group: THREE.Group;
@@ -113,9 +114,11 @@ export function createHellChasm(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
   hitbox.userData = { interactableType: 'hell_chasm' };
   group.add(hitbox);
 
-  // Um 45 Grad im Uhrzeigersinn gedrehte Inhaltsgruppe für Krater und Flammeneffekte
+  // Um 45 Grad im Uhrzeigersinn gedrehte Inhaltsgruppe für Krater und Flammeneffekte.
+  // Setzt bündig auf dem Boden (y = 0.0) auf, sodass der Lavasee in voller Pracht über der Ebene liegt.
   const craterContentGroup = new THREE.Group();
   craterContentGroup.rotation.y = -Math.PI / 4;
+  craterContentGroup.position.y = 0.0;
   group.add(craterContentGroup);
 
   // Temporärer dezenter Platzhalter während des Modell-Ladens
@@ -125,33 +128,36 @@ export function createHellChasm(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
     roughness: 0.9,
     metalness: 0.1,
   });
-  const fallbackRing = new THREE.Mesh(new THREE.CylinderGeometry(8.5, 8.8, 0.4, 24), fallbackMat);
-  fallbackRing.position.y = 0.2;
+  const fallbackRing = new THREE.Mesh(new THREE.CylinderGeometry(8.5, 8.8, 0.8, 24), fallbackMat);
+  fallbackRing.position.y = 0.4;
   fallbackRing.userData = { interactableType: 'hell_chasm' };
   fallback.add(fallbackRing);
 
   const fallbackLava = new THREE.Mesh(
-    new THREE.CylinderGeometry(7.5, 7.5, 0.2, 24),
+    new THREE.CylinderGeometry(7.5, 7.5, 0.4, 24),
     new THREE.MeshStandardMaterial({
       color: 0xff3b00,
       emissive: 0xff4800,
-      emissiveIntensity: 0.8,
-      roughness: 0.3,
+      emissiveIntensity: 1.8,
+      roughness: 0.2,
     })
   );
-  fallbackLava.position.y = 0.22;
+  fallbackLava.position.y = 0.44;
   fallbackLava.userData = { interactableType: 'hell_chasm' };
   fallback.add(fallbackLava);
   craterContentGroup.add(fallback);
 
-  // Lade das bereinigte 3D-Kratermodell
+  // Variable zum Speichern des Modell-Lavamaterials für dynamische Glutanimation
+  let modelLavaMat: THREE.MeshStandardMaterial | null = null;
+
+  // Lade das bereinigte 3D-Kratermodell mit verdoppelter Plateau- und Reliefhöhe (15.0)
   const loader = new GLTFLoader();
   loader.load(
     '/assets/models/lava-crater.glb',
     (gltf) => {
       const model = gltf.scene;
-      // Kratermodell auf ca. 17.5m Durchmesser und markante Reliefhöhe skalieren
-      model.scale.set(17.5, 7.5, 17.5);
+      // Kratermodell auf ca. 17.5m Durchmesser und verdoppelte Relief-/Plattformhöhe (15.0 statt 7.5) skalieren
+      model.scale.set(17.5, 15.0, 17.5);
 
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
@@ -166,8 +172,15 @@ export function createHellChasm(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
 
           if (mesh.material && 'roughness' in mesh.material) {
             const mat = mesh.material as THREE.MeshStandardMaterial;
-            mat.roughness = 0.75;
-            mat.metalness = 0.15;
+            mat.roughness = 0.55;
+            mat.metalness = 0.2;
+            // Lava leuchtend machen: Textur als EmissiveMap mit intensivem Glut-Leuchten
+            if (mat.map) {
+              mat.emissiveMap = mat.map;
+              mat.emissive = new THREE.Color(0xff4400);
+              mat.emissiveIntensity = 1.6;
+              modelLavaMat = mat;
+            }
           }
 
           if (onMeshLoaded) {
@@ -198,6 +211,57 @@ export function createHellChasm(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
     side: THREE.DoubleSide,
   });
 
+  // Spitze, glühende Lavasteine im Kraterbecken und am Kraterrand
+  const lavaRockTex = createVeinedLavaRockTexture();
+  if (lavaRockTex.map) lavaRockTex.map.repeat.set(1.5, 2.5);
+  if (lavaRockTex.emissiveMap) lavaRockTex.emissiveMap.repeat.set(1.5, 2.5);
+  if (lavaRockTex.bumpMap) lavaRockTex.bumpMap.repeat.set(1.5, 2.5);
+
+  const glowingLavaSpikeMat = new THREE.MeshStandardMaterial({
+    color: 0x181515,
+    map: lavaRockTex.map ?? undefined,
+    emissiveMap: lavaRockTex.emissiveMap ?? undefined,
+    emissive: new THREE.Color(0xff3300),
+    emissiveIntensity: 2.2,
+    bumpMap: lavaRockTex.bumpMap ?? undefined,
+    bumpScale: 0.12,
+    roughness: 0.85,
+    metalness: 0.25,
+    flatShading: true,
+  });
+
+  const spikeConfigs: [number, number, number, number, number, number, number][] = [
+    // [x, y, z, baseRadius, height, rotY, tiltZ]
+    [-3.2, 0.9, -2.4, 0.55, 1.9, 0.4, 0.12],
+    [3.4, 0.9, -2.1, 0.6, 2.1, 1.1, -0.1],
+    [-2.8, 0.9, 2.8, 0.5, 1.7, 2.3, 0.15],
+    [3.1, 0.9, 2.5, 0.55, 1.85, 0.8, -0.14],
+    [-4.8, 0.85, 0.6, 0.65, 2.2, 1.9, 0.08],
+    [4.6, 0.85, -0.8, 0.65, 2.3, 2.7, -0.09],
+    [-1.2, 0.9, 3.8, 0.45, 1.6, 0.2, 0.1],
+    [1.4, 0.9, 3.6, 0.48, 1.75, 1.5, -0.11],
+    [-1.5, 0.9, -3.9, 0.48, 1.65, 0.9, 0.08],
+    [1.6, 0.9, -3.8, 0.5, 1.7, 2.1, -0.07],
+    // Zusätzliche spitze Lavasteine am inneren Kraterrand
+    [-5.6, 0.7, -2.8, 0.7, 2.4, 0.6, 0.18],
+    [5.8, 0.7, 2.4, 0.75, 2.5, 1.7, -0.16],
+    [-5.2, 0.7, 3.5, 0.68, 2.2, 2.5, 0.14],
+    [5.4, 0.7, -3.2, 0.7, 2.3, 0.3, -0.15],
+  ];
+
+  for (const [sx, sy, sz, br, sh, ry, tz] of spikeConfigs) {
+    const spike = new THREE.Mesh(
+      new THREE.ConeGeometry(br, sh, 5),
+      glowingLavaSpikeMat
+    );
+    spike.position.set(sx, sy + sh * 0.45, sz);
+    spike.rotation.set(0.05, ry, tz);
+    spike.castShadow = true;
+    spike.receiveShadow = true;
+    spike.userData = { interactableType: 'hell_chasm' };
+    craterContentGroup.add(spike);
+  }
+
   const flameEntities: {
     group: THREE.Group;
     baseScaleY: number;
@@ -206,27 +270,27 @@ export function createHellChasm(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
     phase: number;
   }[] = [];
 
-  // Flammenpositionen um die zentrale Felsplattform und in den Lavabecken des Kraters
+  // Flammenpositionen um die erhöhte zentrale Felsplattform und in den Lavabecken des Kraters
   const flamePositions: [number, number, number, number, number][] = [
     // [x, y, z, breite, höhe]
-    // Um das zentrale Felsenplateau
-    [-2.0, 0.85, -1.8, 0.9, 1.8],
-    [2.1, 0.85, -1.7, 0.9, 1.9],
-    [-2.2, 0.85, 1.6, 0.85, 1.7],
-    [2.0, 0.85, 1.7, 0.95, 1.85],
-    [-0.4, 0.95, -2.5, 0.8, 1.6],
-    [0.5, 0.95, 2.4, 0.8, 1.6],
+    // Um das verdoppelte zentrale Felsenplateau
+    [-2.0, 1.7, -1.8, 1.0, 2.2],
+    [2.1, 1.7, -1.7, 1.0, 2.3],
+    [-2.2, 1.7, 1.6, 0.95, 2.1],
+    [2.0, 1.7, 1.7, 1.05, 2.25],
+    [-0.4, 1.85, -2.5, 0.9, 2.0],
+    [0.5, 1.85, 2.4, 0.9, 2.0],
     // Mittleres Lavabecken
-    [-4.2, 0.45, -3.2, 1.2, 2.3],
-    [4.3, 0.45, -2.9, 1.2, 2.4],
-    [-3.8, 0.45, 3.1, 1.1, 2.2],
-    [3.9, 0.45, 3.3, 1.15, 2.25],
-    [-5.2, 0.45, 0.1, 1.3, 2.5],
-    [5.1, 0.45, -0.2, 1.25, 2.4],
-    [-1.6, 0.45, 4.8, 1.05, 2.1],
-    [1.7, 0.45, 4.7, 1.1, 2.15],
-    [-2.0, 0.45, -4.9, 1.05, 2.0],
-    [1.9, 0.45, -5.0, 1.1, 2.1],
+    [-4.2, 0.85, -3.2, 1.3, 2.6],
+    [4.3, 0.85, -2.9, 1.3, 2.7],
+    [-3.8, 0.85, 3.1, 1.2, 2.5],
+    [3.9, 0.85, 3.3, 1.25, 2.55],
+    [-5.2, 0.85, 0.1, 1.4, 2.8],
+    [5.1, 0.85, -0.2, 1.35, 2.7],
+    [-1.6, 0.85, 4.8, 1.15, 2.4],
+    [1.7, 0.85, 4.7, 1.2, 2.45],
+    [-2.0, 0.85, -4.9, 1.15, 2.3],
+    [1.9, 0.85, -5.0, 1.2, 2.4],
   ];
 
   flamePositions.forEach(([fx, fy, fz, w, h], idx) => {
@@ -279,23 +343,33 @@ export function createHellChasm(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
     });
   }
 
-  // Flackernde Höllenfeuer-Punktlichter
-  const fireLight1 = new THREE.PointLight(0xff5500, 3.8, 26);
-  fireLight1.position.set(0, 3.2, 0);
+  // Flackernde Höllenfeuer-Punktlichter (angepasst an abgesenkte Kraterposition)
+  const fireLight1 = new THREE.PointLight(0xff5500, 3.8, 28);
+  fireLight1.position.set(0, 4.35, 0);
   fireLight1.castShadow = true;
   group.add(fireLight1);
 
-  const fireLight2 = new THREE.PointLight(0xff2200, 2.8, 20);
-  fireLight2.position.set(-3.2, 2.0, 2.0);
+  const fireLight2 = new THREE.PointLight(0xff2200, 2.8, 22);
+  fireLight2.position.set(-3.2, 2.75, 2.0);
   group.add(fireLight2);
 
-  const fireLight3 = new THREE.PointLight(0xffaa00, 2.2, 20);
-  fireLight3.position.set(3.4, 2.0, -1.8);
+  const fireLight3 = new THREE.PointLight(0xffaa00, 2.2, 22);
+  fireLight3.position.set(3.4, 2.75, -1.8);
   group.add(fireLight3);
 
   return {
     group,
     update: (elapsedSeconds: number) => {
+      // Dynamisches Glüh-Pulsieren für flüssige Lava und spitze Lavasteine
+      const lavaPulse = 0.88 + 0.24 * Math.sin(elapsedSeconds * 3.4) + 0.12 * Math.cos(elapsedSeconds * 5.2);
+      glowingLavaSpikeMat.emissiveIntensity = 2.2 * lavaPulse;
+      if (modelLavaMat) {
+        modelLavaMat.emissiveIntensity = 1.6 * lavaPulse;
+      }
+      if (fallbackLava.material instanceof THREE.MeshStandardMaterial) {
+        fallbackLava.material.emissiveIntensity = 1.8 * lavaPulse;
+      }
+
       // Realistische Flammenzungen dynamisch lodern, pulsieren und wiegen lassen
       for (const f of flameEntities) {
         const pulse = Math.sin(elapsedSeconds * f.speed + f.phase);

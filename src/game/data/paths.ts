@@ -87,7 +87,7 @@ export const PATH_2_WAYPOINTS: readonly PathPoint2D[] = [
   { x: 17.5, z: -11.8 },
   { x: 25.4, z: -14.0 },
   { x: 33.5, z: -14.8 },
-  { x: 41.0, z: -14.2 },
+  { x: 42.0, z: -14.2 },
 ];
 
 /**
@@ -102,13 +102,12 @@ export const PATH_2_PUDDLE_POS = {
 } as const;
 
 /**
- * Ufer-Vorplatz am Ende von Weg 2 direkt am westlichen Rand des Waldteichs.
-
+ * Ufer-Ende von Weg 2 direkt am Ufer des Waldteichs.
  */
 export const PATH_2_END_CLEARING = {
-  x: 41.0,
+  x: 42.0,
   z: -14.2,
-  radius: 4.2,
+  radius: 1.15,
 } as const;
 
 /**
@@ -121,10 +120,10 @@ export const POND_CENTER_POS = {
 } as const;
 
 /**
- * Position des Steins im Teich, auf dem die Nixe sitzt.
+ * Position der Nixe / Meerjungfrau im Waldteich am Ende von Weg 2.
  */
 export const NIXIE_NPC_POS: PathPoint2D = {
-  x: 45.0,
+  x: 45.2,
   z: -14.2,
 };
 
@@ -244,7 +243,7 @@ export const PATH_5_WAYPOINTS: readonly PathPoint2D[] = [
   { x: -10.8, z: 20.0 },
   { x: -15.5, z: 28.2 },
   { x: -19.2, z: 36.5 },
-  { x: -21.0, z: 44.0 },
+  { x: -21.2, z: 44.8 },
 ];
 
 /**
@@ -259,12 +258,12 @@ export const PATH_5_FIRE_POS = {
 
 
 /**
- * Begehbare Felsplattform am Ende von Weg 5 direkt vor dem feurigen Höllenschlund.
+ * Ende von Weg 5 direkt am Kraterrand des feurigen Höllenschlunds.
  */
 export const PATH_5_END_CLEARING = {
-  x: -21.0,
-  z: 44.0,
-  radius: 4.8,
+  x: -21.2,
+  z: 44.8,
+  radius: 1.15,
 } as const;
 
 /**

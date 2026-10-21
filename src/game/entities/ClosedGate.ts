@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createAshlarWallTexture, createWoodGrainTexture } from '../textures/GroundTextures';
 
 export interface ClosedGateEntity {
   group: THREE.Group;
@@ -9,9 +10,9 @@ export interface ClosedGateEntity {
  * Erstellt das 3D-Modell des uralten, fest verschlossenen Tores am Ende von Weg 7:
  * - Zwei mächtige Steinpfeiler mit Kapitellen und Kugelspitzen
  * - Ein massiver Torsturzbalken mit geheimnisvoller Siegel-Gravur
- * - Zweiflügeliges, schweres Eichenholztor mit Eisenbeschlägen und Ziernägeln
+ * - Zweiflügeliges, schweres Eichenholztor mit edler Holzmaserung, Eisenbeschlägen und Ziernägeln
  * - Fester Eisen-Querbalken (Schieberiegel) und dicke Eisenketten mit riesigem Vorhängeschloss
- * - Anschließende alte Bruchsteinmauern links und rechts, die den Waldweg vollständig abriegeln
+ * - Anschließende alte Quadersteinmauern mit breiter Mauerstruktur und Zinnen
  * - Zwei schmiedeeiserne Wandlaternen an den Pfeilern mit sanft flackerndem Licht
  * - Schwebender Hinweis-Kristall für die Interaktion
  */
@@ -20,19 +21,39 @@ export function createClosedGate(): ClosedGateEntity {
   group.name = 'ClosedGate';
 
   // --- MATERIALIEN ---
+  // Breite Quaderstein-Mauerstruktur für Mauern, Pfeiler, Torbogen und Zinnen
+  const wallTex = createAshlarWallTexture();
+  if (wallTex.map) wallTex.map.repeat.set(3.2, 1.8);
+  if (wallTex.bumpMap) wallTex.bumpMap.repeat.set(3.2, 1.8);
+
   const stoneMat = new THREE.MeshStandardMaterial({
-    color: 0x58554f,
-    roughness: 0.92,
+    color: 0x6e6860,
+    map: wallTex.map ?? undefined,
+    bumpMap: wallTex.bumpMap ?? undefined,
+    bumpScale: 0.1,
+    roughness: 0.88,
     flatShading: true,
   });
   const mossStoneMat = new THREE.MeshStandardMaterial({
-    color: 0x485242,
-    roughness: 0.95,
+    color: 0x586050,
+    map: wallTex.map ?? undefined,
+    bumpMap: wallTex.bumpMap ?? undefined,
+    bumpScale: 0.1,
+    roughness: 0.92,
     flatShading: true,
   });
+
+  // Edle Holzmaserung für das zweiflügelige Eichenholztor
+  const woodGrainTex = createWoodGrainTexture();
+  if (woodGrainTex.map) woodGrainTex.map.repeat.set(1.4, 2.4);
+  if (woodGrainTex.bumpMap) woodGrainTex.bumpMap.repeat.set(1.4, 2.4);
+
   const woodMat = new THREE.MeshStandardMaterial({
-    color: 0x3d291a,
-    roughness: 0.88,
+    color: 0x664426, // Sattes, geöltes Eichenholz mit sichtbarer Holzmaserung
+    map: woodGrainTex.map ?? undefined,
+    bumpMap: woodGrainTex.bumpMap ?? undefined,
+    bumpScale: 0.08,
+    roughness: 0.82,
   });
   const ironMat = new THREE.MeshStandardMaterial({
     color: 0x222326,

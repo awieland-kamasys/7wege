@@ -7,8 +7,10 @@ Alle externen Modelle, Texturen, Bilder, Schriften und Audio-Dateien hier dokume
 | Graumännchen 3D-Charakter (`grey-man.glb`, reduziert aus `fantasy character 3d model.glb`) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/grey-man.glb` | aktiv |
 | Waldhüter Arvid 3D-Charakter (`arvid.glb`, optimiert aus `bearded man 3d model.glb`, 1024x1024 Texturen, 1,07 MB) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/arvid.glb` | aktiv |
 | Schutzhütte 7 Wege (`hut.glb` / `7wegehuette.glb`, 875 kB, geometrisch bereinigt: Tisch/Fahrrad-Anbau entfernt, 2048x2048 Textur) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/hut.glb` | aktiv |
-| Dämonenkrieger / Teufel 3D-Charakter (`demon-warrior.glb` / `demon warrior 3d model.glb`, 3,95 MB, geriggt) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/demon-warrior.glb` | aktiv |
+| Dämonenkrieger / Teufel 3D-Charakter (`demon+warrior+3d+model_ohne_Dreizack.glb` / `demon-warrior-no-trident.glb`, 1,40 MB, ohne Dreizack, mit 6s-Wait-Animation) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/demon+warrior+3d+model_ohne_Dreizack.glb` | aktiv |
 | Lavakrater 3D-Landschaft (`lava-crater.glb` / `lava crater 3d model.glb`, 4,21 MB, texturiert) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/lava-crater.glb` | aktiv |
+| Seerosenteich der Nixe (`water-lily-pond.glb` / `water lily pond 3d model.glb`, 5,11 MB, PBR-Felsenufer und Seerosen mit Normal- & RM-Map) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/water-lily-pond.glb` | aktiv |
+| Meerjungfrau / Nixe 3D-Charakter (`mermaid.glb` / `mermaid 3d model.glb`, 1,88 MB, Tripo 3D PBR-Modell) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/mermaid.glb` | aktiv |
 
 
 ## Regeln
