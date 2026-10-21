@@ -61,9 +61,7 @@ export function createPathLog(): PathLogEntity {
   mainLog.position.set(0, 0.28, 0);
   mainLog.castShadow = true;
   mainLog.receiveShadow = true;
-  mainLog.userData = { interactableType: 'log' };
   group.add(mainLog);
-  pickableMeshes.push(mainLog);
 
   // Schnittflächen an beiden Enden
   for (const side of [-1, 1]) {
@@ -73,9 +71,7 @@ export function createPathLog(): PathLogEntity {
     );
     endFace.rotation.y = side * (Math.PI / 2);
     endFace.position.set(side * 1.601, 0.28, 0);
-    endFace.userData = { interactableType: 'log' };
     group.add(endFace);
-    pickableMeshes.push(endFace);
   }
 
   // Moosschicht auf dem Stamm
@@ -85,9 +81,7 @@ export function createPathLog(): PathLogEntity {
   );
   mossPatch.position.set(0.1, 0.54, 0);
   mossPatch.castShadow = true;
-  mossPatch.userData = { interactableType: 'log' };
   group.add(mossPatch);
-  pickableMeshes.push(mossPatch);
 
   // Abstehende Aststümpfe
   const branchCoords = [
@@ -102,9 +96,7 @@ export function createPathLog(): PathLogEntity {
     branch.position.set(b.x, b.y, b.z);
     branch.rotation.set(b.rx, 0, b.rz);
     branch.castShadow = true;
-    branch.userData = { interactableType: 'log' };
     group.add(branch);
-    pickableMeshes.push(branch);
   }
 
   // Eingeschnittene Bernstein-Runenrisse
@@ -114,9 +106,7 @@ export function createPathLog(): PathLogEntity {
   );
   runeVein.position.set(0, 0.38, 0.25);
   runeVein.scale.set(1.4, 0.4, 0.4);
-  runeVein.userData = { interactableType: 'log' };
   group.add(runeVein);
-  pickableMeshes.push(runeVein);
 
   // Warmes Bernsteinlicht
   const logLight = new THREE.PointLight(0xf0a530, 0.8, 3.8);

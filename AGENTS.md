@@ -5,8 +5,9 @@
 - Verfasse auch alle Kurzbeschreibungen, Tool-Statusmeldungen (`toolAction`, `toolSummary`, `Description`, `Instruction`), Commit-Nachrichten und Kommentare im Code auf Deutsch.
 
 ## Projektpfad & Obsidian-Vault
-- Das Hauptprojekt und der gemeinsame Obsidian-Vault befinden sich direkt im geöffneten Workspace unter `d:\WANDERLAND\7WEGE`.
-- Alle Konzept- und Projektdokumente liegen in `docs/` (`7Wege.md`, `Spielkonzept.md`, `Technische-Entscheidungen.md`, `Assets-und-Lizenzen.md`, `Veröffentlichung.md`).
+- Das Hauptprojekt befindet sich direkt im geöffneten Workspace unter `d:\WANDERLAND\7WEGE`.
+- Der zentrale Obsidian-Vault befindet sich unter `d:\WANDERLAND\WANDERLAND_OBS`.
+- Alle Konzept- und Projektdokumente liegen in `docs/` (`7Wege.md`, `Spielkonzept.md`, `Technische-Entscheidungen.md`, `Assets-und-Lizenzen.md`, `Veröffentlichung.md`) und sind per Verzeichnis-Verknüpfung (Junction) nahtlos in `d:\WANDERLAND\WANDERLAND_OBS\7WEGE` eingebunden.
 - Halte die Obsidian-Notizen in `docs/` bei architektonischen oder konzeptionellen Änderungen aktuell.
 
 ## Architektur & Technische Leitplanken

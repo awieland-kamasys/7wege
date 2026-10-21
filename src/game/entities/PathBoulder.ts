@@ -56,9 +56,7 @@ export function createPathBoulder(): PathBoulderEntity {
   mainBoulder.rotation.set(0.35, 0.45, -0.2);
   mainBoulder.castShadow = true;
   mainBoulder.receiveShadow = true;
-  mainBoulder.userData = { interactableType: 'boulder' };
   group.add(mainBoulder);
-  pickableMeshes.push(mainBoulder);
 
   // Zweiter großer Felskeil, der den Wegrand links verkeilt
   const leftBoulderGeo = new THREE.DodecahedronGeometry(0.85, 0);
@@ -68,9 +66,7 @@ export function createPathBoulder(): PathBoulderEntity {
   leftBoulder.rotation.set(0.2, -0.5, 0.4);
   leftBoulder.castShadow = true;
   leftBoulder.receiveShadow = true;
-  leftBoulder.userData = { interactableType: 'boulder' };
   group.add(leftBoulder);
-  pickableMeshes.push(leftBoulder);
 
   // Rechter Stützfels am Wegrand
   const rightBoulderGeo = new THREE.DodecahedronGeometry(0.92, 0);
@@ -80,9 +76,7 @@ export function createPathBoulder(): PathBoulderEntity {
   rightBoulder.rotation.set(-0.3, 0.6, -0.15);
   rightBoulder.castShadow = true;
   rightBoulder.receiveShadow = true;
-  rightBoulder.userData = { interactableType: 'boulder' };
   group.add(rightBoulder);
-  pickableMeshes.push(rightBoulder);
 
   // Kleine Trümmersteine am Fuß
   const debrisCoords = [
@@ -95,9 +89,7 @@ export function createPathBoulder(): PathBoulderEntity {
     debris.position.set(c.x, c.r * 0.7, c.z);
     debris.castShadow = true;
     debris.receiveShadow = true;
-    debris.userData = { interactableType: 'boulder' };
     group.add(debris);
-    pickableMeshes.push(debris);
   }
 
   // Eingebettete Kristalladern (geometrisch sichtbare Kristallsegmente)
@@ -105,17 +97,13 @@ export function createPathBoulder(): PathBoulderEntity {
   runeVein1.position.set(0.35, 1.15, 0.65);
   runeVein1.scale.set(0.6, 1.4, 0.5);
   runeVein1.rotation.set(0.4, 0.2, 0.6);
-  runeVein1.userData = { interactableType: 'boulder' };
   group.add(runeVein1);
-  pickableMeshes.push(runeVein1);
 
   const runeVein2 = new THREE.Mesh(new THREE.OctahedronGeometry(0.24, 0), runeMaterial);
   runeVein2.position.set(-0.4, 0.85, 0.75);
   runeVein2.scale.set(0.5, 1.2, 0.6);
   runeVein2.rotation.set(-0.3, 0.5, -0.4);
-  runeVein2.userData = { interactableType: 'boulder' };
   group.add(runeVein2);
-  pickableMeshes.push(runeVein2);
 
   // Zartes Glimmlicht
   const runeLight = new THREE.PointLight(0x55dd88, 0.8, 3.8);

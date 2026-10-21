@@ -30,12 +30,22 @@ export const PATH_1_WAYPOINTS: readonly PathPoint2D[] = [
 ];
 
 /**
+ * Standard-Startpunkt der Spielfigur bei Spielstart:
+ * Auf Weg 7 (Torweg) in halber Strecke (ca. 27.9 m von der Kreuzung) mit Blickrichtung zur Kreuzung.
+ */
+export const START_PLAYER_POS: PathPoint2D = {
+  x: -21.0,
+  z: -18.4,
+};
+
+/**
  * Position und Kollisionsradius des Felsbrockens, der Weg 1 versperrt.
+ * Exakt auf die Referenz-Entfernung wie das Feuer (~16.3 m von der Kreuzung) gesetzt.
  * Lässt sich durch Anklicken des rotierenden Edelsteins am Pfadanfang entfernen.
  */
 export const PATH_1_BOULDER_POS = {
-  x: 0,
-  z: -11.5,
+  x: 0.2,
+  z: -16.3,
   radius: 1.55,
 } as const;
 
@@ -82,12 +92,13 @@ export const PATH_2_WAYPOINTS: readonly PathPoint2D[] = [
 
 /**
  * Position und Kollisionsradius der Wasserpfütze, die Weg 2 (Nixenteich-Pfad) versperrt.
+ * Exakt auf die Referenz-Entfernung wie das Feuer (~16.3 m von der Kreuzung) gesetzt.
  * Lässt sich durch Anklicken des rotierenden Edelsteins am Pfadanfang entfernen.
  */
 export const PATH_2_PUDDLE_POS = {
-  x: 7.5,
-  z: -6.0,
-  radius: 1.5,
+  x: 13.2,
+  z: -9.6,
+  radius: 1.55,
 } as const;
 
 /**
@@ -145,8 +156,8 @@ export const PATH_3_END_CLEARING = {
  * rotationY richtet die lokale +Z-Achse exakt entlang des Brückensegments (34.8, 15.6) -> (42.0, 21.0) aus.
  */
 export const WEIR_BRIDGE_POS = {
-  x: 37.6,
-  z: 17.7,
+  x: 38.4,
+  z: 18.3,
   rotationY: Math.atan2(7.2, 5.4),
 } as const;
 
@@ -160,13 +171,14 @@ export const GIANT_NPC_POS: PathPoint2D = {
 
 /**
  * Position, Ausrichtung und Kollisionsradius des reißenden Bachlaufs, der Weg 3 (Quellenweg) versperrt.
+ * Exakt auf die Referenz-Entfernung wie das Feuer (~16.3 m von der Kreuzung) gesetzt.
  * Lässt sich durch Anklicken des rotierenden Saphir-Edelsteins am Pfadanfang beseitigen.
  */
 export const PATH_3_STREAM_POS = {
-  x: 9.2,
-  z: 2.1,
+  x: 15.8,
+  z: 4.1,
   radius: 1.55,
-  rotationY: Math.atan2(7.3, 1.7),
+  rotationY: Math.atan2(7.5, 2.9),
 } as const;
 
 /**
@@ -185,13 +197,14 @@ export const PATH_4_WAYPOINTS: readonly PathPoint2D[] = [
 
 /**
  * Position, Ausrichtung und Kollisionsradius des Baumstamms, der Weg 4 (Holzfäller-Pfad) versperrt.
+ * Exakt auf die Referenz-Entfernung wie das Feuer (~16.3 m von der Kreuzung) gesetzt.
  * Liegt quer über dem Pfad und lässt sich durch Anklicken des rotierenden Edelsteins am Pfadanfang entfernen.
  */
 export const PATH_4_LOG_POS = {
-  x: 4.0,
-  z: 8.4,
+  x: 7.1,
+  z: 14.7,
   radius: 1.55,
-  rotationY: Math.atan2(3.2, 6.7),
+  rotationY: Math.atan2(3.6, 7.5),
 } as const;
 
 /**
@@ -267,8 +280,8 @@ export const HELL_CHASM_POS = {
  * Position des Teufels auf seinem Obsidianfelsen inmitten des Höllenschlundes.
  */
 export const DEVIL_NPC_POS: PathPoint2D = {
-  x: -22.2,
-  z: 50.8,
+  x: -22.5,
+  z: 52.0,
 };
 
 /**
@@ -287,13 +300,14 @@ export const PATH_6_WAYPOINTS: readonly PathPoint2D[] = [
 
 /**
  * Position, Ausrichtung und Kollisionsradius der hohen Kräuterpflanzen mit Geländer auf Weg 6 (Jägerpfad).
+ * Exakt auf die Referenz-Entfernung wie das Feuer (~16.3 m von der Kreuzung) gesetzt.
  * Lässt sich durch Anklicken des rotierenden Amethyst-Edelsteins am Pfadanfang beseitigen.
  */
 export const PATH_6_HERBS_POS = {
-  x: -9.1,
-  z: 2.0,
+  x: -15.9,
+  z: 3.8,
   radius: 1.55,
-  rotationY: Math.atan2(-7.4, 1.6),
+  rotationY: Math.atan2(-7.7, 2.6),
 } as const;
 
 /**

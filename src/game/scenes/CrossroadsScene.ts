@@ -25,6 +25,7 @@ import {
   PathPoint2D,
   POND_CENTER_POS,
   SEVEN_PATHS,
+  START_PLAYER_POS,
   WEIR_BRIDGE_POS,
   WILD_HUNTER_NPC_POS,
   WOOD_WOMAN_LODGE_NPC_POS,
@@ -126,7 +127,7 @@ export class CrossroadsScene {
   private readonly path5Fire: PathFireEntity;
   private readonly path6Herbs: PathHerbsEntity;
   private readonly treasureChest: TreasureChestEntity;
-  private readonly pathMeshes = new Map<number, THREE.MeshStandardMaterial>();
+  private readonly pathMeshes = new Map<number, THREE.MeshStandardMaterial[]>();
   private readonly pathGemstones = new Map<
     number,
     {
@@ -140,7 +141,7 @@ export class CrossroadsScene {
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointerNdc = new THREE.Vector2();
 
-  private cameraOrbitAngle = 0;
+  private cameraOrbitAngle = Math.atan2(-21.0, -18.4);
   private cameraPitch = 0.56;
   private cameraDistance = 11.0;
   private hoveredPathId: number | null = null;
@@ -161,16 +162,20 @@ export class CrossroadsScene {
   private isHerbsHovered = false;
   private isChestHovered = false;
   private readonly gemstonePulseTimers = new Map<number, number>();
-  private lastPlayerPos: Vector2D = { x: 0, z: 5.2 };
+  private lastPlayerPos: Vector2D = { ...START_PLAYER_POS };
   private elapsedSeconds = 0;
+
+  // Nebelfarben: Heller Waldnebel auf der Lichtung und finster-dunkelroter Nebel im Höllenschlund
+  private readonly defaultFogColor = new THREE.Color(0xdce2e0);
+  private readonly hellFogColor = new THREE.Color(0x160708);
+  private readonly currentFogColor = new THREE.Color(0xdce2e0);
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.scene = new THREE.Scene();
-    // Echter hellgrau-weißer Waldnebel: im Nahbereich klar, ab ~9.5m einsetzend, ab 22m komplett im weißen Nebel verborgen
-    const fogColor = 0xdce2e0;
-    this.scene.background = new THREE.Color(fogColor);
-    this.scene.fog = new THREE.Fog(fogColor, 9.5, 22.0);
+    // Echter Waldnebel: im Nahbereich klar, ab ~9.5m einsetzend, ab 22m im Nebel verborgen
+    this.scene.background = this.currentFogColor;
+    this.scene.fog = new THREE.Fog(this.defaultFogColor.getHex(), 9.5, 22.0);
 
     this.camera = new THREE.PerspectiveCamera(
       55,
@@ -189,15 +194,10 @@ export class CrossroadsScene {
     this.buildTerrainAndPaths();
 
     // Schutzhütte direkt in die Mitte der Kreuzung stellen (offene Vorderseite nach +Z)
-    const cabin = createLogCabin();
-    cabin.position.set(0, 0, 0);
-    cabin.rotation.y = 0;
-    cabin.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        child.userData = { interactableType: 'hut' };
-        this.pickableObjects.push(child);
-      }
+    const cabin = createLogCabin((mesh) => {
+      this.pickableObjects.push(mesh);
     });
+    cabin.position.set(0, 0, 0);
     this.scene.add(cabin);
 
     // Schatztruhe vor der Schutzhütte platzieren
@@ -316,8 +316,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.woodWomanNpc.group);
 
-    // Der feurige Höllenschlund am Ende des 5. Weges
-    this.hellChasm = createHellChasm();
+    // Der feurige Höllenschlund am Ende des 5. Weges (3D-Lavakrater)
+    this.hellChasm = createHellChasm((mesh) => {
+      this.pickableObjects.push(mesh);
+    });
     this.hellChasm.group.position.set(HELL_CHASM_POS.x, 0, HELL_CHASM_POS.z);
     this.hellChasm.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
@@ -326,8 +328,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.hellChasm.group);
 
-    // Der Teufel (NPC) inmitten des Höllenschlundes am Ende des 5. Weges
-    this.devilNpc = createDevilNpc();
+    // Der Teufel / Dämonenkrieger (NPC) inmitten des Höllenschlundes am Ende des 5. Weges
+    this.devilNpc = createDevilNpc((mesh) => {
+      this.pickableObjects.push(mesh);
+    });
     this.devilNpc.group.position.set(DEVIL_NPC_POS.x, 0, DEVIL_NPC_POS.z);
     this.devilNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -387,32 +391,26 @@ export class CrossroadsScene {
     // Magischer Felsbrocken, der Weg 1 (Silberstollen-Pfad) blockiert
     this.path1Boulder = createPathBoulder();
     this.scene.add(this.path1Boulder.group);
-    this.pickableObjects.push(...this.path1Boulder.pickableMeshes);
 
     // Magische Wasserpfütze, die Weg 2 (Nixenteich-Pfad) blockiert
     this.path2Puddle = createPathPuddle();
     this.scene.add(this.path2Puddle.group);
-    this.pickableObjects.push(...this.path2Puddle.pickableMeshes);
 
     // Reißender Gebirgsbach, der Weg 3 (Quellenweg) blockiert
     this.path3Stream = createPathStream();
     this.scene.add(this.path3Stream.group);
-    this.pickableObjects.push(...this.path3Stream.pickableMeshes);
 
     // Magischer Baumstamm, der Weg 4 (Holzfäller-Pfad) blockiert
     this.path4Log = createPathLog();
     this.scene.add(this.path4Log.group);
-    this.pickableObjects.push(...this.path4Log.pickableMeshes);
 
     // Magisches Feuer, das Weg 5 (Höllenschlund-Pfad) blockiert
     this.path5Fire = createPathFire();
     this.scene.add(this.path5Fire.group);
-    this.pickableObjects.push(...this.path5Fire.pickableMeshes);
 
     // Hohe Kräuterpflanzen mit Geländer, die Weg 6 (Jägerpfad) blockieren
     this.path6Herbs = createPathHerbs();
     this.scene.add(this.path6Herbs.group);
-    this.pickableObjects.push(...this.path6Herbs.pickableMeshes);
 
 
     // Bäume rund um die Lichtung, zwischen den 7 Wegen und entlang aller Kurven von Weg 1 bis 7
@@ -430,9 +428,19 @@ export class CrossroadsScene {
     this.targetMarker = this.createTargetMarker();
     this.scene.add(this.targetMarker);
 
-    // Spielfigur (Wandernde Person)
+    // Spielfigur (Wandernde Person) – Start auf Weg 7 in halber Strecke mit Blick zur Kreuzung
     this.playerGroup = this.createPlayerMarker();
+    this.playerGroup.position.set(START_PLAYER_POS.x, 0, START_PLAYER_POS.z);
+    this.playerGroup.rotation.y = Math.atan2(21.0, 18.4);
     this.scene.add(this.playerGroup);
+
+    // Initiale Kamera-Ausrichtung hinter dem Spieler mit Blickrichtung zur Kreuzung
+    const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
+    const camHeight = Math.sin(this.cameraPitch) * this.cameraDistance;
+    const initCamX = START_PLAYER_POS.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
+    const initCamZ = START_PLAYER_POS.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
+    this.camera.position.set(initCamX, camHeight, initCamZ);
+    this.camera.lookAt(START_PLAYER_POS.x, 1.0, START_PLAYER_POS.z);
 
     window.addEventListener('resize', this.onResize);
   }
@@ -466,6 +474,33 @@ export class CrossroadsScene {
     ground.receiveShadow = true;
     this.scene.add(ground);
 
+    // Aschgrauer Brandboden im Bereich des Höllenschlunds (Weg 5 / Teufel)
+    // Äußerer Ausläufer der Brandzone (weicher Übergang von der grünen Wiese zu Aschland)
+    const ashGroundOuter = new THREE.Mesh(
+      new THREE.CircleGeometry(26, 36),
+      new THREE.MeshStandardMaterial({
+        color: 0x3d3835, // Dunkles Aschgrau mit leichtem Erdton
+        roughness: 0.98,
+      })
+    );
+    ashGroundOuter.position.set(HELL_CHASM_POS.x, 0.012, HELL_CHASM_POS.z - 2.0);
+    ashGroundOuter.rotation.x = -Math.PI / 2;
+    ashGroundOuter.receiveShadow = true;
+    this.scene.add(ashGroundOuter);
+
+    // Innerer verkohlter Asche- und Rußboden direkt um den Lavakrater
+    const ashGroundInner = new THREE.Mesh(
+      new THREE.CircleGeometry(18, 36),
+      new THREE.MeshStandardMaterial({
+        color: 0x221f1d, // Tiefes Verkohlt-Aschgrau / Rußschwarz
+        roughness: 0.96,
+      })
+    );
+    ashGroundInner.position.set(HELL_CHASM_POS.x, 0.018, HELL_CHASM_POS.z);
+    ashGroundInner.rotation.x = -Math.PI / 2;
+    ashGroundInner.receiveShadow = true;
+    this.scene.add(ashGroundInner);
+
     // Zentrale Waldkreuzung (begehbare Lichtung)
     const clearing = new THREE.Mesh(
       new THREE.CylinderGeometry(6.8, 7.0, 0.06, 36),
@@ -483,9 +518,9 @@ export class CrossroadsScene {
         roughness: 0.9,
         emissive: 0x000000,
       });
-      this.pathMeshes.set(pathData.id, mat);
 
       if (pathData.id === 1) {
+        this.pathMeshes.set(1, [mat]);
         // Weg 1: Verlängerter Weg mit Rechtskurve entlang PATH_1_WAYPOINTS bis zum Berg
         this.buildCurvedPathMeshes(
           1,
@@ -499,6 +534,7 @@ export class CrossroadsScene {
       }
 
       if (pathData.id === 2) {
+        this.pathMeshes.set(2, [mat]);
         // Weg 2: Geschwungener Pfad entlang PATH_2_WAYPOINTS bis zum Waldteich mit der Nixe
         this.buildCurvedPathMeshes(
           2,
@@ -512,6 +548,7 @@ export class CrossroadsScene {
       }
 
       if (pathData.id === 3) {
+        this.pathMeshes.set(3, [mat]);
         // Weg 3: Pfad entlang PATH_3_WAYPOINTS über die Wehrbrücke bis zum Riesen
         this.buildCurvedPathMeshes(
           3,
@@ -525,6 +562,7 @@ export class CrossroadsScene {
       }
 
       if (pathData.id === 4) {
+        this.pathMeshes.set(4, [mat]);
         // Weg 4: Pfad entlang PATH_4_WAYPOINTS bis zum Holzfällerlager auf der Waldlichtung
         this.buildCurvedPathMeshes(
           4,
@@ -539,18 +577,39 @@ export class CrossroadsScene {
 
       if (pathData.id === 5) {
         // Weg 5: Pfad entlang PATH_5_WAYPOINTS bis zum Höllenschlund
+        // Farbverlauf von Sandfarben an der Kreuzung bis zu tiefem Dunkelgrau am Höllenschlund
+        const path5Colors = [0x7b654b, 0x6a5845, 0x52453a, 0x38322e, 0x221f1d];
+        const segMats = path5Colors.map(
+          (c) =>
+            new THREE.MeshStandardMaterial({
+              color: c,
+              roughness: 0.9,
+              emissive: 0x000000,
+            })
+        );
+        const endClearingMat = new THREE.MeshStandardMaterial({
+          color: 0x1e1b19,
+          roughness: 0.9,
+          emissive: 0x000000,
+        });
+
+        this.pathMeshes.set(5, [...segMats, endClearingMat]);
+
         this.buildCurvedPathMeshes(
           5,
           PATH_5_WAYPOINTS,
           PATH_5_END_CLEARING,
           pathData.angleRad,
           mat,
-          pathData.colorHex
+          pathData.colorHex,
+          segMats,
+          endClearingMat
         );
         return;
       }
 
       if (pathData.id === 6) {
+        this.pathMeshes.set(6, [mat]);
         // Weg 6: Pfad entlang PATH_6_WAYPOINTS bis zur Jagdhütte und dem Kräutergarten
         this.buildCurvedPathMeshes(
           6,
@@ -564,6 +623,7 @@ export class CrossroadsScene {
       }
 
       if (pathData.id === 7) {
+        this.pathMeshes.set(7, [mat]);
         // Weg 7: Pfad entlang PATH_7_WAYPOINTS bis zum geschlossenen Tor
         this.buildCurvedPathMeshes(
           7,
@@ -636,7 +696,9 @@ export class CrossroadsScene {
     clearing: { x: number; z: number; radius: number },
     entranceAngleRad: number,
     mat: THREE.MeshStandardMaterial,
-    markerColorHex: number
+    markerColorHex: number,
+    segmentMats?: THREE.MeshStandardMaterial[],
+    clearingMat?: THREE.MeshStandardMaterial
   ): void {
     const pathWidth = 2.2;
 
@@ -646,6 +708,8 @@ export class CrossroadsScene {
       if (pathId === 3 && i === waypoints.length - 2) {
         continue;
       }
+
+      const segMat = segmentMats?.[i] ?? mat;
 
       const a = waypoints[i];
       const b = waypoints[i + 1];
@@ -658,7 +722,7 @@ export class CrossroadsScene {
 
       const segMesh = new THREE.Mesh(
         new THREE.BoxGeometry(pathWidth, 0.05, segLength),
-        mat
+        segMat
       );
       segMesh.position.set(midX, 0.03, midZ);
       segMesh.rotation.y = angleY;
@@ -670,7 +734,7 @@ export class CrossroadsScene {
       // Runde Gelenkplatte an jedem Kurven-Wegpunkt für nahtlose Übergänge
       const jointMesh = new THREE.Mesh(
         new THREE.CylinderGeometry(pathWidth / 2, pathWidth / 2, 0.05, 16),
-        mat
+        segMat
       );
       jointMesh.position.set(b.x, 0.03, b.z);
       jointMesh.receiveShadow = true;
@@ -687,7 +751,7 @@ export class CrossroadsScene {
         0.06,
         28
       ),
-      mat
+      clearingMat ?? mat
     );
     endClearing.position.set(clearing.x, 0.03, clearing.z);
     endClearing.receiveShadow = true;
@@ -1588,6 +1652,7 @@ export class CrossroadsScene {
     this.lastPlayerPos = { x: playerPos.x, z: playerPos.z };
     this.playerGroup.position.set(playerPos.x, 0, playerPos.z);
     this.playerGroup.rotation.y = 0;
+    this.cameraOrbitAngle = 0;
 
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
     const camHeight = Math.sin(this.cameraPitch) * this.cameraDistance;
@@ -1670,6 +1735,10 @@ export class CrossroadsScene {
     this.gemstonePulseTimers.set(pathId, 1.3);
   }
 
+  public triggerGuideCheers(): void {
+    this.guideNpc.triggerCheers();
+  }
+
   public removePath1BoulderVisual(onComplete?: () => void): void {
     this.path1Boulder.startDissolve(onComplete);
   }
@@ -1743,24 +1812,6 @@ export class CrossroadsScene {
 
       if (data.interactableType === 'gate') {
         return { kind: 'gate', point };
-      }
-      if (data.interactableType === 'boulder') {
-        return { kind: 'boulder', point };
-      }
-      if (data.interactableType === 'puddle') {
-        return { kind: 'puddle', point };
-      }
-      if (data.interactableType === 'stream') {
-        return { kind: 'stream', point };
-      }
-      if (data.interactableType === 'log') {
-        return { kind: 'log', point };
-      }
-      if (data.interactableType === 'fire') {
-        return { kind: 'fire', point };
-      }
-      if (data.interactableType === 'herbs') {
-        return { kind: 'herbs', point };
       }
       if (data.interactableType === 'gemstone' && typeof data.pathId === 'number') {
         return { kind: 'gemstone', pathId: data.pathId, point };
@@ -1859,7 +1910,8 @@ export class CrossroadsScene {
     this.guideNpc.update(
       this.elapsedSeconds,
       playerPos,
-      this.isNpcHovered || isDialogueActive
+      this.isNpcHovered || isDialogueActive,
+      dtSeconds
     );
     this.greyManNpc.update(
       this.elapsedSeconds,
@@ -1920,13 +1972,11 @@ export class CrossroadsScene {
 
     // Wegweiser und ausgewählten/gehoverten Pfad optisch hervorheben
     this.signpost.highlightSign(selectedPathId, this.hoveredPathId);
-    this.pathMeshes.forEach((mat, id) => {
-      if (id === selectedPathId) {
-        mat.emissive.setHex(0x2c220c);
-      } else if (id === this.hoveredPathId) {
-        mat.emissive.setHex(0x1b1507);
-      } else {
-        mat.emissive.setHex(0x000000);
+    this.pathMeshes.forEach((mats, id) => {
+      const emColor =
+        id === selectedPathId ? 0x2c220c : id === this.hoveredPathId ? 0x1b1507 : 0x000000;
+      for (const m of mats) {
+        m.emissive.setHex(emColor);
       }
     });
 
@@ -1962,6 +2012,23 @@ export class CrossroadsScene {
       }
     });
 
+
+    // Dynamische Nebel- und Himmelanpassung:
+    // Nähert sich die Spielfigur dem Höllenschlund am Ende des 5. Weges, färbt sich der Nebel unheilvoll dunkelrot/schwarz
+    const distToDevil = Math.hypot(playerPos.x - DEVIL_NPC_POS.x, playerPos.z - DEVIL_NPC_POS.z);
+    // Ab 36m beginnt die Verfinsterung, bei <= 14m ist voller aschig-dunkler Höllennebel
+    const hellFogFactor = 1.0 - Math.min(1.0, Math.max(0.0, (distToDevil - 14.0) / 22.0));
+    const targetFogColor = this.defaultFogColor.clone().lerp(this.hellFogColor, hellFogFactor);
+    this.currentFogColor.lerp(targetFogColor, 0.05);
+
+    this.scene.background = this.currentFogColor;
+    if (this.scene.fog) {
+      (this.scene.fog as THREE.Fog).color.copy(this.currentFogColor);
+      const targetFar = THREE.MathUtils.lerp(22.0, 32.0, hellFogFactor);
+      const targetNear = THREE.MathUtils.lerp(9.5, 7.5, hellFogFactor);
+      (this.scene.fog as THREE.Fog).far = THREE.MathUtils.lerp((this.scene.fog as THREE.Fog).far, targetFar, 0.05);
+      (this.scene.fog as THREE.Fog).near = THREE.MathUtils.lerp((this.scene.fog as THREE.Fog).near, targetNear, 0.05);
+    }
 
     // Sanfte Verfolgerkamera mit Maus-Orbit, Neigung (Pitch) und Zoom (Distanz)
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;

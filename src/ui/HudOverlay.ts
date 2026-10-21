@@ -39,9 +39,9 @@ export class HudOverlay {
     const header = document.createElement('header');
     header.className = 'hud-header';
 
-    // Kompakte Anzeige für den aktuellen Pfad samt Rücksprung zur 7-Wegekreuzung (standardmäßig ausgeblendet)
+    // Kompakte Anzeige für den aktuellen Pfad samt Rücksprung zur 7-Wegekreuzung (immer links unten)
     this.activePathBadgeEl = document.createElement('div');
-    this.activePathBadgeEl.className = 'active-path-badge is-hidden';
+    this.activePathBadgeEl.className = 'active-path-badge';
     this.activePathBadgeEl.setAttribute('aria-live', 'polite');
 
     this.activePathTitleEl = document.createElement('span');
@@ -117,8 +117,8 @@ export class HudOverlay {
       this.dialogueOptionsEl
     );
 
-    header.append(this.activePathBadgeEl, this.dialogueModalEl);
-    container.append(header);
+    header.append(this.dialogueModalEl);
+    container.append(header, this.activePathBadgeEl);
   }
 
   public update(
@@ -135,14 +135,15 @@ export class HudOverlay {
         ? SEVEN_PATHS.find((p) => p.id === selectedPathId) ?? null
         : null);
 
-    // Wenn die Spielfigur auf den Wegen unterwegs ist:
-    // Wegnamen und Button zum Rücksprung zur 7-Wegekreuzung anzeigen
+    // Bezeichnung des Weges und Link zur Kreuzung immer links unten anzeigen
     if (selectedPath && !isOnClearing) {
       this.activePathTitleEl.textContent = `🧭 ${selectedPath.name}`;
-      this.activePathBadgeEl.classList.remove('is-hidden');
+      this.returnToClearingBtn.classList.remove('is-hidden');
     } else {
-      this.activePathBadgeEl.classList.add('is-hidden');
+      this.activePathTitleEl.textContent = '🧭 7-Wegekreuzung';
+      this.returnToClearingBtn.classList.add('is-hidden');
     }
+    this.activePathBadgeEl.classList.remove('is-hidden');
 
     // Kommunikationsmenü nur einblenden, wenn ein Gespräch stattfindet
     this.renderDialogue(activeDialogueNode);

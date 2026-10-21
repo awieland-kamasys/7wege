@@ -32,16 +32,14 @@ export function createPathStream(): PathStreamEntity {
   });
 
   const bedMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(3.2, 0.04, 1.4),
+    new THREE.BoxGeometry(3.2, 0.05, 1.4),
     bedMaterial
   );
-  bedMesh.position.set(0, 0.015, 0);
+  bedMesh.position.set(0, 0.045, 0);
   bedMesh.receiveShadow = true;
-  bedMesh.userData = { interactableType: 'stream' };
   group.add(bedMesh);
-  pickableMeshes.push(bedMesh);
 
-  // Strömende Wasseroberfläche (transparentes, glänzendes Gebirgswasser)
+  // Strömende Wasseroberfläche (transparentes, glänzendes Gebirgswasser, deutlich über dem Weg)
   const waterMaterial = new THREE.MeshStandardMaterial({
     color: 0x1f5e7a,
     emissive: 0x0c334d,
@@ -49,7 +47,7 @@ export function createPathStream(): PathStreamEntity {
     roughness: 0.12,
     metalness: 0.25,
     transparent: true,
-    opacity: 0.82,
+    opacity: 0.85,
     flatShading: true,
   });
 
@@ -58,11 +56,9 @@ export function createPathStream(): PathStreamEntity {
     waterMaterial
   );
   waterMesh.rotation.x = -Math.PI / 2;
-  waterMesh.position.set(0, 0.05, 0);
+  waterMesh.position.set(0, 0.088, 0);
   waterMesh.receiveShadow = true;
-  waterMesh.userData = { interactableType: 'stream' };
   group.add(waterMesh);
-  pickableMeshes.push(waterMesh);
 
   // Gischt- / Schaumstreifen an den Uferrändern und in der Mitte
   const foamMaterial = new THREE.MeshStandardMaterial({
@@ -71,7 +67,7 @@ export function createPathStream(): PathStreamEntity {
     emissiveIntensity: 0.45,
     roughness: 0.4,
     transparent: true,
-    opacity: 0.72,
+    opacity: 0.75,
     flatShading: true,
   });
 
@@ -89,10 +85,8 @@ export function createPathStream(): PathStreamEntity {
       new THREE.BoxGeometry(c.w, 0.02, c.d),
       foamMaterial
     );
-    foam.position.set(c.x, 0.062, c.z);
-    foam.userData = { interactableType: 'stream' };
+    foam.position.set(c.x, 0.098, c.z);
     group.add(foam);
-    pickableMeshes.push(foam);
     foamMeshes.push(foam);
   }
 
@@ -118,13 +112,11 @@ export function createPathStream(): PathStreamEntity {
       new THREE.DodecahedronGeometry(r.r, 0),
       rockMaterial
     );
-    rock.position.set(r.x, r.sy * 0.5, r.z);
+    rock.position.set(r.x, 0.1 + r.sy * 0.5, r.z);
     rock.scale.set(1.0, r.sy / r.r, 1.1);
     rock.castShadow = true;
     rock.receiveShadow = true;
-    rock.userData = { interactableType: 'stream' };
     group.add(rock);
-    pickableMeshes.push(rock);
   }
 
   // Blaues Wasserlicht (Saphir-Resonanz)

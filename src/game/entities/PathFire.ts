@@ -37,9 +37,7 @@ export function createPathFire(): PathFireEntity {
   );
   ashBase.position.y = 0.04;
   ashBase.receiveShadow = true;
-  ashBase.userData = { interactableType: 'fire' };
   group.add(ashBase);
-  pickableMeshes.push(ashBase);
 
   // Glühende Felsen und Kohlebrocken
   const coalMat = new THREE.MeshStandardMaterial({
@@ -62,9 +60,7 @@ export function createPathFire(): PathFireEntity {
     coal.position.set(c.x, c.r * 0.7, c.z);
     coal.castShadow = true;
     coal.receiveShadow = true;
-    coal.userData = { interactableType: 'fire' };
     group.add(coal);
-    pickableMeshes.push(coal);
   }
 
   // Lodernde Flammenzungen (Konen und Pyramiden in mehreren Schichten)
@@ -110,9 +106,7 @@ export function createPathFire(): PathFireEntity {
     const flame = new THREE.Mesh(geo, mat);
     const baseY = (1.25 * fp.scale) / 2 + 0.05;
     flame.position.set(fp.x, baseY, fp.z);
-    flame.userData = { interactableType: 'fire' };
     group.add(flame);
-    pickableMeshes.push(flame);
 
     flames.push({
       mesh: flame,

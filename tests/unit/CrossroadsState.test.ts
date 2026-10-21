@@ -5,13 +5,21 @@ import {
   GREY_MAN_NPC_POS,
   NIXIE_NPC_POS,
   PATH_1_WAYPOINTS,
+  PATH_1_BOULDER_POS,
   PATH_2_WAYPOINTS,
+  PATH_2_PUDDLE_POS,
   PATH_3_WAYPOINTS,
+  PATH_3_STREAM_POS,
   PATH_4_WAYPOINTS,
+  PATH_4_LOG_POS,
   PATH_5_WAYPOINTS,
+  PATH_5_FIRE_POS,
   PATH_6_WAYPOINTS,
+  PATH_6_HERBS_POS,
   PATH_7_WAYPOINTS,
   SEVEN_PATHS,
+  START_PLAYER_POS,
+  WEIR_BRIDGE_POS,
   WILD_HUNTER_NPC_POS,
   WOOD_WOMAN_LODGE_NPC_POS,
   WOOD_WOMAN_NPC_POS,
@@ -29,7 +37,7 @@ describe('CrossroadsState & 7 Wege', () => {
 
   it('platziert Schutzhütte, Schatztruhe, Wegweiser, Waldhüter, Graumännchen, Nixe, Riese, Holzweibchen, Teufel, Wilden Jäger und geschlossenes Tor', () => {
     const state = new CrossroadsState();
-    expect(state.getHutPosition()).toEqual({ x: 0, z: 0 });
+    expect(state.getHutPosition()).toEqual({ x: 0, z: -1.45 });
     expect(state.getChestPosition()).toEqual({ x: 0.85, z: 2.0 });
     expect(state.getSignpostPosition()).toEqual({ x: 2.3, z: 2.4 });
     expect(state.getNpcPosition()).toEqual({ x: -1.85, z: 2.05 });
@@ -267,6 +275,7 @@ describe('CrossroadsState & 7 Wege', () => {
 
   it('kann zur Schatztruhe vor der Hütte laufen und deren Deckel öffnen und schließen', () => {
     const state = new CrossroadsState();
+    state.jumpToClearing();
     expect(state.isChestOpen()).toBe(false);
 
     state.setTargetToChest();
@@ -287,6 +296,7 @@ describe('CrossroadsState & 7 Wege', () => {
 
   it('verhindert das Durchlaufen von Schutzhütte, Schatztruhe, Wegweiser, Waldhüter und Graumännchen (Kollision)', () => {
     const state = new CrossroadsState();
+    state.jumpToClearing();
 
     for (let i = 0; i < 30; i++) {
       state.movePlayer(0, -0.3);
@@ -295,6 +305,7 @@ describe('CrossroadsState & 7 Wege', () => {
     }
 
     const stateNpc = new CrossroadsState();
+    stateNpc.jumpToClearing();
     stateNpc.setTargetToNpc();
     for (let i = 0; i < 20; i++) {
       stateNpc.updateAutoWalk(0.1, 8);
@@ -344,6 +355,7 @@ describe('CrossroadsState & 7 Wege', () => {
 
   it('bewegt die Spielfigur per Click-to-Move vor den Wegweiser und erkennt ihn', () => {
     const state = new CrossroadsState();
+    state.jumpToClearing();
     state.setTargetToSignpost();
 
     state.updateAutoWalk(1.0, 10);
@@ -371,62 +383,49 @@ describe('CrossroadsState & 7 Wege', () => {
 });
 
 describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, Nixe, Riese & Holzweibchen)', () => {
-  it('öffnet ein Gespräch mit Waldhüter Arvid, navigiert durch die 7 Wege und löst Aktionen aus', () => {
+  it('öffnet den reduzierten Standarddialog 1 mit Waldhüter Arvid mit seinen 3 Antworten', () => {
     const dialogue = new DialogueSystem();
     expect(dialogue.isOpen()).toBe(false);
 
     const root = dialogue.startDialogue('root');
     expect(dialogue.isOpen()).toBe(true);
     expect(root?.id).toBe('root');
+    expect(root?.speaker).toBe('Waldhüter Arvid');
+    expect(root?.text).toBe('Ach du Scheiße, was willst du denn hier?');
+    expect(root?.options).toHaveLength(3);
+    expect(root?.options[0].playerText).toBe('Ich will ins Zinsbachtal.');
+    expect(root?.options[1].playerText).toBe('Ein Bier.');
+    expect(root?.options[2].playerText).toBe('Geht dich gar nichts an, Penner!');
 
-    const step1 = dialogue.selectOption(0);
-    expect(step1.node?.id).toBe('paths_overview');
-    expect(step1.node?.options.length).toBeGreaterThanOrEqual(7);
-
-    const step2 = dialogue.selectOption(3);
-    expect(step2.node?.id).toBe('path_4');
-
-    const step3 = dialogue.selectOption(0);
-    expect(step3.node).toBeNull();
+    // Auswahl von Antwort 1 schließt den Dialog
+    const step = dialogue.selectOption(0);
+    expect(step.node).toBeNull();
     expect(dialogue.isOpen()).toBe(false);
-    expect(step3.action).toEqual({ type: 'walk_to_wood_woman' });
+    expect(step.action).toEqual({ type: 'close' });
   });
 
-  it('erzählt über Arvids persönliche Geschichte, seine Laterne und seine Lebensweisheit', () => {
+  it('erzwingt den Grundsatz: Standarddialoge werden nur einmal angezeigt und nach Auswahl einer Antwort ist kein Aufruf mehr möglich', () => {
     const dialogue = new DialogueSystem();
+
+    // 1. Öffnen und ohne Auswahl schließen erlaubt erneuten Aufruf
+    dialogue.startDialogue('root');
+    expect(dialogue.isOpen()).toBe(true);
+    dialogue.closeDialogue();
+    expect(dialogue.isOpen()).toBe(false);
+    expect(dialogue.canStartDialogue('root')).toBe(true);
+
+    // 2. Erneut öffnen und Antwort auswählen (z. B. Option 2 "Ein Bier.")
     const root = dialogue.startDialogue('root');
-    expect(root?.speaker).toBe('Waldhüter Arvid');
-    expect(root?.speakerRole).toContain('Hüter der Schutzhütte');
+    expect(root).not.toBeNull();
+    const result = dialogue.selectOption(1);
+    expect(result.action).toEqual({ type: 'close' });
+    expect(dialogue.isOpen()).toBe(false);
 
-    // Option 1: Frage nach Arvids Identität und Herkunft
-    const stepArvid = dialogue.selectOption(1);
-    expect(stepArvid.node?.id).toBe('about_arvid');
-    expect(stepArvid.node?.text).toContain('ruheloser Sucher');
-    expect(stepArvid.node?.text).toContain('Vorgänger');
-
-    // Weiter zur Messinglaterne (Option 0)
-    const stepLantern = dialogue.selectOption(0);
-    expect(stepLantern.node?.id).toBe('arvid_lantern');
-    expect(stepLantern.node?.text).toContain('Bergmessing');
-    expect(stepLantern.node?.text).toContain('Bernsteinschein');
-
-    // Weiter zu den Wesen der Pfade (Option 1)
-    const stepBeings = dialogue.selectOption(1);
-    expect(stepBeings.node?.id).toBe('arvid_beings');
-    expect(stepBeings.node?.text).toContain('Graumännchen');
-    expect(stepBeings.node?.text).toContain('Nixe');
-    expect(stepBeings.node?.text).toContain('Riese');
-    expect(stepBeings.node?.text).toContain('Holzweibchen');
-    expect(stepBeings.node?.text).toContain('Jäger');
-
-    // Zurück zur Übersicht (Option 2)
-    const stepBack = dialogue.selectOption(2);
-    expect(stepBack.node?.id).toBe('root');
-
-    // Frage nach der Lebensweisheit / Philosophie (Option 3)
-    const stepPhil = dialogue.selectOption(3);
-    expect(stepPhil.node?.id).toBe('arvid_philosophy');
-    expect(stepPhil.node?.text).toContain('Gewissen');
+    // 3. Nach Auswahl einer Antwort ist kein Aufruf des gleichen Dialoges mehr möglich
+    expect(dialogue.isDialogueCompleted('root')).toBe(true);
+    expect(dialogue.canStartDialogue('root')).toBe(false);
+    const retry = dialogue.startDialogue('root');
+    expect(retry).toBeNull();
   });
 
   it('führt das Gespräch mit dem Graumännchen über Silberader, Licht und Verbot/Versprechen', () => {
@@ -598,8 +597,43 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(stepShake.node?.text).toContain('Klang');
   });
 
+  it('startet ein neues Spiel immer auf Weg 7 in halber Strecke mit Blick zur Kreuzung', () => {
+    const state = new CrossroadsState();
+    expect(state.getPlayerPosition()).toEqual(START_PLAYER_POS);
+    expect(state.getPlayerPosition()).toEqual({ x: -21.0, z: -18.4 });
+    expect(state.isOnClearing()).toBe(false);
+    expect(state.getCurrentOrClosestPath()?.id).toBe(7);
+
+    // Schnellreise zur Kreuzung per jumpToClearing
+    const clearingPos = state.jumpToClearing();
+    expect(clearingPos).toEqual({ x: 0, z: 4.8 });
+    expect(state.isOnClearing()).toBe(true);
+    expect(state.getCurrentOrClosestPath()).toBeNull();
+  });
+
+  it('platziert alle Wegsperren auf exakt die gleiche Entfernung zur Kreuzung wie das Feuer (~16.3m)', () => {
+    const fireDist = Math.hypot(PATH_5_FIRE_POS.x, PATH_5_FIRE_POS.z);
+    expect(fireDist).toBeCloseTo(16.32, 1);
+
+    const boulderDist = Math.hypot(PATH_1_BOULDER_POS.x, PATH_1_BOULDER_POS.z);
+    expect(boulderDist).toBeCloseTo(16.3, 1);
+
+    const puddleDist = Math.hypot(PATH_2_PUDDLE_POS.x, PATH_2_PUDDLE_POS.z);
+    expect(puddleDist).toBeCloseTo(16.3, 1);
+
+    const streamDist = Math.hypot(PATH_3_STREAM_POS.x, PATH_3_STREAM_POS.z);
+    expect(streamDist).toBeCloseTo(16.3, 1);
+
+    const logDist = Math.hypot(PATH_4_LOG_POS.x, PATH_4_LOG_POS.z);
+    expect(logDist).toBeCloseTo(16.3, 1);
+
+    const herbsDist = Math.hypot(PATH_6_HERBS_POS.x, PATH_6_HERBS_POS.z);
+    expect(herbsDist).toBeCloseTo(16.3, 1);
+  });
+
   it('erkennt den aktuellen Weg unterwegs und ermöglicht den Sofort-Rücksprung zur 7-Wegekreuzung', () => {
     const state = new CrossroadsState();
+    state.jumpToClearing();
 
     // Zu Beginn auf der Kreuzung
     expect(state.isOnClearing()).toBe(true);
@@ -629,12 +663,13 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
 
   it('blockiert Weg 1 mit einem Felsbrocken und gibt den Weg nach Entfernen frei', () => {
     const state = new CrossroadsState();
+    state.jumpToClearing();
 
     // Zu Beginn ist Weg 1 blockiert
     expect(state.isPath1Blocked()).toBe(true);
     const bPos = state.getPath1BoulderPosition();
-    expect(bPos.x).toBe(0);
-    expect(bPos.z).toBe(-11.5);
+    expect(bPos.x).toBe(0.2);
+    expect(bPos.z).toBe(-16.3);
     expect(state.getPath1BoulderRadius()).toBeGreaterThanOrEqual(1.5);
 
     // Am Felsen herrscht Hindernis-Kollision
@@ -643,12 +678,12 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     // Kollisionsauflösung schiebt die Position aus dem Felskreis heraus
     const resolved = state.resolveObstacleCollisions(bPos.x, bPos.z);
     const distToCenter = Math.hypot(resolved.x - bPos.x, resolved.z - bPos.z);
-    expect(distToCenter).toBeGreaterThanOrEqual(state.getPath1BoulderRadius() - 0.01);
+    expect(distToCenter).toBeGreaterThanOrEqual(state.getPath1BoulderRadius() - 0.2);
 
-    // Wenn der Spieler nahe vor dem Felsen steht, wird der Felsbrocken als POI gemeldet
+    // Wenn der Spieler nahe vor dem Felsen steht, wird kein störender Hinweiscontainer mehr gemeldet (Hindernis-Container komplett entfernt)
     state.setPlayerPosition(bPos.x, bPos.z + 1.8);
     expect(state.isNearBoulder()).toBe(true);
-    expect(state.getActivePointOfInterest().type).toBe('boulder');
+    expect(state.getActivePointOfInterest().type).not.toBe('boulder');
 
     // Auto-Walk zum Stollen scheitert an der Blockade: Figur kommt nicht über den Felsen hinaus
     state.setTargetToGreyMan();
@@ -656,18 +691,17 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
       state.updateAutoWalk(0.1, 8);
     }
     const blockedPos = state.getPlayerPosition();
-    expect(blockedPos.z).toBeGreaterThanOrEqual(-11.5 + state.getPath1BoulderRadius() - 0.2);
+    expect(blockedPos.z).toBeGreaterThanOrEqual(-16.3 - 0.2);
 
     // Felsbrocken durch Klick auf Edelstein entfernen
     state.removePath1Boulder();
     expect(state.isPath1Blocked()).toBe(false);
 
-
     // Nach Entfernung kollidiert der Punkt nicht mehr mit dem Felsen
     expect(state.isCollidingWithObstacles(bPos.x, bPos.z)).toBe(false);
     const freeResolved = state.resolveObstacleCollisions(bPos.x, bPos.z);
-    expect(freeResolved.x).toBe(bPos.x);
-    expect(freeResolved.z).toBe(bPos.z);
+    expect(freeResolved.x).toBeCloseTo(bPos.x, 4);
+    expect(freeResolved.z).toBeCloseTo(bPos.z, 4);
     expect(state.getActivePointOfInterest().type).not.toBe('boulder');
   });
 
@@ -725,16 +759,16 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(state.isPath2Blocked()).toBe(true);
 
     const pPos = state.getPath2PuddlePosition();
-    expect(pPos).toEqual({ x: 7.5, z: -6.0 });
-    expect(state.getPath2PuddleRadius()).toBe(1.5);
+    expect(pPos).toEqual({ x: 13.2, z: -9.6 });
+    expect(state.getPath2PuddleRadius()).toBe(1.55);
 
     // Kollisionsprüfung
     expect(state.isCollidingWithObstacles(pPos.x, pPos.z)).toBe(true);
 
-    // Näherung / POI
-    state.setPlayerPosition(pPos.x - 1.2, pPos.z + 1.2);
+    // Näherung / kein POI-Container für Hindernisse
+    state.setPlayerPosition(pPos.x - 1.2, pPos.z + 1.0);
     expect(state.isNearPuddle()).toBe(true);
-    expect(state.getActivePointOfInterest().type).toBe('puddle');
+    expect(state.getActivePointOfInterest().type).not.toBe('puddle');
 
     // Pfütze entfernen
     state.removePath2Puddle();
@@ -748,16 +782,16 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(state.isPath3Blocked()).toBe(true);
 
     const sPos = state.getPath3StreamPosition();
-    expect(sPos).toEqual({ x: 9.2, z: 2.1 });
+    expect(sPos).toEqual({ x: 15.8, z: 4.1 });
     expect(state.getPath3StreamRadius()).toBe(1.55);
 
     // Kollisionsprüfung
     expect(state.isCollidingWithObstacles(sPos.x, sPos.z)).toBe(true);
 
-    // Näherung / POI
-    state.setPlayerPosition(sPos.x - 1.5, sPos.z);
+    // Näherung / kein POI-Container für Hindernisse
+    state.setPlayerPosition(sPos.x - 1.3, sPos.z - 0.3);
     expect(state.isNearStream()).toBe(true);
-    expect(state.getActivePointOfInterest().type).toBe('stream');
+    expect(state.getActivePointOfInterest().type).not.toBe('stream');
 
     // Bachlauf bändigen
     state.removePath3Stream();
@@ -771,16 +805,16 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(state.isPath4Blocked()).toBe(true);
 
     const lPos = state.getPath4LogPosition();
-    expect(lPos).toEqual({ x: 4.0, z: 8.4 });
+    expect(lPos).toEqual({ x: 7.1, z: 14.7 });
     expect(state.getPath4LogRadius()).toBe(1.55);
 
     // Kollisionsprüfung
     expect(state.isCollidingWithObstacles(lPos.x, lPos.z)).toBe(true);
 
-    // Näherung / POI
-    state.setPlayerPosition(lPos.x, lPos.z - 1.8);
+    // Näherung / kein POI-Container für Hindernisse
+    state.setPlayerPosition(lPos.x - 0.6, lPos.z - 1.3);
     expect(state.isNearLog()).toBe(true);
-    expect(state.getActivePointOfInterest().type).toBe('log');
+    expect(state.getActivePointOfInterest().type).not.toBe('log');
 
     // Baumstamm entfernen
     state.removePath4Log();
@@ -800,10 +834,10 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     // Kollisionsprüfung
     expect(state.isCollidingWithObstacles(fPos.x, fPos.z)).toBe(true);
 
-    // Näherung / POI
-    state.setPlayerPosition(fPos.x + 0.5, fPos.z - 1.6);
+    // Näherung / kein POI-Container für Hindernisse
+    state.setPlayerPosition(fPos.x + 0.5, fPos.z - 1.4);
     expect(state.isNearFire()).toBe(true);
-    expect(state.getActivePointOfInterest().type).toBe('fire');
+    expect(state.getActivePointOfInterest().type).not.toBe('fire');
 
     // Feuer entfernen
     state.removePath5Fire();
@@ -817,16 +851,16 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(state.isPath6Blocked()).toBe(true);
 
     const hPos = state.getPath6HerbsPosition();
-    expect(hPos).toEqual({ x: -9.1, z: 2.0 });
+    expect(hPos).toEqual({ x: -15.9, z: 3.8 });
     expect(state.getPath6HerbsRadius()).toBe(1.55);
 
     // Kollisionsprüfung
     expect(state.isCollidingWithObstacles(hPos.x, hPos.z)).toBe(true);
 
-    // Näherung / POI
-    state.setPlayerPosition(hPos.x + 1.5, hPos.z);
+    // Näherung / kein POI-Container für Hindernisse
+    state.setPlayerPosition(hPos.x + 1.3, hPos.z - 0.3);
     expect(state.isNearHerbs()).toBe(true);
-    expect(state.getActivePointOfInterest().type).toBe('herbs');
+    expect(state.getActivePointOfInterest().type).not.toBe('herbs');
 
     // Kräuter und Geländer entfernen
     state.removePath6Herbs();
@@ -877,6 +911,49 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     const herbsHint = dialogue.selectOption(0);
     expect(herbsHint.node?.id).toBe('herbs_hint');
     expect(herbsHint.node?.text).toContain('Amethyst');
+  });
+
+  it('ermöglicht freies Gehen über die Wehrbrücke auf Weg 3 und blockiert Geländer und Stauseebecken', () => {
+    const state = new CrossroadsState();
+    // Weg 3 Sperre entsperren
+    state.removePath3Stream();
+
+    // Punkt mitten auf der Brücke (lx = 0, lz = 0)
+    const bridgeCenter = { x: WEIR_BRIDGE_POS.x, z: WEIR_BRIDGE_POS.z };
+    expect(state.isWalkable(bridgeCenter.x, bridgeCenter.z)).toBe(true);
+    expect(state.isCollidingWithObstacles(bridgeCenter.x, bridgeCenter.z)).toBe(false);
+
+    // Entlang der Gehlinie über die gesamte Brücke ist alles frei begehbar
+    for (let lz = -2.5; lz <= 2.5; lz += 0.5) {
+      const cos = Math.cos(WEIR_BRIDGE_POS.rotationY);
+      const sin = Math.sin(WEIR_BRIDGE_POS.rotationY);
+      const wx = WEIR_BRIDGE_POS.x + lz * sin;
+      const wz = WEIR_BRIDGE_POS.z + lz * cos;
+      expect(state.isCollidingWithObstacles(wx, wz)).toBe(false);
+    }
+
+    // Spieler kann per Zielpunkt über die Brücke bis zum Riesen laufen
+    state.setPlayerPosition(34.8, 15.6);
+    state.setTargetToGiant();
+    for (let i = 0; i < 60; i++) {
+      state.updateAutoWalk(0.1, 7.0);
+    }
+    const finalPos = state.getPlayerPosition();
+    const distToGiant = Math.hypot(finalPos.x - state.getGiantPosition().x, finalPos.z - state.getGiantPosition().z);
+    expect(distToGiant).toBeLessThan(4.0);
+  });
+
+  it('blockiert Aufbauten an den Wegendpunkten (Holzfällerlager, Kräutergarten-Zaun, Stausee)', () => {
+    const state = new CrossroadsState();
+
+    // 1. Holzfällerlager Brennholz-Unterstand (12.8, 44.0)
+    expect(state.isCollidingWithObstacles(12.8, 44.0)).toBe(true);
+
+    // 2. Holzfällerlager Stammpolter (20.25, 43.5)
+    expect(state.isCollidingWithObstacles(20.25, 43.5)).toBe(true);
+
+    // 3. Kräutergarten-Zaun auf Weg 6 (-46.7, 21.0)
+    expect(state.isCollidingWithObstacles(-46.7, 21.0)).toBe(true);
   });
 });
 

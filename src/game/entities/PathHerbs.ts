@@ -48,7 +48,7 @@ export function createPathHerbs(): PathHerbsEntity {
     flatShading: true,
   });
 
-  // === 1. DAS HOLZGELÄNDER VOR DEN PFLANZEN ===
+  // === 1. DAS HOLZGELÄNDER VOR DEN PFLANZEN (in Richtung Kreuzung bei z = -0.35) ===
   // Drei vertikale Holzpfosten
   const postPositions = [-1.35, 0, 1.35];
   for (const px of postPositions) {
@@ -56,23 +56,19 @@ export function createPathHerbs(): PathHerbsEntity {
       new THREE.CylinderGeometry(0.08, 0.09, 1.15, 8),
       woodMaterial
     );
-    post.position.set(px, 0.575, 0.35);
+    post.position.set(px, 0.575, -0.35);
     post.castShadow = true;
     post.receiveShadow = true;
-    post.userData = { interactableType: 'herbs' };
     group.add(post);
-    pickableMeshes.push(post);
 
     // Kappe auf dem Pfosten
     const cap = new THREE.Mesh(
       new THREE.ConeGeometry(0.1, 0.08, 8),
       woodMaterial
     );
-    cap.position.set(px, 1.18, 0.35);
+    cap.position.set(px, 1.18, -0.35);
     cap.castShadow = true;
-    cap.userData = { interactableType: 'herbs' };
     group.add(cap);
-    pickableMeshes.push(cap);
   }
 
   // Zwei horizontale Querstangen (Geländerbalken quer über die Wegbreite)
@@ -83,27 +79,25 @@ export function createPathHerbs(): PathHerbsEntity {
       woodMaterial
     );
     rail.rotation.z = Math.PI / 2;
-    rail.position.set(0, ry, 0.35);
+    rail.position.set(0, ry, -0.35);
     rail.castShadow = true;
     rail.receiveShadow = true;
-    rail.userData = { interactableType: 'herbs' };
     group.add(rail);
-    pickableMeshes.push(rail);
   }
 
-  // === 2. HOHE KRÄUTERPFLANZEN DAHINTER ===
+  // === 2. HOHE KRÄUTERPFLANZEN DAHINTER (in Richtung Wegende bei z = 0.15 bis 0.40) ===
   const plantsGroup = new THREE.Group();
   group.add(plantsGroup);
 
   // Stängel und breite Blätterbüschel
   const plantConfigs = [
-    { x: -1.2, z: -0.1, h: 1.6, count: 5, bColor: 0x9832cc },
-    { x: -0.8, z: 0.05, h: 1.85, count: 6, bColor: 0xb545e6 },
-    { x: -0.4, z: -0.15, h: 1.5, count: 4, bColor: 0x852db8 },
-    { x: 0.0, z: 0.0, h: 1.95, count: 7, bColor: 0xc455f5 },
-    { x: 0.45, z: -0.12, h: 1.65, count: 5, bColor: 0x9d3ad1 },
-    { x: 0.85, z: 0.08, h: 1.75, count: 6, bColor: 0xb044e0 },
-    { x: 1.25, z: -0.05, h: 1.55, count: 5, bColor: 0x882ebc },
+    { x: -1.2, z: 0.20, h: 1.6, count: 5, bColor: 0x9832cc },
+    { x: -0.8, z: 0.35, h: 1.85, count: 6, bColor: 0xb545e6 },
+    { x: -0.4, z: 0.15, h: 1.5, count: 4, bColor: 0x852db8 },
+    { x: 0.0, z: 0.30, h: 1.95, count: 7, bColor: 0xc455f5 },
+    { x: 0.45, z: 0.18, h: 1.65, count: 5, bColor: 0x9d3ad1 },
+    { x: 0.85, z: 0.38, h: 1.75, count: 6, bColor: 0xb044e0 },
+    { x: 1.25, z: 0.22, h: 1.55, count: 5, bColor: 0x882ebc },
   ];
 
   for (const p of plantConfigs) {
@@ -114,9 +108,7 @@ export function createPathHerbs(): PathHerbsEntity {
     );
     stem.position.set(p.x, p.h * 0.5, p.z);
     stem.castShadow = true;
-    stem.userData = { interactableType: 'herbs' };
     plantsGroup.add(stem);
-    pickableMeshes.push(stem);
 
     // Ausladende Farn-/Kräuterblätter
     for (let i = 0; i < p.count; i++) {
@@ -134,9 +126,7 @@ export function createPathHerbs(): PathHerbsEntity {
       leaf.rotation.y = leafAngle;
       leaf.rotation.z = 0.32;
       leaf.castShadow = true;
-      leaf.userData = { interactableType: 'herbs' };
       plantsGroup.add(leaf);
-      pickableMeshes.push(leaf);
     }
 
     // Leuchtende Blütenkrone / Fruchtstand an der Spitze (Amethystglanz)
@@ -147,14 +137,12 @@ export function createPathHerbs(): PathHerbsEntity {
     bloom.position.set(p.x, p.h + 0.08, p.z);
     bloom.scale.set(0.9, 1.3, 0.9);
     bloom.castShadow = true;
-    bloom.userData = { interactableType: 'herbs' };
     plantsGroup.add(bloom);
-    pickableMeshes.push(bloom);
   }
 
   // Violettes Punktlicht (Amethyst-Resonanz)
   const herbLight = new THREE.PointLight(0xa84cd6, 1.2, 4.2);
-  herbLight.position.set(0, 1.2, 0.1);
+  herbLight.position.set(0, 1.2, 0.25);
   group.add(herbLight);
 
   // Zustandsvariablen für Animation und Beseitigung

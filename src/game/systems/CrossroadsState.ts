@@ -41,6 +41,7 @@ import {
   PathPoint2D,
   POND_CENTER_POS,
   SEVEN_PATHS,
+  START_PLAYER_POS,
   WEIR_BRIDGE_POS,
   WILD_HUNTER_NPC_POS,
   WOOD_WOMAN_LODGE_NPC_POS,
@@ -92,11 +93,11 @@ export type PointOfInterest =
  * Ohne Three.js-Abhängigkeit direkt mit Vitest testbar.
  */
 export class CrossroadsState {
-  // Schutzhütte im Zentrum (0, 0), Schatztruhe davor (0.85, 2.0),
+  // Schutzhütte im Zentrum (0, -1.45), Schatztruhe davor (0.85, 2.0),
   // Wegweiser rechts davor (2.3, 2.4), Hinweisgeber-NPC links davor (-1.85, 2.05)
-  private readonly hutPos: Vector2D = { x: 0, z: 0 };
-  private readonly hutHalfWidth = 1.95;
-  private readonly hutHalfDepth = 1.55;
+  private readonly hutPos: Vector2D = { x: 0, z: -1.45 };
+  private readonly hutHalfWidth = 2.62;
+  private readonly hutHalfDepth = 2.82;
 
   private readonly chestPos: Vector2D = { x: 0.85, z: 2.0 };
   private readonly chestCollisionRadius = 0.48;
@@ -170,9 +171,9 @@ export class CrossroadsState {
 
   // Am Ende des 5. Weges: Feuriger Höllenschlund und der Teufel
   private readonly hellChasmPos: Vector2D = { x: HELL_CHASM_POS.x, z: HELL_CHASM_POS.z };
-  private readonly hellChasmCollisionRadius = 6.8;
+  private readonly hellChasmCollisionRadius = 5.6;
   private readonly devilPos: Vector2D = { ...DEVIL_NPC_POS };
-  private readonly devilCollisionRadius = 0.85;
+  private readonly devilCollisionRadius = 1.35;
   private readonly devilTalkDistance = 6.2;
 
   // Am Ende des 6. Weges: Jagdhütte mit Kräutergarten, Wilder Jäger, Pferd und Holzweibchen
@@ -197,9 +198,9 @@ export class CrossroadsState {
   private readonly pathHalfWidth = 0.95;
   private readonly maxRadius = 26;
 
-  private playerPos: Vector2D = { x: 0, z: 5.2 };
+  private playerPos: Vector2D = { ...START_PLAYER_POS };
   private targetPos: Vector2D | null = null;
-  private selectedPathId: number | null = null;
+  private selectedPathId: number | null = 7;
   private chestOpen = false;
 
   public getPlayerPosition(): Readonly<Vector2D> {
@@ -291,7 +292,7 @@ export class CrossroadsState {
       this.playerPos.x - this.path1BoulderPos.x,
       this.playerPos.z - this.path1BoulderPos.z
     );
-    return dist <= this.path1BoulderRadius + 0.65;
+    return dist <= this.path1BoulderRadius + 0.95;
   }
 
   // --- WEG 2: WASSERPFÜTZE ---
@@ -324,7 +325,7 @@ export class CrossroadsState {
       this.playerPos.x - this.path2PuddlePos.x,
       this.playerPos.z - this.path2PuddlePos.z
     );
-    return dist <= this.path2PuddleRadius + 0.65;
+    return dist <= this.path2PuddleRadius + 0.95;
   }
 
   // --- WEG 3: REISSENDER GEBIRGSBACH ---
@@ -357,7 +358,7 @@ export class CrossroadsState {
       this.playerPos.x - this.path3StreamPos.x,
       this.playerPos.z - this.path3StreamPos.z
     );
-    return dist <= this.path3StreamRadius + 0.65;
+    return dist <= this.path3StreamRadius + 0.95;
   }
 
   // --- WEG 4: BAUMSTAMM ---
@@ -390,7 +391,7 @@ export class CrossroadsState {
       this.playerPos.x - this.path4LogPos.x,
       this.playerPos.z - this.path4LogPos.z
     );
-    return dist <= this.path4LogRadius + 0.65;
+    return dist <= this.path4LogRadius + 0.95;
   }
 
   // --- WEG 5: FEUER / FLAMMENWAND ---
@@ -423,7 +424,7 @@ export class CrossroadsState {
       this.playerPos.x - this.path5FirePos.x,
       this.playerPos.z - this.path5FirePos.z
     );
-    return dist <= this.path5FireRadius + 0.65;
+    return dist <= this.path5FireRadius + 0.95;
   }
 
   // --- WEG 6: HOHES KRÄUTERGELÄNDER ---
@@ -456,7 +457,7 @@ export class CrossroadsState {
       this.playerPos.x - this.path6HerbsPos.x,
       this.playerPos.z - this.path6HerbsPos.z
     );
-    return dist <= this.path6HerbsRadius + 0.65;
+    return dist <= this.path6HerbsRadius + 0.95;
   }
 
   public getChestPosition(): Readonly<Vector2D> {
@@ -851,6 +852,26 @@ export class CrossroadsState {
     };
   }
 
+  private toBridgeLocal(x: number, z: number): { lx: number; lz: number } {
+    const dx = x - WEIR_BRIDGE_POS.x;
+    const dz = z - WEIR_BRIDGE_POS.z;
+    const cos = Math.cos(WEIR_BRIDGE_POS.rotationY);
+    const sin = Math.sin(WEIR_BRIDGE_POS.rotationY);
+    return {
+      lx: dx * cos - dz * sin,
+      lz: dx * sin + dz * cos,
+    };
+  }
+
+  private fromBridgeLocal(lx: number, lz: number): Vector2D {
+    const cos = Math.cos(WEIR_BRIDGE_POS.rotationY);
+    const sin = Math.sin(WEIR_BRIDGE_POS.rotationY);
+    return {
+      x: WEIR_BRIDGE_POS.x + lx * cos + lz * sin,
+      z: WEIR_BRIDGE_POS.z - lx * sin + lz * cos,
+    };
+  }
+
   /**
    * Prüft, ob ein Punkt mit Schutzhütte, Schatztruhe, Wegweiser, Waldhüter, Graumännchen, Felsen, Waldteich, Riese oder Holzweibchen kollidiert.
    */
@@ -910,8 +931,42 @@ export class CrossroadsState {
       return true;
     }
 
+    // Wehrbrücke & Stausee auf Weg 3:
+    // Die Brücke selbst (|lx| <= 1.05) ist begehbar. Außerhalb der Geländer (|lx| > 1.1) und im Stauseebecken herrscht Kollision.
+    const localBridge = this.toBridgeLocal(x, z);
+    if (Math.abs(localBridge.lz) < 3.3) {
+      if (Math.abs(localBridge.lx) > 1.08 && Math.abs(localBridge.lx) < 4.5) {
+        return true;
+      }
+    }
+    if (Math.hypot(localBridge.lx - (-5.4), localBridge.lz) < 4.3) {
+      return true;
+    }
+
     // Der Riese am Wehr auf Weg 3
     if (Math.hypot(x - this.giantPos.x, z - this.giantPos.z) < this.giantCollisionRadius - eps) {
+      return true;
+    }
+
+    // Aufbauten im Holzfällerlager auf Weg 4:
+    // 1. Brennholz-Unterstand (AABB bei 12.8, 44.0)
+    if (Math.abs(x - 12.8) < 1.5 - eps && Math.abs(z - 44.0) < 0.9 - eps) {
+      return true;
+    }
+    // 2. Stammpolter & Sägebock (AABB bei 20.25, 43.5)
+    if (Math.abs(x - 20.25) < 1.7 - eps && Math.abs(z - 43.5) < 1.3 - eps) {
+      return true;
+    }
+    // 3. Hackklotz mit Axt bei (14.85, 45.35)
+    if (Math.hypot(x - 14.85, z - 45.35) < 0.55 - eps) {
+      return true;
+    }
+    // 4. Feuerstelle im Steinkreis bei (18.55, 45.45)
+    if (Math.hypot(x - 18.55, z - 45.45) < 0.65 - eps) {
+      return true;
+    }
+    // 5. Großer Urwaldstumpf bei (16.8, 45.35)
+    if (Math.hypot(x - 16.8, z - 45.35) < 0.85 - eps) {
       return true;
     }
 
@@ -936,6 +991,20 @@ export class CrossroadsState {
       Math.hypot(x - this.hellChasmPos.x, z - this.hellChasmPos.z) <
       this.hellChasmCollisionRadius - eps
     ) {
+      return true;
+    }
+
+    // Aufbauten und Garten an der Jagdhütte auf Weg 6:
+    // Eingezäunter Kräutergarten (AABB um -46.7, 21.0)
+    if (Math.abs(x - (-46.7)) < 1.85 - eps && Math.abs(z - 21.0) < 1.75 - eps) {
+      return true;
+    }
+    // Kamin an der Jagdhütte bei (-48.8, 25.4)
+    if (Math.abs(x - (-48.8)) < 0.65 - eps && Math.abs(z - 25.4) < 0.65 - eps) {
+      return true;
+    }
+    // Jagdhund neben dem Wilden Jäger bei (-41.2, 22.4)
+    if (Math.hypot(x - (-41.2), z - 22.4) < 0.45 - eps) {
       return true;
     }
 
@@ -974,6 +1043,7 @@ export class CrossroadsState {
     // Felsbrocken auf Weg 1 (blockiert den Pfad, bis er durch den Edelstein entfernt wird)
     if (this.path1BoulderBlocked) {
       if (
+        this.isCollidingWithBarrier(x, z, this.path1BoulderPos) ||
         Math.hypot(x - this.path1BoulderPos.x, z - this.path1BoulderPos.z) <
         this.path1BoulderRadius - eps
       ) {
@@ -984,6 +1054,7 @@ export class CrossroadsState {
     // Wasserpfütze auf Weg 2 (blockiert den Nixenteich-Pfad)
     if (this.path2PuddleBlocked) {
       if (
+        this.isCollidingWithBarrier(x, z, this.path2PuddlePos) ||
         Math.hypot(x - this.path2PuddlePos.x, z - this.path2PuddlePos.z) <
         this.path2PuddleRadius - eps
       ) {
@@ -994,6 +1065,7 @@ export class CrossroadsState {
     // Reißender Gebirgsbach auf Weg 3 (blockiert den Quellenweg)
     if (this.path3StreamBlocked) {
       if (
+        this.isCollidingWithBarrier(x, z, this.path3StreamPos) ||
         Math.hypot(x - this.path3StreamPos.x, z - this.path3StreamPos.z) <
         this.path3StreamRadius - eps
       ) {
@@ -1004,6 +1076,7 @@ export class CrossroadsState {
     // Baumstamm auf Weg 4 (blockiert den Holzfäller-Pfad)
     if (this.path4LogBlocked) {
       if (
+        this.isCollidingWithBarrier(x, z, this.path4LogPos) ||
         Math.hypot(x - this.path4LogPos.x, z - this.path4LogPos.z) <
         this.path4LogRadius - eps
       ) {
@@ -1014,6 +1087,7 @@ export class CrossroadsState {
     // Flammenwand / Feuer auf Weg 5 (blockiert den Höllenschlund-Pfad)
     if (this.path5FireBlocked) {
       if (
+        this.isCollidingWithBarrier(x, z, this.path5FirePos) ||
         Math.hypot(x - this.path5FirePos.x, z - this.path5FirePos.z) <
         this.path5FireRadius - eps
       ) {
@@ -1024,6 +1098,7 @@ export class CrossroadsState {
     // Hohe Kräuterpflanzen mit Geländer auf Weg 6 (blockiert den Jägerpfad)
     if (this.path6HerbsBlocked) {
       if (
+        this.isCollidingWithBarrier(x, z, this.path6HerbsPos) ||
         Math.hypot(x - this.path6HerbsPos.x, z - this.path6HerbsPos.z) <
         this.path6HerbsRadius - eps
       ) {
@@ -1254,6 +1329,63 @@ export class CrossroadsState {
     return bestPoint;
   }
 
+  /**
+   * Prüft, ob ein Punkt innerhalb einer quer über den befestigten Weg liegenden Barriere liegt.
+   * Der Vektor vom Kreuzungszentrum (0, 0) zur Sperre definiert die Längsachse (entlang des Weges),
+   * die Normale quer dazu definiert die Querachse (über die gesamte Wegbreite).
+   */
+  private isCollidingWithBarrier(
+    x: number,
+    z: number,
+    barrierPos: Vector2D,
+    halfWidth = 2.6,
+    halfDepth = 1.45
+  ): boolean {
+    const len = Math.hypot(barrierPos.x, barrierPos.z);
+    if (len < 1e-4) {
+      return false;
+    }
+    const ux = barrierPos.x / len;
+    const uz = barrierPos.z / len;
+    const dx = x - barrierPos.x;
+    const dz = z - barrierPos.z;
+    const dAlong = dx * ux + dz * uz;
+    const dAcross = -dx * uz + dz * ux;
+    return Math.abs(dAcross) < halfWidth && Math.abs(dAlong) < halfDepth;
+  }
+
+  /**
+   * Schiebt eine Position, die in eine gesperrte Barriere eintritt, zuverlässig vor die Barriere auf die Kreuzungsseite.
+   */
+  private pushOutOfBarrier(
+    x: number,
+    z: number,
+    barrierPos: Vector2D,
+    halfWidth = 2.6,
+    halfDepth = 1.45
+  ): Vector2D {
+    const len = Math.hypot(barrierPos.x, barrierPos.z);
+    if (len < 1e-4) {
+      return { x, z };
+    }
+    const ux = barrierPos.x / len;
+    const uz = barrierPos.z / len;
+    const dx = x - barrierPos.x;
+    const dz = z - barrierPos.z;
+    const dAlong = dx * ux + dz * uz;
+    const dAcross = -dx * uz + dz * ux;
+
+    if (Math.abs(dAcross) < halfWidth && Math.abs(dAlong) < halfDepth) {
+      // Wenn der Spieler sich von der Kreuzung genähert hat (dAlong <= 0): vor die Barriere schieben
+      const targetAlong = dAlong <= 0 ? -halfDepth : halfDepth;
+      return {
+        x: barrierPos.x + dAcross * (-uz) + targetAlong * ux,
+        z: barrierPos.z + dAcross * ux + targetAlong * uz,
+      };
+    }
+    return { x, z };
+  }
+
   private pushOutOfCircle(
     x: number,
     z: number,
@@ -1362,6 +1494,33 @@ export class CrossroadsState {
       resolvedX = afterPond.x;
       resolvedZ = afterPond.z;
 
+      // Wehrbrücke & Stausee auf Weg 3:
+      // Auf der Brücke selbst (|localBridge.lz| < 3.2) bleibt die Gehfläche frei begehbar (|localBridge.lx| <= 1.02),
+      // aber das Geländer hält den Spieler sicher auf dem Steg.
+      let localBridge = this.toBridgeLocal(resolvedX, resolvedZ);
+      if (Math.abs(localBridge.lz) < 3.2) {
+        if (Math.abs(localBridge.lx) > 1.02 && Math.abs(localBridge.lx) < 4.5) {
+          localBridge.lx = Math.sign(localBridge.lx) * 1.02;
+          const worldOnBridge = this.fromBridgeLocal(localBridge.lx, localBridge.lz);
+          resolvedX = worldOnBridge.x;
+          resolvedZ = worldOnBridge.z;
+        }
+      }
+      // Stauseebecken links neben der Brücke
+      const lakeCenter = { x: -5.4, z: 0 };
+      const distToLake = Math.hypot(localBridge.lx - lakeCenter.x, localBridge.lz - lakeCenter.z);
+      if (distToLake < 4.2) {
+        const pushedLake = this.pushOutOfCircle(
+          localBridge.lx,
+          localBridge.lz,
+          lakeCenter,
+          4.2
+        );
+        const worldLake = this.fromBridgeLocal(pushedLake.x, pushedLake.z);
+        resolvedX = worldLake.x;
+        resolvedZ = worldLake.z;
+      }
+
       // Riesen-Kollision am Ende von Weg 3
       const afterGiant = this.pushOutOfCircle(
         resolvedX,
@@ -1381,6 +1540,63 @@ export class CrossroadsState {
       );
       resolvedX = afterWoodWoman.x;
       resolvedZ = afterWoodWoman.z;
+
+      // Aufbauten im Holzfällerlager auf Weg 4:
+      // 1. Brennholz-Unterstand (AABB bei 12.8, 44.0)
+      const relShedX = resolvedX - 12.8;
+      const relShedZ = resolvedZ - 44.0;
+      if (Math.abs(relShedX) < 1.5 && Math.abs(relShedZ) < 0.9) {
+        const penX = 1.5 - Math.abs(relShedX);
+        const penZ = 0.9 - Math.abs(relShedZ);
+        if (penX < penZ) {
+          resolvedX = 12.8 + (relShedX >= 0 ? 1.5 : -1.5);
+        } else {
+          resolvedZ = 44.0 + (relShedZ >= 0 ? 0.9 : -0.9);
+        }
+      }
+
+      // 2. Stammpolter & Sägebock (AABB bei 20.25, 43.5)
+      const relLogPileX = resolvedX - 20.25;
+      const relLogPileZ = resolvedZ - 43.5;
+      if (Math.abs(relLogPileX) < 1.7 && Math.abs(relLogPileZ) < 1.3) {
+        const penX = 1.7 - Math.abs(relLogPileX);
+        const penZ = 1.3 - Math.abs(relLogPileZ);
+        if (penX < penZ) {
+          resolvedX = 20.25 + (relLogPileX >= 0 ? 1.7 : -1.7);
+        } else {
+          resolvedZ = 43.5 + (relLogPileZ >= 0 ? 1.3 : -1.3);
+        }
+      }
+
+      // 3. Hackklotz mit Axt bei (14.85, 45.35)
+      const afterChoppingBlock = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        { x: 14.85, z: 45.35 },
+        0.55
+      );
+      resolvedX = afterChoppingBlock.x;
+      resolvedZ = afterChoppingBlock.z;
+
+      // 4. Feuerstelle im Steinkreis bei (18.55, 45.45)
+      const afterCampfire = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        { x: 18.55, z: 45.45 },
+        0.65
+      );
+      resolvedX = afterCampfire.x;
+      resolvedZ = afterCampfire.z;
+
+      // 5. Großer Urwaldstumpf bei (16.8, 45.35)
+      const afterBigStump = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        { x: 16.8, z: 45.35 },
+        0.85
+      );
+      resolvedX = afterBigStump.x;
+      resolvedZ = afterBigStump.z;
 
       // Teufel-Kollision am Ende von Weg 5
       const afterDevil = this.pushOutOfCircle(
@@ -1432,6 +1648,42 @@ export class CrossroadsState {
       resolvedX = afterHorse.x;
       resolvedZ = afterHorse.z;
 
+      // Eingezäunter Kräutergarten auf Weg 6 (AABB um -46.7, 21.0)
+      const relGardenX = resolvedX - (-46.7);
+      const relGardenZ = resolvedZ - 21.0;
+      if (Math.abs(relGardenX) < 1.85 && Math.abs(relGardenZ) < 1.75) {
+        const penX = 1.85 - Math.abs(relGardenX);
+        const penZ = 1.75 - Math.abs(relGardenZ);
+        if (penX < penZ) {
+          resolvedX = -46.7 + (relGardenX >= 0 ? 1.85 : -1.85);
+        } else {
+          resolvedZ = 21.0 + (relGardenZ >= 0 ? 1.75 : -1.75);
+        }
+      }
+
+      // Kamin an der Jagdhütte bei (-48.8, 25.4)
+      const relChimneyX = resolvedX - (-48.8);
+      const relChimneyZ = resolvedZ - 25.4;
+      if (Math.abs(relChimneyX) < 0.65 && Math.abs(relChimneyZ) < 0.65) {
+        const penX = 0.65 - Math.abs(relChimneyX);
+        const penZ = 0.65 - Math.abs(relChimneyZ);
+        if (penX < penZ) {
+          resolvedX = -48.8 + (relChimneyX >= 0 ? 0.65 : -0.65);
+        } else {
+          resolvedZ = 25.4 + (relChimneyZ >= 0 ? 0.65 : -0.65);
+        }
+      }
+
+      // Jagdhund neben dem Wilden Jäger bei (-41.2, 22.4)
+      const afterDog = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        { x: -41.2, z: 22.4 },
+        0.45
+      );
+      resolvedX = afterDog.x;
+      resolvedZ = afterDog.z;
+
       // Jagdhütte selbst (AABB um huntingCabinCenter)
       const relCabinX = resolvedX - this.huntingCabinCenter.x;
       const relCabinZ = resolvedZ - this.huntingCabinCenter.z;
@@ -1468,6 +1720,14 @@ export class CrossroadsState {
 
       // Felsbrocken auf Weg 1 (blockiert den Wegkorridor vollständig)
       if (this.path1BoulderBlocked) {
+        const afterBarrier = this.pushOutOfBarrier(
+          resolvedX,
+          resolvedZ,
+          this.path1BoulderPos
+        );
+        resolvedX = afterBarrier.x;
+        resolvedZ = afterBarrier.z;
+
         const afterBoulder = this.pushOutOfCircle(
           resolvedX,
           resolvedZ,
@@ -1480,6 +1740,14 @@ export class CrossroadsState {
 
       // Wasserpfütze auf Weg 2
       if (this.path2PuddleBlocked) {
+        const afterBarrier = this.pushOutOfBarrier(
+          resolvedX,
+          resolvedZ,
+          this.path2PuddlePos
+        );
+        resolvedX = afterBarrier.x;
+        resolvedZ = afterBarrier.z;
+
         const afterPuddle = this.pushOutOfCircle(
           resolvedX,
           resolvedZ,
@@ -1492,6 +1760,14 @@ export class CrossroadsState {
 
       // Reißender Gebirgsbach auf Weg 3
       if (this.path3StreamBlocked) {
+        const afterBarrier = this.pushOutOfBarrier(
+          resolvedX,
+          resolvedZ,
+          this.path3StreamPos
+        );
+        resolvedX = afterBarrier.x;
+        resolvedZ = afterBarrier.z;
+
         const afterStream = this.pushOutOfCircle(
           resolvedX,
           resolvedZ,
@@ -1504,6 +1780,14 @@ export class CrossroadsState {
 
       // Baumstamm auf Weg 4
       if (this.path4LogBlocked) {
+        const afterBarrier = this.pushOutOfBarrier(
+          resolvedX,
+          resolvedZ,
+          this.path4LogPos
+        );
+        resolvedX = afterBarrier.x;
+        resolvedZ = afterBarrier.z;
+
         const afterLog = this.pushOutOfCircle(
           resolvedX,
           resolvedZ,
@@ -1516,6 +1800,14 @@ export class CrossroadsState {
 
       // Flammenwand / Feuer auf Weg 5
       if (this.path5FireBlocked) {
+        const afterBarrier = this.pushOutOfBarrier(
+          resolvedX,
+          resolvedZ,
+          this.path5FirePos
+        );
+        resolvedX = afterBarrier.x;
+        resolvedZ = afterBarrier.z;
+
         const afterFire = this.pushOutOfCircle(
           resolvedX,
           resolvedZ,
@@ -1528,6 +1820,14 @@ export class CrossroadsState {
 
       // Hohe Kräuterpflanzen mit Geländer auf Weg 6
       if (this.path6HerbsBlocked) {
+        const afterBarrier = this.pushOutOfBarrier(
+          resolvedX,
+          resolvedZ,
+          this.path6HerbsPos
+        );
+        resolvedX = afterBarrier.x;
+        resolvedZ = afterBarrier.z;
+
         const afterHerbs = this.pushOutOfCircle(
           resolvedX,
           resolvedZ,
@@ -1940,14 +2240,19 @@ export class CrossroadsState {
       );
     }
 
-    // Falls die direkte Linie auf der Kreuzung durch die zentrale Hütte führt,
+    // Falls die direkte Linie auf der Kreuzung durch die vergrößerte Schutzhütte führt,
     // nutze einen seitlichen Wegpunkt links oder rechts neben der Hütte
+    const hutMinZ = this.hutPos.z - this.hutHalfDepth;
+    const hutMaxZ = this.hutPos.z + this.hutHalfDepth;
     const crossesHutZ =
-      (this.playerPos.z > this.hutHalfDepth - 0.1 && effectiveTarget.z < -0.5) ||
-      (this.playerPos.z < -this.hutHalfDepth + 0.1 && effectiveTarget.z > 0.5);
-    if (crossesHutZ && Math.abs(this.playerPos.x) < 2.6 && playerDist <= this.clearingRadius + 0.5) {
-      const sideX = this.playerPos.x + effectiveTarget.x > 0.5 ? 3.4 : -3.2;
-      effectiveTarget = { x: sideX, z: 0 };
+      (this.playerPos.z < hutMinZ && effectiveTarget.z > hutMinZ) ||
+      (this.playerPos.z > hutMaxZ && effectiveTarget.z < hutMaxZ) ||
+      (this.playerPos.z >= hutMinZ && this.playerPos.z <= hutMaxZ);
+
+    if (crossesHutZ && Math.abs(this.playerPos.x) <= this.hutHalfWidth + 0.5 && playerDist <= this.clearingRadius + 0.5) {
+      const sideMargin = this.hutHalfWidth + 0.85;
+      const sideX = this.playerPos.x + effectiveTarget.x > 0 ? sideMargin : -sideMargin;
+      effectiveTarget = { x: sideX, z: this.hutPos.z };
     }
 
     const dx = effectiveTarget.x - this.playerPos.x;
@@ -2022,55 +2327,6 @@ export class CrossroadsState {
           'Geschlossenes Tor – ein uraltes, mit schweren Eisenketten versiegeltes Portal versperrt den weiteren Weg (Klick oder [F]).',
       };
     }
-
-    if (this.isNearBoulder()) {
-      return {
-        type: 'boulder',
-        label:
-          'Ein gewaltiger Felsbrocken versperrt den 1. Weg. Klicke auf den rotierenden Edelstein am Pfadanfang, um den Weg freizuräumen.',
-      };
-    }
-
-    if (this.isNearPuddle()) {
-      return {
-        type: 'puddle',
-        label:
-          'Eine tiefe, magische Wasserpfütze versperrt den 2. Weg zum Spiegelteich. Klicke auf den rotierenden Aquamarin am Pfadanfang, um das Wasser versickern zu lassen.',
-      };
-    }
-
-    if (this.isNearStream()) {
-      return {
-        type: 'stream',
-        label:
-          'Ein tosender Gebirgsbach stürzt quer über den 3. Weg zum Wehr. Klicke auf den rotierenden Saphirkristall am Pfadanfang, um das Wasser zu bändigen.',
-      };
-    }
-
-    if (this.isNearLog()) {
-      return {
-        type: 'log',
-        label:
-          'Ein riesiger Baumstamm liegt quer über dem 4. Weg zum Holzfällerlager. Klicke auf den rotierenden Bernsteinkristall am Pfadanfang, um den Stamm zu beseitigen.',
-      };
-    }
-
-    if (this.isNearFire()) {
-      return {
-        type: 'fire',
-        label:
-          'Eine lodernde Flammenwand versperrt den 5. Weg zum Höllenschlund. Klicke auf den rotierenden Rubinkristall am Pfadanfang, um das Feuer zu löschen.',
-      };
-    }
-
-    if (this.isNearHerbs()) {
-      return {
-        type: 'herbs',
-        label:
-          'Ein massives Holzgeländer und dichte Zauberkräuter versperren den 6. Weg zur Jagdhütte. Klicke auf den rotierenden Amethystkristall am Pfadanfang, um den Weg zu öffnen.',
-      };
-    }
-
 
     const nearHunter = this.isNearWildHunter();
     const nearWoodLodge = this.isNearWoodWomanLodge();

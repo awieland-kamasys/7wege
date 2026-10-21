@@ -10,7 +10,7 @@ Eine spielende Person kommt an eine Waldkreuzung mit sieben Wegen und entscheide
 
 - Das Spiel beginnt auf einer Kreuzung im Wald, an der sieben Waldwege zusammentreffen.
 - In der Mitte der Kreuzung steht eine Schutzhütte aus Baumstämmen; davor stehen eine **Schatztruhe (mit zu öffnendem Deckel)**, rechts davor der Wegweiser mit sieben Schildern und links direkt an der Hütte **Waldhüter Arvid** als Hinweisgeber-NPC.
-- Über ein **Kommunikationssystem (Dialog-UI mit Browser-Sprachausgabe)** kann die spielende Person mit dem Hinweisgeber an der Hütte sprechen, um Ratschläge zur Kreuzung, zur Schutzhütte und zu jedem der sieben Wege zu erhalten.
+- Über ein **Kommunikationssystem (Dialog-UI mit Browser-Sprachausgabe)** kann die spielende Person mit NPCs sprechen. **Grundsatz:** Standarddialoge werden nur einmal angezeigt und nach Auswahl einer Antwort ist kein erneuter Aufruf des gleichen Dialoges mehr möglich. Standarddialog 1 mit Waldhüter Arvid begrüßt die Person mit „Ach du Scheiße, was willst du denn hier?“ mit drei Antwortoptionen (1. „Ich will ins Zinsbachtal.“, 2. „Ein Bier.“, 3. „Geht dich gar nichts an, Penner!“).
 - Die spielende Person kann sich ausschließlich auf der befestigten Waldkreuzung und den sieben Wegen bewegen (Grünflächen und Wald sind nicht begehbar; Schutzhütte, Schatztruhe, Wegweiser und NPC besitzen feste Kollisionen).
 - Dichter weiß-hellgrauer Waldnebel begrenzt die Sichtweite, sodass das Ende der Wege von der Kreuzung aus nicht sichtbar ist.
 - Ziele, Themen und Besonderheiten der sieben Wege sind noch offen.
@@ -28,37 +28,51 @@ Eine spielende Person kommt an eine Waldkreuzung mit sieben Wegen und entscheide
 
 ## Die sieben Wege
 
+## Spielstart & Startpunkt
+
+- **Initialer Einstieg:** Ein neues Spiel beginnt immer exakt auf **Weg 7 (Torweg)** in **halber Strecke** (ca. 27,9 m von der Kreuzung entfernt bei `x: -21.0, z: -18.4`).
+- **Perspektive & Blickrichtung:** Die Spielfigur und die Verfolgerkamera blicken entlang des Weges nach vorn in Richtung der geheimnisvollen 7-Wegekreuzung.
+- **HUD links unten:** Am unteren linken Bildschirmrand wird dauerhaft die aktuelle Wegbezeichnung (`🧭 7. Torweg`) sowie der Schnellreise-Link `↩ Zur 7-Wegekreuzung` angezeigt.
+
+## Die Sieben Waldwege & Sperren-System
+
+Alle temporären Wegsperren der Pfade 1 bis 6 sind auf **exakt die gleiche Distanz zur Kreuzung wie das Feuer auf Weg 5 (~16,3 m)** gesetzt und verfügen über ein lückenloses Kollisionssystem, das Durchlaufen oder Hindurchglitschen vor dem Lösen der Sperre unmöglich macht. Das Beseitigen der Sperren erfolgt ausschließlich durch Anklicken des jeweiligen rotierenden Edelsteins am Pfadanfang; es gibt keine störenden Inspektions- oder Hinweiscontainer vor den Hindernissen.
+
 1. **1. Silberstollen-Pfad (Norden → Kurve nach Nordosten):**
    - Verlängerter Bergpfad mit langgezogener Rechtskurve durch den Waldnebel.
-   - **Magische Felsblockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 1 wenige Schritte hinter der Kreuzung durch einen gewaltigen, bemoosten Felsbrocken mit grünlich glimmenden Kristalladern blockiert. Ein Klick auf den rotierenden grünen Edelstein am Pfadanfang löst eine magische Resonanz aus, lässt den Edelstein aufblitzen, spielt ein tiefes Erd-Grollen mit kristallinem Klang ab und lässt den Felsbrocken zerfallen und im Erdboden versinken. Bei Annäherung an den Felsen kann dieser per Klick oder Taste [F] untersucht werden.
-   - Endet auf einem Felsvorplatz vor einem **Bergmassiv mit Höhleneingang (Stollenmundloch)**.
+   - **Magische Felsblockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 1 in 16,3 m Entfernung von der Kreuzung (`x: 0.2, z: -16.3`) durch einen gewaltigen, bemoosten Felsbrocken mit grünlich glimmenden Kristalladern und unüberwindbarer Barriere-Kollision blockiert. Ein Klick auf den rotierenden grünen Edelstein am Pfadanfang löst eine magische Resonanz aus, lässt den Edelstein aufblitzen, spielt ein tiefes Erd-Grollen mit kristallinem Klang ab und lässt den Felsbrocken zerfallen und im Erdboden versinken.
+   - Endet auf einem Felsvorplatz vor einem **Bergmassiv mit Höhleneingang (Stollenmundloch)**; Bergmassiv, Stollenwände und Felsenflanken besitzen feste Kollision.
    - Vor dem Höhleneingang wartet **das Graumännchen** als NPC.
    - **Inhalt & Konflikt:** Eine neue Silberader könnte Mine und Arbeiter retten. Ihr Auffinden verlangt Licht in einem Stollen, für den ein altes Verbot beziehungsweise Versprechen gilt.
 2. **2. Nixenteich-Pfad (Nordosten → Bogen nach Osten):**
-   - Geschwungener Waldpfad durch den Nebel bis zu einem stillen **Waldteich mit Ufersteinen, Seerosen und Schilf**.
-   - **Magische Wasserpfützen-Blockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 2 wenige Schritte hinter der Kreuzung durch eine tiefe, türkisfarben schimmernde Wasserpfütze mit magischem Wellenschlag versperrt. Ein Klick auf den rotierenden türkisfarbenen Edelstein (Aquamarin) am Pfadanfang lässt den Kristall aufleuchten, spielt gluckerndes Wasserversickern und Kristallglanz ab und lässt die Pfütze im Waldboden versickern. Bei Annäherung kann die Pfütze per Klick oder Taste [F] untersucht werden.
+   - Geschwungener Waldpfad durch den Nebel bis zu einem stillen **Waldteich mit Ufersteinen, Seerosen und Schilf**; das tiefe Wasserbecken besitzt feste Uferkollision.
+   - **Magische Wasserpfützen-Blockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 2 in 16,3 m Entfernung von der Kreuzung (`x: 13.2, z: -9.6`) durch eine tiefe, türkisfarben schimmernde Wasserpfütze mit magischem Wellenschlag und Barriere-Kollision versperrt. Ein Klick auf den rotierenden türkisfarbenen Edelstein (Aquamarin) am Pfadanfang lässt den Kristall aufleuchten, spielt gluckerndes Wasserversickern und Kristallglanz ab und lässt die Pfütze im Waldboden versickern.
    - Auf einem **Stein im Teich** sitzt **die Nixe vom Spiegelteich** als NPC; unter der Wasseroberfläche funkelt ein Goldhort.
    - **Inhalt & Konflikt:** Ein verlockender Schatz im Teich ist mit einem Fluch beziehungsweise drohendem Unglück verbunden.
 3. **3. Quellenweg (Osten → Bogen nach Südosten):**
-   - Waldpfad über eine **Holz-/Steinbrücke**, unter der ein **Bach** hindurchfließt.
-   - **Magische Bachlauf-Blockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 3 wenige Schritte hinter der Kreuzung durch einen tosenden, quer über den Weg strömenden Gebirgsbach mit Kiesbett, schäumenden Gischtkronen und Ufersteinen blockiert. Ein Klick auf den rotierenden kornblumenblauen Edelstein (Saphir) am Pfadanfang entfesselt die Quellmagie, spielt einen reinen Saphir-Akkord mit beruhigendem Wasserrauschen ab und lässt den Bachlauf im Waldboden versickern. Bei Annäherung kann der Bachlauf per Klick oder Taste [F] untersucht werden.
+   - Waldpfad über eine **Holz-/Steinbrücke**, unter der ein **Bach** hindurchfließt. Die Brücke selbst ist vollkommen frei begehbar, während die seitlichen Geländer und das Stauseebecken feste Kollision besitzen.
+   - **Magische Bachlauf-Blockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 3 in 16,3 m Entfernung von der Kreuzung (`x: 15.8, z: 4.1`) durch einen tosenden, quer über den Weg strömenden Gebirgsbach mit Kiesbett, schäumenden Gischtkronen (Wasseroberfläche stabil auf $y = 0.088$, erhaben über dem Weg bei $y = 0.055$) und Barriere-Kollision blockiert. Ein Klick auf den rotierenden kornblumenblauen Edelstein (Saphir) am Pfadanfang entfesselt die Quellmagie, spielt einen reinen Saphir-Akkord mit beruhigendem Wasserrauschen ab und lässt den Bachlauf im Waldboden versickern.
    - Die Brücke besitzt ein **geschlossenes Wehr**, welches den Bach zu einem **kleinen Stausee** zurückstaut.
    - Am Ufer hinter der Brücke bewacht **der Riese am Wehr** den Stausee und das Stellrad.
    - **Inhalt & Konflikt:** Eine Quelle versorgt ein Tal. Ihre Freigabe könnte eine Dürre lindern, zerstört jedoch die Heimat des Riesen.
 4. **4. Holzfäller-Pfad (Süd-Südost → Bogen nach Südosten):**
-   - Geschwungener Waldpfad durch den Nebel bis auf eine **gerodete Waldlichtung mit einem Holzfällerlager** (Brennholz-Unterstand, Stammpolter, Sägebock, Hackklotz mit Axt, Wärmefeuerstelle und ein Kranz aus Baumstümpfen).
-   - **Magische Baumstamm-Blockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 4 wenige Schritte hinter der Kreuzung durch einen mächtigen, quer über den gesamten Weg liegenden bemoosten Eichenstamm mit leuchtenden bernsteinfarbenen Runen versperrt. Ein Klick auf den rotierenden Bernsteinkristall am Pfadanfang bricht den Bann, spielt ein kräftiges Holzknacken und Splittern ab und lässt den Stamm in Funken zerfallen. Bei Annäherung kann der Stamm per Klick oder Taste [F] untersucht werden.
+   - Geschwungener Waldpfad durch den Nebel bis auf eine **gerodete Waldlichtung mit einem Holzfällerlager**. Alle Aufbauten (Brennholz-Unterstand, Stammpolter & Sägebock, Hackklotz mit Axt, Wärmefeuerstelle und der mächtige Urwaldstumpf) besitzen feste Kollision.
+   - **Magische Baumstamm-Blockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 4 in 16,3 m Entfernung von der Kreuzung (`x: 7.1, z: 14.7`) durch einen mächtigen, quer über den gesamten Weg liegenden bemoosten Eichenstamm mit leuchtenden bernsteinfarbenen Runen und Barriere-Kollision versperrt. Ein Klick auf den rotierenden Bernsteinkristall am Pfadanfang bricht den Bann, spielt ein kräftiges Holzknacken und Splittern ab und lässt den Stamm in Funken zerfallen.
    - Im Lager neben einem bemoosten Urwaldstumpf wartet **das Holzweibchen** als NPC.
    - **Inhalt & Konflikt:** Brennholz rettet Dorfbewohner vor Kälte; zu starke Fällungen gefährden den Wald und seine Umgebung.
 5. **5. Höllenschlund-Pfad (Süd-Südwest → Bogen durch Felsspalten nach Süden):**
-   - Geschwungener Pfad durch zerklüftete Felsen und verbrannte Nadelbäume bis an den Rand eines tiefen Basaltkraters.
-   - **Magische Flammenwand-Blockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 5 etwas weiter hinten im Pfad zwischen den ersten Felsspalten durch eine lodernde Flammenwand mit sengender Glut und aufsteigenden Funken versperrt. Ein Klick auf den rotierenden roten Rubin am Pfadanfang bannt das Höllenfeuer, spielt ein zischendes Verlöschen mit aufsteigenden Rauchwolken ab und räumt den Weg frei. Bei Annäherung kann das Feuer per Klick oder Taste [F] untersucht werden.
-   - Am Ende des Weges öffnet sich ein gewaltiger **Höllenschlund voller Feuer, züngelnder Flammen und brodelnder Lava**.
-   - Inmitten des Höllenschlundes thront auf einem erhabenen Obsidianfelsen **der Teufel** als NPC mit Hörnern und Dreizack.
+   - Geschwungener Pfad durch zerklüftete Felsen und verbrannte Nadelbäume bis an den Rand eines tiefen Basaltkraters mit Lava-Kollision.
+   - **Magische Flammenwand-Blockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 5 in 16,3 m Entfernung von der Kreuzung (`x: -7.5, z: 14.5`) zwischen den ersten Felsspalten durch eine lodernde Flammenwand mit sengender Glut, aufsteigenden Funken und Barriere-Kollision versperrt. Ein Klick auf den rotierenden roten Rubin am Pfadanfang bannt das Höllenfeuer, spielt ein zischendes Verlöschen mit aufsteigenden Rauchwolken ab und räumt den Weg frei.
+   - Am Ende des Weges öffnet sich ein gewaltiger **Höllenschlund (3D-Lavakrater aus zerklüftetem Basalt und brodelnder Lava, um 45° im Uhrzeigersinn gedreht)**.
+   - Inmitten des Höllenschlundes thront auf der zentralen Felsspitze **der Dämonenkrieger / Teufel** als monumentaler 3D-NPC (~5,2 m Höhe) mit lebendiger Mixamo-Rig-Animation (tiefe Atmung, lauernde Kopfbewegung, drohend angewinkelte Klauenarme) und feurigem Interaktions-Kristall.
+   - **Atmosphärische Verfinsterung:** Nähert sich die Spielfigur dem Höllenschlund, färbt sich der hellgraue Waldnebel stufenlos in eine bedrohlich-dunkle, aschig-rote Rauch- und Feuernacht ein.
    - **Inhalt & Konflikt:** _Noch keine Story hinterlegt (Platzhalter-Einstiegsdialog vorhanden)._
 6. **6. Jägerpfad (Südwesten → Kurve durch weite Waldschneise):**
-   - Weit geschwungener Waldpfad durch ein waldreiches Jagdrevier bis auf eine sonnige Waldlichtung vor einer rustikalen **Jagdhütte mit rauchendem Steinkamin, Schindeldach und Hirschgeweih über der Tür**.
-   - **Magische Kräuter- und Geländersperre & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 6 wenige Schritte hinter der Kreuzung durch ein massives rustikales Holzgeländer mit drei Holzpfosten und dahinter dicht emporwuchernden, mannshohen Zauberkräutern mit leuchtend violetten Blütenkelchen versperrt. Ein Klick auf den rotierenden violetten Edelstein (Amethyst) am Pfadanfang lässt das Holz sanft weichen, spielt einen sphärischen Amethyst-Glockenton mit raschelndem Blätterrauschen ab und löst die Kräuterpflanzen im Lichtglanz auf. Bei Annäherung kann die Sperre per Klick oder Taste [F] untersucht werden.
+   - Weit geschwungener Waldpfad durch ein waldreiches Jagdrevier bis auf eine sonnige Waldlichtung vor einer rustikalen **Jagdhütte mit rauchendem Steinkamin, Schindeldach und Hirschgeweih über der Tür**. Alle Aufbauten (Kräutergarten-Zaun, Kamin, Hütte, Jagdhund und Pferd) besitzen feste Kollision.
+   - **Magische Kräuter- und Geländersperre & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 6 in 16,3 m Entfernung von der Kreuzung (`x: -15.9, z: 3.8`) durch ein massives rustikales Holzgeländer (zur Kreuzung hin) mit drei Holzpfosten und dahinter dicht emporwuchernden, mannshohen Zauberkräutern mit leuchtend violetten Blütenkelchen und Barriere-Kollision versperrt. Ein Klick auf den rotierenden violetten Edelstein (Amethyst) am Pfadanfang lässt das Holz sanft weichen, spielt einen sphärischen Amethyst-Glockenton mit raschelndem Blätterrauschen ab und löst die Kräuterpflanzen im Lichtglanz auf.
+   - Vor der Hütte liegt ein liebevoll angelegter, umzäunter **Kräutergarten** mit Beeten (duftender Lavendel, Königs-Salbei, die seltene, sanft schimmernde Mondwurz, Thymian und Ringelblumen) sowie einem Wassertrog.
+   - Am Gartenzaun steht **der Wilde Jäger (mit edlem Jagdpferd und aufmerksamem Jagdhund)** und diskutiert hitzig mit dem **Holzweibchen**.
+   - **Inhalt & Konflikt:** Der Jäger verfolgt das Holzweibchen und wirft ihr den Diebstahl seltener Heilkräuter (Mondwurz & Königs-Salbei) aus seinem gehegten Kräutergarten vor. Das Holzweibchen entgegnet, sie habe die Wurzeln in höchster Not genommen, um einer im Brombeerdickicht schwer verletzten jungen Hirschkuh vor dem Erfrierungs- und Wundfiebertod das Leben zu retten. Beide Seiten erzählen ihre Sicht der Dinge und eröffnen eine Debatte über Revier- und Eigentumsordnung versus Lebensrettung in der Natur.
    - Vor der Hütte liegt ein liebevoll angelegter, umzäunter **Kräutergarten** mit Beeten (duftender Lavendel, Königs-Salbei, die seltene, sanft schimmernde Mondwurz, Thymian und Ringelblumen) sowie einem Wassertrog.
    - Am Gartenzaun steht **der Wilde Jäger (mit edlem Jagdpferd und aufmerksamem Jagdhund)** und diskutiert hitzig mit dem **Holzweibchen**.
    - **Inhalt & Konflikt:** Der Jäger verfolgt das Holzweibchen und wirft ihr den Diebstahl seltener Heilkräuter (Mondwurz & Königs-Salbei) aus seinem gehegten Kräutergarten vor. Das Holzweibchen entgegnet, sie habe die Wurzeln in höchster Not genommen, um einer im Brombeerdickicht schwer verletzten jungen Hirschkuh vor dem Erfrierungs- und Wundfiebertod das Leben zu retten. Beide Seiten erzählen ihre Sicht der Dinge und eröffnen eine Debatte über Revier- und Eigentumsordnung versus Lebensrettung in der Natur.
@@ -96,7 +110,7 @@ Eine spielende Person kommt an eine Waldkreuzung mit sieben Wegen und entscheide
   - Gedrückte Maustaste ziehen = Kamera frei drehen und neigen
   - Mausrad = Kamera-Zoom
   - WASD / Pfeiltasten = Gehen relativ zur Kamerablickrichtung, Q / E = Kamera drehen, F / Enter = Gespräch mit NPC starten, Tasten 1–7 = Weg bzw. Dialogantwort direkt wählen, Esc = Dialog schließen, Taste 0 / Backspace = Schneller Rücksprung zur 7-Wegekreuzung
-  - HUD-Schnellreise: Sobald die Spielfigur auf den Wegen unterwegs ist, zeigt das HUD oben links den aktuellen Wegnamen sowie den Button „↩ Zur 7-Wegekreuzung“, über den per Mausklick oder Touch sofort zurück auf die zentrale Waldkreuzung gesprungen werden kann.
+  - HUD-Schnellreise: Das HUD zeigt dauerhaft links unten den aktuellen Standort bzw. Wegnamen sowie den Button „↩ Zur 7-Wegekreuzung“, über den per Mausklick oder Touch sofort zurück auf die zentrale Waldkreuzung gesprungen werden kann.
 - Touch: Volle Touch-Bedienung für Bewegung, Kameraschwenk und HUD-Rücksprung.
 - Barrierearme Alternativen: DOM-Schaltflächen für alle sieben Wege, Dialogantworten und Schnellreise-Rücksprung zur Kreuzung.
 

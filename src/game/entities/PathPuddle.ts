@@ -35,9 +35,7 @@ export function createPathPuddle(): PathPuddleEntity {
   );
   mudRing.position.y = 0.02;
   mudRing.receiveShadow = true;
-  mudRing.userData = { interactableType: 'puddle' };
   group.add(mudRing);
-  pickableMeshes.push(mudRing);
 
   // Glänzende, transparente Wasseroberfläche
   const waterMaterial = new THREE.MeshStandardMaterial({
@@ -56,9 +54,7 @@ export function createPathPuddle(): PathPuddleEntity {
   );
   waterSurface.position.y = 0.035;
   waterSurface.receiveShadow = true;
-  waterSurface.userData = { interactableType: 'puddle' };
   group.add(waterSurface);
-  pickableMeshes.push(waterSurface);
 
   // Kleine Uferkiesel und Schaumblasen am Rand
   const pebbleMat = new THREE.MeshStandardMaterial({
@@ -78,9 +74,7 @@ export function createPathPuddle(): PathPuddleEntity {
     pebble.position.set(p.x, 0.08, p.z);
     pebble.castShadow = true;
     pebble.receiveShadow = true;
-    pebble.userData = { interactableType: 'puddle' };
     group.add(pebble);
-    pickableMeshes.push(pebble);
   }
 
   // Sanftes, türkises Wasserlicht
