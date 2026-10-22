@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
   CAVE_ENTRANCE_POS,
   DEVIL_NPC_POS,
@@ -113,35 +112,7 @@ interface ForestTreeInstance {
   birdhouseAngle?: number;
 }
 
-interface HeroTreeConfig {
-  x: number;
-  z: number;
-  scale: number;
-  rotY: number;
-}
 
-/**
- * Testgruppe von 12 markanten Bäumen mit dem hochdetaillierten 3D-Modell `low poly tree model.glb`.
- * Platziert direkt entlang des Startpfades auf Weg 7 und um die zentrale Schutzhütte,
- * um den visuellen Eindruck und die Live-Performance im Spiel vergleichend zu evaluieren.
- */
-const HERO_TREE_CONFIGS: readonly HeroTreeConfig[] = [
-  // Gruppe 1: Entlang des Startweges (Weg 7) links und rechts vom Spieler im Startblickfeld
-  { x: -22.5, z: -14.8, scale: 5.4, rotY: 1.1 },
-  { x: -18.2, z: -11.5, scale: 5.6, rotY: 2.3 },
-  { x: -13.5, z: -8.8, scale: 5.2, rotY: 0.7 },
-  { x: -17.2, z: -19.4, scale: 5.5, rotY: 3.4 },
-  { x: -12.8, z: -15.8, scale: 5.8, rotY: 4.8 },
-  { x: -8.5, z: -12.4, scale: 5.3, rotY: 1.9 },
-
-  // Gruppe 2: Um die zentrale Schutzhütte und die Kreuzungseingänge
-  { x: -5.8, z: -5.2, scale: 5.5, rotY: 0.4 },
-  { x: -6.4, z: 2.8, scale: 5.4, rotY: 2.9 },
-  { x: 4.6, z: -5.8, scale: 5.7, rotY: 3.7 },
-  { x: 6.8, z: 2.5, scale: 5.3, rotY: 5.2 },
-  { x: 5.4, z: 6.8, scale: 5.6, rotY: 1.6 },
-  { x: -4.8, z: 6.2, scale: 5.2, rotY: 4.1 },
-];
 
 /**
  * Three.js-Szene der Waldkreuzung mit 7 Wegen,
@@ -586,7 +557,6 @@ export class CrossroadsScene {
     this.buildCurvedPath6Trees();
     this.buildCurvedPath7Trees();
     this.buildInstancedForest();
-    this.buildHeroGLBTrees();
     this.buildPath7Wildflowers();
     this.buildForestMushrooms();
     this.buildHellChasmBackdropRocks();
@@ -864,6 +834,7 @@ export class CrossroadsScene {
           bumpMap: foliageTex.bumpMap ?? undefined,
           bumpScale: 0.08,
           roughness: 0.92,
+          vertexColors: true,
         });
         this.burnedCrownLightMat = new THREE.MeshStandardMaterial({
           color: 0x382e26,
@@ -871,6 +842,7 @@ export class CrossroadsScene {
           bumpMap: foliageTex.bumpMap ?? undefined,
           bumpScale: 0.08,
           roughness: 0.92,
+          vertexColors: true,
         });
       }
       return { dark: this.burnedCrownDarkMat, light: this.burnedCrownLightMat };
@@ -889,6 +861,7 @@ export class CrossroadsScene {
         bumpMap: foliageTex.bumpMap ?? undefined,
         bumpScale: 0.08,
         roughness: 0.74,
+        vertexColors: true,
       });
       this.defaultCrownLightMat = new THREE.MeshStandardMaterial({
         color: 0xbfe4c4,
@@ -896,18 +869,10 @@ export class CrossroadsScene {
         bumpMap: foliageTex.bumpMap ?? undefined,
         bumpScale: 0.08,
         roughness: 0.68,
+        vertexColors: true,
       });
     }
     return { dark: this.defaultCrownDarkMat, light: this.defaultCrownLightMat };
-  }
-
-  private isNearHeroTree(x: number, z: number, minDist = 2.5): boolean {
-    for (const h of HERO_TREE_CONFIGS) {
-      if (Math.hypot(x - h.x, z - h.z) < minDist) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private addTreeToForest(
@@ -918,9 +883,6 @@ export class CrossroadsScene {
     isBurned = false,
     birdhouseAngle?: number
   ): void {
-    if (this.isNearHeroTree(x, z, 2.5)) {
-      return; // Platz für das detailreiche GLB-Hero-Baummodell freihalten
-    }
     this.treeInstances.push({ x, z, scale, useDarkCrown, isBurned, birdhouseAngle });
   }
 
@@ -934,42 +896,87 @@ export class CrossroadsScene {
     const { dark: normalCrownDarkMat, light: normalCrownLightMat } = this.getCrownMaterials(false);
     const { dark: burnedCrownDarkMat, light: burnedCrownLightMat } = this.getCrownMaterials(true);
 
-    // 1. Detaillierterer Nadelbaum-Stamm (10 Segmente, leicht konischer Wurzelansatz, reicht 0.45m tief in den Boden)
-    const trunkGeo = new THREE.CylinderGeometry(0.20, 0.38, 2.5, 10);
-    trunkGeo.translate(0, 0.8, 0);
+    // 1. Organischer Nadelbaum-Stamm mit 4 kräftigen Wurzelanläufen (12 Segmente, reicht 0.45m tief in den Boden)
+    const trunkHeight = 2.6;
+    const trunkGeo = new THREE.CylinderGeometry(0.18, 0.40, trunkHeight, 12, 3);
+    const trunkPos = trunkGeo.attributes.position;
+    for (let i = 0; i < trunkPos.count; i++) {
+      const x = trunkPos.getX(i);
+      const y = trunkPos.getY(i);
+      const z = trunkPos.getZ(i);
+      if (y < -trunkHeight * 0.2) {
+        const angle = Math.atan2(z, x);
+        const rootWave = Math.pow(Math.cos(angle * 2), 2);
+        const depthFactor = ((-y) - trunkHeight * 0.2) / (trunkHeight * 0.3);
+        const flare = 1.0 + rootWave * 0.48 * Math.min(1.0, Math.max(0, depthFactor));
+        trunkPos.setXYZ(i, x * flare, y, z * flare);
+      }
+    }
+    trunkGeo.computeVertexNormals();
+    trunkGeo.translate(0, 0.85, 0);
 
-    // 2. Mehrstufige Krone mit 5 gestaffelten, versetzt verdrehten Nadelast-Etagen
-    // 13 Segmente pro Etage und versetzte Drehwinkel brechen das Licht lebendig wie echte Tannenzweige
-    const crownLayers: THREE.BufferGeometry[] = [];
+    // 2. Mehrstufige Krone mit 5 gestaffelten, gezackten Nadelast-Etagen, organischem Überhang und Tiefenschatten
+    const createBranchedTier = (
+      radius: number,
+      height: number,
+      numBranches: number,
+      branchDepth: number,
+      rotY: number,
+      yCenter: number
+    ): THREE.BufferGeometry => {
+      const geo = new THREE.ConeGeometry(radius, height, numBranches * 2, 2, false);
+      const pos = geo.attributes.position;
+      const colors = new Float32Array(pos.count * 3);
 
-    // Etage 1 (breiteste Basissäume): Radius 1.65, Höhe 1.85
-    const cone1 = new THREE.ConeGeometry(1.65, 1.85, 13);
-    cone1.translate(0, 2.25, 0);
-    crownLayers.push(cone1);
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const y = pos.getY(i);
+        const z = pos.getZ(i);
 
-    // Etage 2: Radius 1.40, Höhe 1.70, leicht gedreht
-    const cone2 = new THREE.ConeGeometry(1.40, 1.70, 13);
-    cone2.rotateY(0.25);
-    cone2.translate(0, 2.95, 0);
-    crownLayers.push(cone2);
+        let shade = 1.0;
+        // Basis / unterer Astkranz: Astspitzen springen hervor und neigen sich leicht nach unten (Tannen-Überhang)
+        if (y < -height * 0.35) {
+          const angle = Math.atan2(z, x);
+          const wave = Math.sin(angle * numBranches);
+          const rFactor = 1.0 + wave * branchDepth;
+          const yDrop = wave > 0 ? wave * 0.14 * height : wave * 0.05 * height;
+          pos.setXYZ(i, x * rFactor, y - yDrop, z * rFactor);
+          // Plastischer Tiefenschatten: Astunterseite schattiert (Ambient Occlusion)
+          shade = wave > 0 ? 0.82 : 0.62;
+        } else if (y < height * 0.1 && y > -height * 0.1) {
+          // Mittlerer Ring: sanfter konkaver Schwung der Nadelzweige
+          const angle = Math.atan2(z, x);
+          const wave = Math.sin(angle * numBranches);
+          const rFactor = 1.0 + Math.max(0, wave) * (branchDepth * 0.45);
+          pos.setXYZ(i, x * rFactor, y, z * rFactor);
+          shade = 0.92;
+        } else {
+          // Sonnenbeschienene Ast-Spitze
+          shade = 1.08;
+        }
 
-    // Etage 3: Radius 1.15, Höhe 1.55, gegenläufig gedreht
-    const cone3 = new THREE.ConeGeometry(1.15, 1.55, 13);
-    cone3.rotateY(-0.22);
-    cone3.translate(0, 3.65, 0);
-    crownLayers.push(cone3);
+        colors[i * 3] = shade;
+        colors[i * 3 + 1] = shade;
+        colors[i * 3 + 2] = shade;
+      }
 
-    // Etage 4: Radius 0.88, Höhe 1.40
-    const cone4 = new THREE.ConeGeometry(0.88, 1.40, 13);
-    cone4.rotateY(0.38);
-    cone4.translate(0, 4.30, 0);
-    crownLayers.push(cone4);
+      geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      geo.computeVertexNormals();
 
-    // Etage 5 (Wipfel / Baumspitze): Schlanker Spitzenkegel
-    const cone5 = new THREE.ConeGeometry(0.55, 1.30, 11);
-    cone5.rotateY(-0.15);
-    cone5.translate(0, 4.95, 0);
-    crownLayers.push(cone5);
+      if (rotY !== 0) {
+        geo.rotateY(rotY);
+      }
+      geo.translate(0, yCenter, 0);
+      return geo;
+    };
+
+    const crownLayers: THREE.BufferGeometry[] = [
+      createBranchedTier(1.80, 1.95, 8, 0.32, 0.0, 2.25),
+      createBranchedTier(1.55, 1.80, 7, 0.30, 0.28, 3.00),
+      createBranchedTier(1.25, 1.65, 6, 0.28, -0.32, 3.75),
+      createBranchedTier(0.95, 1.50, 5, 0.26, 0.42, 4.45),
+      createBranchedTier(0.58, 1.40, 5, 0.20, -0.18, 5.15),
+    ];
 
     const mergedCrownGeo = BufferGeometryUtils.mergeGeometries(crownLayers);
     for (const geo of crownLayers) {
@@ -1104,63 +1111,6 @@ export class CrossroadsScene {
       const mergedBirdhouses = buildMergedBirdhouses(birdhouseInstances);
       this.scene.add(mergedBirdhouses);
     }
-  }
-
-  /**
-   * Lädt das 3D-Modell `low poly tree model.glb` und instanziiert eine Testgruppe von
-   * 12 markanten Bäumen direkt entlang von Weg 7 und um die zentrale Schutzhütte,
-   * um den visuellen Eindruck und die Live-Performance im Spiel vergleichend zu evaluieren.
-   */
-  private buildHeroGLBTrees(): void {
-    const loader = new GLTFLoader();
-    loader.load(
-      '/assets/models/low poly tree model.glb',
-      (gltf) => {
-        let sourceMesh: THREE.Mesh | null = null;
-        gltf.scene.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh && !sourceMesh) {
-            sourceMesh = child as THREE.Mesh;
-          }
-        });
-
-        if (!sourceMesh) {
-          console.warn('Kein Mesh in low poly tree model.glb gefunden.');
-          return;
-        }
-
-        const geo = (sourceMesh as THREE.Mesh).geometry.clone();
-        // Modell leicht im Boden versenken (-0.03 bei Einheitsgröße), damit die Wurzelbasis fest im Erdreich sitzt
-        geo.translate(0, -0.03, 0);
-
-        const mat = (sourceMesh as THREE.Mesh).material as THREE.MeshStandardMaterial;
-        if (mat) {
-          mat.roughness = 0.82;
-        }
-
-        const count = HERO_TREE_CONFIGS.length;
-        const instancedMesh = new THREE.InstancedMesh(geo, mat, count);
-        instancedMesh.name = 'InstancedHeroGLBTrees';
-        instancedMesh.castShadow = true;
-        instancedMesh.receiveShadow = true;
-
-        const dummy = new THREE.Object3D();
-        HERO_TREE_CONFIGS.forEach((t, index) => {
-          const gy = getTerrainHeight(t.x, t.z);
-          dummy.position.set(t.x, gy, t.z);
-          dummy.scale.set(t.scale, t.scale, t.scale);
-          dummy.rotation.y = t.rotY;
-          dummy.updateMatrix();
-          instancedMesh.setMatrixAt(index, dummy.matrix);
-        });
-
-        instancedMesh.instanceMatrix.needsUpdate = true;
-        this.scene.add(instancedMesh);
-      },
-      undefined,
-      (err) => {
-        console.warn('Hero-Bäume konnten nicht geladen werden:', err);
-      }
-    );
   }
 
   private isNearCurvedCorridor(
