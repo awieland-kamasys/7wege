@@ -217,11 +217,13 @@ export const PATH_4_END_CLEARING = {
 
 /**
  * Zentrum und Ausrichtung des Holzfällerlagers auf der Waldlichtung am Ende von Weg 4.
+ * rotationY = Math.PI dreht das Lagerfeuer-Camp um 180 Grad in Richtung des ankommenden Pfades.
  */
 export const LUMBER_CAMP_POS = {
   x: 16.5,
   z: 43.8,
   radius: 7.2,
+  rotationY: Math.PI,
 } as const;
 
 /**

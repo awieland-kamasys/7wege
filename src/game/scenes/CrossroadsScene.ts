@@ -207,17 +207,17 @@ export class CrossroadsScene {
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.scene = new THREE.Scene();
-    // Echter Waldnebel: im Nahbereich (0-16m) vollkommen klar und farbecht, ab 16m einsetzend, ab 38m im Nebel verborgen
+    // Dichter Waldnebel: im Nahbereich um die Spielfigur klar (0-10m), ab 10m einsetzend, ab 25m im dichten Nebel verborgen
     this.scene.background = this.currentFogColor;
-    this.scene.fog = new THREE.Fog(this.defaultFogColor.getHex(), 16.0, 38.0);
+    this.scene.fog = new THREE.Fog(this.defaultFogColor.getHex(), 10.0, 25.0);
 
-    // Far-Plane auf 55m optimiert: dichter Nebel verdeckt ohnehin alles ab 38m,
+    // Far-Plane auf 38m optimiert: dichter Nebel verdeckt ohnehin alles ab 25m,
     // dadurch werden weiter entfernte Objekte automatisch per Frustum-Culling verworfen.
     this.camera = new THREE.PerspectiveCamera(
       55,
       window.innerWidth / window.innerHeight,
       0.1,
-      55
+      38
     );
 
     this.renderer = new THREE.WebGLRenderer({
@@ -377,6 +377,7 @@ export class CrossroadsScene {
       getTerrainHeight(LUMBER_CAMP_POS.x, LUMBER_CAMP_POS.z),
       LUMBER_CAMP_POS.z
     );
+    this.lumberCamp.group.rotation.y = LUMBER_CAMP_POS.rotationY;
     this.lumberCamp.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
         this.pickableObjects.push(child);
@@ -2474,8 +2475,8 @@ export class CrossroadsScene {
     this.scene.background = this.currentFogColor;
     if (this.scene.fog) {
       (this.scene.fog as THREE.Fog).color.copy(this.currentFogColor);
-      const targetFar = THREE.MathUtils.lerp(38.0, 32.0, hellFogFactor);
-      const targetNear = THREE.MathUtils.lerp(16.0, 8.5, hellFogFactor);
+      const targetFar = THREE.MathUtils.lerp(25.0, 19.0, hellFogFactor);
+      const targetNear = THREE.MathUtils.lerp(10.0, 6.5, hellFogFactor);
       (this.scene.fog as THREE.Fog).far = THREE.MathUtils.lerp((this.scene.fog as THREE.Fog).far, targetFar, 0.05);
       (this.scene.fog as THREE.Fog).near = THREE.MathUtils.lerp((this.scene.fog as THREE.Fog).near, targetNear, 0.05);
     }
