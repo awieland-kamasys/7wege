@@ -102,6 +102,7 @@ export type ScenePickResult =
   | { kind: 'path'; pathId: number; point: Vector2D }
   | { kind: 'hut'; point: Vector2D }
   | { kind: 'signpost'; point: Vector2D }
+  | { kind: 'signpost_cap'; point: Vector2D }
   | { kind: 'ground'; point: Vector2D };
 
 interface ForestTreeInstance {
@@ -2393,6 +2394,31 @@ export class CrossroadsScene {
     return this.path6Herbs.isRemoved();
   }
 
+  public setSignpostCapHovered(hovered: boolean): void {
+    this.signpost.setCapHovered(hovered);
+  }
+
+  public pulseSignpostCap(): void {
+    this.signpost.pulseCap();
+  }
+
+  public pulseAllGemstones(): void {
+    for (let id = 1; id <= 6; id++) {
+      setTimeout(() => {
+        this.pulseGemstone(id);
+      }, (id - 1) * 75);
+    }
+  }
+
+  public removeAllBarriersVisual(): void {
+    if (!this.path1Boulder.isRemoved()) this.removePath1BoulderVisual();
+    if (!this.path2Puddle.isRemoved()) this.removePath2PuddleVisual();
+    if (!this.path3Stream.isRemoved()) this.removePath3StreamVisual();
+    if (!this.path4Log.isRemoved()) this.removePath4LogVisual();
+    if (!this.path5Fire.isRemoved()) this.removePath5FireVisual();
+    if (!this.path6Herbs.isRemoved()) this.removePath6HerbsVisual();
+  }
+
   private getCanvasRect(): DOMRect {
     if (!this.cachedCanvasRect) {
       this.cachedCanvasRect = this.canvas.getBoundingClientRect();
@@ -2486,6 +2512,9 @@ export class CrossroadsScene {
       }
       if (data.interactableType === 'signpost') {
         return { kind: 'signpost', point };
+      }
+      if (data.interactableType === 'signpost_cap') {
+        return { kind: 'signpost_cap', point };
       }
       if (data.interactableType === 'path' && typeof data.pathId === 'number') {
         return { kind: 'path', pathId: data.pathId, point };
@@ -2636,6 +2665,7 @@ export class CrossroadsScene {
 
     // Wegweiser und ausgewählten/gehoverten Pfad optisch hervorheben
     this.signpost.highlightSign(selectedPathId, this.hoveredPathId);
+    this.signpost.update(dtSeconds);
 
     // Dynamisches Glühen der Magma-Adern im Basaltkessel des Höllenschlunds
     const groundPulse = 0.88 + 0.22 * Math.sin(this.elapsedSeconds * 2.8) + 0.1 * Math.cos(this.elapsedSeconds * 4.6);

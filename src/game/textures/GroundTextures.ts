@@ -35,6 +35,7 @@ function cloneLava(bundle: LavaRockBundle): LavaRockBundle {
 const cachedGrassPresets = new Map<TerrainPresetKey, TexturePair>();
 const cachedPathPresets = new Map<TerrainPresetKey, TexturePair>();
 let cachedBarkTexture: TexturePair | null = null;
+let cachedCampBarkTexture: TexturePair | null = null;
 let cachedPineFoliageTexture: TexturePair | null = null;
 let cachedStoneTexture: TexturePair | null = null;
 let cachedVeinedLavaRockTexture: LavaRockBundle | null = null;
@@ -611,6 +612,181 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
 
   cachedBarkTexture = { map: texture, bumpMap: bumpTexture };
   return clonePair(cachedBarkTexture);
+}
+
+/**
+ * Erzeugt eine warme, hellbraune Baumrindentextur, passend zu den Stämmen im Holzfällercamp:
+ * - Sonniges, warmes Hellbraun/Honigbraun (#a67b44 bis #c49658) passend zum 3D-Lagerfeuermodell
+ * - Feine vertikale Faserstrukturen und organische Rindenfurchen mit lebendigen Lichtakzenten
+ * - Plastische Bump-Map für spürbare Tiefenwirkung und Haptik
+ */
+export function createCampBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedCampBarkTexture) {
+    return clonePair(cachedCampBarkTexture);
+  }
+  if (typeof document === 'undefined') {
+    return { map: null, bumpMap: null };
+  }
+
+  const width = 512;
+  const height = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return { map: null, bumpMap: null };
+
+  const bumpCanvas = document.createElement('canvas');
+  bumpCanvas.width = width;
+  bumpCanvas.height = height;
+  const bumpCtx = bumpCanvas.getContext('2d');
+
+  // 1. Grundfläche: Warmes, sonniges Hellbraun (passend zu den Baumstämmen im Camp)
+  ctx.fillStyle = '#a67b44';
+  ctx.fillRect(0, 0, width, height);
+
+  if (bumpCtx) {
+    bumpCtx.fillStyle = '#808080';
+    bumpCtx.fillRect(0, 0, width, height);
+  }
+
+  const rng = (seed: number) => {
+    let s = seed % 2147483647;
+    if (s <= 0) s += 2147483646;
+    return () => {
+      s = (s * 16807) % 2147483647;
+      return (s - 1) / 2147483646;
+    };
+  };
+  const random = rng(214);
+
+  // Sanfte Helligkeitswolken in warmen Honig- und Hellbrauntönen
+  for (let i = 0; i < 50; i++) {
+    const cx = random() * width;
+    const cy = random() * height;
+    const rad = 25 + random() * 60;
+    const isLighter = random() > 0.35;
+    ctx.fillStyle = isLighter ? 'rgba(215, 172, 115, 0.35)' : 'rgba(138, 98, 52, 0.28)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 2. Feine vertikale Holzfasern (schmale Stränge in warmen Hellbrauntönen)
+  for (let x = 0; x < width; x += 1.6 + random() * 2.4) {
+    const strandWidth = 1.0 + random() * 2.2;
+    const isDark = random() > 0.55;
+    const alpha = isDark ? 0.12 + random() * 0.18 : 0.14 + random() * 0.22;
+    ctx.fillStyle = isDark
+      ? `rgba(115, 78, 38, ${alpha})`
+      : `rgba(224, 185, 132, ${alpha})`;
+
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    let curX = x;
+    for (let y = 0; y <= height; y += 16) {
+      curX += (random() - 0.5) * 1.8;
+      ctx.lineTo(curX, y);
+    }
+    ctx.lineWidth = strandWidth;
+    ctx.strokeStyle = ctx.fillStyle;
+    ctx.stroke();
+
+    if (bumpCtx && random() > 0.3) {
+      bumpCtx.strokeStyle = isDark ? '#505050' : '#b2b2b2';
+      bumpCtx.lineWidth = strandWidth;
+      bumpCtx.beginPath();
+      bumpCtx.moveTo(x, 0);
+      let bX = x;
+      for (let y = 0; y <= height; y += 16) {
+        bX += (random() - 0.5) * 1.8;
+        bumpCtx.lineTo(bX, y);
+      }
+      bumpCtx.stroke();
+    }
+  }
+
+  // 3. Ausgeprägte Rindenfurchen (plastische Spalten)
+  const fissureCount = 26;
+  for (let f = 0; f < fissureCount; f++) {
+    const fx = random() * width;
+    const fWidth = 2.0 + random() * 3.5;
+    const fLen = 45 + random() * 110;
+    const startY = random() * (height - fLen);
+
+    ctx.strokeStyle = 'rgba(78, 48, 22, 0.38)';
+    ctx.lineWidth = fWidth;
+    ctx.beginPath();
+    ctx.moveTo(fx, startY);
+    let curFx = fx;
+    for (let y = startY; y < startY + fLen; y += 12) {
+      curFx += (random() - 0.5) * 2.2;
+      ctx.lineTo(curFx, y);
+    }
+    ctx.stroke();
+
+    // Helle Lichtkante an der Rindenkante
+    ctx.strokeStyle = 'rgba(238, 202, 150, 0.28)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(fx - fWidth * 0.6, startY);
+    let lkX = fx - fWidth * 0.6;
+    for (let y = startY; y < startY + fLen; y += 12) {
+      lkX += (random() - 0.5) * 2.0;
+      ctx.lineTo(lkX, y);
+    }
+    ctx.stroke();
+
+    if (bumpCtx) {
+      bumpCtx.strokeStyle = '#383838';
+      bumpCtx.lineWidth = fWidth;
+      bumpCtx.beginPath();
+      bumpCtx.moveTo(fx, startY);
+      let bFx = fx;
+      for (let y = startY; y < startY + fLen; y += 12) {
+        bFx += (random() - 0.5) * 2.2;
+        bumpCtx.lineTo(bFx, y);
+      }
+      bumpCtx.stroke();
+
+      bumpCtx.strokeStyle = '#c4c4c4';
+      bumpCtx.lineWidth = 1.2;
+      bumpCtx.beginPath();
+      bumpCtx.moveTo(fx - fWidth * 0.6, startY);
+      let bLkX = fx - fWidth * 0.6;
+      for (let y = startY; y < startY + fLen; y += 12) {
+        bLkX += (random() - 0.5) * 2.0;
+        bumpCtx.lineTo(bLkX, y);
+      }
+      bumpCtx.stroke();
+    }
+  }
+
+  // 4. Mikro-Körnung für natürliche Haptik
+  for (let i = 0; i < 2200; i++) {
+    const nx = random() * width;
+    const ny = random() * height;
+    const isLight = random() > 0.5;
+    ctx.fillStyle = isLight ? 'rgba(235, 198, 148, 0.22)' : 'rgba(88, 56, 26, 0.22)';
+    ctx.fillRect(nx, ny, 1.0, 1.0);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+
+  let bumpTexture: THREE.CanvasTexture | null = null;
+  if (bumpCanvas) {
+    bumpTexture = new THREE.CanvasTexture(bumpCanvas);
+    bumpTexture.wrapS = THREE.RepeatWrapping;
+    bumpTexture.wrapT = THREE.RepeatWrapping;
+    bumpTexture.needsUpdate = true;
+  }
+
+  cachedCampBarkTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedCampBarkTexture);
 }
 
 /**

@@ -462,6 +462,53 @@ export class CrossroadsState {
     return dist <= this.path6HerbsRadius + 0.95;
   }
 
+  /**
+   * Entfernt alle 6 Wegsperren gleichzeitig (Felsbrocken, Pfütze, Gebirgsbach, Baumstamm, Feuer, Kräuter).
+   * Gibt true zurück, wenn mindestens eine Wegsperre zuvor noch aktiv war.
+   */
+  public removeAllPathBarriers(): boolean {
+    let hadBlocked = false;
+    if (this.path1BoulderBlocked) {
+      this.path1BoulderBlocked = false;
+      hadBlocked = true;
+    }
+    if (this.path2PuddleBlocked) {
+      this.path2PuddleBlocked = false;
+      hadBlocked = true;
+    }
+    if (this.path3StreamBlocked) {
+      this.path3StreamBlocked = false;
+      hadBlocked = true;
+    }
+    if (this.path4LogBlocked) {
+      this.path4LogBlocked = false;
+      hadBlocked = true;
+    }
+    if (this.path5FireBlocked) {
+      this.path5FireBlocked = false;
+      hadBlocked = true;
+    }
+    if (this.path6HerbsBlocked) {
+      this.path6HerbsBlocked = false;
+      hadBlocked = true;
+    }
+    return hadBlocked;
+  }
+
+  /**
+   * Prüft, ob mindestens eine der 6 Wegsperren aktiv ist.
+   */
+  public hasAnyBlockedPath(): boolean {
+    return (
+      this.path1BoulderBlocked ||
+      this.path2PuddleBlocked ||
+      this.path3StreamBlocked ||
+      this.path4LogBlocked ||
+      this.path5FireBlocked ||
+      this.path6HerbsBlocked
+    );
+  }
+
   public getChestPosition(): Readonly<Vector2D> {
 
     return { ...this.chestPos };

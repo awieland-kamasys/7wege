@@ -549,6 +549,7 @@ export class GameApp {
       this.scene.setFireHovered(false);
       this.scene.setHerbsHovered(false);
       this.scene.setChestHovered(false);
+      this.scene.setSignpostCapHovered(false);
       this.canvas.style.cursor = 'grab';
       return;
     }
@@ -572,6 +573,7 @@ export class GameApp {
     this.scene.setFireHovered(hit.kind === 'fire');
     this.scene.setHerbsHovered(hit.kind === 'herbs');
     this.scene.setChestHovered(hit.kind === 'chest');
+    this.scene.setSignpostCapHovered(hit.kind === 'signpost_cap');
 
     this.canvas.style.cursor = hit.kind === 'ground' ? 'default' : 'pointer';
   };
@@ -741,6 +743,23 @@ export class GameApp {
 
       if (hit.kind === 'chest') {
         this.initiateToggleChest();
+        return;
+      }
+
+      if (hit.kind === 'signpost_cap') {
+        // Klick auf die Spitze des Wegweisers löst alle Wegsperren auf!
+        const hadBarriers = this.state.removeAllPathBarriers();
+        this.scene.pulseSignpostCap();
+        this.scene.removeAllBarriersVisual();
+        this.scene.pulseAllGemstones();
+        this.sound.playAllBarriersClearSound();
+        this.clearPendingActions();
+        this.closeDialogueAndSpeech();
+        if (hadBarriers) {
+          this.hud.showToast('Ein uralter Zauber durchströmt den Wegweiser – alle Wegsperren lösen sich auf!', 3500);
+        } else {
+          this.hud.showToast('Die Spitze des Wegweisers leuchtet auf – alle Wege sind bereits frei.', 2800);
+        }
         return;
       }
 

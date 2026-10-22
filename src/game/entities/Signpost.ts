@@ -5,6 +5,9 @@ import { createStoneTexture, createWoodGrainTexture } from '../textures/GroundTe
 export interface SignpostEntity {
   group: THREE.Group;
   highlightSign: (pathId: number | null, hoveredPathId?: number | null) => void;
+  setCapHovered: (hovered: boolean) => void;
+  pulseCap: () => void;
+  update: (dtSeconds: number) => void;
 }
 
 /**
@@ -64,11 +67,64 @@ export function createSignpost(): SignpostEntity {
   post.userData = { interactableType: 'signpost' };
   group.add(post);
 
-  // Kleine Spitze oben auf dem Pfosten
-  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.3, 12), postMaterial);
-  cap.position.y = postHeight + 0.35;
-  cap.userData = { interactableType: 'signpost' };
+  // Spitze oben auf dem Pfosten (interaktiver magischer Auslöser für alle Wegsperren)
+  const capMaterial = new THREE.MeshStandardMaterial({
+    color: 0x8a5a36,
+    map: woodGrainTex.map ?? undefined,
+    bumpMap: woodGrainTex.bumpMap ?? undefined,
+    bumpScale: 0.08,
+    roughness: 0.65,
+    metalness: 0.12,
+    emissive: 0x000000,
+    emissiveIntensity: 0.0,
+  });
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.32, 12), capMaterial);
+  cap.position.y = postHeight + 0.36;
+  cap.castShadow = true;
+  cap.userData = { interactableType: 'signpost_cap' };
   group.add(cap);
+
+  // Zartes magisches Glanzlicht über der Spitze beim Pulsieren
+  const capGlowLight = new THREE.PointLight(0xffdf77, 0, 4.5);
+  capGlowLight.position.set(0, postHeight + 0.45, 0);
+  group.add(capGlowLight);
+
+  let isCapHovered = false;
+  let pulseTimer = 0;
+  const pulseDuration = 0.85;
+
+  const setCapHovered = (hovered: boolean) => {
+    isCapHovered = hovered;
+  };
+
+  const pulseCap = () => {
+    pulseTimer = pulseDuration;
+  };
+
+  const update = (dtSeconds: number) => {
+    if (pulseTimer > 0) {
+      pulseTimer = Math.max(0, pulseTimer - dtSeconds);
+      const progress = pulseTimer / pulseDuration; // 1.0 -> 0.0
+      // Strahlender, goldener Sonnenlicht-Impuls
+      capMaterial.emissive.setHex(0xffcb52);
+      capMaterial.emissiveIntensity = 0.4 + progress * 2.4;
+      capGlowLight.intensity = progress * 3.2;
+
+      const bounce = 1.0 + Math.sin(progress * Math.PI) * 0.18;
+      cap.scale.set(bounce, bounce, bounce);
+    } else {
+      cap.scale.set(1, 1, 1);
+      capGlowLight.intensity = 0;
+
+      if (isCapHovered) {
+        capMaterial.emissive.setHex(0xe8aa3a);
+        capMaterial.emissiveIntensity = 0.75;
+      } else {
+        capMaterial.emissive.setHex(0x000000);
+        capMaterial.emissiveIntensity = 0.0;
+      }
+    }
+  };
 
   const signMaterials = new Map<number, THREE.MeshStandardMaterial>();
 
@@ -116,5 +172,5 @@ export function createSignpost(): SignpostEntity {
     });
   };
 
-  return { group, highlightSign };
+  return { group, highlightSign, setCapHovered, pulseCap, update };
 }

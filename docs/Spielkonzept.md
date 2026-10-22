@@ -111,6 +111,7 @@ Alle temporären Wegsperren der Pfade 1 bis 6 sind auf **exakt die gleiche Dista
 
 - Tastatur/Maus:
   - Linksklick auf Kreuzung, Wege, Schilder, Wegweiser, Schutzhütte oder NPC = Hingehen / Sprechen / Auswählen (Click-to-Move mit Hindernisumgehung)
+  - Linksklick auf die Spitze des Wegweisers = Zauber auslösen: Alle sechs aktiven Wegsperren lösen sich gleichzeitig mit strahlendem Lichtimpuls und feierlichem Glockenspiel-Arpeggio auf!
   - Gedrückte Maustaste ziehen = Kamera frei drehen und neigen (stufenlos vom waagerechten Blick nach vorn bis zu 90° Draufsicht)
   - Mausrad = Kamera-Zoom
   - WASD / Pfeiltasten = Gehen relativ zur Kamerablickrichtung, Q / E = Kamera drehen, R / F = Kamera neigen (Blick nach vorn / nach oben), Enter = Gespräch mit NPC starten, Tasten 1–7 = Weg bzw. Dialogantwort direkt wählen, Esc = Dialog schließen, Taste 0 / Backspace = Schneller Rücksprung zur 7-Wegekreuzung
@@ -122,7 +123,7 @@ Alle temporären Wegsperren der Pfade 1 bis 6 sind auf **exakt die gleiche Dista
 
 - Referenzen: Märchenhafter, uriger Mittelgebirgs- und Zauberwald (Thüringer Wald / Schwarzwald).
 - Farbwelt: Tannengrün, warmes Erdbraun, weicher hellgrauer Nebel, herbstliche Farbakzente.
-- Wald-Flora & Details: Unter den Bäumen und an den Waldrändern sprießen idyllische Pilzgruppen auf kleinen Moospolstern (rote Fliegenpilze mit weißen Tupfen, kastanienbraune Steinpilze mit dickem Stiel und goldgelbe Pfifferlinge). Alle Baumstämme im Wald und entlang der Pfade besitzen eine detailreiche, organische Rindentextur und alle Baumkronen sind mit natürlicher Nadelbaum-Textur (feine Nadelbüschel, Schattierungen und Relief-Bump-Map) versehen. Die Sockel der 7 Edelsteine sowie das Fundament des zentralen Wegweisers tragen eine antike, plastisch reliefierte Bruchstein- und Schiefertextur. Der Stamm des Wegweisers und die Torflügel des Steintores sind mit edler Holzmaserung texturiert. Die Mauern und Pfeiler des Steintores weisen eine breite Großquader-Mauerstruktur auf und der runde Vorplatz davor ist mit warmem Klinker-/Backsteinpflaster gestaltet.
+- Wald-Flora & Details: Unter den Bäumen und an den Waldrändern sprießen idyllische Pilzgruppen auf kleinen Moospolstern (rote Fliegenpilze mit weißen Tupfen, kastanienbraune Steinpilze mit dickem Stiel und goldgelbe Pfifferlinge). Alle Baumstämme im Wald und entlang der Pfade besitzen eine detailreiche, organische Rindentextur und alle Baumkronen sind mit natürlicher Nadelbaum-Textur (feine Nadelbüschel, Schattierungen und Relief-Bump-Map) versehen. Die Baumstümpfe rund um das Holzfällercamp (Weg 4) tragen eine warme hellbraune Rindentextur, die harmonisch auf die Stämme und Scheite der Lagerfeuer-Szene abgestimmt ist. Die Sockel der 7 Edelsteine sowie das Fundament des zentralen Wegweisers tragen eine antike, plastisch reliefierte Bruchstein- und Schiefertextur. Der Stamm des Wegweisers und die Torflügel des Steintores sind mit edler Holzmaserung texturiert. Die Mauern und Pfeiler des Steintores weisen eine breite Großquader-Mauerstruktur auf und der runde Vorplatz davor ist mit warmem Klinker-/Backsteinpflaster gestaltet.
 - Kamera/Perspektive: Dynamische Third-Person-Verfolgerkamera mit vollem Neigungsbereich von 0° (waagerechter Blick nach vorn in Augenhöhe) bis 90° (Vogelperspektive senkrecht von oben) und 360°-Orbit-Drehung.
 - Audio:
 

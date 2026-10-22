@@ -733,6 +733,75 @@ export class SoundService {
     leafSource.stop(now + 0.9);
   }
 
+  /**
+   * Spielt einen allumfassenden, erhabenen Zauberklang ab, wenn auf die Spitze
+   * des Wegweisers geklickt wird und sich alle 6 Wegsperren gleichzeitig auflösen:
+   * Aufsteigendes kristallines Celesta-Arpeggio, warmer Äther-Chor und ein sanfter Magiewind.
+   */
+  public playAllBarriersClearSound(): void {
+    const ctx = this.getContext();
+    if (!ctx) {
+      return;
+    }
+
+    const now = ctx.currentTime;
+
+    // 1. Aufsteigendes Celesta-/Glockenspiel-Arpeggio (Weite Quinten & Terzen)
+    const notes = [
+      { freq: 440.0, delay: 0.0, dur: 0.85, gain: 0.08 },    // A4
+      { freq: 554.37, delay: 0.07, dur: 0.85, gain: 0.085 }, // C#5
+      { freq: 659.25, delay: 0.14, dur: 0.9, gain: 0.09 },   // E5
+      { freq: 880.0, delay: 0.21, dur: 1.0, gain: 0.095 },   // A5
+      { freq: 1108.73, delay: 0.28, dur: 1.1, gain: 0.09 },  // C#6
+      { freq: 1318.51, delay: 0.35, dur: 1.25, gain: 0.085 },// E6
+      { freq: 1760.0, delay: 0.44, dur: 1.45, gain: 0.07 },  // A6
+    ];
+
+    notes.forEach((n) => {
+      this.scheduleShimmerNote(ctx, n.freq, now + n.delay, n.dur, n.gain);
+    });
+
+    // 2. Warmer Resonanz-Akkord im Hintergrund (Klangkissen)
+    const chordPadFreqs = [220.0, 329.63, 440.0, 554.37];
+    chordPadFreqs.forEach((freq) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.045, now + 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 1.85);
+    });
+
+    // 3. Seidiger Magie-Wind (Bandpass-Rauschen mit Frequenzanstieg)
+    const noiseSource = ctx.createBufferSource();
+    noiseSource.buffer = this.getNoiseBuffer(ctx);
+
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(600, now);
+    bp.frequency.exponentialRampToValueAtTime(2800, now + 0.6);
+    bp.frequency.exponentialRampToValueAtTime(900, now + 1.4);
+    bp.Q.setValueAtTime(2.0, now);
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.0001, now);
+    noiseGain.gain.linearRampToValueAtTime(0.18, now + 0.25);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.5);
+
+    noiseSource.connect(bp);
+    bp.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noiseSource.start(now);
+    noiseSource.stop(now + 1.55);
+  }
+
 
   private scheduleShimmerNote(
     ctx: AudioContext,

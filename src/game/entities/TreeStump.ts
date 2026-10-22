@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { createBarkTexture, createTreeRingsTexture } from '../textures/GroundTextures';
+import { createCampBarkTexture, createTreeRingsTexture } from '../textures/GroundTextures';
 import { getTerrainHeight } from '../utils/terrainHeight';
 
 export interface TreeStumpInstance {
@@ -191,17 +191,18 @@ export function buildMergedTreeStumps(stumps: TreeStumpInstance[]): THREE.Group 
   }
 
   // --- MATERIALIEN ---
-  const barkTex = createBarkTexture();
+  // Warme, hellbraune Rindentextur, exakt abgestimmt auf die Stämme und Scheite im Holzfällercamp
+  const barkTex = createCampBarkTexture();
   if (barkTex.map) barkTex.map.repeat.set(2.0, 2.0);
   if (barkTex.bumpMap) barkTex.bumpMap.repeat.set(2.0, 2.0);
 
   const barkMat = new THREE.MeshStandardMaterial({
-    color: 0x6e4a30,
+    color: barkTex.map ? 0xffffff : 0xa67b44,
     map: barkTex.map ?? undefined,
     bumpMap: barkTex.bumpMap ?? undefined,
-    bumpScale: 0.12,
-    roughness: 0.88,
-    metalness: 0.04,
+    bumpScale: 0.10,
+    roughness: 0.82,
+    metalness: 0.02,
   });
 
   const ringsTex = createTreeRingsTexture();

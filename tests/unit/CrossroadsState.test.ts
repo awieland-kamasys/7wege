@@ -380,6 +380,30 @@ describe('CrossroadsState & 7 Wege', () => {
       expect(poi.path.id).toBe(1);
     }
   });
+
+  it('entfernt mit removeAllPathBarriers alle 6 Wegsperren auf einmal', () => {
+    const state = new CrossroadsState();
+    expect(state.hasAnyBlockedPath()).toBe(true);
+    expect(state.isPath1Blocked()).toBe(true);
+    expect(state.isPath2Blocked()).toBe(true);
+    expect(state.isPath3Blocked()).toBe(true);
+    expect(state.isPath4Blocked()).toBe(true);
+    expect(state.isPath5Blocked()).toBe(true);
+    expect(state.isPath6Blocked()).toBe(true);
+
+    const hadBlocked = state.removeAllPathBarriers();
+    expect(hadBlocked).toBe(true);
+    expect(state.hasAnyBlockedPath()).toBe(false);
+    expect(state.isPath1Blocked()).toBe(false);
+    expect(state.isPath2Blocked()).toBe(false);
+    expect(state.isPath3Blocked()).toBe(false);
+    expect(state.isPath4Blocked()).toBe(false);
+    expect(state.isPath5Blocked()).toBe(false);
+    expect(state.isPath6Blocked()).toBe(false);
+
+    // Erneuter Aufruf liefert false, da keine Sperre mehr vorhanden ist
+    expect(state.removeAllPathBarriers()).toBe(false);
+  });
 });
 
 describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, Nixe, Riese & Holzweibchen)', () => {
