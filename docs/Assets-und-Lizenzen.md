@@ -19,6 +19,8 @@ Alle externen Modelle, Texturen, Bilder, Schriften und Audio-Dateien hier dokume
 | Der Riese am Wehr 3D-Charakter (`stylized dwarf 3d model.glb`, 3,11 MB, stilisierter Zwergenriese mit Rüstung, Bart und Felsenstatur) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/stylized dwarf 3d model.glb` | aktiv |
 | Verziertes Tor 3D-Modell (`ornate gate 3d model.glb`, 1,98 MB, prunkvolles Schmiedetor) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/ornate gate 3d model.glb` | aktiv |
 | Schatztruhe hinter dem Tor (`treasure chest 3d model.glb`, 3,22 MB, kunstvolle Schatztruhe mit Eisenbeschlägen) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/treasure chest 3d model.glb` | aktiv |
+| Steinruine 3D-Modell (`stone ruin 3d model.glb`, 2,95 MB, alte steinerne Mauer- und Turmruine) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/stone ruin 3d model.glb` | bereitgestellt |
+| Verfallener Steinturm 3D-Modell (`ruined stone tower 3d model.glb`, 3,70 MB, verwitterter Wehrturm) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/ruined stone tower 3d model.glb` | bereitgestellt |
 | Stilisierter Nadelbaum 3D-Modell (`low poly tree model.glb`, 2,48 MB, 9.846 Dreiecke, 2048x2048 PBR-Textur) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/low poly tree model.glb` | evaluiert (Referenzmodell für prozedurale Optimierung) |
 
 
