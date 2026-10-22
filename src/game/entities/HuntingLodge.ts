@@ -68,6 +68,7 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
 
   // Temporärer Platzhalter während des Ladens (stilisierter Bergfried und Wehrmauer)
   const castleFallback = new THREE.Group();
+  castleFallback.rotation.y = Math.PI;
   const keepFallback = new THREE.Mesh(
     new THREE.BoxGeometry(3.4, 4.2, 3.4),
     stoneMat
@@ -97,8 +98,8 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
       const model = gltf.scene;
       // Stattliche Skalierung (Breite ca. 8.2m, Höhe ca. 5.6m, Tiefe ca. 7.4m)
       model.scale.setScalar(8.2);
-      // Drehung: Burgtor und Vorhof weisen einladend nach Südosten zur Lichtungsmitte und zum Kräutergarten
-      model.rotation.y = -Math.PI * 0.75;
+      // Drehung: um 180 Grad gedreht gegenüber der ursprünglichen Ausrichtung
+      model.rotation.y = Math.PI * 0.25;
 
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
