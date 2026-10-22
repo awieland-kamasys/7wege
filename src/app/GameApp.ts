@@ -94,6 +94,7 @@ export class GameApp {
     // Globale Referenzen für Konsole und Debugging
     (window as any).__7WEGE_APP__ = this;
     (window as any).__7WEGE_SCENE__ = this.scene;
+    (window as any).__7WEGE_STATE__ = this.state;
   }
 
   public start(): void {

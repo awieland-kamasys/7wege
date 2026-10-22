@@ -76,11 +76,12 @@ body,
   z-index: 10;
 }
 
-/* Dezentes Performance-Badge oben rechts mit Live-FPS und Draw Calls */
+/* Dezentes Performance-Badge oben links mit Live-FPS und Draw Calls */
 .perf-badge {
   position: absolute;
-  top: 0.85rem;
-  right: 0.85rem;
+  top: 3.6rem;
+  left: 0.85rem;
+  right: auto;
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -108,8 +109,9 @@ body,
 
 .perf-modal {
   position: absolute;
-  top: 3.2rem;
-  right: 0.85rem;
+  top: 6.0rem;
+  left: 0.85rem;
+  right: auto;
   background: rgba(18, 26, 20, 0.95);
   border: 1px solid var(--accent-gold);
   border-radius: 12px;

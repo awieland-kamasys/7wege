@@ -61,7 +61,7 @@ import {
   createStoneTexture,
   createVeinedLavaRockTexture,
 } from '../textures/GroundTextures';
-import { createCompositeTerrainTexture } from '../textures/CompositeTerrainTexture';
+import { createTerrainMaterial, TerrainMaterialController } from '../textures/TerrainMaterial';
 import { createWoodWomanNpc, WoodWomanNpcEntity } from '../entities/WoodWomanNpc';
 import { buildMergedMushroomClusters, MushroomClusterOptions, MushroomType } from '../entities/MushroomCluster';
 import { buildMergedBirdhouses, BirdhouseInstance } from '../entities/Birdhouse';
@@ -184,7 +184,7 @@ export class CrossroadsScene {
   private readonly gemstonePulseTimers = new Map<number, number>();
   private lastPlayerPos: Vector2D = { ...START_PLAYER_POS };
   private elapsedSeconds = 0;
-  private groundMaterial: THREE.MeshStandardMaterial | null = null;
+  private terrainMatController: TerrainMaterialController | null = null;
 
   // Nebelfarben: Heller Waldnebel auf der Lichtung und finster-dunkelroter Nebel im Höllenschlund
   private readonly defaultFogColor = new THREE.Color(0xdce2e0);
@@ -583,8 +583,8 @@ export class CrossroadsScene {
   }
 
   private buildTerrainAndPaths(): void {
-    // 1. Hochaufgelöste Composite-Geländetextur (Wald, Lichtung, 7 Wege, Schauplätze & dunkelrotadrige Lavazone)
-    const terrainTex = createCompositeTerrainTexture();
+    // 1. Splatmap-Terrain-System (gestochen scharfe gekachelte Waldwiese, Pfade & Obsidian-Lavaboden)
+    this.terrainMatController = createTerrainMaterial();
 
     // 2. Weitläufiges 3D-Gelände mit natürlicher Höhenmap und plastischem Relief
     const groundGeo = new THREE.PlaneGeometry(240, 240, 160, 160);
@@ -598,18 +598,7 @@ export class CrossroadsScene {
     }
     groundGeo.computeVertexNormals();
 
-    this.groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      map: terrainTex.map ?? undefined,
-      emissiveMap: terrainTex.emissiveMap ?? undefined,
-      emissive: new THREE.Color(0xffffff),
-      emissiveIntensity: 1.0,
-      bumpMap: terrainTex.bumpMap ?? undefined,
-      bumpScale: 0.045,
-      roughness: 0.88,
-    });
-
-    const ground = new THREE.Mesh(groundGeo, this.groundMaterial);
+    const ground = new THREE.Mesh(groundGeo, this.terrainMatController.material);
     ground.receiveShadow = true;
     ground.userData = { interactableType: 'ground' };
     this.scene.add(ground);
@@ -1902,47 +1891,71 @@ export class CrossroadsScene {
       }),
     ];
 
-    // Felsformationen: [relX, relZ, baseRadius, height, rotY, tiltX, tiltZ, matIndex]
-    // Relativ zum Kraterzentrum HELL_CHASM_POS (-22.5, 52.0)
-    const rockConfigs: [number, number, number, number, number, number, number, number][] = [
-      // Zentrale gewaltige Felszacken direkt hinter dem Krater
-      [0.0, 10.8, 3.8, 19.5, 0.4, 0.08, 0.02, 0],
-      [-3.2, 11.6, 3.2, 16.8, 1.2, 0.06, -0.07, 1],
-      [3.5, 11.2, 3.4, 17.4, 2.1, 0.07, 0.06, 2],
-      // Linke Felsflanke (Westen)
-      [-6.5, 9.8, 2.9, 14.2, 0.8, 0.05, -0.1, 0],
-      [-9.8, 8.2, 2.6, 12.5, 1.6, 0.04, -0.12, 1],
-      [-12.4, 5.8, 2.4, 10.8, 2.4, 0.03, -0.09, 2],
-      // Rechte Felsflanke (Osten)
-      [6.8, 9.6, 3.0, 15.0, 1.1, 0.05, 0.09, 1],
-      [10.2, 7.8, 2.7, 13.0, 2.3, 0.04, 0.11, 2],
-      [12.8, 5.2, 2.3, 11.2, 0.6, 0.03, 0.08, 0],
-      // Hoher Gebirgsgrat in der zweiten Reihe dahinter
-      [-1.8, 15.2, 4.5, 23.0, 0.3, 0.06, -0.03, 0],
-      [2.2, 15.8, 4.2, 21.5, 1.7, 0.07, 0.04, 1],
-      [-5.8, 14.5, 3.6, 18.5, 2.8, 0.05, -0.06, 2],
-      [6.2, 14.0, 3.8, 19.0, 0.9, 0.06, 0.05, 0],
-      [-10.2, 12.8, 3.3, 15.5, 1.9, 0.04, -0.08, 1],
-      [10.6, 12.2, 3.4, 16.0, 2.5, 0.05, 0.07, 2],
-      // Vorgelagerte scharfe Felsnadeln
-      [-1.2, 8.2, 1.8, 9.5, 0.5, 0.04, 0.03, 1],
-      [2.0, 8.6, 1.9, 10.2, 1.8, 0.05, -0.04, 0],
-    ];
+    // Felsformationen: Zwei Drittel (ca. 240 Grad) des Lavasees mit spitzen, hohen Basaltzacken umschließen
+    // Der Zugang vom Weg 5 her (Norden, ca. -90 Grad) bleibt frei, während Osten, Süden und Westen wie ein Kessel umrahmt sind.
+    const rockConfigs: Array<{
+      rx: number;
+      rz: number;
+      baseRadius: number;
+      height: number;
+      rotY: number;
+      tiltX: number;
+      tiltZ: number;
+      matIdx: number;
+    }> = [];
 
-    for (const [rx, rz, baseRadius, height, rotY, tiltX, tiltZ, matIdx] of rockConfigs) {
+    const startAngle = -0.52; // -30 Grad (Osten)
+    const endAngle = 3.66;   // +210 Grad (Westen) -> exakt 240 Grad (zwei Drittel des Umfangs)
+    const totalAngle = endAngle - startAngle;
+
+    // 1. Innerer Felsenkranz (18 scharfe Basaltnadeln direkt am Kraterrand)
+    const innerCount = 18;
+    for (let i = 0; i < innerCount; i++) {
+      const frac = i / (innerCount - 1);
+      const angle = startAngle + frac * totalAngle + Math.sin(i * 3.7) * 0.08;
+      const rad = 10.2 + Math.sin(i * 2.3) * 1.3;
+      const rx = Math.cos(angle) * rad;
+      const rz = Math.sin(angle) * rad;
+      const height = 12.5 + ((i * 7) % 5) * 1.2;
+      const baseRadius = 2.4 + ((i * 3) % 4) * 0.28;
+      const rotY = (i * 1.618) % (Math.PI * 2);
+      const tiltX = Math.sin(angle) * 0.07;
+      const tiltZ = -Math.cos(angle) * 0.07;
+      const matIdx = i % 3;
+      rockConfigs.push({ rx, rz, baseRadius, height, rotY, tiltX, tiltZ, matIdx });
+    }
+
+    // 2. Äußerer Ring: Monumentaler Felsengrat in zweiter Reihe (18 hohe Basaltzacken bis 24m)
+    const outerCount = 18;
+    for (let i = 0; i < outerCount; i++) {
+      const frac = (i + 0.5) / outerCount;
+      const angle = startAngle + frac * totalAngle + Math.cos(i * 4.1) * 0.07;
+      const rad = 14.8 + Math.cos(i * 2.9) * 1.8;
+      const rx = Math.cos(angle) * rad;
+      const rz = Math.sin(angle) * rad;
+      const height = 18.0 + ((i * 5) % 6) * 1.4;
+      const baseRadius = 3.4 + ((i * 4) % 4) * 0.35;
+      const rotY = (i * 2.718) % (Math.PI * 2);
+      const tiltX = Math.sin(angle) * 0.09;
+      const tiltZ = -Math.cos(angle) * 0.09;
+      const matIdx = (i + 1) % 3;
+      rockConfigs.push({ rx, rz, baseRadius, height, rotY, tiltX, tiltZ, matIdx });
+    }
+
+    for (const r of rockConfigs) {
       const rockMesh = new THREE.Mesh(
-        new THREE.ConeGeometry(baseRadius, height, 6),
-        rockMats[matIdx]
+        new THREE.ConeGeometry(r.baseRadius, r.height, 6),
+        rockMats[r.matIdx]
       );
-      const wx = HELL_CHASM_POS.x + rx;
-      const wz = HELL_CHASM_POS.z + rz;
+      const wx = HELL_CHASM_POS.x + r.rx;
+      const wz = HELL_CHASM_POS.z + r.rz;
       const groundY = getTerrainHeight(wx, wz);
       rockMesh.position.set(
         wx,
-        groundY + height / 2 - 0.4,
+        groundY + r.height / 2 - 0.4,
         wz
       );
-      rockMesh.rotation.set(tiltX, rotY, tiltZ);
+      rockMesh.rotation.set(r.tiltX, r.rotY, r.tiltZ);
       rockMesh.castShadow = true;
       rockMesh.receiveShadow = true;
       rockGroup.add(rockMesh);
@@ -2387,8 +2400,8 @@ export class CrossroadsScene {
 
     // Dynamisches Glühen der Magma-Adern im Basaltkessel des Höllenschlunds
     const groundPulse = 0.88 + 0.22 * Math.sin(this.elapsedSeconds * 2.8) + 0.1 * Math.cos(this.elapsedSeconds * 4.6);
-    if (this.groundMaterial) {
-      this.groundMaterial.emissiveIntensity = 1.35 * groundPulse;
+    if (this.terrainMatController) {
+      this.terrainMatController.setLavaPulse(groundPulse);
     }
 
     // Edelstein am jeweils aktiven Storyweg (Weg 1 bis 7 bzw. aktuell gewählter Storyweg) leuchten lassen
