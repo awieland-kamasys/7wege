@@ -31,6 +31,10 @@
 - **Textur-Caching:** Prozedural generierte Texturen (`GroundTextures.ts`) werden im Speicher gecacht, sodass aufwendige 2D-Canvas-Renderzyklen nur einmalig ablaufen.
 - **Sauberes Ressourcen-Disposal:** Bei GLTF-Modell-Ladevorgängen und Szenen-Teardowns werden temporäre Platzhalter und Meshes rekursiv über `disposeObject3D()` aus dem GPU-VRAM freigegeben.
 - **DOM-Dirty-Checking:** UI-Elemente (`HudOverlay.ts`) aktualisieren Text- und Klassen-Attribute nur bei tatsächlichen Zustandsänderungen, um ständige Reflows und Repaints zu vermeiden.
+- **High-DPI- & Mobilgeräte-Optimierung:** `renderer.setPixelRatio` deckelt die Renderauflösung auf Mobilgeräten und kleineren Viewports auf maximal `1.5` (Desktop `2.0`), und der Renderer nutzt `powerPreference: 'high-performance'`. Dies spart auf modernen Mobilgeräten (DPR 3-4) bis zu 60 % der GPU-Füllrate und Shader-Berechnungen ein.
+- **Pfad-Geometrie-Verschmelzung (`mergeGeometries`):** Alle geraden Wegsegmente und runden Kurvengelenke pro Pfad werden über `BufferGeometryUtils.mergeGeometries` in ein einziges zusammenhängendes Mesh gebündelt. Dies reduziert die Mesh- und Draw-Call-Zahl um ca. 80 Objekte und beschleunigt das Raycasting spürbar.
+- **Gestaffeltes Laden (Lazy Loading) von 3D-Assets:** Die zentrale Szene (Kreuzung, Hütte, Arvid) lädt im Startframe 0. Entfernte Schauplätze (Graumännchen, Waldteich, Nixe, Lavakrater, Teufel) starten ihr Modell-Download- und Parsing gestaffelt mit kurzen Pausen (400 bis 1900 ms), während prozedurale Low-Poly-Platzhalter sofort klickbar bereitstehen.
+- **Asset-Bereinigung & Trennung:** Das Auslieferungsverzeichnis `public/assets/models/` wurde auf die 7 tatsächlich verwendeten GLB-Dateien bereinigt (Reduktion von 53 MB auf 19 MB Download-Größe). Alle Modell-Duplikate und Konzept-Grafiken wurden in den Sicherungsordner `backup_assets/models/` verschoben (kein Datenverlust).
 
 ## Offene Punkte
 

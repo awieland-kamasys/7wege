@@ -99,7 +99,10 @@ function createFlameTexture(): THREE.CanvasTexture | null {
  * Beinhaltet realistisch texturierte, lodernde Flammenzungen mit Additive-Blending,
  * aufsteigende Funken und dramatisch flackernde Höllenfeuer-Lichter.
  */
-export function createHellChasm(onMeshLoaded?: (mesh: THREE.Object3D) => void): HellChasmEntity {
+export function createHellChasm(
+  onMeshLoaded?: (mesh: THREE.Object3D) => void,
+  options?: { loadDelayMs?: number }
+): HellChasmEntity {
   const group = new THREE.Group();
   group.name = 'HellChasm';
   group.userData = { interactableType: 'hell_chasm' };
@@ -152,55 +155,63 @@ export function createHellChasm(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
   let modelLavaMat: THREE.MeshStandardMaterial | null = null;
 
   // Lade das bereinigte 3D-Kratermodell mit verdoppelter Plateau- und Reliefhöhe (15.0)
-  const loader = new GLTFLoader();
-  loader.load(
-    '/assets/models/lava-crater.glb',
-    (gltf) => {
-      const model = gltf.scene;
-      // Kratermodell auf ca. 17.5m Durchmesser und verdoppelte Relief-/Plattformhöhe (15.0 statt 7.5) skalieren
-      model.scale.set(17.5, 15.0, 17.5);
+  const startLoad = (): void => {
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/lava-crater.glb',
+      (gltf) => {
+        const model = gltf.scene;
+        // Kratermodell auf ca. 17.5m Durchmesser und verdoppelte Relief-/Plattformhöhe (15.0 statt 7.5) skalieren
+        model.scale.set(17.5, 15.0, 17.5);
 
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, 0);
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
 
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          // Der Krater ist eine Bodensenke und empfängt Schatten (wirft keinen Schatten nach oben)
-          mesh.castShadow = false;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'hell_chasm' };
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            // Der Krater ist eine Bodensenke und empfängt Schatten (wirft keinen Schatten nach oben)
+            mesh.castShadow = false;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'hell_chasm' };
 
-          if (mesh.material && 'roughness' in mesh.material) {
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            mat.roughness = 0.55;
-            mat.metalness = 0.2;
-            // Lava leuchtend machen: Textur als EmissiveMap mit intensivem Glut-Leuchten
-            if (mat.map) {
-              mat.emissiveMap = mat.map;
-              mat.emissive = new THREE.Color(0xff4400);
-              mat.emissiveIntensity = 1.6;
-              modelLavaMat = mat;
+            if (mesh.material && 'roughness' in mesh.material) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              mat.roughness = 0.55;
+              mat.metalness = 0.2;
+              // Lava leuchtend machen: Textur als EmissiveMap mit intensivem Glut-Leuchten
+              if (mat.map) {
+                mat.emissiveMap = mat.map;
+                mat.emissive = new THREE.Color(0xff4400);
+                mat.emissiveIntensity = 1.6;
+                modelLavaMat = mat;
+              }
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
             }
           }
+        });
 
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
+        // Platzhalter durch das fertige Modell ersetzen und Speicher freigeben
+        craterContentGroup.remove(fallback);
+        disposeObject3D(fallback);
+        craterContentGroup.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Lavakrater-Modell lava-crater.glb konnte nicht geladen werden, nutze Platzhalter:', err);
+      }
+    );
+  };
 
-      // Platzhalter durch das fertige Modell ersetzen und Speicher freigeben
-      craterContentGroup.remove(fallback);
-      disposeObject3D(fallback);
-      craterContentGroup.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Lavakrater-Modell lava-crater.glb konnte nicht geladen werden, nutze Platzhalter:', err);
-    }
-  );
+  if (options?.loadDelayMs && options.loadDelayMs > 0) {
+    setTimeout(startLoad, options.loadDelayMs);
+  } else {
+    startLoad();
+  }
 
   // Realistische lodernde Flammen mit Feuer-Canvas-Textur und Additive Blending
   const flameTexture = createFlameTexture();

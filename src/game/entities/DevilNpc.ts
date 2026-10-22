@@ -21,7 +21,10 @@ export interface DevilNpcEntity {
  * Spielt die integrierte 6-Sekunden-Animation ("wait.001") dauerhaft als Schleife ab
  * und richtet den Teufel bei Annäherung auf die Spielfigur aus.
  */
-export function createDevilNpc(onMeshLoaded?: (object: THREE.Object3D) => void): DevilNpcEntity {
+export function createDevilNpc(
+  onMeshLoaded?: (object: THREE.Object3D) => void,
+  options?: { loadDelayMs?: number }
+): DevilNpcEntity {
   const group = new THREE.Group();
   group.name = 'DevilNpc';
   group.userData = { interactableType: 'devil' };
@@ -158,83 +161,74 @@ export function createDevilNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
   }
 
   // Lade das Dämonenkrieger-Modell ohne Dreizack
-  const modelUrl = '/assets/models/demon+warrior+3d+model_ohne_Dreizack.glb';
-  const loader = new GLTFLoader();
-  loader.load(
-    modelUrl,
-    (gltf) => {
-      const model = gltf.scene;
+  const startLoad = (): void => {
+    const modelUrl = '/assets/models/demon-warrior-no-trident.glb';
+    const loader = new GLTFLoader();
+    loader.load(
+      modelUrl,
+      (gltf) => {
+        const model = gltf.scene;
 
-      // 1. Skalierung: 5.2x (ergibt ca. 5.17m Gesamthöhe)
-      model.scale.setScalar(5.2);
-
-      // 2. Positionierung auf der Felsenplattform des Lavakraters (Plattformhöhe 1.80m):
-      // Die Klauensohlen stehen exakt bündig oben auf den Felsplatten.
-      model.position.set(0, 1.80, 0);
-
-      // 3. Animation aktivieren
-      if (gltf.animations && gltf.animations.length > 0) {
-        mixer = new THREE.AnimationMixer(model);
-        // Bevorzuge die Animation "wait.001" oder den ersten Clip
-        const clip = gltf.animations.find((a) => a.name.includes('wait')) ?? gltf.animations[0];
-        animAction = mixer.clipAction(clip);
-        animAction.setLoop(THREE.LoopRepeat, Infinity);
-        animAction.clampWhenFinished = false;
-        animAction.play();
-      }
-
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'devil' };
-
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          for (const mat of mats) {
-            if (mat && 'roughness' in mat) {
-              const stdMat = mat as THREE.MeshStandardMaterial;
-              stdMat.roughness = 0.75;
-              stdMat.metalness = 0.15;
-            }
-          }
-
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
-
-      // Dämonisch glühende Augen und Gesichtsschein befestigen
-      attachGlowingEyes(model);
-
-      // Platzhalter durch das fertige Modell ersetzen und Speicher freigeben
-      group.remove(fallback);
-      disposeObject3D(fallback);
-      group.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Dämonenkrieger-Modell konnte nicht geladen werden, versuche Ausweichpfad:', err);
-      // Fallback-Versuch mit Alternativ-Dateinamen
-      loader.load('/assets/models/demon-warrior-no-trident.glb', (fallbackGltf) => {
-        const model = fallbackGltf.scene;
+        // 1. Skalierung: 5.2x (ergibt ca. 5.17m Gesamthöhe)
         model.scale.setScalar(5.2);
+
+        // 2. Positionierung auf der Felsenplattform des Lavakraters (Plattformhöhe 1.80m):
+        // Die Klauensohlen stehen exakt bündig oben auf den Felsplatten.
         model.position.set(0, 1.80, 0);
 
-        if (fallbackGltf.animations && fallbackGltf.animations.length > 0) {
+        // 3. Animation aktivieren
+        if (gltf.animations && gltf.animations.length > 0) {
           mixer = new THREE.AnimationMixer(model);
-          animAction = mixer.clipAction(fallbackGltf.animations[0]);
+          // Bevorzuge die Animation "wait.001" oder den ersten Clip
+          const clip = gltf.animations.find((a) => a.name.includes('wait')) ?? gltf.animations[0];
+          animAction = mixer.clipAction(clip);
+          animAction.setLoop(THREE.LoopRepeat, Infinity);
+          animAction.clampWhenFinished = false;
           animAction.play();
         }
 
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'devil' };
+
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            for (const mat of mats) {
+              if (mat && 'roughness' in mat) {
+                const stdMat = mat as THREE.MeshStandardMaterial;
+                stdMat.roughness = 0.75;
+                stdMat.metalness = 0.15;
+              }
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
+            }
+          }
+        });
+
+        // Dämonisch glühende Augen und Gesichtsschein befestigen
         attachGlowingEyes(model);
+
+        // Platzhalter durch das fertige Modell ersetzen und Speicher freigeben
         group.remove(fallback);
         disposeObject3D(fallback);
         group.add(model);
-      });
-    }
-  );
+      },
+      undefined,
+      (err) => {
+        console.warn('Dämonenkrieger-Modell demon-warrior-no-trident.glb konnte nicht geladen werden, nutze Platzhalter:', err);
+      }
+    );
+  };
+
+  if (options?.loadDelayMs && options.loadDelayMs > 0) {
+    setTimeout(startLoad, options.loadDelayMs);
+  } else {
+    startLoad();
+  }
 
   return {
     group,

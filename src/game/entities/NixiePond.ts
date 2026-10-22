@@ -15,7 +15,10 @@ export interface NixiePondEntity {
  * - Unter der Wasseroberfläche funkelnder, verlockender Goldschatz mit unheimlichem Fluch-Schimmern.
  * - Sanfte konzentrische Wasserwellenringe um den Nixenstein und den versunkenen Hort.
  */
-export function createNixiePond(onMeshLoaded?: (mesh: THREE.Object3D) => void): NixiePondEntity {
+export function createNixiePond(
+  onMeshLoaded?: (mesh: THREE.Object3D) => void,
+  options?: { loadDelayMs?: number }
+): NixiePondEntity {
   const group = new THREE.Group();
   group.name = 'NixiePond';
   // Um weitere 45 Grad nach rechts gedreht (-Math.PI / 2 = -90 Grad in Three.js)
@@ -50,63 +53,61 @@ export function createNixiePond(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
   group.add(fallback);
 
   // 2. Lade das 3D-Seerosenteich-Modell mit verdoppelter Höhe (6.8 statt 3.4)
-  const loader = new GLTFLoader();
-  const pondUrl = '/assets/models/water-lily-pond.glb';
-  loader.load(
-    pondUrl,
-    (gltf) => {
-      const model = gltf.scene;
+  const startLoad = (): void => {
+    const loader = new GLTFLoader();
+    const pondUrl = '/assets/models/water-lily-pond.glb';
+    loader.load(
+      pondUrl,
+      (gltf) => {
+        const model = gltf.scene;
 
-      // Modell auf Teichgröße und verdoppelte Höhe skalieren (ca. 10.5m x 10.5m, Höhe 6.8m)
-      model.scale.set(10.5, 6.8, 10.5);
-
-      // Bounding-Box ermitteln und Bodenkontakt bei y = 0 ausrichten
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y + 0.01, 0);
-
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          // Teichbett und Wasserfläche empfangen Schatten, werfen aber keinen Schatten
-          mesh.castShadow = false;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'pond' };
-
-          if (mesh.material && 'roughness' in mesh.material) {
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            if (!mat.roughnessMap) {
-              mat.roughness = 0.75;
-              mat.metalness = 0.15;
-            }
-          }
-
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
-
-      // Platzhalter durch das fertige 3D-Modell ersetzen und Speicher freigeben
-      group.remove(fallback);
-      disposeObject3D(fallback);
-      group.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Seerosenteich-Modell konnte nicht geladen werden, versuche Ausweichpfad:', err);
-      loader.load('/assets/models/water lily pond 3d model.glb', (fallbackGltf) => {
-        const model = fallbackGltf.scene;
+        // Modell auf Teichgröße und verdoppelte Höhe skalieren (ca. 10.5m x 10.5m, Höhe 6.8m)
         model.scale.set(10.5, 6.8, 10.5);
+
+        // Bounding-Box ermitteln und Bodenkontakt bei y = 0 ausrichten
         model.updateMatrixWorld(true);
         const bounds = new THREE.Box3().setFromObject(model);
         model.position.set(0, -bounds.min.y + 0.01, 0);
+
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            // Teichbett und Wasserfläche empfangen Schatten, werfen aber keinen Schatten
+            mesh.castShadow = false;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'pond' };
+
+            if (mesh.material && 'roughness' in mesh.material) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              if (!mat.roughnessMap) {
+                mat.roughness = 0.75;
+                mat.metalness = 0.15;
+              }
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
+            }
+          }
+        });
+
+        // Platzhalter durch das fertige 3D-Modell ersetzen und Speicher freigeben
         group.remove(fallback);
         disposeObject3D(fallback);
         group.add(model);
-      });
-    }
-  );
+      },
+      undefined,
+      (err) => {
+        console.warn('Seerosenteich-Modell water-lily-pond.glb konnte nicht geladen werden, nutze Platzhalter:', err);
+      }
+    );
+  };
+
+  if (options?.loadDelayMs && options.loadDelayMs > 0) {
+    setTimeout(startLoad, options.loadDelayMs);
+  } else {
+    startLoad();
+  }
 
   // 3. Konzentrische Wasserwellen-Ringe um den Nixenstein und den versunkenen Schatz
   const rippleMat1 = new THREE.MeshBasicMaterial({

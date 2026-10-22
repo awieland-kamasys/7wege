@@ -11,7 +11,10 @@ export interface NixieNpcEntity {
  * Erstellt die 3D-Figur der Nixe / Meerjungfrau im Waldteich am Ende des 2. Weges.
  * Lädt das detaillierte 3D-Modell `mermaid 3d model.glb` (`mermaid.glb`).
  */
-export function createNixieNpc(onMeshLoaded?: (mesh: THREE.Object3D) => void): NixieNpcEntity {
+export function createNixieNpc(
+  onMeshLoaded?: (mesh: THREE.Object3D) => void,
+  options?: { loadDelayMs?: number }
+): NixieNpcEntity {
   const group = new THREE.Group();
   group.name = 'NixieNpc';
 
@@ -62,52 +65,19 @@ export function createNixieNpc(onMeshLoaded?: (mesh: THREE.Object3D) => void): N
 
   const mermaidMaterials: THREE.MeshStandardMaterial[] = [];
 
-  const loader = new GLTFLoader();
-  const mermaidUrl = '/assets/models/mermaid.glb';
+  const startLoad = (): void => {
+    const loader = new GLTFLoader();
+    const mermaidUrl = '/assets/models/mermaid.glb';
 
-  loader.load(
-    mermaidUrl,
-    (gltf) => {
-      const model = gltf.scene;
+    loader.load(
+      mermaidUrl,
+      (gltf) => {
+        const model = gltf.scene;
 
-      // Auf natürliche Lebensgröße skalieren (Höhe ca. 2.0m)
-      model.scale.set(2.0, 2.0, 2.0);
-
-      // Bodenkontakt anpassen, sodass die Schwanzflosse sanft im Wasser schwimmt
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y + 0.05, 0);
-
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'nixie' };
-
-          if (mesh.material && 'roughness' in mesh.material) {
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            mat.roughness = 0.65;
-            mat.metalness = 0.15;
-            mermaidMaterials.push(mat);
-          }
-
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
-
-      modelGroup.remove(fallback);
-      disposeObject3D(fallback);
-      modelGroup.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Meerjungfrauen-Modell mermaid.glb konnte nicht geladen werden, versuche Ausweichpfad:', err);
-      loader.load('/assets/models/mermaid 3d model.glb', (fallbackGltf) => {
-        const model = fallbackGltf.scene;
+        // Auf natürliche Lebensgröße skalieren (Höhe ca. 2.0m)
         model.scale.set(2.0, 2.0, 2.0);
+
+        // Bodenkontakt anpassen, sodass die Schwanzflosse sanft im Wasser schwimmt
         model.updateMatrixWorld(true);
         const bounds = new THREE.Box3().setFromObject(model);
         model.position.set(0, -bounds.min.y + 0.05, 0);
@@ -118,16 +88,36 @@ export function createNixieNpc(onMeshLoaded?: (mesh: THREE.Object3D) => void): N
             mesh.castShadow = true;
             mesh.receiveShadow = true;
             mesh.userData = { interactableType: 'nixie' };
-            if (onMeshLoaded) onMeshLoaded(mesh);
+
+            if (mesh.material && 'roughness' in mesh.material) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              mat.roughness = 0.65;
+              mat.metalness = 0.15;
+              mermaidMaterials.push(mat);
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
+            }
           }
         });
 
         modelGroup.remove(fallback);
         disposeObject3D(fallback);
         modelGroup.add(model);
-      });
-    }
-  );
+      },
+      undefined,
+      (err) => {
+        console.warn('Meerjungfrauen-Modell mermaid.glb konnte nicht geladen werden, nutze Platzhalter:', err);
+      }
+    );
+  };
+
+  if (options?.loadDelayMs && options.loadDelayMs > 0) {
+    setTimeout(startLoad, options.loadDelayMs);
+  } else {
+    startLoad();
+  }
 
   // Standardmäßig blickt die Nixe nach Westen (-X) zum Ufer von Weg 2
   group.rotation.y = -Math.PI / 2;

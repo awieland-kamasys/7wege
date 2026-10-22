@@ -11,7 +11,7 @@ export interface GreyManNpcEntity {
  * Erstellt die 3D-Figur des „Graumännchens“ vor dem Höhleneingang am Ende des 1. Weges.
  * Lädt das optimierte 3D-Charaktermodell (`/assets/models/grey-man.glb`).
  */
-export function createGreyManNpc(): GreyManNpcEntity {
+export function createGreyManNpc(options?: { loadDelayMs?: number }): GreyManNpcEntity {
   const group = new THREE.Group();
   group.name = 'GreyManNpc';
 
@@ -41,40 +41,48 @@ export function createGreyManNpc(): GreyManNpcEntity {
   // Gespeicherte Materialien des geladenen GLB-Modells für den Hover-Leuchteffekt
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
-  const loader = new GLTFLoader();
-  loader.load(
-    '/assets/models/grey-man.glb',
-    (gltf) => {
-      const model = gltf.scene;
-      // Das Originalmodell ist ca. 0.98 Einheiten hoch (Y: 0 bis 0.98) -> Skalierung auf ~1.62 m Körpergröße
-      model.scale.setScalar(1.65);
-      model.position.set(0, 0, 0);
+  const startLoad = (): void => {
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/grey-man.glb',
+      (gltf) => {
+        const model = gltf.scene;
+        // Das Originalmodell ist ca. 0.98 Einheiten hoch (Y: 0 bis 0.98) -> Skalierung auf ~1.62 m Körpergröße
+        model.scale.setScalar(1.65);
+        model.position.set(0, 0, 0);
 
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'grey_man' };
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'grey_man' };
 
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          for (const mat of mats) {
-            if (mat && 'emissive' in mat) {
-              modelMaterials.push(mat as THREE.MeshStandardMaterial);
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            for (const mat of mats) {
+              if (mat && 'emissive' in mat) {
+                modelMaterials.push(mat as THREE.MeshStandardMaterial);
+              }
             }
           }
-        }
-      });
+        });
 
-      group.remove(fallbackGroup);
-      disposeObject3D(fallbackGroup);
-      group.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Graumännchen-GLB konnte nicht geladen werden, nutze Platzhalter:', err);
-    }
-  );
+        group.remove(fallbackGroup);
+        disposeObject3D(fallbackGroup);
+        group.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Graumännchen-GLB konnte nicht geladen werden, nutze Platzhalter:', err);
+      }
+    );
+  };
+
+  if (options?.loadDelayMs && options.loadDelayMs > 0) {
+    setTimeout(startLoad, options.loadDelayMs);
+  } else {
+    startLoad();
+  }
 
   const silverCrystalMat = new THREE.MeshStandardMaterial({
     color: 0xcfe4f5,

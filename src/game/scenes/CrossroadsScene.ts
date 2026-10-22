@@ -218,9 +218,13 @@ export class CrossroadsScene {
       42
     );
 
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    this.renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      powerPreference: 'high-performance',
+    });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(this.getOptimalPixelRatio());
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -280,7 +284,8 @@ export class CrossroadsScene {
     this.scene.add(mountainCave);
 
     // Das Graumännchen (NPC) direkt vor dem Höhleneingang am Ende des 1. Weges
-    this.greyManNpc = createGreyManNpc();
+    // Gestaffeltes Laden: Modell lädt nach 400ms, um den Startframe nicht zu blockieren
+    this.greyManNpc = createGreyManNpc({ loadDelayMs: 400 });
     this.greyManNpc.group.position.set(GREY_MAN_NPC_POS.x, 0, GREY_MAN_NPC_POS.z);
     this.greyManNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -290,7 +295,8 @@ export class CrossroadsScene {
     this.scene.add(this.greyManNpc.group);
 
     // Waldteich mit Nixenstein und verfluchtem Schatz am Ende des 2. Weges
-    this.nixiePond = createNixiePond();
+    // Gestaffeltes Laden: Teichmodell lädt nach 750ms
+    this.nixiePond = createNixiePond(undefined, { loadDelayMs: 750 });
     this.nixiePond.group.position.set(POND_CENTER_POS.x, 0, POND_CENTER_POS.z);
     this.nixiePond.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
@@ -300,9 +306,13 @@ export class CrossroadsScene {
     this.scene.add(this.nixiePond.group);
 
     // Die Nixe / Meerjungfrau (NPC) im Waldteich am Ende des 2. Weges
-    this.nixieNpc = createNixieNpc((mesh) => {
-      this.pickableObjects.push(mesh);
-    });
+    // Gestaffeltes Laden: Meerjungfrauenmodell lädt nach 1100ms
+    this.nixieNpc = createNixieNpc(
+      (mesh) => {
+        this.pickableObjects.push(mesh);
+      },
+      { loadDelayMs: 1100 }
+    );
     this.nixieNpc.group.position.set(NIXIE_NPC_POS.x, 0, NIXIE_NPC_POS.z);
     this.nixieNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -353,9 +363,13 @@ export class CrossroadsScene {
     this.scene.add(this.woodWomanNpc.group);
 
     // Der feurige Höllenschlund am Ende des 5. Weges (3D-Lavakrater)
-    this.hellChasm = createHellChasm((mesh) => {
-      this.pickableObjects.push(mesh);
-    });
+    // Gestaffeltes Laden: Lavakratermodell lädt nach 1500ms
+    this.hellChasm = createHellChasm(
+      (mesh) => {
+        this.pickableObjects.push(mesh);
+      },
+      { loadDelayMs: 1500 }
+    );
     this.hellChasm.group.position.set(HELL_CHASM_POS.x, 0, HELL_CHASM_POS.z);
     this.hellChasm.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
@@ -365,9 +379,13 @@ export class CrossroadsScene {
     this.scene.add(this.hellChasm.group);
 
     // Der Teufel / Dämonenkrieger (NPC) inmitten des Höllenschlundes am Ende des 5. Weges
-    this.devilNpc = createDevilNpc((mesh) => {
-      this.pickableObjects.push(mesh);
-    });
+    // Gestaffeltes Laden: Teufelmodell lädt nach 1900ms
+    this.devilNpc = createDevilNpc(
+      (mesh) => {
+        this.pickableObjects.push(mesh);
+      },
+      { loadDelayMs: 1900 }
+    );
     this.devilNpc.group.position.set(DEVIL_NPC_POS.x, 0, DEVIL_NPC_POS.z);
     this.devilNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -885,6 +903,7 @@ export class CrossroadsScene {
     clearingMat?: THREE.MeshStandardMaterial
   ): void {
     const pathWidth = 2.2;
+    const geometriesToMerge: THREE.BufferGeometry[] = [];
 
     for (let i = 0; i < waypoints.length - 1; i++) {
       // Auf Weg 3 führt das letzte Segment direkt über die Holzbrücke (WeirBridgeScene),
@@ -892,8 +911,6 @@ export class CrossroadsScene {
       if (pathId === 3 && i === waypoints.length - 2) {
         continue;
       }
-
-      const segMat = segmentMats?.[i] ?? mat;
 
       const a = waypoints[i];
       const b = waypoints[i + 1];
@@ -904,27 +921,47 @@ export class CrossroadsScene {
       const midZ = (a.z + b.z) / 2;
       const angleY = Math.atan2(dx, dz);
 
-      const segMesh = new THREE.Mesh(
-        new THREE.BoxGeometry(pathWidth, 0.05, segLength),
-        segMat
-      );
-      segMesh.position.set(midX, 0.03, midZ);
-      segMesh.rotation.y = angleY;
-      segMesh.receiveShadow = true;
-      segMesh.userData = { interactableType: 'path', pathId };
-      this.scene.add(segMesh);
-      this.pickableObjects.push(segMesh);
+      const boxGeo = new THREE.BoxGeometry(pathWidth, 0.05, segLength);
+      boxGeo.rotateY(angleY);
+      boxGeo.translate(midX, 0.03, midZ);
 
-      // Runde Gelenkplatte an jedem Kurven-Wegpunkt für nahtlose Übergänge
-      const jointMesh = new THREE.Mesh(
-        new THREE.CylinderGeometry(pathWidth / 2, pathWidth / 2, 0.05, 16),
-        segMat
-      );
-      jointMesh.position.set(b.x, 0.03, b.z);
-      jointMesh.receiveShadow = true;
-      jointMesh.userData = { interactableType: 'path', pathId };
-      this.scene.add(jointMesh);
-      this.pickableObjects.push(jointMesh);
+      const jointGeo = new THREE.CylinderGeometry(pathWidth / 2, pathWidth / 2, 0.05, 16);
+      jointGeo.translate(b.x, 0.03, b.z);
+
+      if (segmentMats) {
+        // Pfad mit individuellen Segment-Materialien (z.B. Weg 5 feuriger Übergang):
+        // Box und Gelenkplatte pro Segment zu einem einzigen Mesh verschmelzen
+        const segMat = segmentMats[i] ?? mat;
+        const mergedSegGeo = BufferGeometryUtils.mergeGeometries([boxGeo, jointGeo], false);
+        boxGeo.dispose();
+        jointGeo.dispose();
+
+        if (mergedSegGeo) {
+          const segMesh = new THREE.Mesh(mergedSegGeo, segMat);
+          segMesh.receiveShadow = true;
+          segMesh.userData = { interactableType: 'path', pathId };
+          this.scene.add(segMesh);
+          this.pickableObjects.push(segMesh);
+        }
+      } else {
+        // Einheitliches Pfadmaterial: Alle Segmente und Gelenke des Pfades für 1 Draw Call sammeln
+        geometriesToMerge.push(boxGeo, jointGeo);
+      }
+    }
+
+    // Wenn keine individuellen Segmentmaterialien vorliegen, den gesamten Pfad in 1 Mesh bündeln
+    if (!segmentMats && geometriesToMerge.length > 0) {
+      const mergedPathGeo = BufferGeometryUtils.mergeGeometries(geometriesToMerge, false);
+      for (const g of geometriesToMerge) {
+        g.dispose();
+      }
+      if (mergedPathGeo) {
+        const pathMesh = new THREE.Mesh(mergedPathGeo, mat);
+        pathMesh.receiveShadow = true;
+        pathMesh.userData = { interactableType: 'path', pathId };
+        this.scene.add(pathMesh);
+        this.pickableObjects.push(pathMesh);
+      }
     }
 
     // Vorplatz am Ende des Kurvenweges (falls für diesen Weg vorgesehen)
@@ -2676,11 +2713,24 @@ export class CrossroadsScene {
     this.renderer.render(this.scene, this.camera);
   }
 
+  /**
+   * Ermittelt das optimale Pixelverhältnis (DPR):
+   * Auf mobilen Geräten und kleineren Bildschirmen wird DPR auf 1.5 gedeckelt,
+   * um die GPU-Füllrate und Fragment-Shader-Last um bis zu 60% zu senken.
+   */
+  private getOptimalPixelRatio(): number {
+    const isMobile =
+      /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768;
+    const maxDpr = isMobile ? 1.5 : 2.0;
+    return Math.min(window.devicePixelRatio || 1, maxDpr);
+  }
+
   private onResize = (): void => {
     this.cachedCanvasRect = null;
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(this.getOptimalPixelRatio());
   };
 
   public dispose(): void {
