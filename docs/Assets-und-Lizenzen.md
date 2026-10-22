@@ -11,6 +11,7 @@ Alle externen Modelle, Texturen, Bilder, Schriften und Audio-Dateien hier dokume
 | Lavakrater 3D-Landschaft (`lava-crater.glb` / `lava crater 3d model.glb`, 4,21 MB, texturiert) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/lava-crater.glb` | aktiv |
 | Seerosenteich der Nixe (`water-lily-pond.glb` / `water lily pond 3d model.glb`, 5,11 MB, PBR-Felsenufer und Seerosen mit Normal- & RM-Map) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/water-lily-pond.glb` | aktiv |
 | Meerjungfrau / Nixe 3D-Charakter (`mermaid.glb` / `mermaid 3d model.glb`, 1,88 MB, Tripo 3D PBR-Modell) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/mermaid.glb` | aktiv |
+| Lagerfeuer-Szene Holzfällercamp (`campfire scene 3d model.glb`, 3D-Modell mit Feuerstelle, Scheiten, Kochtopf und Sitzstämmen) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/campfire scene 3d model.glb` | aktiv |
 
 
 ## Regeln

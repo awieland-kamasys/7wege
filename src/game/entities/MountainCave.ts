@@ -139,12 +139,12 @@ export function createMountainCave(): THREE.Group {
     group.add(moss);
   }
 
-  // Kleine Randfelsen am Fuß des Stolleneingangs
+  // Kleine Randfelsen am Fuß des Stolleneingangs (tief im Felsgrund verankert)
   for (const [bx, by, bz, r] of [
-    [-1.75, 0.38, 0.92, 0.48],
-    [-2.45, 0.28, 0.88, 0.36],
-    [1.78, 0.42, 0.9, 0.52],
-    [2.5, 0.3, 0.85, 0.38],
+    [-1.75, 0.22, 0.92, 0.58],
+    [-2.45, 0.16, 0.88, 0.48],
+    [1.78, 0.25, 0.9, 0.62],
+    [2.5, 0.18, 0.85, 0.5],
   ]) {
     const boulder = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), rockMatLight);
     boulder.position.set(bx, by, bz);
@@ -189,15 +189,17 @@ export function createMountainCave(): THREE.Group {
   }
 
   // 6. Kräftige Stollenzimmerung (Türstock mit Stempeln, Kappe und Kopfband-Streben)
-  const leftPost = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.23, 2.68, 8), timberMat);
-  leftPost.position.set(-1.22, 1.34, 0.96);
+  // Stempel reichen 0.45m tief in den Boden, um absolut bodenfest zu stehen
+  const postHeight = 3.1;
+  const leftPost = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.24, postHeight, 8), timberMat);
+  leftPost.position.set(-1.22, 2.68 - postHeight / 2, 0.96);
   leftPost.rotation.z = -0.04;
   leftPost.castShadow = true;
   leftPost.receiveShadow = true;
   group.add(leftPost);
 
-  const rightPost = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.23, 2.68, 8), timberMat);
-  rightPost.position.set(1.22, 1.34, 0.96);
+  const rightPost = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.24, postHeight, 8), timberMat);
+  rightPost.position.set(1.22, 2.68 - postHeight / 2, 0.96);
   rightPost.rotation.z = 0.04;
   rightPost.castShadow = true;
   rightPost.receiveShadow = true;

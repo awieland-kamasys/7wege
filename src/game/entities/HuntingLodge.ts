@@ -95,7 +95,16 @@ export function createHuntingLodge(): HuntingLodgeEntity {
   const cabinGroup = new THREE.Group();
   cabinGroup.position.set(-2.4, 0, 3.2);
 
-  // Fundament / Boden
+  // Fundament / Boden (Natursteinfundament reicht 0.65m tief ins Erdreich, damit bei Hanglage kein Spalt entsteht)
+  const stoneFoundation = new THREE.Mesh(
+    new THREE.BoxGeometry(4.55, 0.8, 3.95),
+    chimneyStoneMat
+  );
+  stoneFoundation.position.y = -0.25;
+  stoneFoundation.receiveShadow = true;
+  stoneFoundation.castShadow = true;
+  cabinGroup.add(stoneFoundation);
+
   const floor = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.3, 3.8), logMat);
   floor.position.y = 0.15;
   floor.receiveShadow = true;
@@ -280,10 +289,10 @@ export function createHuntingLodge(): HuntingLodgeEntity {
   const gardenGroup = new THREE.Group();
   gardenGroup.position.set(-2.5, 0, -1.8);
 
-  // Beeterde (zwei gepflegte Kräuterbeete)
+  // Beeterde (zwei gepflegte Kräuterbeete, tief verankert)
   for (const bz of [-0.9, 0.9]) {
-    const bed = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.12, 1.25), soilMat);
-    bed.position.set(0, 0.06, bz);
+    const bed = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.28, 1.25), soilMat);
+    bed.position.set(0, 0.05, bz);
     bed.receiveShadow = true;
     gardenGroup.add(bed);
   }
@@ -310,7 +319,7 @@ export function createHuntingLodge(): HuntingLodgeEntity {
 
   for (const p of fencePosts) {
     const post = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.045, 0.055, 0.85, 6),
+      new THREE.CylinderGeometry(0.045, 0.055, 1.1, 6),
       fenceMat
     );
     post.position.set(p.x, 0.42, p.z);

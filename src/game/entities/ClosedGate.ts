@@ -104,12 +104,13 @@ export function createClosedGate(): ClosedGateEntity {
     const pGroup = new THREE.Group();
     pGroup.position.set(side * pillarOffset, 0, 0);
 
-    // Sockel
+    // Sockel / Fundament (reicht 1.2m tief in den Boden, damit bei Geländeneigung niemals ein Spalt entsteht)
+    const baseHeight = 1.8;
     const base = new THREE.Mesh(
-      new THREE.BoxGeometry(pillarWidth * 1.2, 0.6, pillarWidth * 1.2),
+      new THREE.BoxGeometry(pillarWidth * 1.2, baseHeight, pillarWidth * 1.2),
       stoneMat
     );
-    base.position.y = 0.3;
+    base.position.y = 0.6 - baseHeight / 2;
     base.castShadow = true;
     base.receiveShadow = true;
     pGroup.add(base);
@@ -315,19 +316,22 @@ export function createClosedGate(): ClosedGateEntity {
   group.add(lockShackle);
 
   // 5. Anschließende alte Steinmauern links und rechts (riegeln das Tal ab)
+  // Das Fundament reicht 2.4m tief ins Erdreich, damit an Hangkuppen kein Spalt entsteht
   const wallSegmentLength = 8.5;
   const wallHeight = 3.6;
+  const wallFoundationDepth = 2.4;
+  const totalWallHeight = wallHeight + wallFoundationDepth;
   const wallThickness = 0.85;
 
   for (const side of [-1, 1]) {
     const wallMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(wallSegmentLength, wallHeight, wallThickness),
+      new THREE.BoxGeometry(wallSegmentLength, totalWallHeight, wallThickness),
       side === -1 ? stoneMat : mossStoneMat
     );
     // Leicht schräg nach hinten abgewinkelt, um sich natürlich an die Bergflanken anzuschmiegen
     wallMesh.position.set(
       side * (pillarOffset + pillarWidth / 2 + wallSegmentLength / 2 - 0.1),
-      wallHeight / 2,
+      (wallHeight - wallFoundationDepth) / 2,
       -0.45
     );
     wallMesh.rotation.y = side * 0.08;

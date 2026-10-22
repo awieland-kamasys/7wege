@@ -368,8 +368,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.giantNpc.group);
 
-    // Holzfällerlager auf der Waldlichtung am Ende des 4. Weges
-    this.lumberCamp = createLumberjackCamp();
+    // Lagerfeuerszene (Campfire Scene) auf der Waldlichtung am Ende des 4. Weges
+    this.lumberCamp = createLumberjackCamp((mesh) => {
+      this.pickableObjects.push(mesh);
+    });
     this.lumberCamp.group.position.set(
       LUMBER_CAMP_POS.x,
       getTerrainHeight(LUMBER_CAMP_POS.x, LUMBER_CAMP_POS.z),
@@ -496,14 +498,14 @@ export class CrossroadsScene {
     });
     this.scene.add(this.closedGate.group);
 
-    // Magischer Felsbrocken, der Weg 1 (Silberstollen-Pfad) blockiert
+    // Magischer Felsbrocken, der Weg 1 (Silberstollen-Pfad) blockiert (leicht eingesenkt für Felsclipping)
     this.path1Boulder = createPathBoulder();
-    this.path1Boulder.group.position.y = getTerrainHeight(this.path1Boulder.group.position.x, this.path1Boulder.group.position.z);
+    this.path1Boulder.group.position.y = getTerrainHeight(this.path1Boulder.group.position.x, this.path1Boulder.group.position.z) - 0.22;
     this.scene.add(this.path1Boulder.group);
 
     // Magische Wasserpfütze, die Weg 2 (Nixenteich-Pfad) blockiert
     this.path2Puddle = createPathPuddle();
-    this.path2Puddle.group.position.y = getTerrainHeight(this.path2Puddle.group.position.x, this.path2Puddle.group.position.z);
+    this.path2Puddle.group.position.y = getTerrainHeight(this.path2Puddle.group.position.x, this.path2Puddle.group.position.z) + 0.015;
     this.scene.add(this.path2Puddle.group);
 
     // Reißender Gebirgsbach, der Weg 3 (Quellenweg) blockiert
@@ -511,9 +513,9 @@ export class CrossroadsScene {
     this.path3Stream.group.position.y = getTerrainHeight(this.path3Stream.group.position.x, this.path3Stream.group.position.z);
     this.scene.add(this.path3Stream.group);
 
-    // Magischer Baumstamm, der Weg 4 (Holzfäller-Pfad) blockiert
+    // Magischer Baumstamm, der Weg 4 (Holzfäller-Pfad) blockiert (fest am Waldboden aufliegend)
     this.path4Log = createPathLog();
-    this.path4Log.group.position.y = getTerrainHeight(this.path4Log.group.position.x, this.path4Log.group.position.z);
+    this.path4Log.group.position.y = getTerrainHeight(this.path4Log.group.position.x, this.path4Log.group.position.z) - 0.08;
     this.scene.add(this.path4Log.group);
 
     // Magisches Feuer, das Weg 5 (Höllenschlund-Pfad) blockiert
@@ -521,9 +523,9 @@ export class CrossroadsScene {
     this.path5Fire.group.position.y = getTerrainHeight(this.path5Fire.group.position.x, this.path5Fire.group.position.z);
     this.scene.add(this.path5Fire.group);
 
-    // Hohe Kräuterpflanzen mit Geländer, die Weg 6 (Jägerpfad) blockieren
+    // Hohe Kräuterpflanzen mit Geländer, die Weg 6 (Jägerpfad) blockieren (Fundament im Boden)
     this.path6Herbs = createPathHerbs();
-    this.path6Herbs.group.position.y = getTerrainHeight(this.path6Herbs.group.position.x, this.path6Herbs.group.position.z);
+    this.path6Herbs.group.position.y = getTerrainHeight(this.path6Herbs.group.position.x, this.path6Herbs.group.position.z) - 0.08;
     this.scene.add(this.path6Herbs.group);
 
 
@@ -867,9 +869,9 @@ export class CrossroadsScene {
     const { dark: normalCrownDarkMat, light: normalCrownLightMat } = this.getCrownMaterials(false);
     const { dark: burnedCrownDarkMat, light: burnedCrownLightMat } = this.getCrownMaterials(true);
 
-    // 1. Geteilte Einheitsgeometrien mit Pivot am Boden (y = 0)
-    const trunkGeo = new THREE.CylinderGeometry(0.22, 0.32, 1.8, 8);
-    trunkGeo.translate(0, 0.9, 0);
+    // 1. Geteilte Einheitsgeometrien mit Verankerung im Boden (reicht 0.35m unter y = 0, damit an Hängen keine Wurzelkanten schweben!)
+    const trunkGeo = new THREE.CylinderGeometry(0.22, 0.35, 2.3, 8);
+    trunkGeo.translate(0, 0.8, 0);
 
     const cone1 = new THREE.ConeGeometry(1.35, 2.6, 9);
     cone1.translate(0, 2.6, 0);
@@ -1455,14 +1457,18 @@ export class CrossroadsScene {
           const isBeyondFire = tz >= PATH_5_FIRE_POS.z;
 
           if (isBeyondFire && (i + Math.round(dist)) % 3 === 0) {
-            // Basaltfelsformation am Wegesrand erst ab dem Feuerhindernis
+            // Basaltfelsformation am Wegesrand erst ab dem Feuerhindernis mit sauberer Bodenverankerung (Clipping)
+            const rRadius = 0.95 + (i % 2) * 0.45;
+            const rHeight = 3.2 + (i % 3) * 0.8;
             const rock = new THREE.Mesh(
-              new THREE.ConeGeometry(0.8 + (i % 2) * 0.4, 1.8 + (i % 3) * 0.5, 5),
+              new THREE.ConeGeometry(rRadius, rHeight, 5),
               basaltMat
             );
-            rock.position.set(tx, 0.9, tz);
-            rock.rotation.y = (i + side) * 0.7;
+            const gy = getTerrainHeight(tx, tz);
+            rock.position.set(tx, gy + rHeight / 2 - 1.25, tz);
+            rock.rotation.set(0.06 * side, (i + side) * 0.7, 0.04);
             rock.castShadow = true;
+            rock.receiveShadow = true;
             this.scene.add(rock);
           } else {
             // Vor dem Feuer: normale lebendige Sommerbäume (isBurned = false); ab dem Feuer: verbrannt (isBurned = true)
@@ -1955,8 +1961,11 @@ export class CrossroadsScene {
     }
 
     for (const r of rockConfigs) {
+      // Höhe um 4.0m vergrößern und Felsen um 3.5m tief im Boden versenken,
+      // damit selbst an steilen Kraterhängen kein Basisfelsen in der Luft schwebt, sondern satt clippt!
+      const totalHeight = r.height + 4.0;
       const rockMesh = new THREE.Mesh(
-        new THREE.ConeGeometry(r.baseRadius, r.height, 6),
+        new THREE.ConeGeometry(r.baseRadius, totalHeight, 6),
         rockMats[r.matIdx]
       );
       const wx = HELL_CHASM_POS.x + r.rx;
@@ -1964,7 +1973,7 @@ export class CrossroadsScene {
       const groundY = getTerrainHeight(wx, wz);
       rockMesh.position.set(
         wx,
-        groundY + r.height / 2 - 0.4,
+        groundY + totalHeight / 2 - 3.5,
         wz
       );
       rockMesh.rotation.set(r.tiltX, r.rotY, r.tiltZ);
