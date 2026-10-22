@@ -166,6 +166,7 @@ export class CrossroadsState {
 
   // Am Ende des 4. Weges: Holzfällerlager auf der Waldlichtung und das Holzweibchen
   private readonly lumberCampPos: Vector2D = { x: LUMBER_CAMP_POS.x, z: LUMBER_CAMP_POS.z };
+  private readonly lumberCampCollisionRadius = 2.55;
   private readonly woodWomanPos: Vector2D = { ...WOOD_WOMAN_NPC_POS };
   private readonly woodWomanCollisionRadius = 0.55;
 
@@ -948,29 +949,15 @@ export class CrossroadsState {
       return true;
     }
 
-    // Aufbauten im Holzfällerlager auf Weg 4:
-    // 1. Brennholz-Unterstand (AABB bei 12.8, 44.0)
-    if (Math.abs(x - 12.8) < 1.5 - eps && Math.abs(z - 44.0) < 0.9 - eps) {
-      return true;
-    }
-    // 2. Stammpolter & Sägebock (AABB bei 20.25, 43.5)
-    if (Math.abs(x - 20.25) < 1.7 - eps && Math.abs(z - 43.5) < 1.3 - eps) {
-      return true;
-    }
-    // 3. Hackklotz mit Axt bei (14.85, 45.35)
-    if (Math.hypot(x - 14.85, z - 45.35) < 0.55 - eps) {
-      return true;
-    }
-    // 4. Feuerstelle im Steinkreis bei (18.55, 45.45)
-    if (Math.hypot(x - 18.55, z - 45.45) < 0.65 - eps) {
-      return true;
-    }
-    // 5. Großer Urwaldstumpf bei (16.8, 45.35)
-    if (Math.hypot(x - 16.8, z - 45.35) < 0.85 - eps) {
+    // Die Campfire-Insel mit allen Aufbauten (Lagerfeuer, Kessel, Zelt, Scheite, Stämme) auf Weg 4
+    if (
+      Math.hypot(x - this.lumberCampPos.x, z - this.lumberCampPos.z) <
+      this.lumberCampCollisionRadius - eps
+    ) {
       return true;
     }
 
-    // Das Holzweibchen im Holzfällerlager auf Weg 4
+    // Das Holzweibchen kurz vor der Insel im Holzfällerlager auf Weg 4
     if (
       Math.hypot(x - this.woodWomanPos.x, z - this.woodWomanPos.z) <
       this.woodWomanCollisionRadius - eps
@@ -1541,45 +1528,16 @@ export class CrossroadsState {
       resolvedX = afterWoodWoman.x;
       resolvedZ = afterWoodWoman.z;
 
-      // Aufbauten der Lagerfeuer-Szene (Holzfällercamp auf Weg 4):
-      // 1. Zentrale Feuerstelle mit Kessel und Glutkreis bei (16.5, 43.8)
-      const afterCampfire = this.pushOutOfCircle(
+      // Aufbauten der Campfire-Insel (Holzfällercamp auf Weg 4):
+      // Solide Barriere um die erhöhte Insel (Radius 2.55m), verhindert Durchlaufen von Kessel, Feuer, Zelt und Stämmen
+      const afterLumberCamp = this.pushOutOfCircle(
         resolvedX,
         resolvedZ,
         this.lumberCampPos,
-        0.85
+        this.lumberCampCollisionRadius
       );
-      resolvedX = afterCampfire.x;
-      resolvedZ = afterCampfire.z;
-
-      // 2. Hintere Haupt-Sitzbank und Holzstapel bei (16.5, 45.4)
-      const afterRearBench = this.pushOutOfCircle(
-        resolvedX,
-        resolvedZ,
-        { x: 16.5, z: 45.4 },
-        0.95
-      );
-      resolvedX = afterRearBench.x;
-      resolvedZ = afterRearBench.z;
-
-      // 3. Linke und rechte Sitzbänke/Stämme des Camps
-      const afterLeftBench = this.pushOutOfCircle(
-        resolvedX,
-        resolvedZ,
-        { x: 14.7, z: 43.8 },
-        0.85
-      );
-      resolvedX = afterLeftBench.x;
-      resolvedZ = afterLeftBench.z;
-
-      const afterRightBench = this.pushOutOfCircle(
-        resolvedX,
-        resolvedZ,
-        { x: 18.3, z: 43.8 },
-        0.85
-      );
-      resolvedX = afterRightBench.x;
-      resolvedZ = afterRightBench.z;
+      resolvedX = afterLumberCamp.x;
+      resolvedZ = afterLumberCamp.z;
 
       // Teufel-Kollision am Ende von Weg 5
       const afterDevil = this.pushOutOfCircle(
@@ -1994,11 +1952,11 @@ export class CrossroadsState {
   }
 
   /**
-   * Lässt die Spielfigur entlang des 4. Weges bis auf die Waldlichtung vor das Holzweibchen im Holzfällerlager laufen.
+   * Lässt die Spielfigur entlang des 4. Weges bis auf die Waldlichtung kurz vor die Insel zum Holzweibchen laufen.
    */
   public setTargetToWoodWoman(): Readonly<Vector2D> {
     this.selectPath(4);
-    return this.setTargetPosition(this.woodWomanPos.x + 0.55, this.woodWomanPos.z - 0.85);
+    return this.setTargetPosition(this.woodWomanPos.x - 0.25, this.woodWomanPos.z - 1.0);
   }
 
   /**

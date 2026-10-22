@@ -385,10 +385,16 @@ export class CrossroadsScene {
     });
     this.scene.add(this.lumberCamp.group);
 
-    // Das Holzweibchen (NPC) im Holzfällerlager am Ende des 4. Weges (3D-Walddruidin)
-    this.woodWomanNpc = createWoodWomanNpc((mesh) => {
-      this.pickableObjects.push(mesh);
-    });
+    // Das Holzweibchen (NPC) im Holzfällerlager am Ende des 4. Weges (3D-Walddruidin kurz vor der Insel)
+    this.woodWomanNpc = createWoodWomanNpc(
+      (mesh) => {
+        this.pickableObjects.push(mesh);
+      },
+      {
+        interactableType: 'wood_woman',
+        defaultFacingTarget: { x: 15.2, z: 35.0 },
+      }
+    );
     this.woodWomanNpc.group.position.set(
       WOOD_WOMAN_NPC_POS.x,
       getTerrainHeight(WOOD_WOMAN_NPC_POS.x, WOOD_WOMAN_NPC_POS.z),

@@ -191,7 +191,7 @@ export const PATH_4_WAYPOINTS: readonly PathPoint2D[] = [
   { x: 9.2, z: 19.2 },
   { x: 12.6, z: 27.0 },
   { x: 15.2, z: 35.0 },
-  { x: 16.5, z: 42.5 },
+  { x: 16.5, z: 39.8 },
 ];
 
 /**
@@ -227,11 +227,12 @@ export const LUMBER_CAMP_POS = {
 } as const;
 
 /**
- * Position des Holzweibchens im Holzfällerlager am Ende von Weg 4.
+ * Position des Holzweibchens im Holzfällerlager am Ende von Weg 4:
+ * Steht kurz vor der Campfire-Insel am Übergang des ankommenden Waldweges auf die Lichtung.
  */
 export const WOOD_WOMAN_NPC_POS: PathPoint2D = {
-  x: 16.8,
-  z: 44.8,
+  x: 16.6,
+  z: 40.4,
 };
 
 /**

@@ -946,11 +946,10 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
   it('blockiert Aufbauten an den Wegendpunkten (Holzfällerlager, Kräutergarten-Zaun, Stausee)', () => {
     const state = new CrossroadsState();
 
-    // 1. Holzfällerlager Brennholz-Unterstand (12.8, 44.0)
-    expect(state.isCollidingWithObstacles(12.8, 44.0)).toBe(true);
-
-    // 2. Holzfällerlager Stammpolter (20.25, 43.5)
-    expect(state.isCollidingWithObstacles(20.25, 43.5)).toBe(true);
+    // 1. Campfire-Insel im Holzfällercamp auf Weg 4 (Zentrum und Aufbauten)
+    expect(state.isCollidingWithObstacles(16.5, 43.8)).toBe(true);
+    expect(state.isCollidingWithObstacles(15.2, 44.2)).toBe(true);
+    expect(state.isCollidingWithObstacles(17.8, 43.5)).toBe(true);
 
     // 3. Kräutergarten-Zaun auf Weg 6 (-46.7, 21.0)
     expect(state.isCollidingWithObstacles(-46.7, 21.0)).toBe(true);
