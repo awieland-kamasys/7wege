@@ -491,8 +491,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.woodWomanLodgeNpc.group);
 
-    // Das geschlossene Tor mit flankierenden Steinmauern am Ende des 7. Weges
-    this.closedGate = createClosedGate();
+    // Das geschlossene Tor mit flankierenden Steinmauern am Ende des 7. Weges (3D-Ziertor)
+    this.closedGate = createClosedGate((mesh) => {
+      this.pickableObjects.push(mesh);
+    });
     this.closedGate.group.position.set(
       CLOSED_GATE_POS.x,
       getTerrainHeight(CLOSED_GATE_POS.x, CLOSED_GATE_POS.z),

@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { createAshlarWallTexture, createWoodGrainTexture } from '../textures/GroundTextures';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { createAshlarWallTexture } from '../textures/GroundTextures';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface ClosedGateEntity {
   group: THREE.Group;
@@ -7,21 +9,20 @@ export interface ClosedGateEntity {
 }
 
 /**
- * Erstellt das 3D-Modell des uralten, fest verschlossenen Tores am Ende von Weg 7:
- * - Zwei mächtige Steinpfeiler mit Kapitellen und Kugelspitzen
- * - Ein massiver Torsturzbalken mit geheimnisvoller Siegel-Gravur
- * - Zweiflügeliges, schweres Eichenholztor mit edler Holzmaserung, Eisenbeschlägen und Ziernägeln
- * - Fester Eisen-Querbalken (Schieberiegel) und dicke Eisenketten mit riesigem Vorhängeschloss
- * - Anschließende alte Quadersteinmauern mit breiter Mauerstruktur und Zinnen
- * - Zwei schmiedeeiserne Wandlaternen an den Pfeilern mit sanft flackerndem Licht
- * - Schwebender Hinweis-Kristall für die Interaktion
+ * Erstellt das 3D-Modell des uralten, reich verzierten und verschlossenen Portals am Ende von Weg 7:
+ * - Lädt das detailreiche Schmiedetor-Modell `/assets/models/ornate gate 3d model.glb`
+ * - Harmonische Skalierung (Breite ca. 6.8m, Höhe ca. 4.5m)
+ * - Anschließende alte Quadersteinmauern links und rechts mit tiefem 2.4m-Fundament gegen Boden-Clipping
+ * - Dicke Eisenketten und massives Vorhängeschloss in der Tormitte als Symbol des Siegels
+ * - Schwebender, leuchtender Hinweis-Kristall über dem Torbogen für die Interaktion
  */
-export function createClosedGate(): ClosedGateEntity {
+export function createClosedGate(
+  onMeshLoaded?: (mesh: THREE.Mesh) => void
+): ClosedGateEntity {
   const group = new THREE.Group();
   group.name = 'ClosedGate';
 
-  // --- MATERIALIEN ---
-  // Breite Quaderstein-Mauerstruktur für Mauern, Pfeiler, Torbogen und Zinnen
+  // --- MATERIALIEN FÜR FLANKIERENDE MAUERN & SCHLOSS ---
   const wallTex = createAshlarWallTexture();
   if (wallTex.map) wallTex.map.repeat.set(3.2, 1.8);
   if (wallTex.bumpMap) wallTex.bumpMap.repeat.set(3.2, 1.8);
@@ -43,46 +44,20 @@ export function createClosedGate(): ClosedGateEntity {
     flatShading: true,
   });
 
-  // Edle Holzmaserung für das zweiflügelige Eichenholztor
-  const woodGrainTex = createWoodGrainTexture();
-  if (woodGrainTex.map) woodGrainTex.map.repeat.set(1.4, 2.4);
-  if (woodGrainTex.bumpMap) woodGrainTex.bumpMap.repeat.set(1.4, 2.4);
-
-  const woodMat = new THREE.MeshStandardMaterial({
-    color: 0x664426, // Sattes, geöltes Eichenholz mit sichtbarer Holzmaserung
-    map: woodGrainTex.map ?? undefined,
-    bumpMap: woodGrainTex.bumpMap ?? undefined,
-    bumpScale: 0.08,
-    roughness: 0.82,
-  });
   const ironMat = new THREE.MeshStandardMaterial({
     color: 0x222326,
-    metalness: 0.72,
-    roughness: 0.45,
+    metalness: 0.75,
+    roughness: 0.42,
   });
   const chainMat = new THREE.MeshStandardMaterial({
     color: 0x2b2c30,
-    metalness: 0.8,
-    roughness: 0.4,
+    metalness: 0.82,
+    roughness: 0.38,
   });
   const brassLockMat = new THREE.MeshStandardMaterial({
     color: 0xb58e38,
-    metalness: 0.65,
-    roughness: 0.35,
-  });
-  const runeMat = new THREE.MeshStandardMaterial({
-    color: 0x9370db,
-    emissive: 0x5c3a8f,
-    emissiveIntensity: 0.6,
-    roughness: 0.25,
-  });
-  const lanternGlassMat = new THREE.MeshStandardMaterial({
-    color: 0xffd580,
-    emissive: 0xd9822b,
-    emissiveIntensity: 0.85,
-    roughness: 0.25,
-    transparent: true,
-    opacity: 0.85,
+    metalness: 0.68,
+    roughness: 0.32,
   });
   const indicatorMat = new THREE.MeshStandardMaterial({
     color: 0xa87ffb,
@@ -92,230 +67,122 @@ export function createClosedGate(): ClosedGateEntity {
     metalness: 0.3,
   });
 
-  // Tor-Dimensionen
-  const gateWidth = 4.2;
-  const gateHeight = 4.0;
-  const pillarWidth = 0.95;
-  const pillarHeight = 4.6;
-  const pillarOffset = gateWidth / 2 + pillarWidth / 2;
+  // Tor-Dimensionen des 3D-GLB-Modells nach Skalierung (Faktor 6.8)
+  const gateScale = 6.8;
+  const gateHalfWidth = (1.0 * gateScale) / 2; // ca. 3.40m
+  const gateHeight = 0.656 * gateScale; // ca. 4.46m
 
-  // 1. Zwei mächtige Steinpfeiler (Torpfosten)
-  for (const side of [-1, 1]) {
-    const pGroup = new THREE.Group();
-    pGroup.position.set(side * pillarOffset, 0, 0);
-
-    // Sockel / Fundament (reicht 1.2m tief in den Boden, damit bei Geländeneigung niemals ein Spalt entsteht)
-    const baseHeight = 1.8;
-    const base = new THREE.Mesh(
-      new THREE.BoxGeometry(pillarWidth * 1.2, baseHeight, pillarWidth * 1.2),
-      stoneMat
-    );
-    base.position.y = 0.6 - baseHeight / 2;
-    base.castShadow = true;
-    base.receiveShadow = true;
-    pGroup.add(base);
-
-    // Hauptpfeiler
-    const shaft = new THREE.Mesh(
-      new THREE.BoxGeometry(pillarWidth, pillarHeight - 0.9, pillarWidth),
-      side === -1 ? stoneMat : mossStoneMat
-    );
-    shaft.position.y = (pillarHeight - 0.9) / 2 + 0.6;
-    shaft.castShadow = true;
-    shaft.receiveShadow = true;
-    pGroup.add(shaft);
-
-    // Kapitell
-    const cap = new THREE.Mesh(
-      new THREE.BoxGeometry(pillarWidth * 1.15, 0.4, pillarWidth * 1.15),
-      stoneMat
-    );
-    cap.position.y = pillarHeight + 0.1;
-    cap.castShadow = true;
-    pGroup.add(cap);
-
-    // Steinerne Zierkugel oben auf dem Pfeiler
-    const finial = new THREE.Mesh(
-      new THREE.SphereGeometry(pillarWidth * 0.32, 10, 10),
-      stoneMat
-    );
-    finial.position.y = pillarHeight + 0.55;
-    finial.scale.set(1.0, 1.2, 1.0);
-    finial.castShadow = true;
-    pGroup.add(finial);
-
-    // Schmiedeeiserne Wandlaterne an der Vorderseite des Pfeilers (+Z)
-    const lanternArm = new THREE.Mesh(
-      new THREE.BoxGeometry(0.1, 0.1, 0.45),
-      ironMat
-    );
-    lanternArm.position.set(0, 2.7, 0.55);
-    pGroup.add(lanternArm);
-
-    const lanternMesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.12, 0.16, 0.32, 6),
-      lanternGlassMat
-    );
-    lanternMesh.position.set(0, 2.5, 0.72);
-    pGroup.add(lanternMesh);
-
-    const lanternRoof = new THREE.Mesh(
-      new THREE.ConeGeometry(0.22, 0.18, 6),
-      ironMat
-    );
-    lanternRoof.position.set(0, 2.72, 0.72);
-    pGroup.add(lanternRoof);
-
-    group.add(pGroup);
-  }
-
-  // Sanfte Punktlichter für die beiden Pfeilerlaternen
-  const leftLight = new THREE.PointLight(0xffaa44, 0.9, 7.0);
-  leftLight.position.set(-pillarOffset, 2.5, 0.85);
-  group.add(leftLight);
-
-  const rightLight = new THREE.PointLight(0xffaa44, 0.9, 7.0);
-  rightLight.position.set(pillarOffset, 2.5, 0.85);
-  group.add(rightLight);
-
-  // 2. Massiver Torsturz / Bogen aus Stein
-  const archBeam = new THREE.Mesh(
-    new THREE.BoxGeometry(gateWidth + pillarWidth * 2, 0.65, pillarWidth * 0.95),
+  // 1. Temporäre dezente Platzhalter-Pfeiler bis das GLB geladen ist
+  const fallbackGroup = new THREE.Group();
+  const fallbackPillarLeft = new THREE.Mesh(
+    new THREE.BoxGeometry(0.8, gateHeight, 0.8),
     stoneMat
   );
-  archBeam.position.set(0, gateHeight + 0.32, 0);
-  archBeam.castShadow = true;
-  archBeam.receiveShadow = true;
-  group.add(archBeam);
+  fallbackPillarLeft.position.set(-gateHalfWidth, gateHeight / 2, 0);
+  fallbackPillarLeft.userData = { interactableType: 'gate' };
+  fallbackGroup.add(fallbackPillarLeft);
 
-  // Schlussstein mit leuchtender Glyphe/Rune in der Mitte
-  const keystone = new THREE.Mesh(
-    new THREE.BoxGeometry(0.65, 0.85, pillarWidth * 1.05),
+  const fallbackPillarRight = new THREE.Mesh(
+    new THREE.BoxGeometry(0.8, gateHeight, 0.8),
     stoneMat
   );
-  keystone.position.set(0, gateHeight + 0.38, 0);
-  keystone.castShadow = true;
-  group.add(keystone);
+  fallbackPillarRight.position.set(gateHalfWidth, gateHeight / 2, 0);
+  fallbackPillarRight.userData = { interactableType: 'gate' };
+  fallbackGroup.add(fallbackPillarRight);
 
-  const runePlate = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42, 0.48, 0.08),
-    runeMat
-  );
-  runePlate.position.set(0, gateHeight + 0.38, pillarWidth * 0.53);
-  group.add(runePlate);
+  group.add(fallbackGroup);
 
-  // 3. Zweiflügeliges, schweres Eichenholztor
-  const doorThickness = 0.22;
-  const leafWidth = gateWidth / 2 - 0.05;
+  // Gespeicherte Materialien des GLB-Modells für den Hover-Leuchteffekt
+  const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
-  for (const side of [-1, 1]) {
-    const leafGroup = new THREE.Group();
-    leafGroup.position.set(side * (leafWidth / 2 + 0.02), gateHeight / 2, 0);
+  // 2. GLB-Modell des prachtvollen Ziertores laden
+  const loader = new GLTFLoader();
+  loader.load(
+    '/assets/models/ornate gate 3d model.glb',
+    (gltf) => {
+      const model = gltf.scene;
 
-    // Torflügel (Holzbohlen)
-    const doorLeaf = new THREE.Mesh(
-      new THREE.BoxGeometry(leafWidth, gateHeight, doorThickness),
-      woodMat
-    );
-    doorLeaf.castShadow = true;
-    doorLeaf.receiveShadow = true;
-    leafGroup.add(doorLeaf);
+      // Gleichmäßiges Upscaling auf majestätische Portalgröße
+      model.scale.setScalar(gateScale);
 
-    // Vertikale Bohlenfugen (schwarze Nuten)
-    for (let f = -3; f <= 3; f++) {
-      if (f === 0) continue;
-      const groove = new THREE.Mesh(
-        new THREE.BoxGeometry(0.02, gateHeight - 0.1, doorThickness + 0.02),
-        ironMat
-      );
-      groove.position.x = (f * leafWidth) / 7;
-      leafGroup.add(groove);
-    }
+      // Passgenau auf Bodenniveau (y = 0) aufsetzen
+      model.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(model);
+      model.position.set(0, -bounds.min.y, 0);
 
-    // Horizontale Eisenbänder (oben, mitte, unten)
-    for (const yOffset of [-1.35, 0, 1.35]) {
-      const ironBand = new THREE.Mesh(
-        new THREE.BoxGeometry(leafWidth + 0.02, 0.14, doorThickness + 0.04),
-        ironMat
-      );
-      ironBand.position.y = yOffset;
-      leafGroup.add(ironBand);
+      model.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.userData = { interactableType: 'gate' };
 
-      // Eisennieten / Ziernägel auf den Bändern
-      for (const nx of [-0.65, -0.2, 0.2, 0.65]) {
-        for (const nz of [-1, 1]) {
-          const rivet = new THREE.Mesh(
-            new THREE.SphereGeometry(0.035, 5, 5),
-            ironMat
-          );
-          rivet.position.set(nx * (leafWidth / 2), yOffset, nz * (doorThickness / 2 + 0.025));
-          leafGroup.add(rivet);
+          const mats = Array.isArray(mesh.material)
+            ? mesh.material
+            : [mesh.material];
+          for (const mat of mats) {
+            if (mat && 'emissive' in mat) {
+              const stdMat = mat as THREE.MeshStandardMaterial;
+              stdMat.roughness = 0.65;
+              stdMat.metalness = 0.52;
+              modelMaterials.push(stdMat);
+            }
+          }
+
+          if (onMeshLoaded) {
+            onMeshLoaded(mesh);
+          }
         }
-      }
+      });
+
+      // Platzhalter entfernen und fertiges Tor-Modell einfügen
+      group.remove(fallbackGroup);
+      disposeObject3D(fallbackGroup);
+      group.add(model);
+    },
+    undefined,
+    (err) => {
+      console.warn('Ornate-Gate-GLB konnte nicht geladen werden, nutze Platzhalter:', err);
     }
-
-    // Eisenzinken / Stacheln oben auf der Torkante
-    for (let s = -2; s <= 2; s++) {
-      const spike = new THREE.Mesh(
-        new THREE.ConeGeometry(0.06, 0.35, 4),
-        ironMat
-      );
-      spike.position.set((s * leafWidth) / 6, gateHeight / 2 + 0.15, 0);
-      leafGroup.add(spike);
-    }
-
-    group.add(leafGroup);
-  }
-
-  // 4. Verschluss-Mechanismus: Massiver Schieberiegel, Ketten & Vorhängeschloss
-  // Schwerer Eisen-Riegelbalken quer über beide Flügel
-  const bolt = new THREE.Mesh(
-    new THREE.BoxGeometry(gateWidth * 0.78, 0.2, 0.16),
-    ironMat
   );
-  bolt.position.set(0, 1.85, doorThickness / 2 + 0.1);
-  bolt.castShadow = true;
-  group.add(bolt);
 
-  // Riegel-Halterungen links und rechts
-  for (const side of [-1, 1]) {
-    const bracket = new THREE.Mesh(
-      new THREE.BoxGeometry(0.24, 0.32, 0.26),
-      ironMat
-    );
-    bracket.position.set(side * 1.1, 1.85, doorThickness / 2 + 0.08);
-    group.add(bracket);
-  }
+  // 3. Dicke Eisenketten und massives Vorhängeschloss in der Tormitte
+  const lockGroup = new THREE.Group();
+  lockGroup.position.set(0, 1.65, 0.18);
 
-  // Dicke Eisenketten um die Mitte geschlungen
-  for (const rotY of [-0.2, 0.2]) {
+  for (const rotY of [-0.22, 0.22]) {
     const chain = new THREE.Mesh(
-      new THREE.TorusGeometry(0.32, 0.045, 6, 14),
+      new THREE.TorusGeometry(0.36, 0.05, 6, 14),
       chainMat
     );
-    chain.position.set(0, 1.85, doorThickness / 2 + 0.22);
+    chain.position.set(0, 0, 0);
     chain.rotation.y = rotY;
-    group.add(chain);
+    chain.castShadow = true;
+    chain.userData = { interactableType: 'gate' };
+    lockGroup.add(chain);
   }
 
-  // Großes Vorhängeschloss aus Messing/Eisen
   const lockBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.28, 0.34, 0.14),
+    new THREE.BoxGeometry(0.32, 0.38, 0.16),
     brassLockMat
   );
-  lockBody.position.set(0, 1.62, doorThickness / 2 + 0.28);
+  lockBody.position.set(0, -0.22, 0.06);
   lockBody.castShadow = true;
-  group.add(lockBody);
+  lockBody.userData = { interactableType: 'gate' };
+  lockGroup.add(lockBody);
 
   const lockShackle = new THREE.Mesh(
-    new THREE.TorusGeometry(0.12, 0.035, 6, 12, Math.PI),
+    new THREE.TorusGeometry(0.14, 0.04, 6, 12, Math.PI),
     ironMat
   );
-  lockShackle.position.set(0, 1.8, doorThickness / 2 + 0.28);
+  lockShackle.position.set(0, -0.02, 0.06);
   lockShackle.rotation.x = Math.PI;
-  group.add(lockShackle);
+  lockShackle.userData = { interactableType: 'gate' };
+  lockGroup.add(lockShackle);
 
-  // 5. Anschließende alte Steinmauern links und rechts (riegeln das Tal ab)
+  group.add(lockGroup);
+
+  // 4. Anschließende alte Steinmauern links und rechts (riegeln das Tal nahtlos ab)
   // Das Fundament reicht 2.4m tief ins Erdreich, damit an Hangkuppen kein Spalt entsteht
   const wallSegmentLength = 8.5;
   const wallHeight = 3.6;
@@ -328,15 +195,16 @@ export function createClosedGate(): ClosedGateEntity {
       new THREE.BoxGeometry(wallSegmentLength, totalWallHeight, wallThickness),
       side === -1 ? stoneMat : mossStoneMat
     );
-    // Leicht schräg nach hinten abgewinkelt, um sich natürlich an die Bergflanken anzuschmiegen
+    // Schließt bündig an die Außenflanken des verzierten Tores an
     wallMesh.position.set(
-      side * (pillarOffset + pillarWidth / 2 + wallSegmentLength / 2 - 0.1),
+      side * (gateHalfWidth + wallSegmentLength / 2 - 0.25),
       (wallHeight - wallFoundationDepth) / 2,
       -0.45
     );
     wallMesh.rotation.y = side * 0.08;
     wallMesh.castShadow = true;
     wallMesh.receiveShadow = true;
+    wallMesh.userData = { interactableType: 'gate' };
     group.add(wallMesh);
 
     // Zinnen auf den Mauern
@@ -347,25 +215,26 @@ export function createClosedGate(): ClosedGateEntity {
         stoneMat
       );
       merlon.position.set(
-        side * (pillarOffset + 0.8 + m * 2.0),
+        side * (gateHalfWidth + 0.8 + m * 2.0),
         wallHeight + 0.3,
         -0.45
       );
       merlon.castShadow = true;
+      merlon.userData = { interactableType: 'gate' };
       group.add(merlon);
     }
   }
 
-  // 6. Schwebender Hinweis-Kristall über dem Tor
+  // 5. Schwebender Hinweis-Kristall über dem Torbogen
   const indicator = new THREE.Mesh(
     new THREE.OctahedronGeometry(0.24, 0),
     indicatorMat
   );
-  indicator.position.set(0, gateHeight + 1.65, 0);
+  indicator.position.set(0, gateHeight + 0.55, 0);
   indicator.scale.set(0.9, 1.45, 0.9);
   group.add(indicator);
 
-  // Alle Meshes für Raycasting als 'gate' markieren
+  // Alle anfänglichen Meshes für Raycasting als 'gate' markieren
   group.traverse((child) => {
     if ((child as THREE.Mesh).isMesh) {
       child.userData = { interactableType: 'gate' };
@@ -378,26 +247,20 @@ export function createClosedGate(): ClosedGateEntity {
     highlighted: boolean
   ) => {
     // Kristall über dem Tor schweben und rotieren lassen
-    indicator.position.y = gateHeight + 1.65 + Math.sin(timeSeconds * 2.5) * 0.08;
+    indicator.position.y = gateHeight + 0.55 + Math.sin(timeSeconds * 2.5) * 0.08;
     indicator.rotation.y = timeSeconds * 1.2;
-
-    // Zartes Flackern der Laternen an den Pfeilern
-    const flicker = 0.92 + Math.sin(timeSeconds * 6.5) * 0.12 + Math.cos(timeSeconds * 11.0) * 0.08;
-    leftLight.intensity = 0.9 * flicker;
-    rightLight.intensity = 0.9 * flicker;
-    lanternGlassMat.emissiveIntensity = 0.85 * flicker;
-
-    // Geheimnisvolles Atmen der Rune über dem Tor
-    const runePulse = 0.55 + Math.sin(timeSeconds * 1.8) * 0.25;
-    runeMat.emissiveIntensity = runePulse;
 
     // Hervorhebung bei Mouseover
     indicatorMat.emissiveIntensity = highlighted ? 1.4 : 0.65;
     const indScale = highlighted ? 1.25 : 1.0;
     indicator.scale.set(0.9 * indScale, 1.45 * indScale, 0.9 * indScale);
 
-    const emissiveHex = highlighted ? 0x221a30 : 0x000000;
-    woodMat.emissive.setHex(emissiveHex);
+    // Warm-magischer Leuchteffekt auf dem metallischen Ziertor bei Hover
+    const emissiveHex = highlighted ? 0x221838 : 0x000000;
+    for (const mat of modelMaterials) {
+      mat.emissive.setHex(emissiveHex);
+      mat.emissiveIntensity = highlighted ? 0.38 : 0.0;
+    }
   };
 
   return { group, update };
