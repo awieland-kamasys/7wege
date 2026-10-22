@@ -65,9 +65,9 @@ import {
   createBrickTexture,
 } from '../textures/GroundTextures';
 import { createWoodWomanNpc, WoodWomanNpcEntity } from '../entities/WoodWomanNpc';
-import { createMushroomCluster, MushroomType } from '../entities/MushroomCluster';
-import { createBirdhouse } from '../entities/Birdhouse';
-import { createFlowerCluster, FlowerType } from '../entities/ForestFlowers';
+import { buildMergedMushroomClusters, MushroomClusterOptions, MushroomType } from '../entities/MushroomCluster';
+import { buildMergedBirdhouses, BirdhouseInstance } from '../entities/Birdhouse';
+import { buildMergedFlowerClusters, FlowerClusterOptions, FlowerType } from '../entities/ForestFlowers';
 import { Vector2D } from '../systems/CrossroadsState';
 import { disposeObject3D } from '../utils/threeUtils';
 
@@ -201,6 +201,11 @@ export class CrossroadsScene {
   private readonly tempTargetCamPos = new THREE.Vector3();
   private cachedCanvasRect: DOMRect | null = null;
   private readonly treeInstances: ForestTreeInstance[] = [];
+
+  // Live-Performancemessung
+  private currentFps = 60;
+  private frameCount = 0;
+  private fpsTimer = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -1251,12 +1256,12 @@ export class CrossroadsScene {
       this.scene.add(burnedCrownLightMesh);
     }
 
-    // 6. Nistkästen an jedem 10. lebenden Baum anbringen
+    // 6. Nistkästen an jedem 10. lebenden Baum sammeln und in genau 3 Meshes verschmelzen
+    const birdhouseInstances: BirdhouseInstance[] = [];
     let livingTreeCounter = 0;
     for (const t of normalTrees) {
       livingTreeCounter++;
       if (livingTreeCounter % 10 === 0) {
-        const birdhouse = createBirdhouse(t.scale);
         const trunkRadiusAtHeight = 0.274 * t.scale;
         const angle =
           t.birdhouseAngle !== undefined
@@ -1266,10 +1271,19 @@ export class CrossroadsScene {
         const bx = t.x + Math.sin(angle) * trunkRadiusAtHeight;
         const bz = t.z + Math.cos(angle) * trunkRadiusAtHeight;
 
-        birdhouse.position.set(bx, 0.82 * t.scale, bz);
-        birdhouse.rotation.y = angle;
-        this.scene.add(birdhouse);
+        birdhouseInstances.push({
+          x: bx,
+          y: 0.82 * t.scale,
+          z: bz,
+          rotationY: angle,
+          scale: t.scale,
+        });
       }
+    }
+
+    if (birdhouseInstances.length > 0) {
+      const mergedBirdhouses = buildMergedBirdhouses(birdhouseInstances);
+      this.scene.add(mergedBirdhouses);
     }
   }
 
@@ -1874,6 +1888,8 @@ export class CrossroadsScene {
       'mixed',
     ];
 
+    const flowerSpots: FlowerClusterOptions[] = [];
+
     // 1. Entlang der Segmente von Weg 7 auf den Waldwiesen beidseitig
     for (let i = 0; i < waypoints.length - 1; i++) {
       const a = waypoints[i];
@@ -1940,9 +1956,7 @@ export class CrossroadsScene {
             const scale = 0.88 + ((i + dIdx) % 3) * 0.12;
             const rotationY = (i * 1.5 + t * 4 + side) * 1.2;
 
-            const cluster = createFlowerCluster({ type, scale, rotationY });
-            cluster.group.position.set(fx, 0, fz);
-            this.scene.add(cluster.group);
+            flowerSpots.push({ x: fx, z: fz, type, scale, rotationY });
           }
         }
       }
@@ -1972,14 +1986,20 @@ export class CrossroadsScene {
         Math.hypot(wx - CLOSED_GATE_POS.x, wz - CLOSED_GATE_POS.z) >= CLOSED_GATE_POS.radius + 0.3 &&
         !this.isNearCurvedCorridor(wx, wz, PATH_7_WAYPOINTS, undefined, 2.2)
       ) {
-        const cluster = createFlowerCluster({
+        flowerSpots.push({
+          x: wx,
+          z: wz,
           type: spot.type,
           scale: spot.scale,
           rotationY: Math.random() * Math.PI * 2,
         });
-        cluster.group.position.set(wx, 0, wz);
-        this.scene.add(cluster.group);
       }
+    }
+
+    // Alle Blumen als genau 8 hochoptimierte Material-Meshes der Szene hinzufügen
+    if (flowerSpots.length > 0) {
+      const mergedFlowersGroup = buildMergedFlowerClusters(flowerSpots);
+      this.scene.add(mergedFlowersGroup);
     }
   }
 
@@ -1988,6 +2008,8 @@ export class CrossroadsScene {
    * ausschließlich auf den grünen Waldboden-Flächen unter den Bäumen – niemals auf braunen Wegen oder Plätzen.
    */
   private buildForestMushrooms(): void {
+    const mushroomSpots: MushroomClusterOptions[] = [];
+
     // 1. Pilze unter Bäumen im dichten Waldring zwischen den 7 Pfaden
     for (let i = 0; i < SEVEN_PATHS.length; i++) {
       const baseAngle = SEVEN_PATHS[i].angleRad + Math.PI / 7;
@@ -2017,13 +2039,13 @@ export class CrossroadsScene {
         const type = types[(i + Math.round(r / 2)) % types.length];
         const scale = 0.82 + ((i + Math.round(r)) % 3) * 0.12;
 
-        const cluster = createMushroomCluster({
+        mushroomSpots.push({
+          x: mx,
+          z: mz,
           type,
           scale,
           rotationY: shiftAngle,
         });
-        cluster.group.position.set(mx, 0, mz);
-        this.scene.add(cluster.group);
       }
     }
 
@@ -2077,18 +2099,22 @@ export class CrossroadsScene {
     ];
 
     for (const spot of specificMushroomSpots) {
-      // Sicherheitsüberprüfung: niemals auf braunen Wegen oder Plätzen platzieren
       if (!this.isPositionOnGreenGrass(spot.x, spot.z)) {
         continue;
       }
 
-      const cluster = createMushroomCluster({
+      mushroomSpots.push({
+        x: spot.x,
+        z: spot.z,
         type: spot.type,
         scale: spot.scale,
         rotationY: Math.sin(spot.x * 2.3 + spot.z) * Math.PI,
       });
-      cluster.group.position.set(spot.x, 0, spot.z);
-      this.scene.add(cluster.group);
+    }
+
+    if (mushroomSpots.length > 0) {
+      const mergedMushrooms = buildMergedMushroomClusters(mushroomSpots);
+      this.scene.add(mergedMushrooms);
     }
   }
 
@@ -2711,6 +2737,36 @@ export class CrossroadsScene {
     this.camera.lookAt(playerPos.x, targetY, playerPos.z);
 
     this.renderer.render(this.scene, this.camera);
+
+    // Live-FPS ermitteln
+    this.frameCount++;
+    this.fpsTimer += dtSeconds;
+    if (this.fpsTimer >= 0.5) {
+      this.currentFps = this.frameCount / this.fpsTimer;
+      this.frameCount = 0;
+      this.fpsTimer = 0;
+    }
+  }
+
+  /**
+   * Liefert Live-Performancemetriken des WebGLRenderers zur Diagnose und Anzeige.
+   */
+  public getRenderMetrics(): {
+    fps: number;
+    drawCalls: number;
+    triangles: number;
+    geometries: number;
+    textures: number;
+    pixelRatio: number;
+  } {
+    return {
+      fps: Math.round(this.currentFps),
+      drawCalls: this.renderer.info.render.calls,
+      triangles: this.renderer.info.render.triangles,
+      geometries: this.renderer.info.memory.geometries,
+      textures: this.renderer.info.memory.textures,
+      pixelRatio: this.renderer.getPixelRatio(),
+    };
   }
 
   /**

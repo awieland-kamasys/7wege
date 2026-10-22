@@ -90,6 +90,10 @@ export class GameApp {
     window.addEventListener('pointerup', this.onPointerUp);
     this.canvas.addEventListener('wheel', this.onWheel, { passive: false });
     this.canvas.addEventListener('contextmenu', this.onContextMenu);
+
+    // Globale Referenzen für Konsole und Debugging
+    (window as any).__7WEGE_APP__ = this;
+    (window as any).__7WEGE_SCENE__ = this.scene;
   }
 
   public start(): void {
@@ -292,6 +296,12 @@ export class GameApp {
 
     if (event.key === 'Escape' && this.dialogue.isOpen()) {
       this.closeDialogueAndSpeech();
+      return;
+    }
+
+    // Performance-Metriken per Taste P oder F3 umschalten
+    if (key === 'p' || event.key === 'F3') {
+      this.hud.togglePerfModal();
       return;
     }
 
@@ -808,7 +818,8 @@ export class GameApp {
       this.dialogue.getCurrentNode(),
       this.state.isChestOpen(),
       this.state.isOnClearing(),
-      currentPath
+      currentPath,
+      this.scene.getRenderMetrics()
     );
 
     this.animationFrameId = requestAnimationFrame(this.loop);

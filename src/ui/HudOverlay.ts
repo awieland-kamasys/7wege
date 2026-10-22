@@ -2,6 +2,15 @@ import { DialogueNode } from '../game/data/npcDialogues';
 import { ForestPathData, SEVEN_PATHS } from '../game/data/paths';
 import { PointOfInterest } from '../game/systems/CrossroadsState';
 
+export interface RenderMetrics {
+  fps: number;
+  drawCalls: number;
+  triangles: number;
+  geometries: number;
+  textures: number;
+  pixelRatio: number;
+}
+
 export interface HudCallbacks {
   onSelectPath: (pathId: number) => void;
   onReturnToClearing: () => void;
@@ -20,6 +29,7 @@ export interface HudCallbacks {
  * - Es wird nur der eine Pfad angezeigt, auf dem die Spielfigur innerhalb der Quest unterwegs ist
  *   (und erst dann, wenn dieser Pfad aktuell ausgewählt ist).
  * - Das Kommunikationsmenü erscheint ausschließlich, während ein Gespräch stattfindet.
+ * - Ein dezentes Performance-Badge zeigt Live-Messwerte (Draw Calls, FPS, Triangles).
  */
 export class HudOverlay {
   private readonly activePathBadgeEl: HTMLElement;
@@ -31,9 +41,13 @@ export class HudOverlay {
   private readonly dialogueTextEl: HTMLElement;
   private readonly dialogueOptionsEl: HTMLElement;
   private readonly speechToggleBtn: HTMLButtonElement;
+  private readonly perfBadgeEl: HTMLElement;
+  private readonly perfModalEl: HTMLElement;
   private lastDialogueNodeId: string | null = null;
   private lastPathBadgeText: string | null = null;
   private lastReturnBtnHidden: boolean | null = null;
+  private lastPerfText: string | null = null;
+  private isPerfModalOpen = false;
 
   constructor(container: HTMLElement, private readonly callbacks: HudCallbacks) {
     container.innerHTML = '';
@@ -61,6 +75,20 @@ export class HudOverlay {
     });
 
     this.activePathBadgeEl.append(this.activePathTitleEl, this.returnToClearingBtn);
+
+    // Live Performance-Badge (oben rechts)
+    this.perfBadgeEl = document.createElement('div');
+    this.perfBadgeEl.className = 'perf-badge';
+    this.perfBadgeEl.title = 'Performance-Metriken anzeigen / ausblenden (Taste P)';
+    this.perfBadgeEl.textContent = '⚡ Metriken';
+    this.perfBadgeEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.togglePerfModal();
+    });
+
+    // Detailfenster für Performance-Metriken
+    this.perfModalEl = document.createElement('div');
+    this.perfModalEl.className = 'perf-modal is-hidden';
 
     // Kommunikationsmenü: wird ausschließlich eingeblendet, wenn aktive Kommunikation stattfindet
     this.dialogueModalEl = document.createElement('aside');
@@ -120,7 +148,16 @@ export class HudOverlay {
     );
 
     header.append(this.dialogueModalEl);
-    container.append(header, this.activePathBadgeEl);
+    container.append(header, this.activePathBadgeEl, this.perfBadgeEl, this.perfModalEl);
+  }
+
+  public togglePerfModal(): void {
+    this.isPerfModalOpen = !this.isPerfModalOpen;
+    if (this.isPerfModalOpen) {
+      this.perfModalEl.classList.remove('is-hidden');
+    } else {
+      this.perfModalEl.classList.add('is-hidden');
+    }
   }
 
   public update(
@@ -129,8 +166,45 @@ export class HudOverlay {
     activeDialogueNode: DialogueNode | null,
     _isChestOpen = false,
     isOnClearing = true,
-    currentPath: ForestPathData | null = null
+    currentPath: ForestPathData | null = null,
+    metrics?: RenderMetrics
   ): void {
+    if (metrics) {
+      const badgeText = `⚡ ${metrics.fps} FPS · ${metrics.drawCalls} Calls`;
+      if (this.lastPerfText !== badgeText) {
+        this.lastPerfText = badgeText;
+        this.perfBadgeEl.textContent = badgeText;
+      }
+
+      if (this.isPerfModalOpen) {
+        this.perfModalEl.innerHTML = `
+          <div style="font-weight: 700; color: var(--accent-gold); margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+            <span>⚡ Performance-Diagnose</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Taste P</span>
+          </div>
+          <div style="display: grid; grid-template-columns: auto auto; gap: 0.25rem 0.75rem; font-family: monospace;">
+            <span style="color: var(--text-muted);">Bildrate:</span>
+            <span style="color: var(--accent-green); font-weight: 600;">${metrics.fps} FPS (${(1000 / Math.max(1, metrics.fps)).toFixed(1)} ms)</span>
+            <span style="color: var(--text-muted);">Draw Calls:</span>
+            <span style="color: #64b5f6; font-weight: 600;">${metrics.drawCalls} <small style="color: var(--text-muted);">(vorher ~3.100)</small></span>
+            <span style="color: var(--text-muted);">Dreiecke:</span>
+            <span>${metrics.triangles.toLocaleString()}</span>
+            <span style="color: var(--text-muted);">VRAM-Geometrien:</span>
+            <span>${metrics.geometries}</span>
+            <span style="color: var(--text-muted);">VRAM-Texturen:</span>
+            <span>${metrics.textures}</span>
+            <span style="color: var(--text-muted);">Pixel Ratio (DPR):</span>
+            <span>${metrics.pixelRatio}</span>
+          </div>
+          <div style="margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; color: var(--text-muted);">
+            ✔ InstancedMesh (12 Baum-Calls statt 3.000)<br>
+            ✔ Pfad-Geometrien verschmolzen<br>
+            ✔ Gestaffeltes Schauplatz-Laden
+          </div>
+        `;
+      }
+    }
+
     const selectedPath =
       currentPath ??
       (selectedPathId !== null

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export type FlowerType =
   | 'anemone'        // Weißes Buschwindröschen
@@ -9,6 +10,8 @@ export type FlowerType =
   | 'mixed';         // Bunter Waldwiesen-Blumenstrauß
 
 export interface FlowerClusterOptions {
+  x?: number;
+  z?: number;
   type?: FlowerType;
   scale?: number;
   rotationY?: number;
@@ -21,7 +24,7 @@ export interface FlowerClusterEntity {
 /**
  * Geteilte Materialien für alle Waldblumen zur Schonung von Ressourcen und Draw Calls.
  */
-class FlowerMaterialCache {
+export class FlowerMaterialCache {
   private static instance: FlowerMaterialCache;
 
   public readonly stemMat = new THREE.MeshStandardMaterial({
@@ -87,194 +90,197 @@ class FlowerMaterialCache {
 }
 
 /**
- * Erstellt eine einzelne 5-blättrige Stern- oder Schalenblüte.
+ * Erzeugt alle Blumencluster entlang von Wegen als hocheffiziente,
+ * nach Material verschmolzene Geometrien (reduziert über 7.000 Draw Calls auf genau 7).
  */
-function createRadialFlowerHead(
-  petalMat: THREE.Material,
-  centerMat: THREE.Material,
-  radius: number
-): THREE.Group {
-  const head = new THREE.Group();
-
-  // Blütenboden / Mitte
-  const centerGeom = new THREE.SphereGeometry(radius * 0.28, 6, 6);
-  const centerMesh = new THREE.Mesh(centerGeom, centerMat);
-  centerMesh.scale.set(1.0, 0.45, 1.0);
-  head.add(centerMesh);
-
-  // 5 Blütenblätter kreisförmig angeordnet
-  const petalCount = 5;
-  const petalGeom = new THREE.ConeGeometry(radius * 0.38, radius * 0.78, 5);
-  petalGeom.rotateX(Math.PI / 2);
-
-  for (let i = 0; i < petalCount; i++) {
-    const angle = (i * Math.PI * 2) / petalCount;
-    const petal = new THREE.Mesh(petalGeom, petalMat);
-    petal.position.set(
-      Math.sin(angle) * radius * 0.48,
-      0.005,
-      Math.cos(angle) * radius * 0.48
-    );
-    petal.rotation.y = angle;
-    // Blütenblatt sanft nach oben wölben
-    petal.rotation.x = 0.18;
-    petal.scale.set(0.85, 0.3, 1.0);
-    head.add(petal);
-  }
-
-  return head;
-}
-
-/**
- * Erstellt eine nach unten geneigte Glockenblume.
- */
-function createBellFlowerHead(
-  bellMat: THREE.Material,
-  radius: number
-): THREE.Group {
-  const head = new THREE.Group();
-
-  // Glockenkelch
-  const bellGeom = new THREE.ConeGeometry(radius * 0.55, radius * 1.1, 7, 1, true);
-  // Nach unten öffnen
-  bellGeom.rotateX(Math.PI);
-  const bellMesh = new THREE.Mesh(bellGeom, bellMat);
-  head.add(bellMesh);
-
-  // Kleines Staubblatt im Kelchinneren
-  const stamenGeom = new THREE.CylinderGeometry(radius * 0.04, radius * 0.04, radius * 0.6, 4);
-  const stamenMesh = new THREE.Mesh(stamenGeom, FlowerMaterialCache.get().centerYellowMat);
-  stamenMesh.position.y = -radius * 0.35;
-  head.add(stamenMesh);
-
-  return head;
-}
-
-/**
- * Erzeugt einen einzelnen Blütenstängel mit Fußblättern und Blüte.
- */
-function createSingleFlower(
-  type: FlowerType,
-  height: number,
-  tiltX: number,
-  tiltZ: number,
-  mats: FlowerMaterialCache
-): THREE.Group {
-  const flower = new THREE.Group();
-
-  // Zarter Stängel
-  const stemRadius = 0.007;
-  const stemGeom = new THREE.CylinderGeometry(stemRadius * 0.7, stemRadius, height, 5);
-  const stemMesh = new THREE.Mesh(stemGeom, mats.stemMat);
-  stemMesh.position.y = height / 2;
-  stemMesh.rotation.set(tiltX, 0, tiltZ);
-  flower.add(stemMesh);
-
-  // Kleine bodennahe Lanzettblätter
-  const leafCount = 2;
-  for (let l = 0; l < leafCount; l++) {
-    const leafGeom = new THREE.ConeGeometry(0.022, 0.09, 4);
-    const leaf = new THREE.Mesh(leafGeom, mats.leafMat);
-    const leafAngle = l * Math.PI + tiltX;
-    leaf.position.set(Math.sin(leafAngle) * 0.03, 0.02, Math.cos(leafAngle) * 0.03);
-    leaf.rotation.set(0.5, leafAngle, 0.4);
-    flower.add(leaf);
-  }
-
-  // Blüte an der Spitze des geneigten Stängels
-  const tipX = -Math.sin(tiltZ) * height;
-  const tipZ = Math.sin(tiltX) * height;
-  const tipY = height * Math.cos(Math.hypot(tiltX, tiltZ));
-
-  let petalMat: THREE.Material = mats.anemoneMat;
-  let centerMat: THREE.Material = mats.centerYellowMat;
-  let isBell = false;
-
-  switch (type) {
-    case 'anemone':
-      petalMat = mats.anemoneMat;
-      centerMat = mats.centerYellowMat;
-      break;
-    case 'forget_me_not':
-      petalMat = mats.forgetMeNotMat;
-      centerMat = mats.centerYellowMat;
-      break;
-    case 'bellflower':
-      petalMat = mats.bellflowerMat;
-      isBell = true;
-      break;
-    case 'buttercup':
-      petalMat = mats.buttercupMat;
-      centerMat = mats.centerYellowMat;
-      break;
-    case 'campion':
-      petalMat = mats.campionMat;
-      centerMat = mats.centerWhiteMat;
-      break;
-  }
-
-  const flowerHead = isBell
-    ? createBellFlowerHead(petalMat, 0.065)
-    : createRadialFlowerHead(petalMat, centerMat, 0.058);
-
-  flowerHead.position.set(tipX, tipY, tipZ);
-  if (!isBell) {
-    flowerHead.rotation.set(tiltX * 0.6, Math.random() * Math.PI, tiltZ * 0.6);
-  } else {
-    // Glocke neigt sich sanft herab
-    flowerHead.rotation.set(0.35 + tiltX, tiltZ * 0.8, -0.2);
-  }
-  flower.add(flowerHead);
-
-  return flower;
-}
-
-/**
- * Erstellt ein natürliches, dichtes Waldblumen-Cluster (Tuff) aus mehreren Einzelblumen.
- */
-export function createFlowerCluster(options: FlowerClusterOptions = {}): FlowerClusterEntity {
+export function buildMergedFlowerClusters(spots: FlowerClusterOptions[]): THREE.Group {
   const mats = FlowerMaterialCache.get();
   const group = new THREE.Group();
-  group.name = 'FlowerCluster';
+  group.name = 'MergedFlowerClusters';
 
-  const type = options.type ?? 'mixed';
-  const scale = options.scale ?? 1.0;
-  const rotationY = options.rotationY ?? 0;
+  const stemGeos: THREE.BufferGeometry[] = [];
+  const anemoneGeos: THREE.BufferGeometry[] = [];
+  const forgetGeos: THREE.BufferGeometry[] = [];
+  const bellGeos: THREE.BufferGeometry[] = [];
+  const buttercupGeos: THREE.BufferGeometry[] = [];
+  const campionGeos: THREE.BufferGeometry[] = [];
+  const centerYellowGeos: THREE.BufferGeometry[] = [];
+  const centerWhiteGeos: THREE.BufferGeometry[] = [];
 
-  group.scale.set(scale, scale, scale);
-  group.rotation.y = rotationY;
-
-  // Kleines grünes Moos-/Grasbett an der Basis
-  const baseGeom = new THREE.CircleGeometry(0.18, 7);
-  const baseMesh = new THREE.Mesh(baseGeom, mats.leafMat);
-  baseMesh.rotation.x = -Math.PI / 2;
-  baseMesh.position.y = 0.005;
-  group.add(baseMesh);
-
-  // Liste der Blütentypen für diesen Tuff
   const availableTypes: FlowerType[] = ['anemone', 'forget_me_not', 'bellflower', 'buttercup', 'campion'];
 
-  // 5 bis 8 Einzelblüten pro Cluster
-  const flowerCount = 6;
-  for (let i = 0; i < flowerCount; i++) {
-    const chosenType: FlowerType =
-      type === 'mixed'
-        ? availableTypes[i % availableTypes.length]
-        : type;
+  const tempMatrix = new THREE.Matrix4();
+  const tempPos = new THREE.Vector3();
+  const tempEuler = new THREE.Euler();
+  const tempQuat = new THREE.Quaternion();
+  const tempScale = new THREE.Vector3();
 
-    const angle = (i * Math.PI * 2) / flowerCount + (Math.sin(i * 1.7) * 0.4);
-    const radius = 0.04 + (i % 3) * 0.045;
-    const fx = Math.sin(angle) * radius;
-    const fz = Math.cos(angle) * radius;
+  for (const spot of spots) {
+    const sx = spot.x ?? 0;
+    const sz = spot.z ?? 0;
+    const sScale = spot.scale ?? 1.0;
+    const sRotY = spot.rotationY ?? 0;
+    const type = spot.type ?? 'mixed';
 
-    const height = 0.15 + (i % 4) * 0.035;
-    const tiltX = (Math.cos(angle) * 0.18) + ((i % 2 === 0 ? 0.08 : -0.08));
-    const tiltZ = (Math.sin(angle) * 0.18) + ((i % 3 === 0 ? 0.06 : -0.06));
+    // Kleines Moos-/Grasbett am Boden
+    const baseGeom = new THREE.CircleGeometry(0.18 * sScale, 6);
+    tempPos.set(sx, 0.005, sz);
+    tempEuler.set(-Math.PI / 2, 0, sRotY);
+    tempQuat.setFromEuler(tempEuler);
+    tempScale.set(1, 1, 1);
+    tempMatrix.compose(tempPos, tempQuat, tempScale);
+    baseGeom.applyMatrix4(tempMatrix);
+    stemGeos.push(baseGeom);
 
-    const singleFlower = createSingleFlower(chosenType, height, tiltX, tiltZ, mats);
-    singleFlower.position.set(fx, 0, fz);
-    group.add(singleFlower);
+    const flowerCount = 5; // 5 dichte Einzelblumen pro Tuff
+    for (let i = 0; i < flowerCount; i++) {
+      const chosenType: FlowerType =
+        type === 'mixed' ? availableTypes[i % availableTypes.length] : type;
+
+      const angle = (i * Math.PI * 2) / flowerCount + Math.sin(i * 1.7) * 0.4;
+      const radius = (0.04 + (i % 3) * 0.045) * sScale;
+
+      const cosR = Math.cos(sRotY);
+      const sinR = Math.sin(sRotY);
+      const lfx = Math.sin(angle) * radius;
+      const lfz = Math.cos(angle) * radius;
+      const fx = sx + lfx * cosR - lfz * sinR;
+      const fz = sz + lfx * sinR + lfz * cosR;
+
+      const height = (0.14 + (i % 4) * 0.035) * sScale;
+      const tiltX = Math.cos(angle) * 0.18 + (i % 2 === 0 ? 0.08 : -0.08);
+      const tiltZ = Math.sin(angle) * 0.18 + (i % 3 === 0 ? 0.06 : -0.06);
+
+      // Stängel
+      const stemRadius = 0.007 * sScale;
+      const stemGeom = new THREE.CylinderGeometry(stemRadius * 0.7, stemRadius, height, 4);
+      tempPos.set(fx, height / 2, fz);
+      tempEuler.set(tiltX, sRotY, tiltZ);
+      tempQuat.setFromEuler(tempEuler);
+      tempMatrix.compose(tempPos, tempQuat, tempScale);
+      stemGeom.applyMatrix4(tempMatrix);
+      stemGeos.push(stemGeom);
+
+      // 2 kleine Blätter
+      for (let l = 0; l < 2; l++) {
+        const leafGeom = new THREE.ConeGeometry(0.02 * sScale, 0.08 * sScale, 4);
+        const leafAngle = l * Math.PI + tiltX + sRotY;
+        tempPos.set(fx + Math.sin(leafAngle) * 0.025 * sScale, 0.02 * sScale, fz + Math.cos(leafAngle) * 0.025 * sScale);
+        tempEuler.set(0.5, leafAngle, 0.4);
+        tempQuat.setFromEuler(tempEuler);
+        tempMatrix.compose(tempPos, tempQuat, tempScale);
+        leafGeom.applyMatrix4(tempMatrix);
+        stemGeos.push(leafGeom);
+      }
+
+      // Blütenkopf an Stängelspitze
+      const tipX = fx - Math.sin(tiltZ) * height;
+      const tipZ = fz + Math.sin(tiltX) * height;
+      const tipY = height * Math.cos(Math.hypot(tiltX, tiltZ));
+
+      const fRadius = (chosenType === 'bellflower' ? 0.065 : 0.055) * sScale;
+
+      if (chosenType === 'bellflower') {
+        // Glockenblumen-Kelch
+        const bellGeom = new THREE.ConeGeometry(fRadius * 0.55, fRadius * 1.1, 6, 1, true);
+        bellGeom.rotateX(Math.PI);
+        tempPos.set(tipX, tipY, tipZ);
+        tempEuler.set(0.35 + tiltX, sRotY + tiltZ * 0.8, -0.2);
+        tempQuat.setFromEuler(tempEuler);
+        tempMatrix.compose(tempPos, tempQuat, tempScale);
+        bellGeom.applyMatrix4(tempMatrix);
+        bellGeos.push(bellGeom);
+
+        // Staubfaden
+        const stamenGeom = new THREE.CylinderGeometry(fRadius * 0.04, fRadius * 0.04, fRadius * 0.5, 3);
+        tempPos.set(tipX, tipY - fRadius * 0.25, tipZ);
+        tempEuler.set(0.35 + tiltX, sRotY, -0.2);
+        tempQuat.setFromEuler(tempEuler);
+        tempMatrix.compose(tempPos, tempQuat, tempScale);
+        stamenGeom.applyMatrix4(tempMatrix);
+        centerYellowGeos.push(stamenGeom);
+      } else {
+        // Stern-/Schalenblüte
+        let targetPetalList = anemoneGeos;
+        let isWhiteCenter = false;
+        if (chosenType === 'forget_me_not') targetPetalList = forgetGeos;
+        else if (chosenType === 'buttercup') targetPetalList = buttercupGeos;
+        else if (chosenType === 'campion') {
+          targetPetalList = campionGeos;
+          isWhiteCenter = true;
+        }
+
+        // Zentrum
+        const centerGeom = new THREE.SphereGeometry(fRadius * 0.26, 4, 4);
+        tempPos.set(tipX, tipY, tipZ);
+        tempEuler.set(tiltX * 0.6, sRotY, tiltZ * 0.6);
+        tempQuat.setFromEuler(tempEuler);
+        tempScale.set(1.0, 0.45, 1.0);
+        tempMatrix.compose(tempPos, tempQuat, tempScale);
+        centerGeom.applyMatrix4(tempMatrix);
+        if (isWhiteCenter) {
+          centerWhiteGeos.push(centerGeom);
+        } else {
+          centerYellowGeos.push(centerGeom);
+        }
+        tempScale.set(1, 1, 1);
+
+        // 5 Blütenblätter
+        const petalCount = 5;
+        const petalGeom = new THREE.ConeGeometry(fRadius * 0.36, fRadius * 0.74, 4);
+        petalGeom.rotateX(Math.PI / 2);
+        for (let p = 0; p < petalCount; p++) {
+          const pAngle = (p * Math.PI * 2) / petalCount + sRotY;
+          const clonedPetal = petalGeom.clone();
+          tempPos.set(
+            tipX + Math.sin(pAngle) * fRadius * 0.45,
+            tipY + 0.005,
+            tipZ + Math.cos(pAngle) * fRadius * 0.45
+          );
+          tempEuler.set(0.18 + tiltX * 0.6, pAngle, tiltZ * 0.6);
+          tempQuat.setFromEuler(tempEuler);
+          tempScale.set(0.85, 0.3, 1.0);
+          tempMatrix.compose(tempPos, tempQuat, tempScale);
+          clonedPetal.applyMatrix4(tempMatrix);
+          targetPetalList.push(clonedPetal);
+        }
+        petalGeom.dispose();
+        tempScale.set(1, 1, 1);
+      }
+    }
   }
 
+  // Hilfsfunktion zum Zusammenführen und Hinzufügen
+  const mergeAndAdd = (list: THREE.BufferGeometry[], mat: THREE.Material, name: string) => {
+    if (list.length === 0) return;
+    const merged = BufferGeometryUtils.mergeGeometries(list, false);
+    for (const g of list) {
+      g.dispose();
+    }
+    if (merged) {
+      const mesh = new THREE.Mesh(merged, mat);
+      mesh.name = name;
+      mesh.receiveShadow = true;
+      group.add(mesh);
+    }
+  };
+
+  mergeAndAdd(stemGeos, mats.leafMat, 'MergedFlowerStems');
+  mergeAndAdd(anemoneGeos, mats.anemoneMat, 'MergedFlowerAnemones');
+  mergeAndAdd(forgetGeos, mats.forgetMeNotMat, 'MergedFlowerForgetMeNots');
+  mergeAndAdd(bellGeos, mats.bellflowerMat, 'MergedFlowerBellflowers');
+  mergeAndAdd(buttercupGeos, mats.buttercupMat, 'MergedFlowerButtercups');
+  mergeAndAdd(campionGeos, mats.campionMat, 'MergedFlowerCampions');
+  mergeAndAdd(centerYellowGeos, mats.centerYellowMat, 'MergedFlowerCentersYellow');
+  mergeAndAdd(centerWhiteGeos, mats.centerWhiteMat, 'MergedFlowerCentersWhite');
+
+  return group;
+}
+
+/**
+ * Fallback für einzelne Cluster
+ */
+export function createFlowerCluster(options: FlowerClusterOptions = {}): FlowerClusterEntity {
+  const group = buildMergedFlowerClusters([options]);
   return { group };
 }

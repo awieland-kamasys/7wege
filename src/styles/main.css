@@ -76,6 +76,55 @@ body,
   z-index: 10;
 }
 
+/* Dezentes Performance-Badge oben rechts mit Live-FPS und Draw Calls */
+.perf-badge {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--bg-dark);
+  border: 1px solid rgba(108, 168, 112, 0.6);
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-green);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.perf-badge:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  transform: translateY(-1px);
+}
+
+.perf-modal {
+  position: absolute;
+  top: 3.2rem;
+  right: 0.85rem;
+  background: rgba(18, 26, 20, 0.95);
+  border: 1px solid var(--accent-gold);
+  border-radius: 12px;
+  padding: 0.85rem 1.1rem;
+  font-size: 0.82rem;
+  color: var(--text-light);
+  backdrop-filter: blur(12px);
+  pointer-events: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+  min-width: 270px;
+  line-height: 1.5;
+  user-select: none;
+}
+
 .active-path-title {
   display: inline-flex;
   align-items: center;
