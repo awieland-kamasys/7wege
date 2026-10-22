@@ -68,7 +68,7 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
 
   // Temporärer Platzhalter während des Ladens (stilisierter Bergfried und Wehrmauer)
   const castleFallback = new THREE.Group();
-  castleFallback.rotation.y = Math.PI;
+  castleFallback.rotation.y = Math.PI * 1.5;
   const keepFallback = new THREE.Mesh(
     new THREE.BoxGeometry(3.4, 4.2, 3.4),
     stoneMat
@@ -98,8 +98,8 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
       const model = gltf.scene;
       // Stattliche Skalierung (Breite ca. 8.2m, Höhe ca. 5.6m, Tiefe ca. 6.2m)
       model.scale.setScalar(8.2);
-      // Drehung: um 180 Grad gedreht gegenüber der ursprünglichen Ausrichtung
-      model.rotation.y = Math.PI * 0.25;
+      // Drehung: um 90 Grad gegen den Uhrzeigersinn gedreht (von Math.PI * 0.25 auf Math.PI * 0.75)
+      model.rotation.y = Math.PI * 0.75;
 
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
