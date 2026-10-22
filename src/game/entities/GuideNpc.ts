@@ -44,13 +44,19 @@ export function createGuideNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
   fallbackGroup.add(fallbackHead);
   group.add(fallbackGroup);
 
-  // Schwebender Hinweis-Kristall über Arvids Kopf (Marker bleibt exakt gleich)
-  const indicatorMat = new THREE.MeshStandardMaterial({
+  // Schwebender Hinweis-Kristall über Arvids Kopf (transparent und spiegelnd)
+  const indicatorMat = new THREE.MeshPhysicalMaterial({
     color: 0xe2b86b,
     emissive: 0x8a6820,
     emissiveIntensity: 0.6,
-    roughness: 0.25,
-    metalness: 0.2,
+    roughness: 0.08,
+    metalness: 0.35,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.05,
+    reflectivity: 0.95,
+    transparent: true,
+    opacity: 0.85,
+    flatShading: true,
   });
   const indicator = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), indicatorMat);
   indicator.position.y = 2.08;

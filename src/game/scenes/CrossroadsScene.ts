@@ -156,7 +156,7 @@ export class CrossroadsScene {
     number,
     {
       mesh: THREE.Mesh;
-      material: THREE.MeshStandardMaterial;
+      material: THREE.MeshPhysicalMaterial;
       light: THREE.PointLight;
       baseColor: number;
     }
@@ -661,11 +661,16 @@ export class CrossroadsScene {
     group.add(pedestal);
     this.pickableObjects.push(pedestal);
 
-    // Facettierter Edelstein-Kristall
-    const gemMat = new THREE.MeshStandardMaterial({
+    // Facettierter, transparenter und spiegelnder Edelstein-Kristall
+    const gemMat = new THREE.MeshPhysicalMaterial({
       color: colorHex,
-      roughness: 0.2,
+      roughness: 0.08,
       metalness: 0.35,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      reflectivity: 0.95,
+      transparent: true,
+      opacity: 0.82,
       emissive: 0x000000,
       emissiveIntensity: 0,
       flatShading: true,
@@ -2593,12 +2598,14 @@ export class CrossroadsScene {
         gem.light.intensity = 0.3;
         gem.light.visible = true;
         gem.mesh.position.y = 0.62;
+        gem.mesh.rotation.y = this.elapsedSeconds * 0.8;
       } else {
         gem.material.emissive.setHex(0x000000);
         gem.material.emissiveIntensity = 0;
         gem.light.intensity = 0;
         gem.light.visible = false;
         gem.mesh.position.y = 0.62;
+        gem.mesh.rotation.y = this.elapsedSeconds * 0.35;
       }
     });
 
