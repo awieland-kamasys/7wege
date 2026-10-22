@@ -41,7 +41,7 @@ Alle temporären Wegsperren der Pfade 1 bis 6 sind auf **exakt die gleiche Dista
 1. **1. Silberstollen-Pfad (Norden → Kurve nach Nordosten):**
    - Verlängerter Bergpfad mit langgezogener Rechtskurve durch den Waldnebel.
    - **Magische Felsblockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 1 in 16,3 m Entfernung von der Kreuzung (`x: 0.2, z: -16.3`) durch einen gewaltigen, bemoosten Felsbrocken mit grünlich glimmenden Kristalladern und unüberwindbarer Barriere-Kollision blockiert. Ein Klick auf den rotierenden grünen Edelstein am Pfadanfang löst eine magische Resonanz aus, lässt den Edelstein aufblitzen, spielt ein tiefes Erd-Grollen mit kristallinem Klang ab und lässt den Felsbrocken zerfallen und im Erdboden versinken.
-   - Endet auf einem Felsvorplatz vor einem verschneiten **Bergmassiv mit historischem Minenstollen (snowy mine tunnel)**; Bergmassiv, Stollenportal und Felsflanken besitzen feste Kollision.
+   - Endet auf einem Felsvorplatz vor dem historischen Minenstollen (snowy mine tunnel), der von einem gewaltigen, schneebedeckten Felsmassiv im Hintergrund (bis zu 26 m hoch mit Hauptgipfel, schroffen Felsgraten, Felsflanken und Schneehauben) monumental umschlossen wird; Bergmassiv, Stollenportal und Felsflanken besitzen feste Kollision.
    - Vor dem Stolleneingang wartet **das Graumännchen** als NPC.
    - **Inhalt & Konflikt:** Eine neue Silberader könnte Mine und Arbeiter retten. Ihr Auffinden verlangt Licht in einem Stollen, für den ein altes Verbot beziehungsweise Versprechen gilt.
 2. **2. Nixenteich-Pfad (Nordosten → Bogen nach Osten):**
