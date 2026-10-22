@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { createAshlarWallTexture } from '../textures/GroundTextures';
+import { createSandstoneWallTexture } from '../textures/GroundTextures';
 import { disposeObject3D } from '../utils/threeUtils';
 
 export interface ClosedGateEntity {
@@ -12,7 +12,8 @@ export interface ClosedGateEntity {
  * Erstellt das 3D-Modell des uralten, reich verzierten und verschlossenen Portals am Ende von Weg 7:
  * - Lädt das detailreiche Schmiedetor-Modell `/assets/models/ornate gate 3d model.glb`
  * - Harmonische Skalierung (Breite ca. 6.8m, Höhe ca. 4.5m)
- * - Anschließende alte Quadersteinmauern links und rechts mit tiefem 2.4m-Fundament gegen Boden-Clipping
+ * - Anschließende Sandstein-Quadersteinmauern links und rechts ohne Zinnen, mit flacher Mauerkrone
+ *   und tiefem 2.4m-Fundament gegen Boden-Clipping
  * - Dicke Eisenketten und massives Vorhängeschloss in der Tormitte als Symbol des Siegels
  * - Schwebender, leuchtender Hinweis-Kristall über dem Torbogen für die Interaktion
  */
@@ -23,25 +24,16 @@ export function createClosedGate(
   group.name = 'ClosedGate';
 
   // --- MATERIALIEN FÜR FLANKIERENDE MAUERN & SCHLOSS ---
-  const wallTex = createAshlarWallTexture();
-  if (wallTex.map) wallTex.map.repeat.set(3.2, 1.8);
-  if (wallTex.bumpMap) wallTex.bumpMap.repeat.set(3.2, 1.8);
+  const wallTex = createSandstoneWallTexture();
+  if (wallTex.map) wallTex.map.repeat.set(2.8, 1.6);
+  if (wallTex.bumpMap) wallTex.bumpMap.repeat.set(2.8, 1.6);
 
   const stoneMat = new THREE.MeshStandardMaterial({
-    color: 0x6e6860,
+    color: 0xffffff,
     map: wallTex.map ?? undefined,
     bumpMap: wallTex.bumpMap ?? undefined,
-    bumpScale: 0.1,
-    roughness: 0.88,
-    flatShading: true,
-  });
-  const mossStoneMat = new THREE.MeshStandardMaterial({
-    color: 0x586050,
-    map: wallTex.map ?? undefined,
-    bumpMap: wallTex.bumpMap ?? undefined,
-    bumpScale: 0.1,
-    roughness: 0.92,
-    flatShading: true,
+    bumpScale: 0.08,
+    roughness: 0.76,
   });
 
   const ironMat = new THREE.MeshStandardMaterial({
@@ -193,7 +185,7 @@ export function createClosedGate(
   for (const side of [-1, 1]) {
     const wallMesh = new THREE.Mesh(
       new THREE.BoxGeometry(wallSegmentLength, totalWallHeight, wallThickness),
-      side === -1 ? stoneMat : mossStoneMat
+      stoneMat
     );
     // Schließt bündig an die Außenflanken des verzierten Tores an
     wallMesh.position.set(
@@ -207,22 +199,21 @@ export function createClosedGate(
     wallMesh.userData = { interactableType: 'gate' };
     group.add(wallMesh);
 
-    // Zinnen auf den Mauern
-    const merlonCount = 4;
-    for (let m = 0; m < merlonCount; m++) {
-      const merlon = new THREE.Mesh(
-        new THREE.BoxGeometry(1.0, 0.6, wallThickness + 0.05),
-        stoneMat
-      );
-      merlon.position.set(
-        side * (gateHalfWidth + 0.8 + m * 2.0),
-        wallHeight + 0.3,
-        -0.45
-      );
-      merlon.castShadow = true;
-      merlon.userData = { interactableType: 'gate' };
-      group.add(merlon);
-    }
+    // Glatte, zinnenlose Mauerkronen-Abdeckung (schließt die Mauer sauber nach oben ab)
+    const coping = new THREE.Mesh(
+      new THREE.BoxGeometry(wallSegmentLength + 0.1, 0.16, wallThickness + 0.12),
+      stoneMat
+    );
+    coping.position.set(
+      side * (gateHalfWidth + wallSegmentLength / 2 - 0.25),
+      wallHeight + 0.08,
+      -0.45
+    );
+    coping.rotation.y = side * 0.08;
+    coping.castShadow = true;
+    coping.receiveShadow = true;
+    coping.userData = { interactableType: 'gate' };
+    group.add(coping);
   }
 
   // 5. Schwebender Hinweis-Kristall über dem Torbogen

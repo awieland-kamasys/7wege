@@ -40,6 +40,7 @@ let cachedStoneTexture: TexturePair | null = null;
 let cachedVeinedLavaRockTexture: LavaRockBundle | null = null;
 let cachedBrickTexture: TexturePair | null = null;
 let cachedAshlarWallTexture: TexturePair | null = null;
+let cachedSandstoneWallTexture: TexturePair | null = null;
 let cachedWoodGrainTexture: TexturePair | null = null;
 
 /**
@@ -1548,4 +1549,197 @@ export function createWoodGrainTexture(): { map: THREE.CanvasTexture | null; bum
 
   cachedWoodGrainTexture = { map: texture, bumpMap: bumpTexture };
   return clonePair(cachedWoodGrainTexture);
+}
+
+/**
+ * Erzeugt die charakteristische, helle Sandstein-Mauerwerkstextur (Stylized Sandstone Blocks):
+ * - Warmer, sanfter Sandstein- und Kalksteinfarbton (#dab690 bis #98806c)
+ * - Große, unregelmäßige Quadersteine mit weich abgerundeten Ecken
+ * - Helle Sandmörtelfugen und weicher Kanten-Lichtreflex am oberen linken Steinscheitel
+ * - Ausgeprägte, aber sanfte Kissenwölbung im Bump-Map
+ * - Nahtlose Kachelbarkeit für Mauerfluchten
+ */
+export function createSandstoneWallTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedSandstoneWallTexture) {
+    return clonePair(cachedSandstoneWallTexture);
+  }
+  if (typeof document === 'undefined') {
+    return { map: null, bumpMap: null };
+  }
+
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return { map: null, bumpMap: null };
+
+  const bumpCanvas = document.createElement('canvas');
+  bumpCanvas.width = size;
+  bumpCanvas.height = size;
+  const bumpCtx = bumpCanvas.getContext('2d');
+
+  // 1. Helle, sandfarbene Mörtelfugen als Grundierung
+  ctx.fillStyle = '#d5bca0';
+  ctx.fillRect(0, 0, size, size);
+
+  if (bumpCtx) {
+    bumpCtx.fillStyle = '#262626';
+    bumpCtx.fillRect(0, 0, size, size);
+  }
+
+  const rng = (seed: number) => {
+    let s = seed % 2147483647;
+    if (s <= 0) s += 2147483646;
+    return () => {
+      s = (s * 16807) % 2147483647;
+      return (s - 1) / 2147483646;
+    };
+  };
+  const random = rng(7142);
+
+  // Hilfsfunktion: Zeichnet ein Rechteck mit sanft abgerundeten Ecken
+  const drawRoundedBlock = (
+    targetCtx: CanvasRenderingContext2D,
+    bx: number,
+    by: number,
+    bw: number,
+    bh: number,
+    rad: number
+  ) => {
+    const r = Math.min(rad, bw / 2, bh / 2);
+    targetCtx.beginPath();
+    targetCtx.moveTo(bx + r, by);
+    targetCtx.lineTo(bx + bw - r, by);
+    targetCtx.quadraticCurveTo(bx + bw, by, bx + bw, by + r);
+    targetCtx.lineTo(bx + bw, by + bh - r);
+    targetCtx.quadraticCurveTo(bx + bw, by + bh, bx + bw - r, by + bh);
+    targetCtx.lineTo(bx + r, by + bh);
+    targetCtx.quadraticCurveTo(bx, by + bh, bx, by + bh - r);
+    targetCtx.lineTo(bx, by + r);
+    targetCtx.quadraticCurveTo(bx, by, bx + r, by);
+    targetCtx.closePath();
+  };
+
+  // 4 Steinreihen mit großen, plastischen Sandsteinquadern
+  const rows = 4;
+  const rowHeight = size / rows;
+  const jointSize = 8;
+  const cornerRadius = 14;
+
+  const stonePalettes = [
+    { base: '#caa683', light: '#d9ba97', dark: '#ad8b69', highlight: '#f3e1cc' },
+    { base: '#be9b78', light: '#d0ad8c', dark: '#a2805e', highlight: '#ebd4bc' },
+    { base: '#d3b08d', light: '#e2c5a6', dark: '#b89471', highlight: '#fae8d4' },
+    { base: '#c5a27e', light: '#d6b492', dark: '#a98765', highlight: '#ecd6be' },
+    { base: '#b59270', light: '#c8a483', dark: '#997858', highlight: '#e5cdb4' },
+    { base: '#cbb08f', light: '#debfa2', dark: '#ae9173', highlight: '#f5e3ce' },
+  ];
+
+  // Wiederkehrende Quaderbreiten je Reihe für nahtlose Wiederholung
+  const rowBlockWidths = [
+    [180, 210, 122], // Summe 512
+    [130, 220, 162], // Summe 512
+    [220, 150, 142], // Summe 512
+    [160, 172, 180], // Summe 512
+  ];
+
+  for (let r = 0; r < rows; r++) {
+    const y = r * rowHeight + jointSize / 2;
+    const h = rowHeight - jointSize;
+    const widths = rowBlockWidths[r % rowBlockWidths.length];
+
+    let curX = 0;
+    for (let b = 0; b < widths.length; b++) {
+      const bw = widths[b] - jointSize;
+      const bx = curX + jointSize / 2;
+      curX += widths[b];
+
+      const pal = stonePalettes[(r * 3 + b) % stonePalettes.length];
+
+      // Block auf Normalposition und Rändern zeichnen (Seamless Wrapping)
+      for (const offsetX of [0, -size, size]) {
+        for (const offsetY of [0, -size, size]) {
+          const px = bx + offsetX;
+          const py = y + offsetY;
+          if (px + bw < -5 || px > size + 5 || py + h < -5 || py > size + 5) {
+            continue;
+          }
+
+          // 1. Weicher Steingrundverlauf
+          const grad = ctx.createLinearGradient(px, py, px + bw, py + h);
+          grad.addColorStop(0, pal.light);
+          grad.addColorStop(0.5, pal.base);
+          grad.addColorStop(1, pal.dark);
+
+          drawRoundedBlock(ctx, px, py, bw, h, cornerRadius);
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          // 2. Weicher Glanzreflex oben und links am Steinrand
+          const highlightGrad = ctx.createLinearGradient(px, py, px + bw * 0.4, py + h * 0.4);
+          highlightGrad.addColorStop(0, 'rgba(255, 248, 236, 0.48)');
+          highlightGrad.addColorStop(1, 'rgba(255, 248, 236, 0)');
+          drawRoundedBlock(ctx, px + 2, py + 2, bw - 4, h - 4, cornerRadius - 2);
+          ctx.fillStyle = highlightGrad;
+          ctx.fill();
+
+          // 3. Weicher Eigenschatten unten und rechts
+          const shadowGrad = ctx.createLinearGradient(px + bw * 0.55, py + h * 0.55, px + bw, py + h);
+          shadowGrad.addColorStop(0, 'rgba(64, 48, 34, 0)');
+          shadowGrad.addColorStop(1, 'rgba(64, 48, 34, 0.28)');
+          drawRoundedBlock(ctx, px, py, bw, h, cornerRadius);
+          ctx.fillStyle = shadowGrad;
+          ctx.fill();
+
+          // 4. Kissen-Relief für Bump-Map
+          if (bumpCtx) {
+            const bGrad = bumpCtx.createRadialGradient(
+              px + bw * 0.42, py + h * 0.42, 6,
+              px + bw * 0.5, py + h * 0.5, Math.hypot(bw, h) * 0.55
+            );
+            bGrad.addColorStop(0, '#f2f2f2');
+            bGrad.addColorStop(0.65, '#c5c5c5');
+            bGrad.addColorStop(1, '#484848');
+            drawRoundedBlock(bumpCtx, px, py, bw, h, cornerRadius);
+            bumpCtx.fillStyle = bGrad;
+            bumpCtx.fill();
+          }
+        }
+      }
+    }
+  }
+
+  // 3. Feine organische Sandstein-Körnung & Sprenkel
+  for (let i = 0; i < 2800; i++) {
+    const px = random() * size;
+    const py = random() * size;
+    const isPore = random() > 0.45;
+    const alpha = 0.06 + random() * 0.12;
+    ctx.fillStyle = isPore
+      ? `rgba(95, 75, 55, ${alpha})`
+      : `rgba(255, 245, 230, ${alpha * 0.8})`;
+    ctx.fillRect(px, py, 1.8, 1.4);
+
+    if (bumpCtx && isPore) {
+      bumpCtx.fillStyle = '#383838';
+      bumpCtx.fillRect(px, py, 1.4, 1.0);
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.needsUpdate = true;
+
+  let bumpTexture: THREE.CanvasTexture | null = null;
+  if (bumpCanvas) {
+    bumpTexture = new THREE.CanvasTexture(bumpCanvas);
+    bumpTexture.wrapS = THREE.RepeatWrapping;
+    bumpTexture.wrapT = THREE.RepeatWrapping;
+    bumpTexture.needsUpdate = true;
+  }
+
+  cachedSandstoneWallTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedSandstoneWallTexture);
 }
