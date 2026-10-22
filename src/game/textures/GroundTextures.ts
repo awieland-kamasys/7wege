@@ -2571,8 +2571,8 @@ export function createBushFoliageTexture(): { map: THREE.CanvasTexture | null; b
   bumpCanvas.height = size;
   const bumpCtx = bumpCanvas.getContext('2d');
 
-  // 1. Grundfläche: Schattiges, tiefes Waldlaubgrün für Zwischenräume
-  ctx.fillStyle = '#18381c';
+  // 1. Grundfläche: Frisches, helles Waldlaubgrün für sauberen Hellgrün-Untergrund
+  ctx.fillStyle = '#2c6b2a';
   ctx.fillRect(0, 0, size, size);
 
   if (bumpCtx) {
@@ -2607,12 +2607,12 @@ export function createBushFoliageTexture(): { map: THREE.CanvasTexture | null; b
     ctx.fill();
 
     // Dunklerer feiner Blattrand
-    ctx.strokeStyle = 'rgba(15, 45, 18, 0.45)';
+    ctx.strokeStyle = 'rgba(28, 80, 24, 0.40)';
     ctx.lineWidth = 0.8;
     ctx.stroke();
 
     // Mittelnerv
-    ctx.strokeStyle = 'rgba(25, 60, 25, 0.65)';
+    ctx.strokeStyle = 'rgba(38, 105, 32, 0.65)';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(0, 0);
@@ -2620,7 +2620,7 @@ export function createBushFoliageTexture(): { map: THREE.CanvasTexture | null; b
     ctx.stroke();
 
     // Seitennerven
-    ctx.strokeStyle = 'rgba(25, 60, 25, 0.40)';
+    ctx.strokeStyle = 'rgba(42, 115, 36, 0.45)';
     ctx.lineWidth = 0.8;
     const numVeins = 3 + Math.floor(random() * 2);
     for (let v = 1; v <= numVeins; v++) {
@@ -2638,8 +2638,8 @@ export function createBushFoliageTexture(): { map: THREE.CanvasTexture | null; b
       ctx.stroke();
     }
 
-    // Zarter Lichtglanz auf der rechten Blatthälfte
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+    // Zarter, seidiger Sonnenlichtglanz auf der rechten Blatthälfte
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.26)';
     ctx.beginPath();
     ctx.moveTo(0, length * 0.15);
     ctx.bezierCurveTo(width * 0.45, length * 0.35, width * 0.35, length * 0.65, 0, length * 0.85);
@@ -2675,13 +2675,14 @@ export function createBushFoliageTexture(): { map: THREE.CanvasTexture | null; b
     }
   };
 
-  // 2. Dichte Schichten überlappender Laubblätter
+  // 2. Dichte Schichten überlappender sonniger Hellgrün-Laubblätter als frischer Kontrast zum Nadelwald
   const leafColors = [
-    '#255c28', // Dunkles Laub
-    '#2d6f30', // Sattes Waldgrün
-    '#39843a', // Frisches Blattgrün
-    '#489c44', // Helles Sonnenblattgrün
-    '#317b35', // Mittleres Laubgrün
+    '#58bd44', // Frisches Hellgrün
+    '#68ce52', // Leuchtendes Lindgrün
+    '#78dc62', // Sonniges Maigrün
+    '#4cb038', // Saftiges Wiesengrün
+    '#88e870', // Helles Spitzenblattgrün
+    '#60c44a', // Vitales Blattgrün
   ];
 
   const totalLeaves = 380;

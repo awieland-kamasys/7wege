@@ -39,33 +39,33 @@ export class BushMaterialCache {
       flatShading: true,
     });
 
-    // Hauptlaub mit plastischer Blatt-Textur
+    // Hauptlaub mit sonniger, leuchtend hellgrüner Blatt-Textur (starker Kontrast zum dunklen Nadelwald)
     this.lushFoliageMat = new THREE.MeshStandardMaterial({
-      color: 0x98cf92, // Harmonische Tönung für satte, natürliche Blattfarben
+      color: 0xc4f59e, // Strahlend helles, saftiges Frühlingsgrün
       map: foliageTex.map ?? undefined,
       bumpMap: foliageTex.bumpMap ?? undefined,
       bumpScale: 0.08,
-      roughness: 0.68,
+      roughness: 0.58,
       flatShading: true,
     });
 
-    // Helles Oberlaub / Sonnenlichter mit frischem Lindgrün
+    // Helles Oberlaub / Sonnenlichter mit leuchtendem Lindgrün
     this.lightFoliageMat = new THREE.MeshStandardMaterial({
-      color: 0xc8f0be, // Strahlendes Lindlaub
+      color: 0xe0ffba, // Sonniges, fast goldenes Lindgrün
       map: foliageTex.map ?? undefined,
       bumpMap: foliageTex.bumpMap ?? undefined,
       bumpScale: 0.08,
-      roughness: 0.64,
+      roughness: 0.52,
       flatShading: true,
     });
 
-    // Tiefenlaub / schattiger Innenkern
+    // Tiefenlaub / schattiger Innenkern (dennoch frisch und hell gehalten)
     this.deepFoliageMat = new THREE.MeshStandardMaterial({
-      color: 0x62965c, // Schattiges Waldgrün
+      color: 0x9edb7b, // Helles Mooslaub statt dunklem Tannengrün
       map: foliageTex.map ?? undefined,
       bumpMap: foliageTex.bumpMap ?? undefined,
       bumpScale: 0.08,
-      roughness: 0.76,
+      roughness: 0.65,
       flatShading: true,
     });
 
