@@ -1833,11 +1833,11 @@ export class CrossroadsScene {
       const perpZ = dirX / len;
 
       for (const side of [-1, 1]) {
-        for (const dist of [3.4, 6.2]) {
+        for (const dist of [3.6, 6.4]) {
           const tx = curr.x + perpX * side * dist;
           const tz = curr.z + perpZ * side * dist;
           if (
-            this.isNearPath6Corridor(tx, tz, 2.7) ||
+            this.isNearPath6Corridor(tx, tz, 3.2) ||
             this.isNearPath5Corridor(tx, tz, 2.7) ||
             this.isNearPath1Corridor(tx, tz, 2.7)
           ) {
@@ -1849,38 +1849,34 @@ export class CrossroadsScene {
       }
     }
 
-    // Dichte Baumbestände, die die Burgruine auf Weg 6 einrahmen (rechts, links und dahinter)
+    // Baumbestände rund um die Burgruine auf Weg 6:
+    // Rechts und links weit zurückgesetzt, damit die Ruine und der Kräutergarten
+    // vollkommen unverdeckt bleiben und der Weg komplett frei ist.
     const castleSurroundingTrees: [number, number, number, boolean][] = [
-      // 1. Dahinter (im Westen / hinter der Burgruine)
-      [-51.8, 21.4, 1.35, true],
-      [-52.4, 23.2, 1.40, false],
-      [-51.8, 25.0, 1.32, true],
-      [-53.8, 20.2, 1.42, false],
-      [-54.2, 22.0, 1.45, true],
-      [-54.0, 24.0, 1.40, false],
-      [-53.6, 26.2, 1.36, true],
+      // 1. Dahinter (im Westen / hinter der Burgruine als imposante Waldkulisse)
+      [-52.0, 21.0, 1.35, true],
+      [-52.6, 23.2, 1.40, false],
+      [-52.0, 25.4, 1.32, true],
+      [-54.2, 19.8, 1.42, false],
+      [-54.8, 22.0, 1.45, true],
+      [-54.6, 24.4, 1.40, false],
+      [-54.2, 26.6, 1.36, true],
 
-      // 2. Rechts der Burgruine (im Norden / vom Vorplatz aus rechts)
-      [-44.2, 19.0, 1.25, false],
-      [-47.0, 18.6, 1.30, true],
-      [-49.8, 18.8, 1.35, false],
-      [-45.5, 16.6, 1.40, true],
-      [-48.2, 16.2, 1.32, false],
-      [-50.8, 16.6, 1.38, true],
-      [-42.6, 17.0, 1.22, false],
+      // 2. Rechts der Burgruine (nach Norden weit abgerückt, Z <= 15.8, mind. 4.5m von der Burgwand entfernt)
+      [-47.0, 14.8, 1.30, false],
+      [-49.8, 15.2, 1.35, true],
+      [-52.4, 15.8, 1.40, false],
+      [-46.2, 12.5, 1.38, true],
+      [-49.2, 12.8, 1.42, false],
+      [-52.0, 13.0, 1.35, true],
 
-      // 3. Links der Burgruine (im Süden / vom Vorplatz aus links)
-      [-44.2, 27.4, 1.25, true],
-      [-47.0, 27.8, 1.30, false],
-      [-49.8, 27.6, 1.35, true],
-      [-45.5, 29.6, 1.40, false],
-      [-48.2, 30.0, 1.32, true],
-      [-50.8, 29.4, 1.38, false],
-      [-42.6, 29.2, 1.22, true],
-
-      // 4. Zurückversetzter Waldsaum am Rand der Lichtung
-      [-36.5, 27.5, 1.20, false],
-      [-35.2, 16.5, 1.22, true],
+      // 3. Links der Burgruine (nach Süden weit abgerückt, Z >= 30.6, mind. 4.5m von der Burgwand entfernt)
+      [-47.0, 31.4, 1.30, true],
+      [-49.8, 31.0, 1.35, false],
+      [-52.4, 30.6, 1.40, true],
+      [-46.2, 33.8, 1.38, false],
+      [-49.2, 33.5, 1.42, true],
+      [-52.0, 33.2, 1.35, false],
     ];
 
     for (const [x, z, scale, dark] of castleSurroundingTrees) {
