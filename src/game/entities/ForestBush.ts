@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { getTerrainHeight } from '../utils/terrainHeight';
+import { createBushFoliageTexture } from '../textures/GroundTextures';
 
 export type BushType = 'lush_bush' | 'berry_bush' | 'fern_bush';
 
@@ -15,40 +16,66 @@ export interface ForestBushInstance {
 export class BushMaterialCache {
   private static instance: BushMaterialCache;
 
-  // Verholzte Astansätze an der Basis
-  public readonly branchMat = new THREE.MeshStandardMaterial({
-    color: 0x3d2b1d,
-    roughness: 0.92,
-    flatShading: true,
-  });
+  public readonly branchMat: THREE.MeshStandardMaterial;
+  public readonly lushFoliageMat: THREE.MeshStandardMaterial;
+  public readonly lightFoliageMat: THREE.MeshStandardMaterial;
+  public readonly deepFoliageMat: THREE.MeshStandardMaterial;
+  public readonly berryMat: THREE.MeshStandardMaterial;
 
-  // Hauptlaub: sattes, feucht-frisches Ufer- und Waldlaubgrün
-  public readonly lushFoliageMat = new THREE.MeshStandardMaterial({
-    color: 0x2e6e33,
-    roughness: 0.72,
-    flatShading: true,
-  });
+  private constructor() {
+    const foliageTex = createBushFoliageTexture();
+    if (foliageTex.map) {
+      foliageTex.map.repeat.set(2.4, 2.4);
+      foliageTex.map.colorSpace = THREE.SRGBColorSpace;
+    }
+    if (foliageTex.bumpMap) {
+      foliageTex.bumpMap.repeat.set(2.4, 2.4);
+    }
 
-  // Helles Oberlaub / Sonnenlichter: frisches Lindlaub
-  public readonly lightFoliageMat = new THREE.MeshStandardMaterial({
-    color: 0x48903e,
-    roughness: 0.68,
-    flatShading: true,
-  });
+    // Verholzte Astansätze an der Basis
+    this.branchMat = new THREE.MeshStandardMaterial({
+      color: 0x3d2b1d,
+      roughness: 0.92,
+      flatShading: true,
+    });
 
-  // Tiefenlaub / schattiger Innenkern
-  public readonly deepFoliageMat = new THREE.MeshStandardMaterial({
-    color: 0x1d4a23,
-    roughness: 0.78,
-    flatShading: true,
-  });
+    // Hauptlaub mit plastischer Blatt-Textur
+    this.lushFoliageMat = new THREE.MeshStandardMaterial({
+      color: 0x98cf92, // Harmonische Tönung für satte, natürliche Blattfarben
+      map: foliageTex.map ?? undefined,
+      bumpMap: foliageTex.bumpMap ?? undefined,
+      bumpScale: 0.08,
+      roughness: 0.68,
+      flatShading: true,
+    });
 
-  // Reife rote Waldbeeren
-  public readonly berryMat = new THREE.MeshStandardMaterial({
-    color: 0xb82536,
-    roughness: 0.35,
-    metalness: 0.15,
-  });
+    // Helles Oberlaub / Sonnenlichter mit frischem Lindgrün
+    this.lightFoliageMat = new THREE.MeshStandardMaterial({
+      color: 0xc8f0be, // Strahlendes Lindlaub
+      map: foliageTex.map ?? undefined,
+      bumpMap: foliageTex.bumpMap ?? undefined,
+      bumpScale: 0.08,
+      roughness: 0.64,
+      flatShading: true,
+    });
+
+    // Tiefenlaub / schattiger Innenkern
+    this.deepFoliageMat = new THREE.MeshStandardMaterial({
+      color: 0x62965c, // Schattiges Waldgrün
+      map: foliageTex.map ?? undefined,
+      bumpMap: foliageTex.bumpMap ?? undefined,
+      bumpScale: 0.08,
+      roughness: 0.76,
+      flatShading: true,
+    });
+
+    // Reife rote Waldbeeren
+    this.berryMat = new THREE.MeshStandardMaterial({
+      color: 0xb82536,
+      roughness: 0.35,
+      metalness: 0.15,
+    });
+  }
 
   public static get(): BushMaterialCache {
     if (!BushMaterialCache.instance) {

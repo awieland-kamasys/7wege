@@ -47,6 +47,7 @@ let cachedWoodGrainTexture: TexturePair | null = null;
 let cachedSnowTexture: TexturePair | null = null;
 let cachedSnowyPineFoliageTexture: TexturePair | null = null;
 let cachedFrostyBarkTexture: TexturePair | null = null;
+let cachedBushFoliageTexture: TexturePair | null = null;
 
 /**
  * Erzeugt eine detailreiche, nahtlos kachelbare Wiesentextur für den Waldboden:
@@ -2541,4 +2542,180 @@ export function createFrostyBarkTexture(): { map: THREE.CanvasTexture | null; bu
 
   cachedFrostyBarkTexture = { map: texture, bumpMap: bumpTexture };
   return clonePair(cachedFrostyBarkTexture);
+}
+
+/**
+ * Erzeugt eine detailreiche, nahtlos kachelbare Laubblatt-Textur für Wald- und Uferbüsche:
+ * - Überlappende sommerliche Laubblätter (Buche, Hasel, Brombeerlaub) mit gezackten Konturen
+ * - Plastische Blattrippen (Mittelnerv und Seitennerven)
+ * - Schatteneffekte zwischen den Blättern und Lichtreflexe auf den Blattoberseiten
+ * - Relief-Bump-Map für erhabene Blattoberflächen und plastische Laubpolster
+ */
+export function createBushFoliageTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedBushFoliageTexture) {
+    return clonePair(cachedBushFoliageTexture);
+  }
+  if (typeof document === 'undefined') {
+    return { map: null, bumpMap: null };
+  }
+
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return { map: null, bumpMap: null };
+
+  const bumpCanvas = document.createElement('canvas');
+  bumpCanvas.width = size;
+  bumpCanvas.height = size;
+  const bumpCtx = bumpCanvas.getContext('2d');
+
+  // 1. Grundfläche: Schattiges, tiefes Waldlaubgrün für Zwischenräume
+  ctx.fillStyle = '#18381c';
+  ctx.fillRect(0, 0, size, size);
+
+  if (bumpCtx) {
+    bumpCtx.fillStyle = '#505050';
+    bumpCtx.fillRect(0, 0, size, size);
+  }
+
+  const rng = (seed: number) => {
+    let s = seed % 2147483647;
+    if (s <= 0) s += 2147483646;
+    return () => {
+      s = (s * 16807) % 2147483647;
+      return (s - 1) / 2147483646;
+    };
+  };
+  const random = rng(523);
+
+  // Zeichnet ein einzelnes organisches Laubblatt mit Blattrippen
+  const drawLeaf = (cx: number, cy: number, length: number, width: number, angle: number, colorStyle: string) => {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+
+    // Blattrand mit leichter Zähnung und spitzem Ende
+    ctx.beginPath();
+    ctx.moveTo(0, 0); // Blattbasis
+    ctx.bezierCurveTo(width * 0.75, length * 0.25, width * 0.65, length * 0.75, 0, length); // rechte Blattflanke
+    ctx.bezierCurveTo(-width * 0.65, length * 0.75, -width * 0.75, length * 0.25, 0, 0); // linke Blattflanke
+    ctx.closePath();
+
+    ctx.fillStyle = colorStyle;
+    ctx.fill();
+
+    // Dunklerer feiner Blattrand
+    ctx.strokeStyle = 'rgba(15, 45, 18, 0.45)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Mittelnerv
+    ctx.strokeStyle = 'rgba(25, 60, 25, 0.65)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, length * 0.95);
+    ctx.stroke();
+
+    // Seitennerven
+    ctx.strokeStyle = 'rgba(25, 60, 25, 0.40)';
+    ctx.lineWidth = 0.8;
+    const numVeins = 3 + Math.floor(random() * 2);
+    for (let v = 1; v <= numVeins; v++) {
+      const vy = (v / (numVeins + 1)) * length * 0.85;
+      const vSpan = width * 0.45 * (1 - v / (numVeins + 2));
+      // Nach rechts
+      ctx.beginPath();
+      ctx.moveTo(0, vy);
+      ctx.lineTo(vSpan, vy + length * 0.12);
+      ctx.stroke();
+      // Nach links
+      ctx.beginPath();
+      ctx.moveTo(0, vy);
+      ctx.lineTo(-vSpan, vy + length * 0.12);
+      ctx.stroke();
+    }
+
+    // Zarter Lichtglanz auf der rechten Blatthälfte
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+    ctx.beginPath();
+    ctx.moveTo(0, length * 0.15);
+    ctx.bezierCurveTo(width * 0.45, length * 0.35, width * 0.35, length * 0.65, 0, length * 0.85);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+
+    // Dasselbe in der Bump-Map: erhabenes Blatt mit vertiefter Ader
+    if (bumpCtx) {
+      bumpCtx.save();
+      bumpCtx.translate(cx, cy);
+      bumpCtx.rotate(angle);
+
+      bumpCtx.beginPath();
+      bumpCtx.moveTo(0, 0);
+      bumpCtx.bezierCurveTo(width * 0.75, length * 0.25, width * 0.65, length * 0.75, 0, length);
+      bumpCtx.bezierCurveTo(-width * 0.65, length * 0.75, -width * 0.75, length * 0.25, 0, 0);
+      bumpCtx.closePath();
+
+      bumpCtx.fillStyle = 'rgba(215, 215, 215, 0.85)';
+      bumpCtx.fill();
+
+      // Vertiefter Mittelnerv in der Bump-Map
+      bumpCtx.strokeStyle = 'rgba(80, 80, 80, 0.75)';
+      bumpCtx.lineWidth = 1.4;
+      bumpCtx.beginPath();
+      bumpCtx.moveTo(0, 0);
+      bumpCtx.lineTo(0, length * 0.95);
+      bumpCtx.stroke();
+
+      bumpCtx.restore();
+    }
+  };
+
+  // 2. Dichte Schichten überlappender Laubblätter
+  const leafColors = [
+    '#255c28', // Dunkles Laub
+    '#2d6f30', // Sattes Waldgrün
+    '#39843a', // Frisches Blattgrün
+    '#489c44', // Helles Sonnenblattgrün
+    '#317b35', // Mittleres Laubgrün
+  ];
+
+  const totalLeaves = 380;
+  for (let i = 0; i < totalLeaves; i++) {
+    const x = random() * size;
+    const y = random() * size;
+    const len = 18 + random() * 22;
+    const wid = 11 + random() * 12;
+    const ang = random() * Math.PI * 2;
+    const col = leafColors[Math.floor(random() * leafColors.length)];
+
+    drawLeaf(x, y, len, wid, ang, col);
+
+    // Kantenwrapping für nahtlose Kachelbarkeit
+    if (x - len < 0) drawLeaf(x + size, y, len, wid, ang, col);
+    if (x + len > size) drawLeaf(x - size, y, len, wid, ang, col);
+    if (y - len < 0) drawLeaf(x, y + size, len, wid, ang, col);
+    if (y + len > size) drawLeaf(x, y - size, len, wid, ang, col);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+
+  let bumpTexture: THREE.CanvasTexture | null = null;
+  if (bumpCanvas) {
+    bumpTexture = new THREE.CanvasTexture(bumpCanvas);
+    bumpTexture.wrapS = THREE.RepeatWrapping;
+    bumpTexture.wrapT = THREE.RepeatWrapping;
+    bumpTexture.needsUpdate = true;
+  }
+
+  cachedBushFoliageTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedBushFoliageTexture);
 }
