@@ -25,6 +25,7 @@ export interface HudCallbacks {
   onSelectDialogueOption: (optionIndex: number) => void;
   onCloseDialogue: () => void;
   onToggleSpeech: () => boolean;
+  onToggleMusic?: () => boolean;
   onSelectTerrainPreset?: (presetKey: TerrainPresetKey) => void;
 }
 
@@ -51,6 +52,7 @@ export class HudOverlay {
   private readonly perfModalEl: HTMLElement;
   private readonly presetBadgeEl: HTMLElement;
   private readonly presetModalEl: HTMLElement;
+  private readonly musicBadgeEl: HTMLElement;
   private readonly toastEl: HTMLElement;
 
   private lastDialogueNodeId: string | null = null;
@@ -117,6 +119,20 @@ export class HudOverlay {
     this.presetModalEl = document.createElement('div');
     this.presetModalEl.className = 'preset-modal is-hidden';
     this.renderPresetModalContent();
+
+    // Dezentes Musik-Badge (oben links neben Boden- und Performance-Badge)
+    this.musicBadgeEl = document.createElement('div');
+    this.musicBadgeEl.className = 'music-badge';
+    this.musicBadgeEl.title = 'Hintergrundmusik ein-/ausschalten (Taste M oder Klick)';
+    this.musicBadgeEl.textContent = '🎵 Musik';
+    this.musicBadgeEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (this.callbacks.onToggleMusic) {
+        const enabled = this.callbacks.onToggleMusic();
+        this.setMusicActive(enabled);
+        this.showToast(enabled ? '🎵 Hintergrundmusik: Aktiviert' : '🔇 Hintergrundmusik: Stumm');
+      }
+    });
 
     // Dezentes Toast-Element für Benachrichtigungen (z. B. nach Tastendruck 1-4)
     this.toastEl = document.createElement('div');
@@ -188,8 +204,21 @@ export class HudOverlay {
       this.perfModalEl,
       this.presetBadgeEl,
       this.presetModalEl,
+      this.musicBadgeEl,
       this.toastEl
     );
+  }
+
+  public setMusicActive(enabled: boolean): void {
+    if (enabled) {
+      this.musicBadgeEl.classList.remove('is-muted');
+      this.musicBadgeEl.textContent = '🎵 Musik';
+      this.musicBadgeEl.title = 'Hintergrundmusik stummschalten (Taste M oder Klick)';
+    } else {
+      this.musicBadgeEl.classList.add('is-muted');
+      this.musicBadgeEl.textContent = '🔇 Musik';
+      this.musicBadgeEl.title = 'Hintergrundmusik einschalten (Taste M oder Klick)';
+    }
   }
 
   public showToast(message: string, durationMs = 2800): void {

@@ -84,6 +84,9 @@ export class GameApp {
       onToggleSpeech: () => {
         return this.speech.toggleEnabled();
       },
+      onToggleMusic: () => {
+        return this.sound.toggleMusic();
+      },
       onSelectTerrainPreset: (presetKey) => {
         this.setTerrainPreset(presetKey);
       },
@@ -426,6 +429,17 @@ export class GameApp {
       const pathId = Number(key);
       this.clearPendingActions();
       this.state.setTargetToPathEntrance(pathId);
+    }
+
+    // Taste M: Dezent schwebende Hintergrundmusik ein-/ausschalten
+    if (key === 'm') {
+      this.sound.unlock();
+      const enabled = this.sound.toggleMusic();
+      this.hud.setMusicActive(enabled);
+      this.hud.showToast(
+        enabled ? '🎵 Hintergrundmusik: Aktiviert' : '🔇 Hintergrundmusik: Stumm'
+      );
+      return;
     }
 
     // Schneller Rücklauf zur 7-Wegekreuzung per Taste 0 oder Backspace (wenn auf Wegen unterwegs und kein Dialog offen)
@@ -930,6 +944,7 @@ export class GameApp {
     this.handleInput(dtSeconds);
     this.updatePointerHover();
     this.sound.updateAmbientBirds(dtSeconds, this.dialogue.isOpen());
+    this.sound.updateAmbientMusic(dtSeconds, this.dialogue.isOpen());
 
     const poi = this.state.getActivePointOfInterest();
     const currentPath = this.state.getCurrentOrClosestPath();

@@ -138,6 +138,43 @@ body,
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
 }
 
+.music-badge {
+  position: absolute;
+  top: 3.6rem;
+  left: 20.8rem;
+  right: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--bg-dark);
+  border: 1px solid rgba(108, 168, 112, 0.6);
+  border-radius: 999px;
+  padding: 0.28rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-green);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.music-badge:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.music-badge.is-muted {
+  border-color: rgba(180, 180, 180, 0.35);
+  color: #889988;
+  opacity: 0.75;
+}
+
 .preset-modal {
   position: absolute;
   top: 6.0rem;
@@ -366,6 +403,27 @@ body,
 @media (max-width: 640px) {
   #ui-root {
     padding: 0.5rem;
+  }
+
+  .perf-badge {
+    top: 0.5rem;
+    left: 0.5rem;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.7rem;
+  }
+
+  .preset-badge {
+    top: 0.5rem;
+    left: 6.2rem;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.7rem;
+  }
+
+  .music-badge {
+    top: 0.5rem;
+    left: 15.6rem;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.7rem;
   }
 
   .active-path-badge {

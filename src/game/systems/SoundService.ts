@@ -11,6 +11,45 @@ export class SoundService {
   private stepLeftFoot = false;
   private nextBirdTimerSec = 2.2;
 
+  // --- Dezent schwebende Wald-Hintergrundmusik (Ambient) ---
+  private musicMasterGain: GainNode | null = null;
+  private musicFilterNode: BiquadFilterNode | null = null;
+  private isMusicMuted = false;
+  private currentChordIdx = 0;
+  private nextChordScheduleTime = 0;
+  private nextArpTimerSec = 2.5;
+
+  private readonly ambientChords: readonly {
+    durationSec: number;
+    padFreqs: readonly number[];
+    arpNotes: readonly number[];
+  }[] = [
+    // 1. D-Duradd9 (Lichtung im Morgendunst)
+    {
+      durationSec: 9.0,
+      padFreqs: [146.83, 220.0, 329.63, 369.99], // D3, A3, E4, F#4
+      arpNotes: [293.66, 329.63, 369.99, 440.0, 587.33], // D4, E4, F#4, A4, D5
+    },
+    // 2. G-Durmaj7 (Waldmoos, Farne, Seerosen)
+    {
+      durationSec: 9.0,
+      padFreqs: [196.0, 246.94, 293.66, 369.99], // G3, B3, D4, F#4
+      arpNotes: [293.66, 369.99, 392.0, 440.0, 493.88], // D4, F#4, G4, A4, B4
+    },
+    // 3. H-Moll7 (Schattige Nadelwälder, Burgruine)
+    {
+      durationSec: 9.0,
+      padFreqs: [123.47, 185.0, 220.0, 293.66], // B2, F#3, A3, D4
+      arpNotes: [220.0, 293.66, 329.63, 369.99, 440.0], // A3, D4, E4, F#4, A4
+    },
+    // 4. A-Dur add4/9 (Sanfter Hauch des Windes)
+    {
+      durationSec: 9.0,
+      padFreqs: [110.0, 164.81, 220.0, 277.18], // A2, E3, A3, C#4
+      arpNotes: [277.18, 329.63, 369.99, 440.0, 554.37], // C#4, E4, F#4, A4, C#5
+    },
+  ];
+
   private getContext(): AudioContext | null {
     if (typeof window === 'undefined') {
       return null;
@@ -36,7 +75,171 @@ export class SoundService {
    * damit die Hintergrund-Waldatmosphäre sanft starten kann.
    */
   public unlock(): void {
-    this.getContext();
+    const ctx = this.getContext();
+    if (ctx && ctx.state === 'running') {
+      this.getMusicMaster(ctx);
+    }
+  }
+
+  /**
+   * Schaltet die Hintergrundmusik um (Stumm / Aktiv).
+   */
+  public toggleMusic(): boolean {
+    this.isMusicMuted = !this.isMusicMuted;
+    if (this.ctx && this.musicMasterGain) {
+      const target = this.isMusicMuted ? 0.00001 : 0.045;
+      this.musicMasterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.3);
+    }
+    return !this.isMusicMuted;
+  }
+
+  /**
+   * Gibt zurück, ob die Hintergrundmusik aktuell aktiviert ist.
+   */
+  public isMusicEnabled(): boolean {
+    return !this.isMusicMuted;
+  }
+
+  private getMusicMaster(ctx: AudioContext): GainNode {
+    if (!this.musicMasterGain) {
+      const master = ctx.createGain();
+      // Startet unhörbar und fadet sanft ein
+      master.gain.setValueAtTime(0.00001, ctx.currentTime);
+
+      // Weicher Tiefpass-Filter für seidenweichen, unaufdringlichen Wald-Klangteppich
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(540, ctx.currentTime);
+      filter.Q.setValueAtTime(0.7, ctx.currentTime);
+
+      filter.connect(master);
+      master.connect(ctx.destination);
+
+      this.musicFilterNode = filter;
+      this.musicMasterGain = master;
+    }
+    return this.musicMasterGain;
+  }
+
+  /**
+   * Aktualisiert die dezent schwebende, unaufdringliche Wald-Hintergrundmusik.
+   * Fadet bei geöffneten Dialogen noch weiter in den Hintergrund (Ducking).
+   */
+  public updateAmbientMusic(dtSeconds: number, isDialogueOpen = false): void {
+    if (dtSeconds <= 0) {
+      return;
+    }
+    const ctx = this.getContext();
+    if (!ctx || ctx.state !== 'running') {
+      return;
+    }
+
+    const musicGain = this.getMusicMaster(ctx);
+
+    // Sanfte Lautstärkeregelung (sehr dezent, Ducking bei offenem Gespräch)
+    const targetVolume = this.isMusicMuted ? 0.00001 : (isDialogueOpen ? 0.020 : 0.045);
+    musicGain.gain.setTargetAtTime(targetVolume, ctx.currentTime, 0.45);
+
+    if (this.isMusicMuted) {
+      return;
+    }
+
+    // 1. Sanft schwebende harmonische Ambient-Pads im Hintergrund
+    if (this.nextChordScheduleTime <= ctx.currentTime + 1.2) {
+      const startTime = Math.max(ctx.currentTime + 0.05, this.nextChordScheduleTime);
+      const chord = this.ambientChords[this.currentChordIdx];
+
+      this.scheduleAmbientPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
+
+      this.nextChordScheduleTime = startTime + chord.durationSec;
+      this.currentChordIdx = (this.currentChordIdx + 1) % this.ambientChords.length;
+    }
+
+    // 2. Zarte, perlende Waldharfen-Tupfer
+    this.nextArpTimerSec -= dtSeconds;
+    if (this.nextArpTimerSec <= 0) {
+      this.nextArpTimerSec = 3.8 + Math.random() * 4.2;
+      const chord = this.ambientChords[this.currentChordIdx];
+      const note = chord.arpNotes[Math.floor(Math.random() * chord.arpNotes.length)];
+      this.scheduleAmbientPluck(ctx, ctx.currentTime + 0.1, note);
+    }
+  }
+
+  /**
+   * Erzeugt einen weichen, schwebenden Pad-Akkord mit warmem Ein- und Ausfaden.
+   */
+  private scheduleAmbientPadChord(
+    ctx: AudioContext,
+    startTime: number,
+    durationSec: number,
+    frequencies: readonly number[]
+  ): void {
+    if (!this.musicFilterNode) {
+      return;
+    }
+
+    const attack = 2.4;
+    const release = 3.6;
+    const totalDuration = durationSec + release;
+
+    for (let i = 0; i < frequencies.length; i++) {
+      const freq = frequencies[i];
+      for (const detune of [-3.5, 3.5]) {
+        const osc = ctx.createOscillator();
+        osc.type = i === 0 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+        osc.detune.setValueAtTime(detune, startTime);
+
+        const gain = ctx.createGain();
+        const baseLevel = (i === 0 ? 0.07 : 0.05) / frequencies.length;
+
+        gain.gain.setValueAtTime(0.0001, startTime);
+        gain.gain.linearRampToValueAtTime(baseLevel, startTime + attack);
+        gain.gain.setValueAtTime(baseLevel, startTime + durationSec);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + totalDuration);
+
+        osc.connect(gain);
+        gain.connect(this.musicFilterNode);
+
+        osc.start(startTime);
+        osc.stop(startTime + totalDuration + 0.05);
+      }
+    }
+  }
+
+  /**
+   * Spielt einen einzelnen, zarten Waldharfen-Ton mit weichem Ausklang und Stereo-Panorama.
+   */
+  private scheduleAmbientPluck(ctx: AudioContext, startTime: number, freq: number): void {
+    if (!this.musicMasterGain) {
+      return;
+    }
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    const gain = ctx.createGain();
+    const duration = 2.2;
+
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(0.016, startTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    const pan = Math.random() * 1.2 - 0.6;
+    if (typeof ctx.createStereoPanner === 'function') {
+      const panner = ctx.createStereoPanner();
+      panner.pan.setValueAtTime(pan, startTime);
+      osc.connect(gain);
+      gain.connect(panner);
+      panner.connect(this.musicMasterGain);
+    } else {
+      osc.connect(gain);
+      gain.connect(this.musicMasterGain);
+    }
+
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.05);
   }
 
   /**

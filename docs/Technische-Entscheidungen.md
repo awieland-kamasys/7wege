@@ -55,6 +55,11 @@
   - **UI-Ergonomie:** Das Live-Performance-Badge wurde nach links oben unter den Titel verlegt, sodass Kommunikations-, Dialog- und Quest-Fenster auf der rechten Bildschirmseite frei und unbedeckt bleiben.
   - **Strikte Trennung von Spiellogik und 3D-Welt:** Die Spiellogik (`CrossroadsState`, Kollisionen, Quests, Dialoge) verbleibt rein zweidimensional (`x, z`) und ohne Three.js-Abhängigkeiten unit-getestet. Die Geländehöhe wird deterministisch und performant über das mathematische Höhenfeld `getTerrainHeight(x, z)` (`src/game/utils/terrainHeight.ts`) ermittelt; Raycasting auf das Terrain erkennt Pfade analytisch über `getPathAtPosition(x, z)`.
   - **Schauplatz-Plateaus (`TERRAIN_PLATEAUS`):** Die Kreuzung liegt bei `y = 0.0 m`. Schauplatz-Plateaus garantieren einen stabilen Stand: Silberstollen-Bergmassiv (`+6.8 m` mit aufsteigendem Gebirgskamm dahinter), Waldteich mit Nixe (`-1.2 m`), Bachtal mit Wehrbrücke (`-1.5 m`), Waldhochebene am Holzfällerlager (`+0.8 m`), Teufelskrater / Höllenschlund (`-5.0 m`), Waldhang an der Jagdhütte (`+1.0 m`) und Hügelkuppe am verschlossenen Tor (`+2.2 m`).
+  - **Prozedurale Ambient-Hintergrundmusik & Audio-Engine (`SoundService.ts`):**
+    - Vollständig prozedurale Web Audio API-Klangerzeugung ohne externe MP3-Assets oder Download-Ladezeiten.
+    - Seidenweiche, warme D-Dur/G-Dur/H-Moll/A-Dur-Schwebepads mit Tiefpassfilter (540 Hz) und sanft eingestreuten Waldharfen-Tönen im Stereofeld.
+    - Sehr leise und unaufdringlich eingepegelt (Mastergain ~0,045), mit automatischem sanftem Ducking (~0,020) während aktiver NPC-Dialoge.
+    - Direkt stummschaltbar über Taste `M` oder Klick auf das HUD-Musik-Badge (`🎵 / 🔇`).
 
 ## Offene Punkte
 
