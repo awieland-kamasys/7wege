@@ -563,10 +563,10 @@ export class CrossroadsScene {
   }
 
   private setupLights(): void {
-    const ambient = new THREE.AmbientLight(0xe4ebe8, 0.78);
+    const ambient = new THREE.AmbientLight(0xdbe3de, 0.64);
     this.scene.add(ambient);
 
-    const sunLight = new THREE.DirectionalLight(0xfff1d6, 1.15);
+    const sunLight = new THREE.DirectionalLight(0xfff3de, 1.25);
     sunLight.position.set(16, 36, 14);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 1024;

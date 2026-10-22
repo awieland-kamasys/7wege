@@ -98,20 +98,28 @@ export function createTerrainMaterial(): TerrainMaterialController {
       `
       #ifdef USE_MAP
         vec4 splat = texture2D( uSplatMap, vMapUv );
-        vec4 colGrass = texture2D( uGrassMap, vMapUv * 65.0 );
-        vec4 colPath = texture2D( uPathMap, vMapUv * 45.0 );
-        vec4 colLava = texture2D( uLavaMap, vMapUv * 18.0 );
+        vec4 colGrass = texture2D( uGrassMap, vMapUv * 55.0 );
+        vec4 colPath = texture2D( uPathMap, vMapUv * 38.0 );
+        vec4 colLava = texture2D( uLavaMap, vMapUv * 16.0 );
 
-        // Authentische Kiesel-/Erdfärbung
-        colPath.rgb *= vec3(0.92, 0.88, 0.82);
+        // 1. Kräftiges, sattes Waldwiesengrün (früherer atmosphärischer Farbraum mit sattem Grün und Mooskontrast)
+        vec3 grassTint = vec3(0.55, 0.88, 0.58);
+        vec3 richGrass = pow(colGrass.rgb, vec3(1.15)) * grassTint * 1.5;
+
+        // 2. Sandig-lehmiger, warmer Weg (früherer Farbraum 0x826d55 / warmer Lehm- und Ockerton)
+        vec3 pathTint = vec3(1.18, 0.96, 0.72);
+        vec3 warmPath = pow(colPath.rgb, vec3(1.08)) * pathTint * 1.1;
+
+        // 3. Tiefschwarzer Obsidian- und Basaltboden am Lavasee
+        vec3 darkLava = colLava.rgb * 0.9;
 
         // 1. Wiese zu Weg mit natürlichem Auslauf
-        vec4 terrainDiff = mix(colGrass, colPath, splat.r);
+        vec3 terrainDiff = mix(richGrass, warmPath, splat.r);
 
         // 2. Zu tiefschwarzem Obsidianboden um den Lavasee
-        terrainDiff = mix(terrainDiff, colLava, splat.g);
+        terrainDiff = mix(terrainDiff, darkLava, splat.g);
 
-        diffuseColor *= terrainDiff;
+        diffuseColor.rgb *= terrainDiff;
       #endif
       `
     );
