@@ -1,5 +1,42 @@
 import * as THREE from 'three';
 
+interface TexturePair {
+  map: THREE.CanvasTexture | null;
+  bumpMap: THREE.CanvasTexture | null;
+}
+
+interface LavaRockBundle {
+  map: THREE.CanvasTexture | null;
+  emissiveMap: THREE.CanvasTexture | null;
+  bumpMap: THREE.CanvasTexture | null;
+}
+
+function clonePair(pair: TexturePair): TexturePair {
+  return {
+    map: pair.map ? (pair.map.clone() as THREE.CanvasTexture) : null,
+    bumpMap: pair.bumpMap ? (pair.bumpMap.clone() as THREE.CanvasTexture) : null,
+  };
+}
+
+function cloneLava(bundle: LavaRockBundle): LavaRockBundle {
+  return {
+    map: bundle.map ? (bundle.map.clone() as THREE.CanvasTexture) : null,
+    emissiveMap: bundle.emissiveMap ? (bundle.emissiveMap.clone() as THREE.CanvasTexture) : null,
+    bumpMap: bundle.bumpMap ? (bundle.bumpMap.clone() as THREE.CanvasTexture) : null,
+  };
+}
+
+// Prozedural generierte Texturen werden gecacht, damit aufwendige Canvas-Renderzyklen nur einmalig ablaufen
+let cachedGrassTexture: TexturePair | null = null;
+let cachedPathTexture: TexturePair | null = null;
+let cachedBarkTexture: TexturePair | null = null;
+let cachedPineFoliageTexture: TexturePair | null = null;
+let cachedStoneTexture: TexturePair | null = null;
+let cachedVeinedLavaRockTexture: LavaRockBundle | null = null;
+let cachedBrickTexture: TexturePair | null = null;
+let cachedAshlarWallTexture: TexturePair | null = null;
+let cachedWoodGrainTexture: TexturePair | null = null;
+
 /**
  * Erzeugt eine detailreiche, nahtlos kachelbare Wiesentextur für den Waldboden:
  * - Sattes Waldgrün mit natürlichen Helligkeitsnuancen
@@ -7,6 +44,9 @@ import * as THREE from 'three';
  * - Nahtlose Ränder für sauberes RepeatWrapping ohne Kantenartefakte
  */
 export function createGrassTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedGrassTexture) {
+    return clonePair(cachedGrassTexture);
+  }
   if (typeof document === 'undefined') {
     return { map: null, bumpMap: null };
   }
@@ -172,10 +212,14 @@ export function createGrassTexture(): { map: THREE.CanvasTexture | null; bumpMap
     bumpTexture.needsUpdate = true;
   }
 
-  return { map: texture, bumpMap: bumpTexture };
+  cachedGrassTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedGrassTexture);
 }
 
 export function createPathTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedPathTexture) {
+    return clonePair(cachedPathTexture);
+  }
   if (typeof document === 'undefined') {
     return { map: null, bumpMap: null };
   }
@@ -343,7 +387,8 @@ export function createPathTexture(): { map: THREE.CanvasTexture | null; bumpMap:
     bumpTexture.needsUpdate = true;
   }
 
-  return { map: texture, bumpMap: bumpTexture };
+  cachedPathTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedPathTexture);
 }
 
 /**
@@ -353,6 +398,9 @@ export function createPathTexture(): { map: THREE.CanvasTexture | null; bumpMap:
  * - Bump-Map für ausgeprägtes Relief und plastische Tiefenwirkung im Sonnenlicht
  */
 export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedBarkTexture) {
+    return clonePair(cachedBarkTexture);
+  }
   if (typeof document === 'undefined') {
     return { map: null, bumpMap: null };
   }
@@ -533,7 +581,8 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
     bumpTexture.needsUpdate = true;
   }
 
-  return { map: texture, bumpMap: bumpTexture };
+  cachedBarkTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedBarkTexture);
 }
 
 /**
@@ -543,6 +592,9 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
  * - Bump-Map für ausgeprägte Nadelrelief-Haptik im Sonnenlicht
  */
 export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedPineFoliageTexture) {
+    return clonePair(cachedPineFoliageTexture);
+  }
   if (typeof document === 'undefined') {
     return { map: null, bumpMap: null };
   }
@@ -670,7 +722,8 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
     bumpTexture.needsUpdate = true;
   }
 
-  return { map: texture, bumpMap: bumpTexture };
+  cachedPineFoliageTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedPineFoliageTexture);
 }
 
 /**
@@ -680,6 +733,9 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
  * - Plastische Bump-Map für ausgeprägte Stein- und Kantenreliefs
  */
 export function createStoneTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedStoneTexture) {
+    return clonePair(cachedStoneTexture);
+  }
   if (typeof document === 'undefined') {
     return { map: null, bumpMap: null };
   }
@@ -792,7 +848,8 @@ export function createStoneTexture(): { map: THREE.CanvasTexture | null; bumpMap
     bumpTexture.needsUpdate = true;
   }
 
-  return { map: texture, bumpMap: bumpTexture };
+  cachedStoneTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedStoneTexture);
 }
 
 /**
@@ -807,6 +864,9 @@ export function createVeinedLavaRockTexture(): {
   emissiveMap: THREE.CanvasTexture | null;
   bumpMap: THREE.CanvasTexture | null;
 } {
+  if (cachedVeinedLavaRockTexture) {
+    return cloneLava(cachedVeinedLavaRockTexture);
+  }
   if (typeof document === 'undefined') {
     return { map: null, emissiveMap: null, bumpMap: null };
   }
@@ -1003,7 +1063,8 @@ export function createVeinedLavaRockTexture(): {
     bumpTexture.needsUpdate = true;
   }
 
-  return { map: texture, emissiveMap: emissiveTexture, bumpMap: bumpTexture };
+  cachedVeinedLavaRockTexture = { map: texture, emissiveMap: emissiveTexture, bumpMap: bumpTexture };
+  return cloneLava(cachedVeinedLavaRockTexture);
 }
 
 /**
@@ -1013,6 +1074,9 @@ export function createVeinedLavaRockTexture(): {
  * - Plastisches Bump-Relief mit leicht abgerundeten Steinrändern und poröser Oberfläche
  */
 export function createBrickTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedBrickTexture) {
+    return clonePair(cachedBrickTexture);
+  }
   if (typeof document === 'undefined') {
     return { map: null, bumpMap: null };
   }
@@ -1138,7 +1202,8 @@ export function createBrickTexture(): { map: THREE.CanvasTexture | null; bumpMap
     bumpTexture.needsUpdate = true;
   }
 
-  return { map: texture, bumpMap: bumpTexture };
+  cachedBrickTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedBrickTexture);
 }
 
 /**
@@ -1148,6 +1213,9 @@ export function createBrickTexture(): { map: THREE.CanvasTexture | null; bumpMap
  * - Plastisches Bossenwerk mit kräftigem Steinrelief
  */
 export function createAshlarWallTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedAshlarWallTexture) {
+    return clonePair(cachedAshlarWallTexture);
+  }
   if (typeof document === 'undefined') {
     return { map: null, bumpMap: null };
   }
@@ -1278,7 +1346,8 @@ export function createAshlarWallTexture(): { map: THREE.CanvasTexture | null; bu
     bumpTexture.needsUpdate = true;
   }
 
-  return { map: texture, bumpMap: bumpTexture };
+  cachedAshlarWallTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedAshlarWallTexture);
 }
 
 /**
@@ -1288,6 +1357,9 @@ export function createAshlarWallTexture(): { map: THREE.CanvasTexture | null; bu
  * - Feines Rillenrelief im Bump-Map für spürbare Holzhaptik
  */
 export function createWoodGrainTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedWoodGrainTexture) {
+    return clonePair(cachedWoodGrainTexture);
+  }
   if (typeof document === 'undefined') {
     return { map: null, bumpMap: null };
   }
@@ -1403,5 +1475,6 @@ export function createWoodGrainTexture(): { map: THREE.CanvasTexture | null; bum
     bumpTexture.needsUpdate = true;
   }
 
-  return { map: texture, bumpMap: bumpTexture };
+  cachedWoodGrainTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedWoodGrainTexture);
 }

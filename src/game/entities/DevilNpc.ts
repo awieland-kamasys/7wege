@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Vector2D } from '../systems/CrossroadsState';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface DevilNpcEntity {
   group: THREE.Group;
@@ -207,8 +208,9 @@ export function createDevilNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
       // Dämonisch glühende Augen und Gesichtsschein befestigen
       attachGlowingEyes(model);
 
-      // Platzhalter durch das fertige Modell ersetzen
+      // Platzhalter durch das fertige Modell ersetzen und Speicher freigeben
       group.remove(fallback);
+      disposeObject3D(fallback);
       group.add(model);
     },
     undefined,
@@ -228,6 +230,7 @@ export function createDevilNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
 
         attachGlowingEyes(model);
         group.remove(fallback);
+        disposeObject3D(fallback);
         group.add(model);
       });
     }

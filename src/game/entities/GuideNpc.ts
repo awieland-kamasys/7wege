@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface GuideNpcEntity {
   group: THREE.Group;
@@ -145,6 +146,7 @@ export function createGuideNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
       }
 
       group.remove(fallbackGroup);
+      disposeObject3D(fallbackGroup);
       group.add(model);
     },
     undefined,

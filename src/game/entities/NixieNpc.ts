@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface NixieNpcEntity {
   group: THREE.Group;
@@ -98,6 +99,7 @@ export function createNixieNpc(onMeshLoaded?: (mesh: THREE.Object3D) => void): N
       });
 
       modelGroup.remove(fallback);
+      disposeObject3D(fallback);
       modelGroup.add(model);
     },
     undefined,
@@ -121,6 +123,7 @@ export function createNixieNpc(onMeshLoaded?: (mesh: THREE.Object3D) => void): N
         });
 
         modelGroup.remove(fallback);
+        disposeObject3D(fallback);
         modelGroup.add(model);
       });
     }

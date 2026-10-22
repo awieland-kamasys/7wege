@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { disposeObject3D } from '../utils/threeUtils';
 
 /**
  * Erstellt die 3D-Schutzhütte im Zentrum der 7-Wegekreuzung.
@@ -62,8 +63,9 @@ export function createLogCabin(onMeshLoaded?: (object: THREE.Object3D) => void):
         }
       });
 
-      // Platzhalter entfernen und fertige Hütte einhängen
+      // Platzhalter entfernen und Geometrien/Materialien sauber freigeben
       group.remove(fallback);
+      disposeObject3D(fallback);
       group.add(model);
     },
     undefined,

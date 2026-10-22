@@ -28,6 +28,9 @@ export class GameApp {
   private pointerStartY = 0;
   private lastPointerX = 0;
   private lastPointerY = 0;
+  private currentPointerClientX = 0;
+  private currentPointerClientY = 0;
+  private hasPendingPointerHover = false;
   private pendingTalkToNpc = false;
   private pendingTalkToGreyMan = false;
   private pendingTalkToNixie = false;
@@ -413,7 +416,23 @@ export class GameApp {
       return;
     }
 
-    const hit = this.scene.raycastFromMouse(event.clientX, event.clientY);
+    // Mauskoordinaten für den nächsten Animationsframe merken (verhindert hunderte Raycasts pro Sekunde)
+    this.currentPointerClientX = event.clientX;
+    this.currentPointerClientY = event.clientY;
+    this.hasPendingPointerHover = true;
+  };
+
+  /**
+   * Führt das Raycasting zur Objektauswahl und Cursor-Hervorhebung exakt einmal pro Animationsframe aus,
+   * falls sich die Maus bewegt hat (Framerate-Schutz bei High-DPI-/Gaming-Mäusen).
+   */
+  private updatePointerHover(): void {
+    if (!this.hasPendingPointerHover || this.isPointerDown) {
+      return;
+    }
+    this.hasPendingPointerHover = false;
+
+    const hit = this.scene.raycastFromMouse(this.currentPointerClientX, this.currentPointerClientY);
     if (!hit) {
       this.scene.setHoveredPathId(null);
       this.scene.setNpcHovered(false);
@@ -767,6 +786,7 @@ export class GameApp {
     this.lastTime = now;
 
     this.handleInput(dtSeconds);
+    this.updatePointerHover();
     this.sound.updateAmbientBirds(dtSeconds, this.dialogue.isOpen());
 
     const poi = this.state.getActivePointOfInterest();

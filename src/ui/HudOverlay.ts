@@ -32,6 +32,8 @@ export class HudOverlay {
   private readonly dialogueOptionsEl: HTMLElement;
   private readonly speechToggleBtn: HTMLButtonElement;
   private lastDialogueNodeId: string | null = null;
+  private lastPathBadgeText: string | null = null;
+  private lastReturnBtnHidden: boolean | null = null;
 
   constructor(container: HTMLElement, private readonly callbacks: HudCallbacks) {
     container.innerHTML = '';
@@ -135,15 +137,22 @@ export class HudOverlay {
         ? SEVEN_PATHS.find((p) => p.id === selectedPathId) ?? null
         : null);
 
-    // Bezeichnung des Weges und Link zur Kreuzung immer links unten anzeigen
-    if (selectedPath && !isOnClearing) {
-      this.activePathTitleEl.textContent = `🧭 ${selectedPath.name}`;
-      this.returnToClearingBtn.classList.remove('is-hidden');
-    } else {
-      this.activePathTitleEl.textContent = '🧭 7-Wegekreuzung';
-      this.returnToClearingBtn.classList.add('is-hidden');
+    // Bezeichnung des Weges und Link zur Kreuzung immer links unten anzeigen (mit Dirty-Checking gegen unnötige DOM-Reflows)
+    const nextTitle = selectedPath && !isOnClearing ? `🧭 ${selectedPath.name}` : '🧭 7-Wegekreuzung';
+    if (this.lastPathBadgeText !== nextTitle) {
+      this.lastPathBadgeText = nextTitle;
+      this.activePathTitleEl.textContent = nextTitle;
     }
-    this.activePathBadgeEl.classList.remove('is-hidden');
+
+    const shouldHideReturnBtn = !(selectedPath && !isOnClearing);
+    if (this.lastReturnBtnHidden !== shouldHideReturnBtn) {
+      this.lastReturnBtnHidden = shouldHideReturnBtn;
+      if (shouldHideReturnBtn) {
+        this.returnToClearingBtn.classList.add('is-hidden');
+      } else {
+        this.returnToClearingBtn.classList.remove('is-hidden');
+      }
+    }
 
     // Kommunikationsmenü nur einblenden, wenn ein Gespräch stattfindet
     this.renderDialogue(activeDialogueNode);

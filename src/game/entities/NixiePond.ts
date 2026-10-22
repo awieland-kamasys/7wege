@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface NixiePondEntity {
   group: THREE.Group;
@@ -85,8 +86,9 @@ export function createNixiePond(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
         }
       });
 
-      // Platzhalter durch das fertige 3D-Modell ersetzen
+      // Platzhalter durch das fertige 3D-Modell ersetzen und Speicher freigeben
       group.remove(fallback);
+      disposeObject3D(fallback);
       group.add(model);
     },
     undefined,
@@ -99,6 +101,7 @@ export function createNixiePond(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
         const bounds = new THREE.Box3().setFromObject(model);
         model.position.set(0, -bounds.min.y + 0.01, 0);
         group.remove(fallback);
+        disposeObject3D(fallback);
         group.add(model);
       });
     }

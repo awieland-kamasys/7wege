@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface GreyManNpcEntity {
   group: THREE.Group;
@@ -66,6 +67,7 @@ export function createGreyManNpc(): GreyManNpcEntity {
       });
 
       group.remove(fallbackGroup);
+      disposeObject3D(fallbackGroup);
       group.add(model);
     },
     undefined,

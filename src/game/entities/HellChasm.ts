@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createVeinedLavaRockTexture } from '../textures/GroundTextures';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface HellChasmEntity {
   group: THREE.Group;
@@ -189,8 +190,9 @@ export function createHellChasm(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
         }
       });
 
-      // Platzhalter durch das fertige Modell ersetzen
+      // Platzhalter durch das fertige Modell ersetzen und Speicher freigeben
       craterContentGroup.remove(fallback);
+      disposeObject3D(fallback);
       craterContentGroup.add(model);
     },
     undefined,

@@ -68,6 +68,7 @@ import { createMushroomCluster, MushroomType } from '../entities/MushroomCluster
 import { createBirdhouse } from '../entities/Birdhouse';
 import { createFlowerCluster, FlowerType } from '../entities/ForestFlowers';
 import { Vector2D } from '../systems/CrossroadsState';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export type ScenePickResult =
   | { kind: 'npc'; point: Vector2D }
@@ -186,6 +187,11 @@ export class CrossroadsScene {
   private readonly hellFogColor = new THREE.Color(0x160708);
   private readonly currentFogColor = new THREE.Color(0xdce2e0);
 
+  // Wiederverwendbare Hilfsobjekte zur Vermeidung von Garbage-Collection-Rucklern im Render-Loop
+  private readonly tempTargetFogColor = new THREE.Color();
+  private readonly tempTargetCamPos = new THREE.Vector3();
+  private cachedCanvasRect: DOMRect | null = null;
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.scene = new THREE.Scene();
@@ -193,11 +199,13 @@ export class CrossroadsScene {
     this.scene.background = this.currentFogColor;
     this.scene.fog = new THREE.Fog(this.defaultFogColor.getHex(), 9.5, 22.0);
 
+    // Far-Plane auf 42m optimiert: dichter Nebel verdeckt ohnehin alles ab 22-32m,
+    // dadurch werden weiter entfernte Objekte automatisch per Frustum-Culling verworfen.
     this.camera = new THREE.PerspectiveCamera(
       55,
       window.innerWidth / window.innerHeight,
       0.1,
-      95
+      42
     );
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -2357,11 +2365,18 @@ export class CrossroadsScene {
     return this.path6Herbs.isRemoved();
   }
 
+  private getCanvasRect(): DOMRect {
+    if (!this.cachedCanvasRect) {
+      this.cachedCanvasRect = this.canvas.getBoundingClientRect();
+    }
+    return this.cachedCanvasRect;
+  }
+
   /**
    * Ermittelt per Raycasting, auf welches 3D-Objekt oder welchen Punkt am Boden die Maus zeigt.
    */
   public raycastFromMouse(clientX: number, clientY: number): ScenePickResult | null {
-    const rect = this.canvas.getBoundingClientRect();
+    const rect = this.getCanvasRect();
     if (rect.width === 0 || rect.height === 0) {
       return null;
     }
@@ -2606,8 +2621,8 @@ export class CrossroadsScene {
     const distToDevil = Math.hypot(playerPos.x - DEVIL_NPC_POS.x, playerPos.z - DEVIL_NPC_POS.z);
     // Ab 36m beginnt die Verfinsterung, bei <= 14m ist voller aschig-dunkler Höllennebel
     const hellFogFactor = 1.0 - Math.min(1.0, Math.max(0.0, (distToDevil - 14.0) / 22.0));
-    const targetFogColor = this.defaultFogColor.clone().lerp(this.hellFogColor, hellFogFactor);
-    this.currentFogColor.lerp(targetFogColor, 0.05);
+    this.tempTargetFogColor.copy(this.defaultFogColor).lerp(this.hellFogColor, hellFogFactor);
+    this.currentFogColor.lerp(this.tempTargetFogColor, 0.05);
 
     this.scene.background = this.currentFogColor;
     if (this.scene.fog) {
@@ -2625,13 +2640,15 @@ export class CrossroadsScene {
     const targetCamX = playerPos.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
     const targetCamZ = playerPos.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
 
-    this.camera.position.lerp(new THREE.Vector3(targetCamX, camHeight, targetCamZ), 0.14);
+    this.tempTargetCamPos.set(targetCamX, camHeight, targetCamZ);
+    this.camera.position.lerp(this.tempTargetCamPos, 0.14);
     this.camera.lookAt(playerPos.x, targetY, playerPos.z);
 
     this.renderer.render(this.scene, this.camera);
   }
 
   private onResize = (): void => {
+    this.cachedCanvasRect = null;
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -2639,6 +2656,7 @@ export class CrossroadsScene {
 
   public dispose(): void {
     window.removeEventListener('resize', this.onResize);
+    disposeObject3D(this.scene);
     this.renderer.dispose();
   }
 }
