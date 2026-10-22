@@ -65,6 +65,7 @@ import {
 import { createTerrainMaterial, TerrainMaterialController } from '../textures/TerrainMaterial';
 import { TerrainPresetKey } from '../textures/TerrainPresets';
 import { createWoodWomanNpc, WoodWomanNpcEntity } from '../entities/WoodWomanNpc';
+import { buildMergedTreeStumps, TreeStumpInstance } from '../entities/TreeStump';
 import { buildMergedMushroomClusters, MushroomClusterOptions, MushroomType } from '../entities/MushroomCluster';
 import { buildMergedBirdhouses, BirdhouseInstance } from '../entities/Birdhouse';
 import { buildMergedFlowerClusters, FlowerClusterOptions, FlowerType } from '../entities/ForestFlowers';
@@ -388,6 +389,40 @@ export class CrossroadsScene {
       }
     });
     this.scene.add(this.lumberCamp.group);
+
+    // Baumstümpfe rund um die Holzfällerinsel auf Weg 4 (Zeugnisse der Holzfällungen im Wald)
+    const lumberStumpInstances: TreeStumpInstance[] = [
+      // Nordost-Flanke (mit eingesteckter Holzfälleraxt)
+      { x: 19.8, z: 41.6, scale: 1.15, height: 0.7, rotationY: 0.4, hasAxe: true, mossAmount: 0.7 },
+      // Ost-Flanke
+      { x: 21.4, z: 43.2, scale: 1.25, height: 0.45, rotationY: 1.1, mossAmount: 0.8 },
+      // Ost-Südost (mit Baumpilzen)
+      { x: 22.0, z: 45.6, scale: 1.05, height: 0.65, rotationY: 2.3, hasMushrooms: true, mossAmount: 0.5 },
+      // Südost
+      { x: 20.2, z: 47.8, scale: 0.95, height: 0.55, rotationY: 0.8, mossAmount: 0.6 },
+      // Süd
+      { x: 17.8, z: 49.2, scale: 1.1, height: 0.85, rotationY: 1.7, mossAmount: 0.4 },
+      // Süd-Südwest
+      { x: 15.2, z: 49.6, scale: 1.0, height: 0.6, rotationY: 2.8, mossAmount: 0.7 },
+      // Südwest
+      { x: 12.8, z: 48.0, scale: 1.2, height: 0.5, rotationY: 0.2, mossAmount: 0.9 },
+      // West-Südwest
+      { x: 11.4, z: 45.4, scale: 0.9, height: 0.58, rotationY: 1.4, mossAmount: 0.5 },
+      // West (mit Baumpilzen)
+      { x: 11.2, z: 42.8, scale: 1.15, height: 0.75, rotationY: 2.1, hasMushrooms: true, mossAmount: 0.6 },
+      // Nordwest-Flanke
+      { x: 12.6, z: 40.5, scale: 1.05, height: 0.62, rotationY: 0.9, mossAmount: 0.7 },
+      // Nord-Nordwest am Lichtungsrand
+      { x: 14.0, z: 39.4, scale: 0.85, height: 0.48, rotationY: 1.6, mossAmount: 0.6 },
+      // Nord-Nordost am Lichtungsrand
+      { x: 19.0, z: 39.5, scale: 1.1, height: 0.52, rotationY: 2.4, mossAmount: 0.5 },
+      // Weiter östlich im lichten Gras
+      { x: 23.2, z: 43.8, scale: 1.35, height: 0.68, rotationY: 0.6, mossAmount: 0.85 },
+      // Weiter westlich im Moos
+      { x: 10.0, z: 44.2, scale: 1.0, height: 0.55, rotationY: 1.9, mossAmount: 0.65 },
+    ];
+    const lumberStumpsGroup = buildMergedTreeStumps(lumberStumpInstances);
+    this.scene.add(lumberStumpsGroup);
 
     // Das Holzweibchen (NPC) im Holzfällerlager am Ende des 4. Weges (3D-Walddruidin kurz vor der Insel)
     this.woodWomanNpc = createWoodWomanNpc(

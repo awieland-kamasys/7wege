@@ -41,6 +41,7 @@ let cachedVeinedLavaRockTexture: LavaRockBundle | null = null;
 let cachedBrickTexture: TexturePair | null = null;
 let cachedAshlarWallTexture: TexturePair | null = null;
 let cachedSandstoneWallTexture: TexturePair | null = null;
+let cachedTreeRingsTexture: TexturePair | null = null;
 let cachedWoodGrainTexture: TexturePair | null = null;
 
 /**
@@ -1742,4 +1743,184 @@ export function createSandstoneWallTexture(): { map: THREE.CanvasTexture | null;
 
   cachedSandstoneWallTexture = { map: texture, bumpMap: bumpTexture };
   return clonePair(cachedSandstoneWallTexture);
+}
+
+/**
+ * Erzeugt eine detailreiche, kreisrunde Jahresring-Textur für die Schnittflächen von Baumstümpfen:
+ * - Helles Splintholz außen, warmes rötlich-goldenes Kernholz im Zentrum
+ * - Dichte, konzentrische und organisch gewellte Jahresringe
+ * - Feine Trocknungsrisse vom Mark nach außen
+ * - Rillenrelief im Bump-Map für spürbare Schnitt- und Sägetextur
+ */
+export function createTreeRingsTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedTreeRingsTexture) {
+    return clonePair(cachedTreeRingsTexture);
+  }
+  if (typeof document === 'undefined') {
+    return { map: null, bumpMap: null };
+  }
+
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return { map: null, bumpMap: null };
+
+  const bumpCanvas = document.createElement('canvas');
+  bumpCanvas.width = size;
+  bumpCanvas.height = size;
+  const bumpCtx = bumpCanvas.getContext('2d');
+
+  const cx = size / 2;
+  const cy = size / 2;
+  const maxR = size * 0.48;
+
+  // 1. Grundverlauf: Warmes Kernholz innen, helles Splintholz außen
+  const baseGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
+  baseGrad.addColorStop(0, '#af7d46');
+  baseGrad.addColorStop(0.35, '#c5965a');
+  baseGrad.addColorStop(0.75, '#dab178');
+  baseGrad.addColorStop(0.94, '#ecd09e');
+  baseGrad.addColorStop(1.0, '#78502a'); // Rindensaum am Rand
+  ctx.fillStyle = baseGrad;
+  ctx.fillRect(0, 0, size, size);
+
+  if (bumpCtx) {
+    bumpCtx.fillStyle = '#808080';
+    bumpCtx.fillRect(0, 0, size, size);
+  }
+
+  const rng = (seed: number) => {
+    let s = seed % 2147483647;
+    if (s <= 0) s += 2147483646;
+    return () => {
+      s = (s * 16807) % 2147483647;
+      return (s - 1) / 2147483646;
+    };
+  };
+  const random = rng(9421);
+
+  // 2. Konzentrische, organisch gewellte Jahresringe
+  const ringCount = 38;
+  for (let r = 1; r <= ringCount; r++) {
+    const baseRadius = (r / ringCount) * maxR;
+    const ringAlpha = 0.28 + (r % 3 === 0 ? 0.25 : 0.12);
+    const ringColor = r > ringCount * 0.75
+      ? `rgba(130, 95, 55, ${ringAlpha})`
+      : `rgba(98, 62, 30, ${ringAlpha})`;
+
+    ctx.strokeStyle = ringColor;
+    ctx.lineWidth = 1.2 + (r % 4 === 0 ? 1.0 : 0.4);
+    ctx.beginPath();
+
+    const steps = 72;
+    for (let s = 0; s <= steps; s++) {
+      const angle = (s / steps) * Math.PI * 2;
+      // Organische Wellung des Holzwachstums
+      const wobble =
+        Math.sin(angle * 5 + r * 0.8) * 2.2 +
+        Math.cos(angle * 3 - r * 0.5) * 1.6 +
+        Math.sin(angle * 9) * 0.8;
+      const currentR = baseRadius + wobble;
+      const px = cx + Math.cos(angle) * currentR;
+      const py = cy + Math.sin(angle) * currentR;
+
+      if (s === 0) {
+        ctx.moveTo(px, py);
+      } else {
+        ctx.lineTo(px, py);
+      }
+    }
+    ctx.stroke();
+
+    if (bumpCtx) {
+      bumpCtx.strokeStyle = r % 2 === 0 ? '#b8b8b8' : '#454545';
+      bumpCtx.lineWidth = ctx.lineWidth;
+      bumpCtx.beginPath();
+      for (let s = 0; s <= steps; s++) {
+        const angle = (s / steps) * Math.PI * 2;
+        const wobble =
+          Math.sin(angle * 5 + r * 0.8) * 2.2 +
+          Math.cos(angle * 3 - r * 0.5) * 1.6;
+        const currentR = baseRadius + wobble;
+        const px = cx + Math.cos(angle) * currentR;
+        const py = cy + Math.sin(angle) * currentR;
+        if (s === 0) bumpCtx.moveTo(px, py);
+        else bumpCtx.lineTo(px, py);
+      }
+      bumpCtx.stroke();
+    }
+  }
+
+  // 3. Feine radiale Trocknungsrisse vom Mark nach außen
+  const crackCount = 7;
+  for (let c = 0; c < crackCount; c++) {
+    const startAngle = (c / crackCount) * Math.PI * 2 + (random() - 0.5) * 0.4;
+    const crackLength = maxR * (0.45 + random() * 0.45);
+
+    ctx.strokeStyle = 'rgba(40, 24, 12, 0.75)';
+    ctx.lineWidth = 1.4 + random() * 1.2;
+    ctx.beginPath();
+
+    let curX = cx;
+    let curY = cy;
+    ctx.moveTo(curX, curY);
+
+    const segs = 10;
+    for (let i = 1; i <= segs; i++) {
+      const prog = i / segs;
+      const dist = prog * crackLength;
+      const angle = startAngle + (random() - 0.5) * 0.18;
+      curX = cx + Math.cos(angle) * dist;
+      curY = cy + Math.sin(angle) * dist;
+      ctx.lineTo(curX, curY);
+    }
+    ctx.stroke();
+
+    if (bumpCtx) {
+      bumpCtx.strokeStyle = '#181818';
+      bumpCtx.lineWidth = ctx.lineWidth + 0.8;
+      bumpCtx.beginPath();
+      bumpCtx.moveTo(cx, cy);
+      let bx = cx;
+      let by = cy;
+      for (let i = 1; i <= segs; i++) {
+        const prog = i / segs;
+        const dist = prog * crackLength;
+        const angle = startAngle + (random() - 0.5) * 0.18;
+        bx = cx + Math.cos(angle) * dist;
+        by = cy + Math.sin(angle) * dist;
+        bumpCtx.lineTo(bx, by);
+      }
+      bumpCtx.stroke();
+    }
+  }
+
+  // 4. Feine Holzfaserporen und Sägespuren quer über die Schnittfläche
+  ctx.strokeStyle = 'rgba(75, 48, 24, 0.14)';
+  ctx.lineWidth = 1.0;
+  for (let i = -maxR; i <= maxR; i += 7) {
+    ctx.beginPath();
+    const chord = Math.sqrt(Math.max(0, maxR * maxR - i * i));
+    ctx.moveTo(cx - chord, cy + i);
+    ctx.lineTo(cx + chord, cy + i);
+    ctx.stroke();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.needsUpdate = true;
+
+  let bumpTexture: THREE.CanvasTexture | null = null;
+  if (bumpCanvas) {
+    bumpTexture = new THREE.CanvasTexture(bumpCanvas);
+    bumpTexture.wrapS = THREE.ClampToEdgeWrapping;
+    bumpTexture.wrapT = THREE.ClampToEdgeWrapping;
+    bumpTexture.needsUpdate = true;
+  }
+
+  cachedTreeRingsTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedTreeRingsTexture);
 }
