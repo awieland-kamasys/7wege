@@ -112,7 +112,7 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
   // ==========================================
   const gardenGroup = new THREE.Group();
   gardenGroup.name = 'IsometricGarden';
-  gardenGroup.position.set(2.0, 0, 0.4);
+  gardenGroup.position.set(3.4, 0, 0.4);
 
   // Temporärer Platzhalter während des Ladens
   const gardenFallback = new THREE.Mesh(
