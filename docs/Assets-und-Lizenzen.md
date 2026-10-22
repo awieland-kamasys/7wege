@@ -21,6 +21,7 @@ Alle externen Modelle, Texturen, Bilder, Schriften und Audio-Dateien hier dokume
 | Schatztruhe hinter dem Tor (`treasure chest 3d model.glb`, 3,22 MB, kunstvolle Schatztruhe mit Eisenbeschlägen) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/treasure chest 3d model.glb` | aktiv |
 | Steinruine 3D-Modell (`stone ruin 3d model.glb`, 2,95 MB, alte steinerne Mauer- und Torruine) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/stone ruin 3d model.glb` | aktiv |
 | Verfallener Steinturm 3D-Modell (`ruined stone tower 3d model.glb`, 3,70 MB, verwitterter Wehrturm auf der Lichtung von Weg 6) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/ruined stone tower 3d model.glb` | aktiv |
+| Schneebedeckter Minenstollen (`snowy mine tunnel 3d model.glb`, 3,11 MB, 3D-Tunnelportal mit Holzstützen und Felsformation am Ende von Weg 1) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/snowy mine tunnel 3d model.glb` | aktiv |
 | Stilisierter Nadelbaum 3D-Modell (`low poly tree model.glb`, 2,48 MB, 9.846 Dreiecke, 2048x2048 PBR-Textur) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/low poly tree model.glb` | evaluiert (Referenzmodell für prozedurale Optimierung) |
 
 

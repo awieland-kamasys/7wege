@@ -278,8 +278,10 @@ export class CrossroadsScene {
     this.scene.add(this.guideNpc.group);
 
 
-    // Bergmassiv mit Höhleneingang am Ende des 1. Weges
-    const mountainCave = createMountainCave();
+    // Bergmassiv mit Minenstollen am Ende des 1. Weges
+    const mountainCave = createMountainCave((mesh) => {
+      this.pickableObjects.push(mesh);
+    });
     mountainCave.position.set(
       CAVE_ENTRANCE_POS.x,
       getTerrainHeight(CAVE_ENTRANCE_POS.x, CAVE_ENTRANCE_POS.z),

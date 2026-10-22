@@ -69,11 +69,13 @@ export const CAVE_ENTRANCE_POS = {
 } as const;
 
 /**
- * Position des Graumännchens (NPC vor dem Höhleneingang am Ende von Weg 1).
+ * Position des Graumännchens (NPC vor dem Mineneingang am Ende von Weg 1).
+ * Steht leicht seitlich versetzt auf dem Vorplatz vor dem Stollenmundloch,
+ * sodass der Blick in die Mine frei bleibt und der ankommende Spieler direkt begrüßt wird.
  */
 export const GREY_MAN_NPC_POS: PathPoint2D = {
-  x: 22.7,
-  z: -47.0,
+  x: 23.2,
+  z: -46.0,
 };
 
 /**
