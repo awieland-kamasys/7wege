@@ -15,11 +15,13 @@ export interface WoodWomanNpcOptions {
   interactableType?: string;
   defaultFacingTarget?: { x: number; z: number };
   loadDelayMs?: number;
+  modelPath?: string;
 }
 
 /**
  * Erstellt die 3D-Figur "Das Holzweibchen" (Walddruidin):
- * Lädt das detailreiche 3D-Modell `/assets/models/forest druid 3d model new style.glb`
+ * Lädt standardmäßig das detailreiche 3D-Modell `/assets/models/forest druid 3d model new style.glb`
+ * (oder optional das klassische Modell `/assets/models/forest druid 3d model.glb`)
  * mit naturverbundener Robe, Umhang und Geweih-Krone.
  * Wird sowohl im Holzfällercamp (Weg 4) als auch an der Jagdhütte (Weg 6) verwendet.
  */
@@ -43,6 +45,7 @@ export function createWoodWomanNpc(
     interactableType = 'wood_woman',
     defaultFacingTarget,
     loadDelayMs = 0,
+    modelPath = '/assets/models/forest druid 3d model new style.glb',
   } = options;
 
   const group = new THREE.Group();
@@ -86,7 +89,7 @@ export function createWoodWomanNpc(
   const startLoad = (): void => {
     const loader = new GLTFLoader();
     loader.load(
-      '/assets/models/forest druid 3d model new style.glb',
+      modelPath,
       (gltf) => {
         const model = gltf.scene;
 

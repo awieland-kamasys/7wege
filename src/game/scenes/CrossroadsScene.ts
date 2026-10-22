@@ -145,6 +145,7 @@ export class CrossroadsScene {
   private readonly huntingLodge: HuntingLodgeEntity;
   private readonly wildHunterNpc: WildHunterNpcEntity;
   private readonly woodWomanLodgeNpc: WoodWomanNpcEntity;
+  private readonly woodWomanClassicNpc: WoodWomanNpcEntity;
   private readonly closedGate: ClosedGateEntity;
   private readonly path1Boulder: PathBoulderEntity;
   private readonly path2Puddle: PathPuddleEntity;
@@ -516,7 +517,9 @@ export class CrossroadsScene {
     });
     this.scene.add(this.wildHunterNpc.group);
 
-    // Das Holzweibchen (NPC) vor dem Kräutergartenzaun an der Jagdhütte (3D-Walddruidin)
+    // Erstes Holzweibchen (NPC) vor dem Kräutergartenzaun an der Jagdhütte: Neuer Entwurf (forest druid 3d model new style.glb)
+    const lodgePosX1 = WOOD_WOMAN_LODGE_NPC_POS.x - 0.65;
+    const lodgePosZ1 = WOOD_WOMAN_LODGE_NPC_POS.z - 0.2;
     this.woodWomanLodgeNpc = createWoodWomanNpc(
       (mesh) => {
         this.pickableObjects.push(mesh);
@@ -524,12 +527,13 @@ export class CrossroadsScene {
       {
         interactableType: 'wood_woman_lodge',
         defaultFacingTarget: WILD_HUNTER_NPC_POS,
+        modelPath: '/assets/models/forest druid 3d model new style.glb',
       }
     );
     this.woodWomanLodgeNpc.group.position.set(
-      WOOD_WOMAN_LODGE_NPC_POS.x,
-      getTerrainHeight(WOOD_WOMAN_LODGE_NPC_POS.x, WOOD_WOMAN_LODGE_NPC_POS.z),
-      WOOD_WOMAN_LODGE_NPC_POS.z
+      lodgePosX1,
+      getTerrainHeight(lodgePosX1, lodgePosZ1),
+      lodgePosZ1
     );
     this.woodWomanLodgeNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -537,6 +541,31 @@ export class CrossroadsScene {
       }
     });
     this.scene.add(this.woodWomanLodgeNpc.group);
+
+    // Zweites Holzweibchen (NPC) direkt daneben zum Modellvergleich: Klassischer Entwurf (forest druid 3d model.glb)
+    const lodgePosX2 = WOOD_WOMAN_LODGE_NPC_POS.x + 0.65;
+    const lodgePosZ2 = WOOD_WOMAN_LODGE_NPC_POS.z + 0.2;
+    this.woodWomanClassicNpc = createWoodWomanNpc(
+      (mesh) => {
+        this.pickableObjects.push(mesh);
+      },
+      {
+        interactableType: 'wood_woman_lodge',
+        defaultFacingTarget: WILD_HUNTER_NPC_POS,
+        modelPath: '/assets/models/forest druid 3d model.glb',
+      }
+    );
+    this.woodWomanClassicNpc.group.position.set(
+      lodgePosX2,
+      getTerrainHeight(lodgePosX2, lodgePosZ2),
+      lodgePosZ2
+    );
+    this.woodWomanClassicNpc.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.woodWomanClassicNpc.group);
 
     // Das geschlossene Tor mit flankierenden Steinmauern am Ende des 7. Weges (3D-Ziertor)
     this.closedGate = createClosedGate((mesh) => {
@@ -2565,6 +2594,11 @@ export class CrossroadsScene {
         this.isWildHunterHovered || isDialogueActive
       );
       this.woodWomanLodgeNpc.update(
+        this.elapsedSeconds,
+        playerPos,
+        this.isWoodWomanLodgeHovered || isDialogueActive
+      );
+      this.woodWomanClassicNpc.update(
         this.elapsedSeconds,
         playerPos,
         this.isWoodWomanLodgeHovered || isDialogueActive
