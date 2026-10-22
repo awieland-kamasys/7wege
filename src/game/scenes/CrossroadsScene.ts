@@ -947,24 +947,24 @@ export class CrossroadsScene {
           const normY = y / height;
 
           if (normY < -0.3) {
-            // Unterer Astkranz: Astspitzen ragen kräftig nach außen
-            const rFactor = 1.0 + (cosWave > 0 ? cosWave * branchDepth : cosWave * branchDepth * 0.55);
-            // Sanfter, nadelbaumtypischer Ast-Überhang (dezent nach unten geneigt, keine senkrechten Schuppen)
-            const tipDip = cosWave > 0 ? cosWave * 0.06 * height : 0;
+            // Unterer Astkranz: Astspitzen ragen dezent und harmonisch nach außen (keine überbreiten Sägeblätter)
+            const rFactor = 1.0 + (cosWave > 0 ? cosWave * branchDepth : cosWave * branchDepth * 0.45);
+            // Sanfter, nadelbaumtypischer Ast-Überhang (dezent nach unten geneigt)
+            const tipDip = cosWave > 0 ? cosWave * 0.05 * height : 0;
             pos.setXYZ(i, x * rFactor, y - tipDip, z * rFactor);
             // Plastischer Tiefenschatten (Ambient Occlusion) an den Astunterseiten
-            shade = cosWave > 0 ? 0.82 : 0.62;
+            shade = cosWave > 0 ? 0.84 : 0.68;
           } else if (normY < 0.1) {
-            // Mittlerer Ast-Rücken: wölbt sich ebenfalls sternförmig nach außen für ein echtes Astvolumen
-            const rFactor = 1.0 + (cosWave > 0 ? cosWave * branchDepth * 0.55 : cosWave * branchDepth * 0.25);
+            // Mittlerer Ast-Rücken: wölbt sich harmonisch mit für organisches Nadelvolumen
+            const rFactor = 1.0 + (cosWave > 0 ? cosWave * branchDepth * 0.40 : cosWave * branchDepth * 0.20);
             const midDip = cosWave > 0 ? cosWave * 0.02 * height : 0;
             pos.setXYZ(i, x * rFactor, y - midDip, z * rFactor);
-            shade = 0.90;
+            shade = 0.92;
           } else {
             // Obere Astschräge / Wipfelübergang
-            const rFactor = 1.0 + (cosWave > 0 ? cosWave * branchDepth * 0.20 : 0);
+            const rFactor = 1.0 + (cosWave > 0 ? cosWave * branchDepth * 0.15 : 0);
             pos.setXYZ(i, x * rFactor, y, z * rFactor);
-            shade = 1.08;
+            shade = 1.06;
           }
         }
 
@@ -983,12 +983,13 @@ export class CrossroadsScene {
       return geo;
     };
 
+    // Schlankere, kompakte Baumkrone mit harmonischer Astbreite (ca. 3.2m statt 5.0m Spannweite)
     const crownLayers: THREE.BufferGeometry[] = [
-      createBranchedTier(1.85, 1.45, 8, 0.35, 0.0, 2.10),
-      createBranchedTier(1.60, 1.35, 7, 0.33, 0.28, 2.80),
-      createBranchedTier(1.30, 1.25, 6, 0.31, -0.35, 3.48),
-      createBranchedTier(0.98, 1.15, 5, 0.28, 0.45, 4.12),
-      createBranchedTier(0.62, 1.15, 4, 0.24, -0.22, 4.70),
+      createBranchedTier(1.38, 1.35, 8, 0.16, 0.0, 2.15),
+      createBranchedTier(1.18, 1.25, 7, 0.15, 0.28, 2.80),
+      createBranchedTier(0.96, 1.15, 6, 0.14, -0.35, 3.42),
+      createBranchedTier(0.74, 1.05, 5, 0.13, 0.45, 4.02),
+      createBranchedTier(0.48, 1.05, 4, 0.12, -0.22, 4.58),
     ];
 
     const mergedCrownGeo = BufferGeometryUtils.mergeGeometries(crownLayers);
