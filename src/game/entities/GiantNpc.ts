@@ -11,7 +11,7 @@ export interface GiantNpcEntity {
  * Erstellt die 3D-Figur des Riesen („Der Riese am Wehr“), der am Ende des 3. Weges
  * neben der Wehrbrücke und dem kleinen Stausee das geschlossene Wehr bewacht.
  * Lädt das 3D-Modell `/assets/models/stylized dwarf 3d model.glb` und skaliert es
- * auf monumentale Riesengröße (~3,10 m Höhe).
+ * auf monumentale Riesengröße (~6,20 m Höhe).
  */
 export function createGiantNpc(
   onMeshLoaded?: (mesh: THREE.Mesh) => void
@@ -27,13 +27,13 @@ export function createGiantNpc(
     roughness: 0.22,
     metalness: 0.4,
   });
-  const indicator = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 0), indicatorMat);
-  indicator.position.y = 3.35;
+  const indicator = new THREE.Mesh(new THREE.OctahedronGeometry(0.35, 0), indicatorMat);
+  indicator.position.y = 6.65;
   group.add(indicator);
 
   // Quellwasser-Lichtschein über dem Riesen
-  const giantLight = new THREE.PointLight(0x7fd4e6, 1.2, 7.0);
-  giantLight.position.set(0, 3.1, 0.5);
+  const giantLight = new THREE.PointLight(0x7fd4e6, 1.4, 12.0);
+  giantLight.position.set(0, 6.2, 0.8);
   group.add(giantLight);
 
   // 2. Temporäre dezente Platzhalter-Geometrie während des Ladens des 3D-Modells
@@ -43,10 +43,10 @@ export function createGiantNpc(
     roughness: 0.88,
   });
   const fallbackBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.55, 0.75, 2.9, 10),
+    new THREE.CylinderGeometry(1.10, 1.50, 5.8, 10),
     fallbackMat
   );
-  fallbackBody.position.y = 1.45;
+  fallbackBody.position.y = 2.9;
   fallbackBody.castShadow = true;
   fallbackBody.userData = { interactableType: 'giant' };
   fallbackGroup.add(fallbackBody);
@@ -64,8 +64,8 @@ export function createGiantNpc(
       const model = gltf.scene;
       loadedModel = model;
 
-      // Skalierung: Originalmodell ist 1.00m hoch -> 3.10x für monumentale Riesengestalt
-      model.scale.setScalar(3.10);
+      // Skalierung: Originalmodell ist 1.00m hoch -> 6.20x für wahrhaft gigantische Riesengestalt
+      model.scale.setScalar(6.20);
 
       // Bounding-Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
       model.updateMatrixWorld(true);
@@ -119,16 +119,16 @@ export function createGiantNpc(
     const breath = Math.sin(timeSeconds * 1.6);
     if (loadedModel) {
       loadedModel.scale.set(
-        3.10 * (1 + breath * 0.012),
-        3.10 * (1 + breath * 0.015),
-        3.10 * (1 + breath * 0.012)
+        6.20 * (1 + breath * 0.012),
+        6.20 * (1 + breath * 0.015),
+        6.20 * (1 + breath * 0.012)
       );
     } else {
       fallbackBody.scale.set(1 + breath * 0.012, 1 + breath * 0.015, 1 + breath * 0.012);
     }
 
     // Kristall-Animation und Lichtintensität
-    indicator.position.y = 3.35 + Math.sin(timeSeconds * 2.3) * 0.08;
+    indicator.position.y = 6.65 + Math.sin(timeSeconds * 2.3) * 0.12;
     indicator.rotation.y = timeSeconds * 1.25;
 
     indicatorMat.emissiveIntensity = highlighted ? 1.35 : 0.9;

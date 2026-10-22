@@ -162,7 +162,7 @@ export class CrossroadsState {
   // Am Ende des 3. Weges: Brücke mit geschlossenem Wehr, kleinem Stausee und dem Riesen
   private readonly weirBridgePos: Vector2D = { x: WEIR_BRIDGE_POS.x, z: WEIR_BRIDGE_POS.z };
   private readonly giantPos: Vector2D = { ...GIANT_NPC_POS };
-  private readonly giantCollisionRadius = 0.85;
+  private readonly giantCollisionRadius = 1.65;
 
   // Am Ende des 4. Weges: Holzfällerlager auf der Waldlichtung und das Holzweibchen
   private readonly lumberCampPos: Vector2D = { x: LUMBER_CAMP_POS.x, z: LUMBER_CAMP_POS.z };
@@ -507,7 +507,7 @@ export class CrossroadsState {
       this.playerPos.x - this.giantPos.x,
       this.playerPos.z - this.giantPos.z
     );
-    return dist <= this.giantCollisionRadius + 1.45;
+    return dist <= this.giantCollisionRadius + 1.85;
   }
 
   public isNearWoodWoman(): boolean {
@@ -1934,7 +1934,7 @@ export class CrossroadsState {
    */
   public setTargetToGiant(): Readonly<Vector2D> {
     this.selectPath(3);
-    return this.setTargetPosition(this.giantPos.x - 1.5, this.giantPos.z + 0.8);
+    return this.setTargetPosition(this.giantPos.x - 2.0, this.giantPos.z + 1.1);
   }
 
   /**

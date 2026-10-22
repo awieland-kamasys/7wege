@@ -36,21 +36,6 @@ export function createClosedGate(
     roughness: 0.76,
   });
 
-  const ironMat = new THREE.MeshStandardMaterial({
-    color: 0x222326,
-    metalness: 0.75,
-    roughness: 0.42,
-  });
-  const chainMat = new THREE.MeshStandardMaterial({
-    color: 0x2b2c30,
-    metalness: 0.82,
-    roughness: 0.38,
-  });
-  const brassLockMat = new THREE.MeshStandardMaterial({
-    color: 0xb58e38,
-    metalness: 0.68,
-    roughness: 0.32,
-  });
   const indicatorMat = new THREE.MeshStandardMaterial({
     color: 0xa87ffb,
     emissive: 0x683cb8,
@@ -138,41 +123,50 @@ export function createClosedGate(
     }
   );
 
-  // 3. Dicke Eisenketten und massives Vorhängeschloss in der Tormitte
-  const lockGroup = new THREE.Group();
-  lockGroup.position.set(0, 1.65, 0.18);
+  // 3. Geheimnisvolle Schatztruhe direkt hinter dem Tor
+  const chestGroup = new THREE.Group();
+  chestGroup.name = 'GateTreasureChest';
+  chestGroup.position.set(0, 0, -2.6); // 2.6m hinter dem Tor
+  chestGroup.rotation.y = 0.12; // leicht malerisch gedreht
 
-  for (const rotY of [-0.22, 0.22]) {
-    const chain = new THREE.Mesh(
-      new THREE.TorusGeometry(0.36, 0.05, 6, 14),
-      chainMat
-    );
-    chain.position.set(0, 0, 0);
-    chain.rotation.y = rotY;
-    chain.castShadow = true;
-    chain.userData = { interactableType: 'gate' };
-    lockGroup.add(chain);
-  }
+  const chestLoader = new GLTFLoader();
+  chestLoader.load(
+    '/assets/models/treasure chest 3d model.glb',
+    (gltf) => {
+      const chestModel = gltf.scene;
+      // Skalierung: 1.35x für eine stattliche, prächtige Schatztruhe (Breite ca. 1.35m, Höhe ca. 0.91m)
+      chestModel.scale.setScalar(1.35);
 
-  const lockBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.38, 0.16),
-    brassLockMat
+      chestModel.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(chestModel);
+      chestModel.position.set(0, -bounds.min.y, 0);
+
+      chestModel.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.userData = { interactableType: 'gate' };
+          if (onMeshLoaded) {
+            onMeshLoaded(mesh);
+          }
+        }
+      });
+
+      chestGroup.add(chestModel);
+    },
+    undefined,
+    (err) => {
+      console.warn('Schatztruhe hinter dem Tor konnte nicht geladen werden:', err);
+    }
   );
-  lockBody.position.set(0, -0.22, 0.06);
-  lockBody.castShadow = true;
-  lockBody.userData = { interactableType: 'gate' };
-  lockGroup.add(lockBody);
 
-  const lockShackle = new THREE.Mesh(
-    new THREE.TorusGeometry(0.14, 0.04, 6, 12, Math.PI),
-    ironMat
-  );
-  lockShackle.position.set(0, -0.02, 0.06);
-  lockShackle.rotation.x = Math.PI;
-  lockShackle.userData = { interactableType: 'gate' };
-  lockGroup.add(lockShackle);
+  // Geheimnisvoller, goldener Lichtschein über der Schatztruhe
+  const chestLight = new THREE.PointLight(0xffd269, 1.15, 5.0);
+  chestLight.position.set(0, 0.85, 0);
+  chestGroup.add(chestLight);
 
-  group.add(lockGroup);
+  group.add(chestGroup);
 
   // 4. Anschließende alte Steinmauern links und rechts (riegeln das Tal nahtlos ab)
   // Das Fundament reicht 2.4m tief ins Erdreich, damit an Hangkuppen kein Spalt entsteht
@@ -252,6 +246,9 @@ export function createClosedGate(
       mat.emissive.setHex(emissiveHex);
       mat.emissiveIntensity = highlighted ? 0.38 : 0.0;
     }
+
+    // Geheimnisvolles, sanftes Pulsieren des Schatzlichts hinter dem Tor
+    chestLight.intensity = 1.05 + 0.22 * Math.sin(timeSeconds * 2.2);
   };
 
   return { group, update };
