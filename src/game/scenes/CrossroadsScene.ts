@@ -1850,10 +1850,12 @@ export class CrossroadsScene {
     }
 
     // Baumbestände rund um die Burgruine auf Weg 6:
+    // Hinter der Ruine erstreckt sich ein weitläufiger, dichter Hochwald.
     // Rechts und links weit zurückgesetzt, damit die Ruine und der Kräutergarten
     // vollkommen unverdeckt bleiben und der Weg komplett frei ist.
     const castleSurroundingTrees: [number, number, number, boolean][] = [
-      // 1. Dahinter (im Westen / hinter der Burgruine als imposante Waldkulisse)
+      // 1. Dichter Hochwald hinter der Burgruine (in die Tiefe gestaffelt von X = -52 bis X = -73)
+      // Erste Reihe direkt hinter der Ruine
       [-52.0, 21.0, 1.35, true],
       [-52.6, 23.2, 1.40, false],
       [-52.0, 25.4, 1.32, true],
@@ -1861,6 +1863,66 @@ export class CrossroadsScene {
       [-54.8, 22.0, 1.45, true],
       [-54.6, 24.4, 1.40, false],
       [-54.2, 26.6, 1.36, true],
+
+      // Tiefenstaffelung 1 (X ca. -56.5 bis -58.5)
+      [-56.5, 14.5, 1.38, true],
+      [-57.2, 17.0, 1.42, false],
+      [-56.8, 19.5, 1.45, true],
+      [-57.5, 21.8, 1.48, false],
+      [-57.0, 24.2, 1.50, true],
+      [-57.8, 26.5, 1.46, false],
+      [-56.5, 28.8, 1.42, true],
+      [-57.2, 31.0, 1.38, false],
+      [-56.8, 33.5, 1.35, true],
+      [-58.8, 18.2, 1.44, false],
+      [-59.2, 23.0, 1.52, true],
+      [-58.5, 27.8, 1.45, false],
+
+      // Tiefenstaffelung 2 (X ca. -60.0 bis -63.5)
+      [-60.2, 12.0, 1.40, false],
+      [-61.0, 14.8, 1.45, true],
+      [-60.5, 17.2, 1.48, false],
+      [-61.5, 19.8, 1.52, true],
+      [-60.8, 22.4, 1.55, false],
+      [-61.8, 24.8, 1.52, true],
+      [-60.5, 27.2, 1.48, false],
+      [-61.2, 29.5, 1.45, true],
+      [-60.8, 32.0, 1.42, false],
+      [-61.5, 34.5, 1.38, true],
+      [-62.8, 16.5, 1.50, true],
+      [-63.2, 21.8, 1.56, false],
+      [-62.5, 26.8, 1.52, true],
+      [-63.0, 31.5, 1.46, false],
+
+      // Tiefenstaffelung 3 (X ca. -64.5 bis -68.2)
+      [-64.5, 11.0, 1.42, true],
+      [-65.2, 13.5, 1.46, false],
+      [-64.8, 16.0, 1.50, true],
+      [-65.8, 18.5, 1.54, false],
+      [-65.0, 21.0, 1.58, true],
+      [-66.2, 23.5, 1.60, false],
+      [-65.2, 26.0, 1.58, true],
+      [-66.0, 28.2, 1.54, false],
+      [-64.8, 30.8, 1.50, true],
+      [-65.5, 33.0, 1.46, false],
+      [-64.5, 35.5, 1.40, true],
+      [-67.5, 17.2, 1.55, true],
+      [-68.0, 22.5, 1.62, false],
+      [-67.2, 27.5, 1.58, true],
+      [-68.2, 32.2, 1.52, false],
+
+      // Tiefenstaffelung 4 (X ca. -69.0 bis -73.0, majestätischer Waldhorizont)
+      [-69.0, 10.0, 1.45, false],
+      [-70.2, 12.8, 1.50, true],
+      [-69.5, 15.5, 1.55, false],
+      [-71.0, 18.0, 1.60, true],
+      [-70.0, 20.8, 1.62, false],
+      [-71.5, 23.2, 1.65, true],
+      [-70.5, 25.8, 1.62, false],
+      [-71.8, 28.5, 1.60, true],
+      [-70.0, 31.0, 1.55, false],
+      [-71.2, 33.8, 1.50, true],
+      [-69.5, 36.2, 1.45, false],
 
       // 2. Rechts der Burgruine (nach Norden weit abgerückt, Z <= 15.8, mind. 4.5m von der Burgwand entfernt)
       [-47.0, 14.8, 1.30, false],
