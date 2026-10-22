@@ -57,7 +57,7 @@ export function buildMergedBirdhouses(houses: BirdhouseInstance[]): THREE.Group 
   const roofGeos: THREE.BufferGeometry[] = [];
   const holeGeos: THREE.BufferGeometry[] = [];
 
-  const tempMatrix = new THREE.Matrix4();
+  const transformMatrix = new THREE.Matrix4();
   const tempPos = new THREE.Vector3();
   const tempEuler = new THREE.Euler();
   const tempQuat = new THREE.Quaternion();
@@ -65,64 +65,53 @@ export function buildMergedBirdhouses(houses: BirdhouseInstance[]): THREE.Group 
 
   for (const h of houses) {
     const s = h.scale;
-    const cosR = Math.cos(h.rotationY);
-    const sinR = Math.sin(h.rotationY);
 
     const boxWidth = 0.22 * s;
     const boxHeight = 0.28 * s;
     const boxDepth = 0.19 * s;
+    const perchLength = 0.065 * s;
 
-    // 1. Montageleiste + Korpus + Sitzstange in WoodGeos sammeln
-    const mountGeom = new THREE.BoxGeometry(0.06 * s, 0.44 * s, 0.02 * s);
-    const mx = h.x + (0) * cosR - (-0.01 * s) * sinR;
-    const mz = h.z + (0) * sinR + (-0.01 * s) * cosR;
-    tempPos.set(mx, h.y, mz);
+    // Transformationsmatrix für diesen Nistkasten aufstellen
+    tempPos.set(h.x, h.y, h.z);
     tempEuler.set(0, h.rotationY, 0);
     tempQuat.setFromEuler(tempEuler);
-    tempMatrix.compose(tempPos, tempQuat, tempScale);
-    mountGeom.applyMatrix4(tempMatrix);
+    transformMatrix.compose(tempPos, tempQuat, tempScale);
+
+    // 1. Montageleiste: liegt flach an der Rinde an (z = 0 in lokalen Koordinaten)
+    const mountGeom = new THREE.BoxGeometry(0.06 * s, 0.44 * s, 0.02 * s);
+    mountGeom.translate(0, 0, 0.01 * s);
+    mountGeom.applyMatrix4(transformMatrix);
     woodGeos.push(mountGeom);
 
+    // 2. Kastenkorpus: erstreckt sich vom Stamm nach vorne (z = 0 bis boxDepth)
     const boxGeom = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
-    const bx = h.x + (0) * cosR - (boxDepth / 2) * sinR;
-    const bz = h.z + (0) * sinR + (boxDepth / 2) * cosR;
-    tempPos.set(bx, h.y, bz);
-    tempMatrix.compose(tempPos, tempQuat, tempScale);
-    boxGeom.applyMatrix4(tempMatrix);
+    boxGeom.translate(0, 0, (boxDepth / 2) + 0.01 * s);
+    boxGeom.applyMatrix4(transformMatrix);
     woodGeos.push(boxGeom);
 
-    const perchLength = 0.065 * s;
+    // 3. Sitzstange: ragt aus der Vorderseite heraus
     const perchGeom = new THREE.CylinderGeometry(0.008 * s, 0.008 * s, perchLength, 6);
     perchGeom.rotateX(Math.PI / 2);
-    const px = h.x + (0) * cosR - (boxDepth + perchLength / 2) * sinR;
-    const pz = h.z + (0) * sinR + (boxDepth + perchLength / 2) * cosR;
-    tempPos.set(px, h.y + 0.005 * s, pz);
-    tempMatrix.compose(tempPos, tempQuat, tempScale);
-    perchGeom.applyMatrix4(tempMatrix);
+    perchGeom.translate(0, 0.005 * s, boxDepth + 0.01 * s + perchLength / 2);
+    perchGeom.applyMatrix4(transformMatrix);
     woodGeos.push(perchGeom);
 
-    // 2. Dach
+    // 4. Schutzdach: über dem Kasten leicht nach vorne geneigt
     const roofWidth = 0.26 * s;
     const roofDepth = 0.24 * s;
     const roofThick = 0.03 * s;
     const roofGeom = new THREE.BoxGeometry(roofWidth, roofThick, roofDepth);
     roofGeom.rotateX(0.22);
-    const rx = h.x + (0) * cosR - (boxDepth / 2 + 0.02 * s) * sinR;
-    const rz = h.z + (0) * sinR + (boxDepth / 2 + 0.02 * s) * cosR;
-    tempPos.set(rx, h.y + boxHeight / 2 + 0.012 * s, rz);
-    tempMatrix.compose(tempPos, tempQuat, tempScale);
-    roofGeom.applyMatrix4(tempMatrix);
+    roofGeom.translate(0, boxHeight / 2 + 0.015 * s, (boxDepth / 2) + 0.01 * s);
+    roofGeom.applyMatrix4(transformMatrix);
     roofGeos.push(roofGeom);
 
-    // 3. Einflugloch
+    // 5. Einflugloch: an der Vorderseite des Kastens
     const holeRadius = 0.032 * s;
     const holeGeom = new THREE.CylinderGeometry(holeRadius, holeRadius, 0.01 * s, 8);
     holeGeom.rotateX(Math.PI / 2);
-    const hx = h.x + (0) * cosR - (boxDepth + 0.005 * s) * sinR;
-    const hz = h.z + (0) * sinR + (boxDepth + 0.005 * s) * cosR;
-    tempPos.set(hx, h.y + 0.055 * s, hz);
-    tempMatrix.compose(tempPos, tempQuat, tempScale);
-    holeGeom.applyMatrix4(tempMatrix);
+    holeGeom.translate(0, 0.055 * s, boxDepth + 0.015 * s);
+    holeGeom.applyMatrix4(transformMatrix);
     holeGeos.push(holeGeom);
   }
 

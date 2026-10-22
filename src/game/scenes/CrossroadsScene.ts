@@ -1098,30 +1098,44 @@ export class CrossroadsScene {
       this.scene.add(burnedCrownLightMesh);
     }
 
-    // 6. Nistkästen ausschließlich an den Bäumen der zentralen 7-Wege-Lichtung platzieren und zur Schutzhütte (0, 0) ausrichten
+    // 6. Nistkästen AUSSCHLIESSLICH an den Bäumen am Rand der zentralen 7-Wege-Lichtung
+    // Genau an den 7 Waldzwickeln zwischen den 7 Pfaden rund um die Schutzhütte (0, 0)
     const birdhouseInstances: BirdhouseInstance[] = [];
 
-    // Alle Bäume an der 7-Wege-Lichtung rund um die Schutzhütte (Radius 5.2m bis 17.5m um das Zentrum 0, 0)
+    // Nur Bäume am Rand der 7-Wege-Lichtung (Distanz 8.2m bis 13.5m zur Hütte), die NICHT an einem der 7 Pfade stehen
     const clearingTrees = normalTrees.filter((t) => {
       const dist = Math.hypot(t.x, t.z);
-      return dist > 5.2 && dist < 17.5;
+      if (dist < 8.2 || dist > 13.5) return false;
+      if (this.isNearAnyPathCorridor(t.x, t.z, 3.6)) return false;
+      return true;
     });
 
-    for (let i = 0; i < clearingTrees.length; i++) {
-      if (i % 2 === 0) {
-        const t = clearingTrees[i];
-        // Exakt zur Schutzhütte im Zentrum (0, 0) ausrichten
-        const angle = Math.atan2(0 - t.x, 0 - t.z);
-        const trunkRadiusAtHeight = 0.272 * t.scale;
-        const bx = t.x + Math.sin(angle) * trunkRadiusAtHeight;
-        const bz = t.z + Math.cos(angle) * trunkRadiusAtHeight;
+    // In jedem der 7 Lichtungs-Zwickel den vordersten Baum auswählen
+    const numSectors = 7;
+    for (let s = 0; s < numSectors; s++) {
+      const sectorCenterAngle = SEVEN_PATHS[s].angleRad + Math.PI / 7;
+      const sectorTrees = clearingTrees.filter((t) => {
+        const treeAngle = Math.atan2(t.x, -t.z);
+        let diff = Math.abs(treeAngle - sectorCenterAngle);
+        while (diff > Math.PI) diff = Math.abs(diff - Math.PI * 2);
+        return diff < 0.28;
+      });
+
+      sectorTrees.sort((a, b) => Math.hypot(a.x, a.z) - Math.hypot(b.x, b.z));
+      const targetTree = sectorTrees[0];
+      if (targetTree) {
+        // Exakt zur Schutzhütte bei (0, 0) ausrichten
+        const angle = Math.atan2(0 - targetTree.x, 0 - targetTree.z);
+        const trunkRadiusAtHeight = 0.272 * targetTree.scale;
+        const bx = targetTree.x + Math.sin(angle) * trunkRadiusAtHeight;
+        const bz = targetTree.z + Math.cos(angle) * trunkRadiusAtHeight;
 
         birdhouseInstances.push({
           x: bx,
-          y: getTerrainHeight(bx, bz) + 0.92 * t.scale,
+          y: getTerrainHeight(bx, bz) + 0.92 * targetTree.scale,
           z: bz,
           rotationY: angle,
-          scale: t.scale * 1.05,
+          scale: targetTree.scale * 1.05,
         });
       }
     }
@@ -1130,6 +1144,18 @@ export class CrossroadsScene {
       const mergedBirdhouses = buildMergedBirdhouses(birdhouseInstances);
       this.scene.add(mergedBirdhouses);
     }
+  }
+
+  private isNearAnyPathCorridor(x: number, z: number, dist = 3.6): boolean {
+    return (
+      this.isNearPath1Corridor(x, z, dist) ||
+      this.isNearPath2Corridor(x, z, dist) ||
+      this.isNearPath3Corridor(x, z, dist) ||
+      this.isNearPath4Corridor(x, z, dist) ||
+      this.isNearPath5Corridor(x, z, dist) ||
+      this.isNearPath6Corridor(x, z, dist) ||
+      this.isNearPath7Corridor(x, z, dist)
+    );
   }
 
   private isNearCurvedCorridor(
@@ -1331,9 +1357,7 @@ export class CrossroadsScene {
             continue;
           }
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
-          // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
-          const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
-          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false, angleToPath);
+          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false);
         }
       }
     }
@@ -1397,9 +1421,7 @@ export class CrossroadsScene {
             continue;
           }
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
-          // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
-          const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
-          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false, angleToPath);
+          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false);
         }
       }
     }
@@ -1453,9 +1475,7 @@ export class CrossroadsScene {
             continue;
           }
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
-          // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
-          const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
-          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false, angleToPath);
+          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false);
         }
       }
     }
@@ -1509,9 +1529,7 @@ export class CrossroadsScene {
             continue;
           }
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
-          // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
-          const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
-          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false, angleToPath);
+          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false);
         }
       }
     }
@@ -1626,9 +1644,7 @@ export class CrossroadsScene {
             continue;
           }
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
-          // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
-          const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
-          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false, angleToPath);
+          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false);
         }
       }
     }
@@ -1681,9 +1697,7 @@ export class CrossroadsScene {
             continue;
           }
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
-          // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
-          const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
-          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false, angleToPath);
+          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false);
         }
       }
     }
