@@ -396,8 +396,8 @@ export function createPathTexture(presetKey: TerrainPresetKey = DEFAULT_TERRAIN_
 
 /**
  * Erzeugt eine detailreiche, natürlich wirkende Baumrindentextur mit plastischer Bump-Map:
- * - Tiefes, organisches Rindenbraun mit warmen und aschigen Holzschattierungen
- * - Vertikale Faserstrukturen, tiefe Rindenfurchen und raue Risse
+ * - Warmes, sonniges Kiefern- und Fichtenbraun mit natürlichen Lichtreflexen
+ * - Vertikale Faserstrukturen, plastische Rindenfurchen und feine Schuppung
  * - Bump-Map für ausgeprägtes Relief und plastische Tiefenwirkung im Sonnenlicht
  */
 export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
@@ -421,8 +421,8 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
   bumpCanvas.height = height;
   const bumpCtx = bumpCanvas.getContext('2d');
 
-  // 1. Grundfarbe: Tiefes, erdiges Rindenbraun
-  ctx.fillStyle = '#382416';
+  // 1. Grundfarbe: Warmes, helles Kiefern- und Fichtenborkenbraun im Sonnenlicht
+  ctx.fillStyle = '#8a6242';
   ctx.fillRect(0, 0, width, height);
 
   if (bumpCtx) {
@@ -444,10 +444,10 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
   for (let x = 0; x < width; x += 3 + random() * 4) {
     const strandWidth = 2 + random() * 5;
     const isDark = random() > 0.4;
-    const shade = isDark ? 0.2 + random() * 0.35 : 0.08 + random() * 0.15;
+    const shade = isDark ? 0.2 + random() * 0.35 : 0.12 + random() * 0.22;
     ctx.fillStyle = isDark
-      ? `rgba(28, 16, 9, ${shade})`
-      : `rgba(92, 65, 42, ${shade})`;
+      ? `rgba(105, 72, 46, ${shade})`
+      : `rgba(205, 168, 128, ${shade})`;
 
     ctx.beginPath();
     ctx.moveTo(x, 0);
@@ -465,7 +465,7 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
     ctx.fill();
 
     if (bumpCtx) {
-      bumpCtx.fillStyle = isDark ? 'rgba(30, 30, 30, 0.45)' : 'rgba(210, 210, 210, 0.4)';
+      bumpCtx.fillStyle = isDark ? 'rgba(40, 40, 40, 0.45)' : 'rgba(215, 215, 215, 0.4)';
       bumpCtx.beginPath();
       bumpCtx.moveTo(x, 0);
       curX = x;
@@ -483,14 +483,14 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
     }
   }
 
-  // 3. Ausgeprägte tiefe Längsfurchen und Querrisse
+  // 3. Ausgeprägte Längsfurchen mit sonniger Lichtkante
   for (let i = 0; i < 45; i++) {
     const fx = random() * width;
     const fy = random() * (height - 60);
     const flen = 40 + random() * 90;
     const fw = 1.5 + random() * 2.5;
 
-    ctx.strokeStyle = 'rgba(16, 9, 5, 0.75)';
+    ctx.strokeStyle = 'rgba(62, 38, 22, 0.65)';
     ctx.lineWidth = fw;
     ctx.beginPath();
     ctx.moveTo(fx, fy);
@@ -501,8 +501,8 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
     );
     ctx.stroke();
 
-    // Helle Lichtkante direkt neben der Furche
-    ctx.strokeStyle = 'rgba(125, 92, 62, 0.38)';
+    // Helle Lichtkante direkt neben der Furche für Sonnenreflex
+    ctx.strokeStyle = 'rgba(235, 205, 165, 0.65)';
     ctx.lineWidth = fw * 0.7;
     ctx.beginPath();
     ctx.moveTo(fx + fw + 0.5, fy);
@@ -515,7 +515,7 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
 
     if (bumpCtx) {
       // Tiefe Rille in der Bump-Map (dunkel)
-      bumpCtx.strokeStyle = 'rgba(10, 10, 10, 0.85)';
+      bumpCtx.strokeStyle = 'rgba(25, 25, 25, 0.85)';
       bumpCtx.lineWidth = fw;
       bumpCtx.beginPath();
       bumpCtx.moveTo(fx, fy);
@@ -545,7 +545,7 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
     const rx = random() * width;
     const ry = random() * height;
     const rlen = 6 + random() * 16;
-    ctx.strokeStyle = 'rgba(22, 12, 6, 0.65)';
+    ctx.strokeStyle = 'rgba(75, 48, 28, 0.55)';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(rx, ry);
@@ -553,7 +553,7 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
     ctx.stroke();
 
     if (bumpCtx) {
-      bumpCtx.strokeStyle = 'rgba(20, 20, 20, 0.7)';
+      bumpCtx.strokeStyle = 'rgba(35, 35, 35, 0.7)';
       bumpCtx.lineWidth = 1.2;
       bumpCtx.beginPath();
       bumpCtx.moveTo(rx, ry);
@@ -562,18 +562,19 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
     }
   }
 
-  // 5. Feines Rauschen (Rinden-Körnung)
+  // 5. Feines Rauschen (Rinden-Körnung mit warmen Sonnenpartikeln)
   for (let i = 0; i < 1800; i++) {
     const nx = random() * width;
     const ny = random() * height;
     const light = random() > 0.55;
-    ctx.fillStyle = light ? 'rgba(110, 80, 52, 0.32)' : 'rgba(18, 10, 5, 0.4)';
+    ctx.fillStyle = light ? 'rgba(225, 195, 155, 0.42)' : 'rgba(95, 62, 38, 0.32)';
     ctx.fillRect(nx, ny, 1.2, 1.2);
   }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true;
 
   let bumpTexture: THREE.CanvasTexture | null = null;
@@ -590,9 +591,9 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
 
 /**
  * Erzeugt eine detailreiche Nadelbaum-Textur (Tannennadeln / Fichtenfoliage) für die Baumkronen:
- * - Tiefes, sattes Nadelwaldgrün mit Schattierungen
- * - Feine Nadelbüschel, Astansätze und sonnenbeschienene Nadelspitzen
- * - Bump-Map für ausgeprägte Nadelrelief-Haptik im Sonnenlicht
+ * - Saftiges, sonniges Sommerwaldgrün mit lebendigen Lichtschattierungen
+ * - Feine Nadelbüschel, sonnenbeschienene Nadelspitzen und frischer Sommeraustrieb
+ * - Bump-Map für plastische Tiefenwirkung im Sonnenlicht
  */
 export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
   if (cachedPineFoliageTexture) {
@@ -614,8 +615,8 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
   bumpCanvas.height = size;
   const bumpCtx = bumpCanvas.getContext('2d');
 
-  // 1. Grundfläche: Tiefes, schattiges Nadelwaldgrün
-  ctx.fillStyle = '#1c3822';
+  // 1. Grundfläche: Saftiges, sonniges Sommerwald-Nadelgrün
+  ctx.fillStyle = '#3e7d44';
   ctx.fillRect(0, 0, size, size);
 
   if (bumpCtx) {
@@ -633,19 +634,19 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
   };
   const random = rng(777);
 
-  // 2. Weiche Ast- und Tiefenschattierungen
+  // 2. Weiche Ast- und Lichtschattierungen
   for (let i = 0; i < 70; i++) {
     const cx = random() * size;
     const cy = random() * size;
     const r = 20 + random() * 40;
-    const isDark = random() > 0.45;
+    const isDark = random() > 0.55;
     const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
     if (isDark) {
-      grad.addColorStop(0, 'rgba(12, 24, 15, 0.6)');
-      grad.addColorStop(1, 'rgba(12, 24, 15, 0)');
+      grad.addColorStop(0, 'rgba(38, 78, 42, 0.45)');
+      grad.addColorStop(1, 'rgba(38, 78, 42, 0)');
     } else {
-      grad.addColorStop(0, 'rgba(42, 85, 48, 0.45)');
-      grad.addColorStop(1, 'rgba(42, 85, 48, 0)');
+      grad.addColorStop(0, 'rgba(115, 205, 125, 0.55)');
+      grad.addColorStop(1, 'rgba(115, 205, 125, 0)');
     }
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -653,7 +654,7 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
     ctx.fill();
   }
 
-  // 3. Feine Nadelbüschel (Fächerförmig angeordnete Nadelstränge)
+  // 3. Feine Nadelbüschel (Fächerförmig angeordnete Nadelstränge im Sonnenlicht)
   for (let i = 0; i < 550; i++) {
     const bx = random() * size;
     const by = random() * size;
@@ -671,22 +672,22 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
       const shade = random();
       let color: string;
       let bumpColor: string;
-      if (shade > 0.65) {
-        // Helle Nadelspitze (frischer Austrieb)
-        color = 'rgba(78, 148, 86, 0.85)';
-        bumpColor = 'rgba(230, 230, 230, 0.7)';
+      if (shade > 0.6) {
+        // Helle Nadelspitze (sonnenbeschienener Sommeraustrieb)
+        color = 'rgba(135, 228, 142, 0.95)';
+        bumpColor = 'rgba(235, 235, 235, 0.7)';
       } else if (shade > 0.25) {
-        // Mittleres Tannengrün
-        color = 'rgba(38, 88, 46, 0.85)';
-        bumpColor = 'rgba(170, 170, 170, 0.5)';
+        // Mittleres, saftiges Waldgrün
+        color = 'rgba(75, 155, 82, 0.9)';
+        bumpColor = 'rgba(175, 175, 175, 0.5)';
       } else {
-        // Dunkle, schattige Nadel
-        color = 'rgba(16, 42, 20, 0.9)';
-        bumpColor = 'rgba(30, 30, 30, 0.6)';
+        // Sanfter Schatten im Geäst (kein Schwarz!)
+        color = 'rgba(42, 95, 48, 0.85)';
+        bumpColor = 'rgba(45, 45, 45, 0.6)';
       }
 
       ctx.strokeStyle = color;
-      ctx.lineWidth = 1.3;
+      ctx.lineWidth = 1.35;
       ctx.beginPath();
       ctx.moveTo(bx, by);
       ctx.lineTo(ex, ey);
@@ -694,7 +695,7 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
 
       if (bumpCtx) {
         bumpCtx.strokeStyle = bumpColor;
-        bumpCtx.lineWidth = 1.3;
+        bumpCtx.lineWidth = 1.35;
         bumpCtx.beginPath();
         bumpCtx.moveTo(bx, by);
         bumpCtx.lineTo(ex, ey);
@@ -703,18 +704,19 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
     }
   }
 
-  // 4. Feine Nadelkörnung / Tannennadel-Noise
+  // 4. Feine Nadelkörnung / Tannennadel-Noise mit sonnigen Glanzpunkten
   for (let i = 0; i < 1500; i++) {
     const nx = random() * size;
     const ny = random() * size;
-    const isLight = random() > 0.6;
-    ctx.fillStyle = isLight ? 'rgba(92, 168, 102, 0.35)' : 'rgba(10, 28, 14, 0.4)';
+    const isLight = random() > 0.55;
+    ctx.fillStyle = isLight ? 'rgba(155, 235, 162, 0.45)' : 'rgba(38, 85, 45, 0.35)';
     ctx.fillRect(nx, ny, 1.2, 1.2);
   }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true;
 
   let bumpTexture: THREE.CanvasTexture | null = null;

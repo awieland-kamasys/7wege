@@ -742,16 +742,17 @@ export class CrossroadsScene {
       const barkTex = createBarkTexture();
       if (barkTex.map) {
         barkTex.map.repeat.set(1.5, 2.5);
+        barkTex.map.colorSpace = THREE.SRGBColorSpace;
       }
       if (barkTex.bumpMap) {
         barkTex.bumpMap.repeat.set(1.5, 2.5);
       }
       this.defaultTrunkMat = new THREE.MeshStandardMaterial({
-        color: 0x4f3622,
+        color: 0xffffff,
         map: barkTex.map ?? undefined,
         bumpMap: barkTex.bumpMap ?? undefined,
-        bumpScale: 0.08,
-        roughness: 0.9,
+        bumpScale: 0.055,
+        roughness: 0.82,
       });
     }
     return this.defaultTrunkMat;
@@ -767,16 +768,17 @@ export class CrossroadsScene {
       const stoneTex = createStoneTexture();
       if (stoneTex.map) {
         stoneTex.map.repeat.set(1.5, 1.2);
+        stoneTex.map.colorSpace = THREE.SRGBColorSpace;
       }
       if (stoneTex.bumpMap) {
         stoneTex.bumpMap.repeat.set(1.5, 1.2);
       }
       this.stonePedestalMat = new THREE.MeshStandardMaterial({
-        color: 0x62686b,
+        color: 0xffffff,
         map: stoneTex.map ?? undefined,
         bumpMap: stoneTex.bumpMap ?? undefined,
-        bumpScale: 0.08,
-        roughness: 0.9,
+        bumpScale: 0.06,
+        roughness: 0.88,
         flatShading: true,
       });
     }
@@ -795,17 +797,20 @@ export class CrossroadsScene {
     if (burned) {
       if (!this.burnedCrownDarkMat || !this.burnedCrownLightMat) {
         const foliageTex = createPineFoliageTexture();
-        if (foliageTex.map) foliageTex.map.repeat.set(2.5, 2.5);
+        if (foliageTex.map) {
+          foliageTex.map.repeat.set(2.5, 2.5);
+          foliageTex.map.colorSpace = THREE.SRGBColorSpace;
+        }
         if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(2.5, 2.5);
         this.burnedCrownDarkMat = new THREE.MeshStandardMaterial({
-          color: 0x1c1a17,
+          color: 0x221e1a,
           map: foliageTex.map ?? undefined,
           bumpMap: foliageTex.bumpMap ?? undefined,
           bumpScale: 0.08,
           roughness: 0.92,
         });
         this.burnedCrownLightMat = new THREE.MeshStandardMaterial({
-          color: 0x2c241e,
+          color: 0x382e26,
           map: foliageTex.map ?? undefined,
           bumpMap: foliageTex.bumpMap ?? undefined,
           bumpScale: 0.08,
@@ -817,21 +822,24 @@ export class CrossroadsScene {
 
     if (!this.defaultCrownDarkMat || !this.defaultCrownLightMat) {
       const foliageTex = createPineFoliageTexture();
-      if (foliageTex.map) foliageTex.map.repeat.set(2.5, 2.5);
+      if (foliageTex.map) {
+        foliageTex.map.repeat.set(2.5, 2.5);
+        foliageTex.map.colorSpace = THREE.SRGBColorSpace;
+      }
       if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(2.5, 2.5);
       this.defaultCrownDarkMat = new THREE.MeshStandardMaterial({
-        color: 0x24472b,
+        color: 0xd6edd6,
         map: foliageTex.map ?? undefined,
         bumpMap: foliageTex.bumpMap ?? undefined,
-        bumpScale: 0.09,
-        roughness: 0.85,
+        bumpScale: 0.065,
+        roughness: 0.78,
       });
       this.defaultCrownLightMat = new THREE.MeshStandardMaterial({
-        color: 0x335c36,
+        color: 0xffffff,
         map: foliageTex.map ?? undefined,
         bumpMap: foliageTex.bumpMap ?? undefined,
-        bumpScale: 0.09,
-        roughness: 0.85,
+        bumpScale: 0.065,
+        roughness: 0.72,
       });
     }
     return { dark: this.defaultCrownDarkMat, light: this.defaultCrownLightMat };

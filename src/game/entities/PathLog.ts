@@ -23,25 +23,25 @@ export function createPathLog(): PathLogEntity {
 
   const pickableMeshes: THREE.Object3D[] = [];
 
-  // Rindenmaterial des Stamms
+  // Rindenmaterial des Stamms (warmes, sonniges Kiefernholz)
   const barkMaterial = new THREE.MeshStandardMaterial({
-    color: 0x48321e,
-    roughness: 0.92,
+    color: 0x8a6242,
+    roughness: 0.82,
     metalness: 0.05,
     flatShading: true,
   });
 
   // Helles Kernholz an den Schnitt- und Bruchenden
   const woodEndMaterial = new THREE.MeshStandardMaterial({
-    color: 0xb58a52,
-    roughness: 0.85,
+    color: 0xc9a46a,
+    roughness: 0.78,
     flatShading: true,
   });
 
-  // Moosbedeckung auf der Oberseite
+  // Moosbedeckung auf der Oberseite (frisches Sommerwiesenmoos)
   const mossMaterial = new THREE.MeshStandardMaterial({
-    color: 0x42542a,
-    roughness: 0.95,
+    color: 0x4f7d34,
+    roughness: 0.88,
     flatShading: true,
   });
 

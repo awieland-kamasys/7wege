@@ -57,10 +57,10 @@ export const TERRAIN_PRESETS: Record<TerrainPresetKey, TerrainPresetConfig> = {
     key: 'sonnig',
     numberKey: '2',
     name: 'Sonnige Waldlichtung',
-    subtitle: 'Saftiges Wiesengrün & Warmer Ockerlehm',
-    badge: 'Hoher Kontrast',
+    subtitle: 'Saftiges Wiesengrün & Warmer Ockerlehm (Sommerwiese)',
+    badge: 'Aktiv / Sommerwiese',
     description:
-      'Frisches, sattes und lebendiges Wiesengrün mit warmen Lichtreflexen, kombiniert mit einem sonnig-ockergelben, sandig-lehmigen Waldpfad. Sehr plastisch und einladend.',
+      'Frisches, sattes und lebendiges Wiesengrün mit warmen Lichtreflexen, kombiniert mit einem sonnig-ockergelben, sandig-lehmigen Waldpfad. Sehr plastisch, hell und einladend.',
     grassBaseColor: '#2d6829',
     grassShadeDark: 'rgba(24, 58, 22, 0.65)',
     grassShadeLight: 'rgba(74, 142, 62, 0.55)',
@@ -135,4 +135,4 @@ export const TERRAIN_PRESETS: Record<TerrainPresetKey, TerrainPresetConfig> = {
   },
 };
 
-export const DEFAULT_TERRAIN_PRESET: TerrainPresetKey = 'erzgebirge';
+export const DEFAULT_TERRAIN_PRESET: TerrainPresetKey = 'sonnig';
