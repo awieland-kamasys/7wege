@@ -357,7 +357,9 @@ export class CrossroadsScene {
     this.scene.add(this.weirBridge.group);
 
     // Der Riese (NPC) am Ufer hinter der Wehrbrücke am Ende des 3. Weges
-    this.giantNpc = createGiantNpc();
+    this.giantNpc = createGiantNpc((mesh) => {
+      this.pickableObjects.push(mesh);
+    });
     this.giantNpc.group.position.set(
       GIANT_NPC_POS.x,
       getTerrainHeight(GIANT_NPC_POS.x, GIANT_NPC_POS.z),
