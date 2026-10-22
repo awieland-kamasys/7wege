@@ -4,8 +4,8 @@ import { disposeObject3D } from '../utils/threeUtils';
 
 /**
  * Erstellt die 3D-Schutzhütte im Zentrum der 7-Wegekreuzung.
- * Lädt das bereinigte, texturierte GLB-Hüttenmodell (`/assets/models/hut.glb`),
- * skaliert es auf vergrößerte Lebensgröße (+25%) und richtet es passgenau aus.
+ * Lädt das detaillierte GLB-Hüttenmodell (`/assets/models/3wege_huette.glb`),
+ * skaliert es passend auf Lebensgröße und richtet es passgenau aus.
  */
 export function createLogCabin(onMeshLoaded?: (object: THREE.Object3D) => void): THREE.Group {
   const group = new THREE.Group();
@@ -16,32 +16,33 @@ export function createLogCabin(onMeshLoaded?: (object: THREE.Object3D) => void):
     roughness: 0.95,
   });
 
-  // Temporärer dezenter Platzhalter während des Ladens (angepasst auf +25% Hüttengröße)
+  // Temporärer dezenter Platzhalter während des Ladens (angepasst auf Hüttengröße)
   const fallback = new THREE.Group();
   const floor = new THREE.Mesh(new THREE.BoxGeometry(4.75, 0.25, 3.75), floorMaterial);
   floor.position.y = 0.125;
   fallback.add(floor);
   group.add(fallback);
 
-  // Lade das bereinigte GLB-Modell der 7-Wege-Hütte
+  // Lade das detaillierte GLB-Modell der 7-Wege-Hütte (3wege_huette.glb)
   const loader = new GLTFLoader();
   loader.load(
-    '/assets/models/hut.glb',
+    '/assets/models/3wege_huette.glb',
     (gltf) => {
       const model = gltf.scene;
 
-      // 1. Skalierung: um 25 Prozent vergrößert (von 5.0 auf 6.25, ca. 5.24m Breite)
-      model.scale.setScalar(6.25);
+      // 1. Skalierung: 5.64 liefert eine Hüttentiefe von 5.64m (halbe Tiefe 2.82m)
+      //    und Breite von 5.14m (halbe Breite 2.57m), passend zur AABB in CrossroadsState.
+      model.scale.setScalar(5.64);
 
-      // 2. Ausrichtung: Eingang / Veranda blickt nach vorn (+Z) zur Lichtung und zu Arvid
+      // 2. Ausrichtung: Eingang / Schilder blicken nach vorn (+Z) zur Lichtung und zu Arvid
       model.rotation.y = 0;
 
-      // 3. Auf Bodenniveau (y = 0) und nach hinten zentrieren (-1.15m),
-      //    damit die Vorderkante bei z = +1.36m liegt und genügend freier Korridor vor der Veranda
+      // 3. Auf Bodenniveau (y = 0) und zentriert auf Z = -1.45 platzieren,
+      //    damit die Vorderkante bei z = +1.37m liegt und genügend freier Korridor vor der Veranda
       //    für Schatztruhe (z = 2.0), Arvid (z = 2.05) und Wegweiser erhalten bleibt.
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, -1.15);
+      model.position.set(0, -bounds.min.y, -1.45);
 
       model.traverse((child) => {
         const mesh = child as THREE.Mesh;
@@ -70,7 +71,7 @@ export function createLogCabin(onMeshLoaded?: (object: THREE.Object3D) => void):
     },
     undefined,
     (err) => {
-      console.warn('Hüttenmodell hut.glb konnte nicht geladen werden, nutze Platzhalter:', err);
+      console.warn('Hüttenmodell 3wege_huette.glb konnte nicht geladen werden, nutze Platzhalter:', err);
     }
   );
 
