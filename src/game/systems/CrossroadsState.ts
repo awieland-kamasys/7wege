@@ -2384,7 +2384,7 @@ export class CrossroadsState {
       return {
         type: 'herb_garden',
         label:
-          'Gartenbeete vor der Burg – Königs-Salbei, Lavendel und die seltene Mondwurz gedeihen hier in voller Pracht.',
+          'Malerischer Garten vor der Burgruine mit Buchsbaumbeeten, Zierpflanzen und der seltenen Mondwurz.',
       };
     }
 
@@ -2396,7 +2396,7 @@ export class CrossroadsState {
       return {
         type: 'herb_garden',
         label:
-          'Malerischer Garten neben der Burgruine mit Buchsbaumbeeten, Zierpflanzen und duftenden Bergkräutern.',
+          'Gartenbeete an der Burgmauer – Königs-Salbei, Lavendel und frische Bergkräuter gedeihen hier in voller Pracht.',
       };
     }
 

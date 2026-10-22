@@ -107,39 +107,35 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
   );
 
   // ==========================================
-  // 2. GARTENBEETE (garden beds 3d model.glb)
+  // 2. ISOMETRISCHER GARTEN (isometric garden 3d model.glb)
   // Platziert direkt vor der Burgruine
   // ==========================================
   const gardenGroup = new THREE.Group();
-  gardenGroup.name = 'GardenBeds';
+  gardenGroup.name = 'IsometricGarden';
   gardenGroup.position.set(2.0, 0, 0.4);
 
-  // Temporärer Platzhalter während des Ladens (zwei stilisierte Holzbeete mit Erde)
-  const gardenFallback = new THREE.Group();
-  gardenFallback.rotation.y = Math.PI;
-  for (const bz of [-0.85, 0.85]) {
-    const bed = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.32, 1.2), soilMat);
-    bed.position.set(0, 0.16, bz);
-    bed.castShadow = true;
-    bed.receiveShadow = true;
-    bed.userData = { interactableType: 'herb_garden' };
-    gardenFallback.add(bed);
-  }
+  // Temporärer Platzhalter während des Ladens
+  const gardenFallback = new THREE.Mesh(
+    new THREE.BoxGeometry(3.4, 0.30, 3.2),
+    soilMat
+  );
+  gardenFallback.position.set(0, 0.15, 0);
+  gardenFallback.castShadow = true;
+  gardenFallback.receiveShadow = true;
+  gardenFallback.userData = { interactableType: 'herb_garden' };
   gardenGroup.add(gardenFallback);
 
-  // Sanftes, geheimnisvolles Mondwurz-Licht über den Beeten
+  // Sanftes, geheimnisvolles Mondwurz-Licht über dem Garten
   const moonwortLight = new THREE.PointLight(0x76ebe0, 0.85, 3.2);
   moonwortLight.position.set(0, 0.55, 0);
   gardenGroup.add(moonwortLight);
 
   loader.load(
-    '/assets/models/garden beds 3d model.glb',
+    '/assets/models/isometric garden 3d model.glb',
     (gltf) => {
       const model = gltf.scene;
-      // Stattliche Skalierung passend zur Szene vor der Burg (Breite ca. 3.8m, Tiefe ca. 3.4m, Höhe ca. 1.1m)
-      model.scale.setScalar(3.8);
-      // Drehung: um 180 Grad gegen den Uhrzeigersinn gedreht
-      model.rotation.y = Math.PI;
+      // Stattliche Skalierung passend zur Szene vor der Burg (Breite ca. 3.5m, Tiefe ca. 3.35m, Höhe ca. 1.1m)
+      model.scale.setScalar(3.5);
 
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
@@ -170,36 +166,40 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
     },
     undefined,
     (err) => {
-      console.warn('Modell garden beds 3d model.glb konnte nicht geladen werden:', err);
+      console.warn('Modell isometric garden 3d model.glb konnte nicht geladen werden:', err);
     }
   );
 
   group.add(gardenGroup);
 
   // ==========================================
-  // 3. ISOMETRISCHER GARTEN (isometric garden 3d model.glb)
+  // 3. GARTENBEETE (garden beds 3d model.glb)
   // Platziert neben der Burgruine an der südlichen Flanke
   // ==========================================
   const isoGardenGroup = new THREE.Group();
-  isoGardenGroup.name = 'IsometricGarden';
+  isoGardenGroup.name = 'GardenBeds';
   isoGardenGroup.position.set(-1.8, 0, 4.6);
 
-  // Temporärer Platzhalter während des Ladens
-  const isoGardenFallback = new THREE.Mesh(
-    new THREE.BoxGeometry(3.2, 0.28, 3.0),
-    soilMat
-  );
-  isoGardenFallback.position.set(0, 0.14, 0);
-  isoGardenFallback.castShadow = true;
-  isoGardenFallback.receiveShadow = true;
-  isoGardenFallback.userData = { interactableType: 'herb_garden' };
+  // Temporärer Platzhalter während des Ladens (zwei stilisierte Holzbeete mit Erde)
+  const isoGardenFallback = new THREE.Group();
+  isoGardenFallback.rotation.y = Math.PI;
+  for (const bz of [-0.85, 0.85]) {
+    const bed = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.32, 1.2), soilMat);
+    bed.position.set(0, 0.16, bz);
+    bed.castShadow = true;
+    bed.receiveShadow = true;
+    bed.userData = { interactableType: 'herb_garden' };
+    isoGardenFallback.add(bed);
+  }
   isoGardenGroup.add(isoGardenFallback);
 
   loader.load(
-    '/assets/models/isometric garden 3d model.glb',
+    '/assets/models/garden beds 3d model.glb',
     (gltf) => {
       const model = gltf.scene;
-      model.scale.setScalar(3.4);
+      // Skalierung passend für die Gartenflanke neben der Burg
+      model.scale.setScalar(3.6);
+      model.rotation.y = Math.PI;
 
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
@@ -230,7 +230,7 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
     },
     undefined,
     (err) => {
-      console.warn('Modell isometric garden 3d model.glb konnte nicht geladen werden:', err);
+      console.warn('Modell garden beds 3d model.glb konnte nicht geladen werden:', err);
     }
   );
 
