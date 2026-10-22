@@ -41,14 +41,24 @@ function buildMountainBackdrop(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE
   });
 
   // 1. Spezifikationen aller massiven Felsblöcke des Gebirgsmassivs (DodecahedronGeometry)
-  // Alle Blöcke sitzen sauber hinter dem Stollenportal (Z <= -4.0 in der Mitte, Z <= -7.0 im Zentrum)
-  // und halten seitlich einen breiten Abstand (|X| >= 8.0) ein, damit der Eingang komplett frei und unbedeckt bleibt.
+  // Alle Blöcke schließen lückenlos an die Flanken des Stollenportals an (keine Löcher mehr links/rechts),
+  // während der innere Durchgangsbereich vollkommen frei bleibt.
   const rockSpecs: Array<{
     p: [number, number, number];
     r: number;
     s: [number, number, number];
     rot: [number, number, number];
   }> = [
+    // Flankenblöcke links (schließen das Loch links neben dem Eingang lückenlos)
+    { p: [-5.8, 2.4, -2.6], r: 3.2, s: [1.1, 1.35, 1.2], rot: [0.1, 0.4, 0] },
+    { p: [-6.5, 4.4, -4.2], r: 3.6, s: [1.15, 1.3, 1.15], rot: [-0.08, -0.3, 0.05] },
+    { p: [-6.2, -1.0, -1.8], r: 3.2, s: [1.1, 1.0, 1.1], rot: [0, 0, 0] },
+
+    // Flankenblöcke rechts (schließen das Loch rechts neben dem Eingang lückenlos)
+    { p: [5.8, 2.4, -2.6], r: 3.2, s: [1.1, 1.35, 1.2], rot: [0.1, -0.4, 0] },
+    { p: [6.5, 4.4, -4.2], r: 3.6, s: [1.15, 1.3, 1.15], rot: [0.08, 0.3, -0.05] },
+    { p: [6.2, -1.0, -1.8], r: 3.2, s: [1.1, 1.0, 1.1], rot: [0, 0, 0] },
+
     // Zentralmassiv hinter dem Stollen (Z <= -7.0, umschließt das hintere Tunnelende)
     { p: [0.0, 4.8, -7.8], r: 5.2, s: [1.3, 1.25, 0.95], rot: [0.1, 0.4, 0] },
 
@@ -60,13 +70,13 @@ function buildMountainBackdrop(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE
     { p: [0.0, 15.5, -12.5], r: 5.8, s: [1.2, 1.5, 1.1], rot: [0.12, 0.5, -0.05] },
     { p: [0.2, 18.8, -13.0], r: 3.8, s: [0.95, 1.6, 0.95], rot: [0.05, 0.8, -0.1] },
 
-    // Westflanke (weit links vom Stollen: X <= -8.2, lässt das Portal komplett frei)
+    // Westflanke weit
     { p: [-8.8, 3.2, -4.2], r: 3.2, s: [1.0, 1.35, 1.1], rot: [0.1, 0.5, 0] },
     { p: [-8.2, 6.8, -7.0], r: 4.4, s: [1.15, 1.3, 1.1], rot: [-0.1, -0.4, 0.08] },
     { p: [-8.5, 11.0, -10.0], r: 4.8, s: [1.15, 1.4, 1.05], rot: [0.15, 0.6, -0.1] },
     { p: [-7.5, 15.5, -12.8], r: 4.2, s: [1.0, 1.55, 1.0], rot: [-0.08, 0.3, 0.12] },
 
-    // Ostflanke (weit rechts vom Stollen: X >= +8.2, lässt das Portal komplett frei)
+    // Ostflanke weit
     { p: [8.8, 3.2, -4.2], r: 3.2, s: [1.0, 1.35, 1.1], rot: [0.1, -0.5, 0] },
     { p: [8.2, 7.0, -7.0], r: 4.4, s: [1.15, 1.3, 1.1], rot: [0.12, 0.4, -0.08] },
     { p: [8.5, 11.2, -10.2], r: 4.9, s: [1.2, 1.4, 1.05], rot: [-0.15, -0.5, 0.1] },
@@ -134,6 +144,10 @@ function buildMountainBackdrop(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE
 
     // Schneehaube auf dem Felsvorsprung über dem Tunnel (weit über dem Portal bei Y = 10.2)
     { p: [0.0, 10.2, -5.8], r: 3.8, s: [1.35, 0.7, 1.0], rot: [0.08, 0.1, 0], thickness: 0.42 },
+
+    // Flanken-Schneehauben links und rechts über den Portal-Flankenblöcken
+    { p: [-5.8, 4.2, -2.6], r: 2.8, s: [1.15, 0.75, 1.15], rot: [0.1, 0.4, 0], thickness: 0.45 },
+    { p: [5.8, 4.2, -2.6], r: 2.8, s: [1.15, 0.75, 1.15], rot: [0.1, -0.4, 0], thickness: 0.45 },
   ];
 
   const snowGeos: THREE.BufferGeometry[] = [];

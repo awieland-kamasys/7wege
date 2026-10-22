@@ -1367,8 +1367,14 @@ export class CrossroadsScene {
     if (Math.hypot(x - HUNTING_LODGE_POS.x, z - HUNTING_LODGE_POS.z) < HUNTING_LODGE_POS.radius + 2.0) {
       return false;
     }
-    // Bergmassiv mit Stollenmundloch
-    if (Math.hypot(x - CAVE_ENTRANCE_POS.x, z - CAVE_ENTRANCE_POS.z) < 7.0) {
+    // Bergmassiv mit Stollenmundloch (gesamtes Bergareal ausschließen, damit keine Bäume in oder hinter den Felsen wachsen)
+    const caveCos = Math.cos(CAVE_ENTRANCE_POS.rotationY);
+    const caveSin = Math.sin(CAVE_ENTRANCE_POS.rotationY);
+    const cdx = x - CAVE_ENTRANCE_POS.x;
+    const cdz = z - CAVE_ENTRANCE_POS.z;
+    const clx = cdx * caveCos - cdz * caveSin;
+    const clz = cdx * caveSin + cdz * caveCos;
+    if (Math.abs(clx) < 15.0 && clz < 3.2 && clz > -26.0) {
       return false;
     }
 
@@ -1438,28 +1444,20 @@ export class CrossroadsScene {
       }
     }
 
-    // Dichte Baumgruppen links und rechts neben dem Felsen mit dem Höhleneingang
+    // Waldrandbäume weit außen links und rechts neben dem Bergmassiv und dem Vorplatz (keine Bäume in oder hinter den Felsen!)
     const cos = Math.cos(CAVE_ENTRANCE_POS.rotationY);
     const sin = Math.sin(CAVE_ENTRANCE_POS.rotationY);
     const caveSideTrees: readonly [number, number, number, boolean][] = [
-      // Linke Seite neben Felsflanke und Vorplatz (lokale Koordinaten lx, lz, scale, dark)
-      [-6.4, 0.8, 1.25, true],
-      [-7.6, -1.5, 1.38, false],
-      [-5.8, 3.2, 1.12, false],
-      [-8.5, 2.1, 1.3, true],
-      [-7.2, 5.2, 1.18, true],
-      [-9.8, -0.4, 1.42, false],
-      [-10.4, 3.6, 1.22, true],
-      [-6.0, -4.2, 1.35, true],
-      // Rechte Seite neben Felsflanke und Vorplatz
-      [6.6, 0.7, 1.28, false],
-      [7.8, -1.6, 1.4, true],
-      [5.9, 3.3, 1.15, true],
-      [8.6, 2.2, 1.32, false],
-      [7.3, 5.3, 1.2, false],
-      [10.0, -0.5, 1.45, true],
-      [10.5, 3.7, 1.25, false],
-      [6.2, -4.3, 1.36, false],
+      // Linker Waldrand weit außen neben dem Vorplatz
+      [-12.5, 1.5, 1.3, true],
+      [-13.8, -1.5, 1.4, false],
+      [-11.5, 4.2, 1.25, false],
+      [-9.5, 6.2, 1.15, true],
+      // Rechter Waldrand weit außen neben dem Vorplatz
+      [12.5, 1.5, 1.3, false],
+      [13.8, -1.5, 1.4, true],
+      [11.5, 4.2, 1.25, true],
+      [9.5, 6.2, 1.15, false],
     ];
 
     for (const [lx, lz, scale, useDark] of caveSideTrees) {
