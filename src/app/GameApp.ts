@@ -21,7 +21,7 @@ export class GameApp {
   private animationFrameId = 0;
   private lastTime = performance.now();
 
-  // Zustand für Maussteuerung (Drag = Kamera drehen, Klick = Gehen / Sprechen / Truhe öffnen / Auswählen)
+  // Zustand für Maus- und Gestensteuerung (Drag = Kamera drehen, Pinch = Zoom, Klick = Gehen / Sprechen / Auswählen)
   private isPointerDown = false;
   private isDraggingCamera = false;
   private pointerDownButton = 0;
@@ -32,6 +32,9 @@ export class GameApp {
   private currentPointerClientX = 0;
   private currentPointerClientY = 0;
   private hasPendingPointerHover = false;
+  private readonly activePointers = new Map<number, { clientX: number; clientY: number }>();
+  private lastPinchDistance = 0;
+  private isPinching = false;
   private pendingTalkToNpc = false;
   private pendingTalkToGreyMan = false;
   private pendingTalkToNixie = false;
@@ -92,8 +95,14 @@ export class GameApp {
     this.canvas.addEventListener('pointerdown', this.onPointerDown);
     window.addEventListener('pointermove', this.onPointerMove);
     window.addEventListener('pointerup', this.onPointerUp);
+    window.addEventListener('pointercancel', this.onPointerCancel);
     this.canvas.addEventListener('wheel', this.onWheel, { passive: false });
     this.canvas.addEventListener('contextmenu', this.onContextMenu);
+
+    // Unterbindet native Browser-Zoomgesten (z. B. Safari Pinch-to-Zoom), damit der 3D-Canvas exklusiv zoomt
+    this.canvas.addEventListener('gesturestart', this.onPreventDefault, { passive: false });
+    this.canvas.addEventListener('gesturechange', this.onPreventDefault, { passive: false });
+    this.canvas.addEventListener('gestureend', this.onPreventDefault, { passive: false });
 
     // Globale Referenzen für Konsole und Debugging
     (window as any).__7WEGE_APP__ = this;
@@ -431,17 +440,58 @@ export class GameApp {
   };
 
   private onPointerDown = (event: PointerEvent): void => {
-    this.sound.unlock();
-    this.isPointerDown = true;
-    this.isDraggingCamera = false;
-    this.pointerDownButton = event.button;
-    this.pointerStartX = event.clientX;
-    this.pointerStartY = event.clientY;
-    this.lastPointerX = event.clientX;
-    this.lastPointerY = event.clientY;
+    this.activePointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+
+    if (this.activePointers.size === 1) {
+      this.sound.unlock();
+      this.isPointerDown = true;
+      this.isDraggingCamera = false;
+      this.isPinching = false;
+      this.pointerDownButton = event.button;
+      this.pointerStartX = event.clientX;
+      this.pointerStartY = event.clientY;
+      this.lastPointerX = event.clientX;
+      this.lastPointerY = event.clientY;
+    } else if (this.activePointers.size >= 2) {
+      // Zwei-Finger-Geste (Pinch-to-Zoom) initiiert: Drehung unterbrechen und Startabstand messen
+      this.isPinching = true;
+      this.isDraggingCamera = false;
+      const [p1, p2] = Array.from(this.activePointers.values());
+      this.lastPinchDistance = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+    }
   };
 
   private onPointerMove = (event: PointerEvent): void => {
+    if (this.activePointers.has(event.pointerId)) {
+      this.activePointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+    }
+
+    // Gestensteuerung auf mobilen Geräten: Zwei-Finger-Pinch zum stufenlosen Zoomen der Kamera
+    if (this.activePointers.size >= 2) {
+      this.isPinching = true;
+      this.isDraggingCamera = false;
+      const [p1, p2] = Array.from(this.activePointers.values());
+      const currentDist = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+
+      if (this.lastPinchDistance > 0) {
+        const diff = currentDist - this.lastPinchDistance;
+        if (Math.abs(diff) > 0.5) {
+          // diff > 0 -> Finger spreizen auseinander -> Hineinzoomen (Kameradistanz verringern)
+          // diff < 0 -> Finger ziehen zusammen -> Herauszoomen (Kameradistanz vergrößern)
+          const zoomDelta = -diff * 0.018;
+          this.scene.zoomCamera(zoomDelta);
+        }
+      }
+      this.lastPinchDistance = currentDist;
+      return;
+    }
+
+    // Falls gerade ein Pinch beendet wird (noch ein Finger auf dem Display),
+    // keine unerwünschte Kameradrehung oder Raycasting durchführen
+    if (this.isPinching) {
+      return;
+    }
+
     if (this.isPointerDown) {
       const totalDist = Math.hypot(
         event.clientX - this.pointerStartX,
@@ -526,7 +576,28 @@ export class GameApp {
     this.canvas.style.cursor = hit.kind === 'ground' ? 'default' : 'pointer';
   };
 
+  private onPointerCancel = (event: PointerEvent): void => {
+    this.onPointerUp(event);
+  };
+
   private onPointerUp = (event: PointerEvent): void => {
+    this.activePointers.delete(event.pointerId);
+
+    if (this.activePointers.size < 2) {
+      this.lastPinchDistance = 0;
+    }
+
+    // Wenn ein Pinch aktiv war, sicherstellen, dass beim Loslassen kein Klick/Tap ausgelöst wird
+    if (this.isPinching) {
+      if (this.activePointers.size === 0) {
+        this.isPinching = false;
+        this.isPointerDown = false;
+        this.isDraggingCamera = false;
+        this.canvas.style.cursor = 'default';
+      }
+      return;
+    }
+
     if (!this.isPointerDown) {
       return;
     }
@@ -701,6 +772,10 @@ export class GameApp {
     event.preventDefault();
   };
 
+  private onPreventDefault = (event: Event): void => {
+    event.preventDefault();
+  };
+
   private handleInput(dtSeconds: number): void {
     const speed = 6.5 * dtSeconds;
     let forward = 0;
@@ -870,9 +945,13 @@ export class GameApp {
     window.removeEventListener('keyup', this.onKeyUp);
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     window.removeEventListener('pointermove', this.onPointerMove);
-    this.canvas.removeEventListener('pointerup', this.onPointerUp);
+    window.removeEventListener('pointerup', this.onPointerUp);
+    window.removeEventListener('pointercancel', this.onPointerCancel);
     this.canvas.removeEventListener('wheel', this.onWheel);
     this.canvas.removeEventListener('contextmenu', this.onContextMenu);
+    this.canvas.removeEventListener('gesturestart', this.onPreventDefault);
+    this.canvas.removeEventListener('gesturechange', this.onPreventDefault);
+    this.canvas.removeEventListener('gestureend', this.onPreventDefault);
     this.scene.dispose();
   }
 }

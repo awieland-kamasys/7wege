@@ -115,7 +115,7 @@ Alle temporären Wegsperren der Pfade 1 bis 6 sind auf **exakt die gleiche Dista
   - Mausrad = Kamera-Zoom
   - WASD / Pfeiltasten = Gehen relativ zur Kamerablickrichtung, Q / E = Kamera drehen, R / F = Kamera neigen (Blick nach vorn / nach oben), Enter = Gespräch mit NPC starten, Tasten 1–7 = Weg bzw. Dialogantwort direkt wählen, Esc = Dialog schließen, Taste 0 / Backspace = Schneller Rücksprung zur 7-Wegekreuzung
   - HUD-Schnellreise: Das HUD zeigt dauerhaft links unten den aktuellen Standort bzw. Wegnamen sowie den Button „↩ Zur 7-Wegekreuzung“, über den per Mausklick oder Touch sofort zurück auf die zentrale Waldkreuzung gesprungen werden kann.
-- Touch: Volle Touch-Bedienung für Bewegung, Kameraschwenk und HUD-Rücksprung.
+- Touch & Mobile: Volle Touch- und Gestenbedienung für Bewegung (Tap-to-Move), Kameraschwenk (Ein-Finger-Drag), Gestensteuerung zum Zoomen (Zwei-Finger-Pinch-to-Zoom stufenlos) und HUD-Rücksprung.
 - Barrierearme Alternativen: DOM-Schaltflächen für alle sieben Wege, Dialogantworten und Schnellreise-Rücksprung zur Kreuzung.
 
 ## Stimmung und visuelle Richtung
