@@ -1849,23 +1849,42 @@ export class CrossroadsScene {
       }
     }
 
-    // Zusätzliche Bäume rund um die Lichtung der Jagdhütte
-    const lodgeClearingTrees: [number, number, number, boolean][] = [
-      [-49.5, 18.5, 1.25, true],
-      [-50.2, 22.8, 1.35, false],
-      [-48.8, 27.2, 1.2, true],
-      [-44.5, 30.2, 1.3, false],
-      [-40.2, 28.5, 1.15, true],
-      [-37.5, 25.8, 1.22, false],
-      [-38.2, 16.5, 1.18, true],
-      [-42.6, 15.2, 1.32, false],
-      [-46.8, 14.8, 1.28, true],
+    // Dichte Baumbestände, die die Burgruine auf Weg 6 einrahmen (rechts, links und dahinter)
+    const castleSurroundingTrees: [number, number, number, boolean][] = [
+      // 1. Dahinter (im Westen / hinter der Burgruine)
+      [-51.8, 21.4, 1.35, true],
+      [-52.4, 23.2, 1.40, false],
+      [-51.8, 25.0, 1.32, true],
+      [-53.8, 20.2, 1.42, false],
+      [-54.2, 22.0, 1.45, true],
+      [-54.0, 24.0, 1.40, false],
+      [-53.6, 26.2, 1.36, true],
+
+      // 2. Rechts der Burgruine (im Norden / vom Vorplatz aus rechts)
+      [-44.2, 19.0, 1.25, false],
+      [-47.0, 18.6, 1.30, true],
+      [-49.8, 18.8, 1.35, false],
+      [-45.5, 16.6, 1.40, true],
+      [-48.2, 16.2, 1.32, false],
+      [-50.8, 16.6, 1.38, true],
+      [-42.6, 17.0, 1.22, false],
+
+      // 3. Links der Burgruine (im Süden / vom Vorplatz aus links)
+      [-44.2, 27.4, 1.25, true],
+      [-47.0, 27.8, 1.30, false],
+      [-49.8, 27.6, 1.35, true],
+      [-45.5, 29.6, 1.40, false],
+      [-48.2, 30.0, 1.32, true],
+      [-50.8, 29.4, 1.38, false],
+      [-42.6, 29.2, 1.22, true],
+
+      // 4. Zurückversetzter Waldsaum am Rand der Lichtung
+      [-36.5, 27.5, 1.20, false],
+      [-35.2, 16.5, 1.22, true],
     ];
 
-    for (const [x, z, scale, dark] of lodgeClearingTrees) {
-      if (!this.isNearPath6Corridor(x, z, 3.2)) {
-        this.addTreeToForest(x, z, scale, dark, false);
-      }
+    for (const [x, z, scale, dark] of castleSurroundingTrees) {
+      this.addTreeToForest(x, z, scale, dark, false);
     }
   }
 

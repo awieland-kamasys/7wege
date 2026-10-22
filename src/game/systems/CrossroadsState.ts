@@ -1046,8 +1046,8 @@ export class CrossroadsState {
     }
 
     // Aufbauten und Garten an der Ruinenlichtung auf Weg 6:
-    // Eingezäunter Kräutergarten (AABB um -44.4, 20.6)
-    if (Math.abs(x - (-44.4)) < 1.7 - eps && Math.abs(z - 20.6) < 1.6 - eps) {
+    // Eingezäunter Kräutergarten vor der Burg (AABB um -42.2, 23.2)
+    if (Math.abs(x - (-42.2)) < 1.7 - eps && Math.abs(z - 23.2) < 1.6 - eps) {
       return true;
     }
     // Der Wilde Jäger an der Jagdhütte auf Weg 6
@@ -1626,29 +1626,16 @@ export class CrossroadsState {
       resolvedX = afterLodgeWoman.x;
       resolvedZ = afterLodgeWoman.z;
 
-      // Eingezäunter Kräutergarten auf Weg 6 (AABB um -46.7, 21.0)
-      const relGardenX = resolvedX - (-46.7);
-      const relGardenZ = resolvedZ - 21.0;
-      if (Math.abs(relGardenX) < 1.85 && Math.abs(relGardenZ) < 1.75) {
-        const penX = 1.85 - Math.abs(relGardenX);
-        const penZ = 1.75 - Math.abs(relGardenZ);
+      // Eingezäunter Kräutergarten vor der Burg auf Weg 6 (AABB um -42.2, 23.2)
+      const relGardenX = resolvedX - (-42.2);
+      const relGardenZ = resolvedZ - 23.2;
+      if (Math.abs(relGardenX) < 1.75 && Math.abs(relGardenZ) < 1.65) {
+        const penX = 1.75 - Math.abs(relGardenX);
+        const penZ = 1.65 - Math.abs(relGardenZ);
         if (penX < penZ) {
-          resolvedX = -46.7 + (relGardenX >= 0 ? 1.85 : -1.85);
+          resolvedX = -42.2 + (relGardenX >= 0 ? 1.75 : -1.75);
         } else {
-          resolvedZ = 21.0 + (relGardenZ >= 0 ? 1.75 : -1.75);
-        }
-      }
-
-      // Kamin an der Jagdhütte bei (-48.8, 25.4)
-      const relChimneyX = resolvedX - (-48.8);
-      const relChimneyZ = resolvedZ - 25.4;
-      if (Math.abs(relChimneyX) < 0.65 && Math.abs(relChimneyZ) < 0.65) {
-        const penX = 0.65 - Math.abs(relChimneyX);
-        const penZ = 0.65 - Math.abs(relChimneyZ);
-        if (penX < penZ) {
-          resolvedX = -48.8 + (relChimneyX >= 0 ? 0.65 : -0.65);
-        } else {
-          resolvedZ = 25.4 + (relChimneyZ >= 0 ? 0.65 : -0.65);
+          resolvedZ = 23.2 + (relGardenZ >= 0 ? 1.65 : -1.65);
         }
       }
 
@@ -2373,14 +2360,14 @@ export class CrossroadsState {
     }
 
     const distToGarden = Math.hypot(
-      this.playerPos.x - (this.huntingLodgePos.x - 2.5),
-      this.playerPos.z - (this.huntingLodgePos.z - 1.8)
+      this.playerPos.x - (-42.2),
+      this.playerPos.z - 23.2
     );
-    if (distToGarden < 3.8) {
+    if (distToGarden < 3.4) {
       return {
         type: 'herb_garden',
         label:
-          'Umzäunter Kräutergarten – Königs-Salbei, Lavendel und die seltene Mondwurz gedeihen hier in voller Pracht.',
+          'Umzäunter Kräutergarten vor der Burg – Königs-Salbei, Lavendel und die seltene Mondwurz gedeihen hier in voller Pracht.',
       };
     }
 

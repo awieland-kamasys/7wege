@@ -299,7 +299,7 @@ export const PATH_6_WAYPOINTS: readonly PathPoint2D[] = [
   { x: -20.5, z: 5.4 },
   { x: -28.2, z: 9.6 },
   { x: -35.8, z: 14.8 },
-  { x: -42.8, z: 20.6 },
+  { x: -39.0, z: 20.5 },
 ];
 
 /**
@@ -318,9 +318,9 @@ export const PATH_6_HERBS_POS = {
  * Begehbare Waldlichtung am Ende von Weg 6 vor der Jagdhütte und dem Kräutergarten.
  */
 export const PATH_6_END_CLEARING = {
-  x: -42.8,
-  z: 20.6,
-  radius: 5.6,
+  x: -40.0,
+  z: 22.2,
+  radius: 6.4,
 } as const;
 
 /**
@@ -333,19 +333,19 @@ export const HUNTING_LODGE_POS = {
 } as const;
 
 /**
- * Position des Wilden Jägers an der Jagdhütte.
+ * Position des Wilden Jägers an der Jagdhütte (auf dem Vorplatz vor dem Kräutergarten).
  */
 export const WILD_HUNTER_NPC_POS: PathPoint2D = {
-  x: -41.8,
-  z: 21.6,
+  x: -39.2,
+  z: 21.4,
 };
 
 /**
- * Position des Holzweibchens, das vor dem Kräutergarten mit dem Wilden Jäger diskutiert.
+ * Position des Holzweibchens, das vor der Pforte des Kräutergartens mit dem Wilden Jäger diskutiert.
  */
 export const WOOD_WOMAN_LODGE_NPC_POS: PathPoint2D = {
-  x: -42.6,
-  z: 23.2,
+  x: -39.2,
+  z: 23.6,
 };
 
 /**

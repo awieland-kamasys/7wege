@@ -136,9 +136,10 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
 
   // ==========================================
   // 2. DER KRÄUTERGARTEN (Beete, Zaun & Kräuter)
+  // Platziert direkt vor der Burgruine, mit Pforte zur Lichtungsmitte
   // ==========================================
   const gardenGroup = new THREE.Group();
-  gardenGroup.position.set(-0.2, 0, -2.2);
+  gardenGroup.position.set(2.0, 0, 0.4);
 
   // Beeterde (zwei gepflegte Kräuterbeete, tief verankert)
   for (const bz of [-0.85, 0.85]) {
