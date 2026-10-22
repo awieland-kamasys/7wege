@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { getTerrainHeight } from '../utils/terrainHeight';
 
 export type MushroomType = 'fly_agaric' | 'bolete' | 'chanterelle' | 'mixed';
 
@@ -107,10 +108,11 @@ export function buildMergedMushroomClusters(spots: MushroomClusterOptions[]): TH
     const baseScale = spot.scale ?? 1.0;
     const rotY = spot.rotationY ?? 0;
     const type = spot.type ?? 'fly_agaric';
+    const baseY = getTerrainHeight(sx, sz);
 
     // Moospolster
     const mossGeom = new THREE.CylinderGeometry(0.24 * baseScale, 0.3 * baseScale, 0.02 * baseScale, 7);
-    tempPos.set(sx, 0.01 * baseScale, sz);
+    tempPos.set(sx, baseY + 0.01 * baseScale, sz);
     tempEuler.set(0, rotY, 0);
     tempQuat.setFromEuler(tempEuler);
     tempMatrix.compose(tempPos, tempQuat, tempScale);
@@ -134,11 +136,12 @@ export function buildMergedMushroomClusters(spots: MushroomClusterOptions[]): TH
       const sinR = Math.sin(rotY);
       const mx = sx + cfg.x * cosR - cfg.z * sinR;
       const mz = sz + cfg.x * sinR + cfg.z * cosR;
+      const my = getTerrainHeight(mx, mz);
 
       if (subType === 'bolete') {
         // Stiel
         const stemGeom = new THREE.CylinderGeometry(0.055 * s, 0.085 * s, 0.26 * s, 6);
-        tempPos.set(mx, 0.13 * s, mz);
+        tempPos.set(mx, my + 0.13 * s, mz);
         tempEuler.set(cfg.rx, rotY, cfg.rz);
         tempQuat.setFromEuler(tempEuler);
         tempMatrix.compose(tempPos, tempQuat, tempScale);
@@ -147,21 +150,21 @@ export function buildMergedMushroomClusters(spots: MushroomClusterOptions[]): TH
 
         // Schwamm
         const spongeGeom = new THREE.CylinderGeometry(0.14 * s, 0.14 * s, 0.03 * s, 6);
-        tempPos.set(mx, 0.25 * s, mz);
+        tempPos.set(mx, my + 0.25 * s, mz);
         tempMatrix.compose(tempPos, tempQuat, tempScale);
         spongeGeom.applyMatrix4(tempMatrix);
         boleteSpongeGeos.push(spongeGeom);
 
         // Kappe
         const capGeom = new THREE.SphereGeometry(0.155 * s, 7, 5, 0, Math.PI * 2, 0, Math.PI * 0.52);
-        tempPos.set(mx, 0.26 * s, mz);
+        tempPos.set(mx, my + 0.26 * s, mz);
         tempMatrix.compose(tempPos, tempQuat, tempScale);
         capGeom.applyMatrix4(tempMatrix);
         boleteCapGeos.push(capGeom);
       } else if (subType === 'chanterelle') {
         // Pfifferling
         const stemGeom = new THREE.CylinderGeometry(0.095 * s, 0.032 * s, 0.22 * s, 6);
-        tempPos.set(mx, 0.11 * s, mz);
+        tempPos.set(mx, my + 0.11 * s, mz);
         tempEuler.set(cfg.rx, rotY, cfg.rz);
         tempQuat.setFromEuler(tempEuler);
         tempMatrix.compose(tempPos, tempQuat, tempScale);
@@ -169,14 +172,14 @@ export function buildMergedMushroomClusters(spots: MushroomClusterOptions[]): TH
         chanterelleGeos.push(stemGeom);
 
         const capGeom = new THREE.CylinderGeometry(0.13 * s, 0.085 * s, 0.05 * s, 6);
-        tempPos.set(mx, 0.22 * s, mz);
+        tempPos.set(mx, my + 0.22 * s, mz);
         tempMatrix.compose(tempPos, tempQuat, tempScale);
         capGeom.applyMatrix4(tempMatrix);
         chanterelleGeos.push(capGeom);
       } else {
         // Fliegenpilz: Stiel
         const stemGeom = new THREE.CylinderGeometry(0.032 * s, 0.046 * s, 0.28 * s, 6);
-        tempPos.set(mx, 0.14 * s, mz);
+        tempPos.set(mx, my + 0.14 * s, mz);
         tempEuler.set(cfg.rx, rotY, cfg.rz);
         tempQuat.setFromEuler(tempEuler);
         tempMatrix.compose(tempPos, tempQuat, tempScale);
@@ -185,7 +188,7 @@ export function buildMergedMushroomClusters(spots: MushroomClusterOptions[]): TH
 
         // Kappe
         const capGeom = new THREE.SphereGeometry(0.14 * s, 7, 5, 0, Math.PI * 2, 0, Math.PI * 0.56);
-        tempPos.set(mx, 0.26 * s, mz);
+        tempPos.set(mx, my + 0.26 * s, mz);
         tempScale.set(1.15, 0.95, 1.15);
         tempMatrix.compose(tempPos, tempQuat, tempScale);
         capGeom.applyMatrix4(tempMatrix);
@@ -202,7 +205,7 @@ export function buildMergedMushroomClusters(spots: MushroomClusterOptions[]): TH
         ];
         for (const [dx, dy, dz] of dotOffsets) {
           const dotGeom = new THREE.SphereGeometry(0.018 * s, 3, 3);
-          tempPos.set(mx + dx, 0.26 * s + dy, mz + dz);
+          tempPos.set(mx + dx, my + 0.26 * s + dy, mz + dz);
           tempMatrix.compose(tempPos, tempQuat, tempScale);
           dotGeom.applyMatrix4(tempMatrix);
           flyDotGeos.push(dotGeom);

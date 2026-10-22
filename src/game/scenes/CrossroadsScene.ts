@@ -70,6 +70,7 @@ import { buildMergedBirdhouses, BirdhouseInstance } from '../entities/Birdhouse'
 import { buildMergedFlowerClusters, FlowerClusterOptions, FlowerType } from '../entities/ForestFlowers';
 import { Vector2D } from '../systems/CrossroadsState';
 import { disposeObject3D } from '../utils/threeUtils';
+import { getTerrainHeight } from '../utils/terrainHeight';
 
 export type ScenePickResult =
   | { kind: 'npc'; point: Vector2D }
@@ -279,7 +280,11 @@ export class CrossroadsScene {
 
     // Bergmassiv mit Höhleneingang am Ende des 1. Weges
     const mountainCave = createMountainCave();
-    mountainCave.position.set(CAVE_ENTRANCE_POS.x, 0, CAVE_ENTRANCE_POS.z);
+    mountainCave.position.set(
+      CAVE_ENTRANCE_POS.x,
+      getTerrainHeight(CAVE_ENTRANCE_POS.x, CAVE_ENTRANCE_POS.z),
+      CAVE_ENTRANCE_POS.z
+    );
     mountainCave.rotation.y = CAVE_ENTRANCE_POS.rotationY;
     mountainCave.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -291,7 +296,11 @@ export class CrossroadsScene {
     // Das Graumännchen (NPC) direkt vor dem Höhleneingang am Ende des 1. Weges
     // Gestaffeltes Laden: Modell lädt nach 400ms, um den Startframe nicht zu blockieren
     this.greyManNpc = createGreyManNpc({ loadDelayMs: 400 });
-    this.greyManNpc.group.position.set(GREY_MAN_NPC_POS.x, 0, GREY_MAN_NPC_POS.z);
+    this.greyManNpc.group.position.set(
+      GREY_MAN_NPC_POS.x,
+      getTerrainHeight(GREY_MAN_NPC_POS.x, GREY_MAN_NPC_POS.z),
+      GREY_MAN_NPC_POS.z
+    );
     this.greyManNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         this.pickableObjects.push(child);
@@ -302,7 +311,11 @@ export class CrossroadsScene {
     // Waldteich mit Nixenstein und verfluchtem Schatz am Ende des 2. Weges
     // Gestaffeltes Laden: Teichmodell lädt nach 750ms
     this.nixiePond = createNixiePond(undefined, { loadDelayMs: 750 });
-    this.nixiePond.group.position.set(POND_CENTER_POS.x, 0, POND_CENTER_POS.z);
+    this.nixiePond.group.position.set(
+      POND_CENTER_POS.x,
+      getTerrainHeight(POND_CENTER_POS.x, POND_CENTER_POS.z),
+      POND_CENTER_POS.z
+    );
     this.nixiePond.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
         this.pickableObjects.push(child);
@@ -318,7 +331,11 @@ export class CrossroadsScene {
       },
       { loadDelayMs: 1100 }
     );
-    this.nixieNpc.group.position.set(NIXIE_NPC_POS.x, 0, NIXIE_NPC_POS.z);
+    this.nixieNpc.group.position.set(
+      NIXIE_NPC_POS.x,
+      getTerrainHeight(NIXIE_NPC_POS.x, NIXIE_NPC_POS.z),
+      NIXIE_NPC_POS.z
+    );
     this.nixieNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         this.pickableObjects.push(child);
@@ -328,7 +345,11 @@ export class CrossroadsScene {
 
     // Brücke mit geschlossenem Wehr, kleinem Stausee und Bachlauf auf dem 3. Weg
     this.weirBridge = createWeirBridgeScene();
-    this.weirBridge.group.position.set(WEIR_BRIDGE_POS.x, 0, WEIR_BRIDGE_POS.z);
+    this.weirBridge.group.position.set(
+      WEIR_BRIDGE_POS.x,
+      getTerrainHeight(WEIR_BRIDGE_POS.x, WEIR_BRIDGE_POS.z),
+      WEIR_BRIDGE_POS.z
+    );
     this.weirBridge.group.rotation.y = WEIR_BRIDGE_POS.rotationY;
     this.weirBridge.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
@@ -339,7 +360,11 @@ export class CrossroadsScene {
 
     // Der Riese (NPC) am Ufer hinter der Wehrbrücke am Ende des 3. Weges
     this.giantNpc = createGiantNpc();
-    this.giantNpc.group.position.set(GIANT_NPC_POS.x, 0, GIANT_NPC_POS.z);
+    this.giantNpc.group.position.set(
+      GIANT_NPC_POS.x,
+      getTerrainHeight(GIANT_NPC_POS.x, GIANT_NPC_POS.z),
+      GIANT_NPC_POS.z
+    );
     this.giantNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         this.pickableObjects.push(child);
@@ -349,7 +374,11 @@ export class CrossroadsScene {
 
     // Holzfällerlager auf der Waldlichtung am Ende des 4. Weges
     this.lumberCamp = createLumberjackCamp();
-    this.lumberCamp.group.position.set(LUMBER_CAMP_POS.x, 0, LUMBER_CAMP_POS.z);
+    this.lumberCamp.group.position.set(
+      LUMBER_CAMP_POS.x,
+      getTerrainHeight(LUMBER_CAMP_POS.x, LUMBER_CAMP_POS.z),
+      LUMBER_CAMP_POS.z
+    );
     this.lumberCamp.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
         this.pickableObjects.push(child);
@@ -359,7 +388,11 @@ export class CrossroadsScene {
 
     // Das Holzweibchen (NPC) im Holzfällerlager am Ende des 4. Weges
     this.woodWomanNpc = createWoodWomanNpc();
-    this.woodWomanNpc.group.position.set(WOOD_WOMAN_NPC_POS.x, 0, WOOD_WOMAN_NPC_POS.z);
+    this.woodWomanNpc.group.position.set(
+      WOOD_WOMAN_NPC_POS.x,
+      getTerrainHeight(WOOD_WOMAN_NPC_POS.x, WOOD_WOMAN_NPC_POS.z),
+      WOOD_WOMAN_NPC_POS.z
+    );
     this.woodWomanNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         this.pickableObjects.push(child);
@@ -375,7 +408,11 @@ export class CrossroadsScene {
       },
       { loadDelayMs: 1500 }
     );
-    this.hellChasm.group.position.set(HELL_CHASM_POS.x, 0, HELL_CHASM_POS.z);
+    this.hellChasm.group.position.set(
+      HELL_CHASM_POS.x,
+      getTerrainHeight(HELL_CHASM_POS.x, HELL_CHASM_POS.z),
+      HELL_CHASM_POS.z
+    );
     this.hellChasm.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
         this.pickableObjects.push(child);
@@ -391,7 +428,11 @@ export class CrossroadsScene {
       },
       { loadDelayMs: 1900 }
     );
-    this.devilNpc.group.position.set(DEVIL_NPC_POS.x, 0, DEVIL_NPC_POS.z);
+    this.devilNpc.group.position.set(
+      DEVIL_NPC_POS.x,
+      getTerrainHeight(DEVIL_NPC_POS.x, DEVIL_NPC_POS.z),
+      DEVIL_NPC_POS.z
+    );
     this.devilNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         this.pickableObjects.push(child);
@@ -401,7 +442,11 @@ export class CrossroadsScene {
 
     // Jagdhütte mit Kräutergarten, Jagdpferd und Jagdhund am Ende des 6. Weges
     this.huntingLodge = createHuntingLodge();
-    this.huntingLodge.group.position.set(HUNTING_LODGE_POS.x, 0, HUNTING_LODGE_POS.z);
+    this.huntingLodge.group.position.set(
+      HUNTING_LODGE_POS.x,
+      getTerrainHeight(HUNTING_LODGE_POS.x, HUNTING_LODGE_POS.z),
+      HUNTING_LODGE_POS.z
+    );
     this.huntingLodge.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
         this.pickableObjects.push(child);
@@ -411,7 +456,11 @@ export class CrossroadsScene {
 
     // Der Wilde Jäger (NPC) an der Jagdhütte
     this.wildHunterNpc = createWildHunterNpc();
-    this.wildHunterNpc.group.position.set(WILD_HUNTER_NPC_POS.x, 0, WILD_HUNTER_NPC_POS.z);
+    this.wildHunterNpc.group.position.set(
+      WILD_HUNTER_NPC_POS.x,
+      getTerrainHeight(WILD_HUNTER_NPC_POS.x, WILD_HUNTER_NPC_POS.z),
+      WILD_HUNTER_NPC_POS.z
+    );
     this.wildHunterNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         this.pickableObjects.push(child);
@@ -426,7 +475,7 @@ export class CrossroadsScene {
     });
     this.woodWomanLodgeNpc.group.position.set(
       WOOD_WOMAN_LODGE_NPC_POS.x,
-      0,
+      getTerrainHeight(WOOD_WOMAN_LODGE_NPC_POS.x, WOOD_WOMAN_LODGE_NPC_POS.z),
       WOOD_WOMAN_LODGE_NPC_POS.z
     );
     this.woodWomanLodgeNpc.group.traverse((child) => {
@@ -438,7 +487,11 @@ export class CrossroadsScene {
 
     // Das geschlossene Tor mit flankierenden Steinmauern am Ende des 7. Weges
     this.closedGate = createClosedGate();
-    this.closedGate.group.position.set(CLOSED_GATE_POS.x, 0, CLOSED_GATE_POS.z);
+    this.closedGate.group.position.set(
+      CLOSED_GATE_POS.x,
+      getTerrainHeight(CLOSED_GATE_POS.x, CLOSED_GATE_POS.z),
+      CLOSED_GATE_POS.z
+    );
     this.closedGate.group.rotation.y = CLOSED_GATE_POS.rotationY;
     this.closedGate.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && child.userData?.interactableType) {
@@ -449,26 +502,32 @@ export class CrossroadsScene {
 
     // Magischer Felsbrocken, der Weg 1 (Silberstollen-Pfad) blockiert
     this.path1Boulder = createPathBoulder();
+    this.path1Boulder.group.position.y = getTerrainHeight(this.path1Boulder.group.position.x, this.path1Boulder.group.position.z);
     this.scene.add(this.path1Boulder.group);
 
     // Magische Wasserpfütze, die Weg 2 (Nixenteich-Pfad) blockiert
     this.path2Puddle = createPathPuddle();
+    this.path2Puddle.group.position.y = getTerrainHeight(this.path2Puddle.group.position.x, this.path2Puddle.group.position.z);
     this.scene.add(this.path2Puddle.group);
 
     // Reißender Gebirgsbach, der Weg 3 (Quellenweg) blockiert
     this.path3Stream = createPathStream();
+    this.path3Stream.group.position.y = getTerrainHeight(this.path3Stream.group.position.x, this.path3Stream.group.position.z);
     this.scene.add(this.path3Stream.group);
 
     // Magischer Baumstamm, der Weg 4 (Holzfäller-Pfad) blockiert
     this.path4Log = createPathLog();
+    this.path4Log.group.position.y = getTerrainHeight(this.path4Log.group.position.x, this.path4Log.group.position.z);
     this.scene.add(this.path4Log.group);
 
     // Magisches Feuer, das Weg 5 (Höllenschlund-Pfad) blockiert
     this.path5Fire = createPathFire();
+    this.path5Fire.group.position.y = getTerrainHeight(this.path5Fire.group.position.x, this.path5Fire.group.position.z);
     this.scene.add(this.path5Fire.group);
 
     // Hohe Kräuterpflanzen mit Geländer, die Weg 6 (Jägerpfad) blockieren
     this.path6Herbs = createPathHerbs();
+    this.path6Herbs.group.position.y = getTerrainHeight(this.path6Herbs.group.position.x, this.path6Herbs.group.position.z);
     this.scene.add(this.path6Herbs.group);
 
 
@@ -492,14 +551,15 @@ export class CrossroadsScene {
 
     // Spielfigur (Wandernde Person) – Start auf Weg 7 in halber Strecke mit Blick zur Kreuzung
     this.playerGroup = this.createPlayerMarker();
-    this.playerGroup.position.set(START_PLAYER_POS.x, 0, START_PLAYER_POS.z);
+    const startY = getTerrainHeight(START_PLAYER_POS.x, START_PLAYER_POS.z);
+    this.playerGroup.position.set(START_PLAYER_POS.x, startY, START_PLAYER_POS.z);
     this.playerGroup.rotation.y = Math.atan2(21.0, 18.4);
     this.scene.add(this.playerGroup);
 
     // Initiale Kamera-Ausrichtung hinter dem Spieler mit Blickrichtung zur Kreuzung
-    const targetY = 1.1;
+    const targetY = startY + 1.1;
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
-    const camHeight = Math.max(0.55, targetY + Math.sin(this.cameraPitch) * this.cameraDistance);
+    const camHeight = Math.max(startY + 0.55, targetY + Math.sin(this.cameraPitch) * this.cameraDistance);
     const initCamX = START_PLAYER_POS.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
     const initCamZ = START_PLAYER_POS.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
     this.camera.position.set(initCamX, camHeight, initCamZ);
@@ -562,9 +622,20 @@ export class CrossroadsScene {
       endClearingTex.bumpMap.repeat.set(4, 4);
     }
 
-    // Weitläufiger Waldboden mit natürlicher Wiesentextur und plastischem Relief
+    // Weitläufiges 3D-Gelände mit natürlicher Höhenmap und plastischem Relief
+    const groundGeo = new THREE.PlaneGeometry(240, 240, 160, 160);
+    groundGeo.rotateX(-Math.PI / 2);
+    const posAttr = groundGeo.attributes.position;
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i);
+      const vz = posAttr.getZ(i);
+      const vy = getTerrainHeight(vx, vz);
+      posAttr.setY(i, vy);
+    }
+    groundGeo.computeVertexNormals();
+
     const ground = new THREE.Mesh(
-      new THREE.CircleGeometry(110, 48),
+      groundGeo,
       new THREE.MeshStandardMaterial({
         color: 0x3d6842,
         map: grassTex.map ?? undefined,
@@ -573,15 +644,18 @@ export class CrossroadsScene {
         roughness: 0.92,
       })
     );
-    ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
+    ground.userData = { interactableType: 'ground' };
     this.scene.add(ground);
+    this.pickableObjects.push(ground);
 
     // Glühende Wiese & feuriger Magmaboden im Bereich des Höllenschlunds / Lavasees (Weg 5 / Teufel)
     const lavaRockTex = createVeinedLavaRockTexture();
     if (lavaRockTex.map) lavaRockTex.map.repeat.set(2.5, 2.5);
     if (lavaRockTex.emissiveMap) lavaRockTex.emissiveMap.repeat.set(2.5, 2.5);
     if (lavaRockTex.bumpMap) lavaRockTex.bumpMap.repeat.set(2.5, 2.5);
+
+    const hellGroundY = getTerrainHeight(HELL_CHASM_POS.x, HELL_CHASM_POS.z);
 
     // 1. Äußerer weicher Glüh-Saum der Wiese (großflächiges Glühen im Gras)
     this.hellMeadowGlowMat = new THREE.MeshStandardMaterial({
@@ -597,7 +671,7 @@ export class CrossroadsScene {
       new THREE.CircleGeometry(36, 40),
       this.hellMeadowGlowMat
     );
-    ashGroundMeadowGlow.position.set(HELL_CHASM_POS.x, 0.007, HELL_CHASM_POS.z - 2.5);
+    ashGroundMeadowGlow.position.set(HELL_CHASM_POS.x, hellGroundY + 0.007, HELL_CHASM_POS.z - 2.5);
     ashGroundMeadowGlow.rotation.x = -Math.PI / 2;
     ashGroundMeadowGlow.receiveShadow = true;
     this.scene.add(ashGroundMeadowGlow);
@@ -617,7 +691,7 @@ export class CrossroadsScene {
       new THREE.CircleGeometry(28, 40),
       this.hellGroundOuterMat
     );
-    ashGroundOuter.position.set(HELL_CHASM_POS.x, 0.012, HELL_CHASM_POS.z - 1.8);
+    ashGroundOuter.position.set(HELL_CHASM_POS.x, hellGroundY + 0.012, HELL_CHASM_POS.z - 1.8);
     ashGroundOuter.rotation.x = -Math.PI / 2;
     ashGroundOuter.receiveShadow = true;
     this.scene.add(ashGroundOuter);
@@ -639,7 +713,7 @@ export class CrossroadsScene {
       new THREE.RingGeometry(7.6, 18.5, 48),
       this.hellGroundInnerMat
     );
-    ashGroundInner.position.set(HELL_CHASM_POS.x, 0.018, HELL_CHASM_POS.z);
+    ashGroundInner.position.set(HELL_CHASM_POS.x, hellGroundY + 0.018, HELL_CHASM_POS.z);
     ashGroundInner.rotation.x = -Math.PI / 2;
     ashGroundInner.receiveShadow = true;
     this.scene.add(ashGroundInner);
@@ -926,12 +1000,19 @@ export class CrossroadsScene {
       const midZ = (a.z + b.z) / 2;
       const angleY = Math.atan2(dx, dz);
 
-      const boxGeo = new THREE.BoxGeometry(pathWidth, 0.05, segLength);
-      boxGeo.rotateY(angleY);
-      boxGeo.translate(midX, 0.03, midZ);
+      const yA = getTerrainHeight(a.x, a.z);
+      const yB = getTerrainHeight(b.x, b.z);
+      const horizDist = Math.hypot(dx, dz);
+      const pitch = -Math.atan2(yB - yA, horizDist);
+      const midY = (yA + yB) / 2;
 
-      const jointGeo = new THREE.CylinderGeometry(pathWidth / 2, pathWidth / 2, 0.05, 16);
-      jointGeo.translate(b.x, 0.03, b.z);
+      const boxGeo = new THREE.BoxGeometry(pathWidth, 0.06, segLength);
+      boxGeo.rotateX(pitch);
+      boxGeo.rotateY(angleY);
+      boxGeo.translate(midX, midY + 0.035, midZ);
+
+      const jointGeo = new THREE.CylinderGeometry(pathWidth / 2, pathWidth / 2, 0.06, 16);
+      jointGeo.translate(b.x, yB + 0.035, b.z);
 
       if (segmentMats) {
         // Pfad mit individuellen Segment-Materialien (z.B. Weg 5 feuriger Übergang):
@@ -972,6 +1053,7 @@ export class CrossroadsScene {
     // Vorplatz am Ende des Kurvenweges (falls für diesen Weg vorgesehen)
     // Weg 2 (Nixenteich) und Weg 5 (Lavateich des Teufels) führen direkt an ihr Ziel ohne runden Vorplatz
     if (pathId !== 2 && pathId !== 5) {
+      const endClearingY = getTerrainHeight(clearing.x, clearing.z);
       const endClearing = new THREE.Mesh(
         new THREE.CylinderGeometry(
           clearing.radius,
@@ -981,7 +1063,7 @@ export class CrossroadsScene {
         ),
         clearingMat ?? mat
       );
-      endClearing.position.set(clearing.x, 0.03, clearing.z);
+      endClearing.position.set(clearing.x, endClearingY + 0.035, clearing.z);
       endClearing.receiveShadow = true;
       endClearing.userData = { interactableType: 'path', pathId };
       this.scene.add(endClearing);
@@ -1174,7 +1256,8 @@ export class CrossroadsScene {
 
     const dummy = new THREE.Object3D();
     const setMatrix = (instancedMesh: THREE.InstancedMesh, index: number, t: ForestTreeInstance) => {
-      dummy.position.set(t.x, 0, t.z);
+      const treeY = getTerrainHeight(t.x, t.z);
+      dummy.position.set(t.x, treeY, t.z);
       dummy.scale.set(t.scale, t.scale, t.scale);
       dummy.rotation.y = (t.x * 37.1 + t.z * 59.3) % 6.28;
       dummy.updateMatrix();
@@ -1273,7 +1356,7 @@ export class CrossroadsScene {
 
         birdhouseInstances.push({
           x: bx,
-          y: 0.82 * t.scale,
+          y: getTerrainHeight(bx, bz) + 0.82 * t.scale,
           z: bz,
           rotationY: angle,
           scale: t.scale,
@@ -2209,10 +2292,13 @@ export class CrossroadsScene {
         new THREE.ConeGeometry(baseRadius, height, 6),
         rockMats[matIdx]
       );
+      const wx = HELL_CHASM_POS.x + rx;
+      const wz = HELL_CHASM_POS.z + rz;
+      const groundY = getTerrainHeight(wx, wz);
       rockMesh.position.set(
-        HELL_CHASM_POS.x + rx,
-        height / 2 - 0.4,
-        HELL_CHASM_POS.z + rz
+        wx,
+        groundY + height / 2 - 0.4,
+        wz
       );
       rockMesh.rotation.set(tiltX, rotY, tiltZ);
       rockMesh.castShadow = true;
@@ -2279,13 +2365,14 @@ export class CrossroadsScene {
    */
   public snapCameraToPlayer(playerPos: Readonly<Vector2D>): void {
     this.lastPlayerPos = { x: playerPos.x, z: playerPos.z };
-    this.playerGroup.position.set(playerPos.x, 0, playerPos.z);
+    const groundY = getTerrainHeight(playerPos.x, playerPos.z);
+    this.playerGroup.position.set(playerPos.x, groundY, playerPos.z);
     this.playerGroup.rotation.y = 0;
     this.cameraOrbitAngle = 0;
 
-    const targetY = 1.1;
+    const targetY = groundY + 1.1;
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
-    const camHeight = Math.max(0.55, targetY + Math.sin(this.cameraPitch) * this.cameraDistance);
+    const camHeight = Math.max(groundY + 0.55, targetY + Math.sin(this.cameraPitch) * this.cameraDistance);
     const targetCamX = playerPos.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
     const targetCamZ = playerPos.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
 
@@ -2541,7 +2628,8 @@ export class CrossroadsScene {
       this.playerGroup.rotation.y = targetRotation;
     }
     this.lastPlayerPos = { x: playerPos.x, z: playerPos.z };
-    this.playerGroup.position.set(playerPos.x, 0, playerPos.z);
+    const groundY = getTerrainHeight(playerPos.x, playerPos.z);
+    this.playerGroup.position.set(playerPos.x, groundY, playerPos.z);
 
     // Entfernungs-Culling: Entities, die weiter als 33m entfernt sind (durch Nebel ab 22m verborgen),
     // pausieren ihre rechenintensiven Animationen, Partikel- und Skelettberechnungen.
@@ -2638,7 +2726,11 @@ export class CrossroadsScene {
     // Ziel-Markierung am Boden anzeigen, solange Click-to-Move aktiv ist
     if (targetPos) {
       this.targetMarker.visible = true;
-      this.targetMarker.position.set(targetPos.x, 0.08, targetPos.z);
+      this.targetMarker.position.set(
+        targetPos.x,
+        getTerrainHeight(targetPos.x, targetPos.z) + 0.08,
+        targetPos.z
+      );
     } else {
       this.targetMarker.visible = false;
     }
@@ -2726,9 +2818,9 @@ export class CrossroadsScene {
     }
 
     // Sanfte Verfolgerkamera mit Maus-Orbit, Neigung (Pitch) und Zoom (Distanz)
-    const targetY = 1.1;
+    const targetY = groundY + 1.1;
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
-    const camHeight = Math.max(0.55, targetY + Math.sin(this.cameraPitch) * this.cameraDistance);
+    const camHeight = Math.max(groundY + 0.55, targetY + Math.sin(this.cameraPitch) * this.cameraDistance);
     const targetCamX = playerPos.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
     const targetCamZ = playerPos.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
 

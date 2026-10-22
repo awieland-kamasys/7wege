@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { getTerrainHeight } from '../utils/terrainHeight';
 
 export type FlowerType =
   | 'anemone'        // Weißes Buschwindröschen
@@ -121,10 +122,11 @@ export function buildMergedFlowerClusters(spots: FlowerClusterOptions[]): THREE.
     const sScale = spot.scale ?? 1.0;
     const sRotY = spot.rotationY ?? 0;
     const type = spot.type ?? 'mixed';
+    const baseY = getTerrainHeight(sx, sz);
 
     // Kleines Moos-/Grasbett am Boden
     const baseGeom = new THREE.CircleGeometry(0.18 * sScale, 6);
-    tempPos.set(sx, 0.005, sz);
+    tempPos.set(sx, baseY + 0.005, sz);
     tempEuler.set(-Math.PI / 2, 0, sRotY);
     tempQuat.setFromEuler(tempEuler);
     tempScale.set(1, 1, 1);
@@ -154,7 +156,7 @@ export function buildMergedFlowerClusters(spots: FlowerClusterOptions[]): THREE.
       // Stängel
       const stemRadius = 0.007 * sScale;
       const stemGeom = new THREE.CylinderGeometry(stemRadius * 0.7, stemRadius, height, 4);
-      tempPos.set(fx, height / 2, fz);
+      tempPos.set(fx, baseY + height / 2, fz);
       tempEuler.set(tiltX, sRotY, tiltZ);
       tempQuat.setFromEuler(tempEuler);
       tempMatrix.compose(tempPos, tempQuat, tempScale);
@@ -165,7 +167,11 @@ export function buildMergedFlowerClusters(spots: FlowerClusterOptions[]): THREE.
       for (let l = 0; l < 2; l++) {
         const leafGeom = new THREE.ConeGeometry(0.02 * sScale, 0.08 * sScale, 4);
         const leafAngle = l * Math.PI + tiltX + sRotY;
-        tempPos.set(fx + Math.sin(leafAngle) * 0.025 * sScale, 0.02 * sScale, fz + Math.cos(leafAngle) * 0.025 * sScale);
+        tempPos.set(
+          fx + Math.sin(leafAngle) * 0.025 * sScale,
+          baseY + 0.02 * sScale,
+          fz + Math.cos(leafAngle) * 0.025 * sScale
+        );
         tempEuler.set(0.5, leafAngle, 0.4);
         tempQuat.setFromEuler(tempEuler);
         tempMatrix.compose(tempPos, tempQuat, tempScale);
@@ -176,7 +182,7 @@ export function buildMergedFlowerClusters(spots: FlowerClusterOptions[]): THREE.
       // Blütenkopf an Stängelspitze
       const tipX = fx - Math.sin(tiltZ) * height;
       const tipZ = fz + Math.sin(tiltX) * height;
-      const tipY = height * Math.cos(Math.hypot(tiltX, tiltZ));
+      const tipY = baseY + height * Math.cos(Math.hypot(tiltX, tiltZ));
 
       const fRadius = (chosenType === 'bellflower' ? 0.065 : 0.055) * sScale;
 
