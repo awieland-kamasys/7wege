@@ -11,7 +11,8 @@ function toNonIndexed(geo: THREE.BufferGeometry): THREE.BufferGeometry {
  * Erzeugt das monumentale, hochalpine schneebedeckte Bergmassiv hinter und über dem Mineneingang:
  * - Aufragender Hauptgipfel und zerklüftete Nebengipfel (bis zu 26 Meter hoch)
  * - Breite Gebirgsflanken und eine geschlossene Hintergrundwand, die das Tal majestätisch abschließt
- * - Strahlend weiße Schneehauben und Schneefelder auf allen Kämmen, Terrassen und direkt über dem Stollenportal
+ * - Strahlend weiße Schneehauben und Schneefelder auf allen Kämmen und Terrassen
+ * - Präzise Platzierung hinter dem herausgezogenen Stollenportal: 0 Überlappungen mit dem sichtbaren Eingang!
  * - Durch BufferGeometryUtils.mergeGeometries extrem performant (nur 2 Draw Calls für den gesamten Berg)
  */
 function buildMountainBackdrop(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE.Group {
@@ -40,42 +41,46 @@ function buildMountainBackdrop(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE
   });
 
   // 1. Spezifikationen aller massiven Felsblöcke des Gebirgsmassivs (DodecahedronGeometry)
+  // Alle Blöcke sind so positioniert, dass sie das hintere Ende des Tunnels umschließen,
+  // aber das herausgezogene Stollenportal weder von den Seiten noch von vorn verdecken!
   const rockSpecs: Array<{
     p: [number, number, number];
     r: number;
     s: [number, number, number];
     rot: [number, number, number];
   }> = [
-    // Sockel & Wölbung direkt hinter dem Stollensturz
-    { p: [0.0, 4.5, -4.5], r: 4.8, s: [1.35, 1.25, 1.1], rot: [0.1, 0.4, 0] },
-    { p: [0.0, 5.8, -1.8], r: 3.8, s: [1.55, 0.85, 1.15], rot: [0.08, 0.1, 0] },
+    // Zentralmassiv hinter dem Stollen (Z <= -5.0)
+    { p: [0.0, 4.8, -5.8], r: 5.2, s: [1.3, 1.25, 0.95], rot: [0.1, 0.4, 0] },
+
+    // Felsüberhang weit über dem Stollensturz (beginnt erst ab Y = 6.2)
+    { p: [0.0, 9.4, -3.8], r: 4.2, s: [1.35, 0.75, 1.0], rot: [0.08, 0.1, 0] },
 
     // Mittelstufe & Steilwand
-    { p: [-0.5, 8.5, -6.5], r: 5.5, s: [1.3, 1.35, 1.15], rot: [-0.08, -0.3, 0.05] },
-    { p: [0.0, 13.5, -9.0], r: 5.8, s: [1.2, 1.5, 1.1], rot: [0.12, 0.5, -0.05] },
-    { p: [0.2, 16.8, -9.5], r: 3.8, s: [0.95, 1.6, 0.95], rot: [0.05, 0.8, -0.1] },
+    { p: [-0.5, 11.2, -7.8], r: 5.6, s: [1.3, 1.35, 1.15], rot: [-0.08, -0.3, 0.05] },
+    { p: [0.0, 15.5, -10.5], r: 5.8, s: [1.2, 1.5, 1.1], rot: [0.12, 0.5, -0.05] },
+    { p: [0.2, 18.8, -11.0], r: 3.8, s: [0.95, 1.6, 0.95], rot: [0.05, 0.8, -0.1] },
 
-    // Westflanke (links vom Tunneleingang)
-    { p: [-4.6, 2.2, -0.8], r: 3.5, s: [1.15, 1.35, 1.2], rot: [0.1, 0.5, 0] },
-    { p: [-5.8, 5.2, -3.2], r: 4.2, s: [1.2, 1.3, 1.1], rot: [-0.1, -0.4, 0.08] },
-    { p: [-6.8, 9.2, -6.2], r: 4.8, s: [1.15, 1.4, 1.05], rot: [0.15, 0.6, -0.1] },
-    { p: [-6.5, 13.8, -9.2], r: 4.2, s: [1.0, 1.55, 1.0], rot: [-0.08, 0.3, 0.12] },
+    // Westflanke (weit links vom Stollen: X <= -8.0, lässt das Stollenportal komplett frei)
+    { p: [-8.8, 3.2, -2.2], r: 3.2, s: [1.0, 1.35, 1.1], rot: [0.1, 0.5, 0] },
+    { p: [-8.2, 6.8, -5.0], r: 4.4, s: [1.15, 1.3, 1.1], rot: [-0.1, -0.4, 0.08] },
+    { p: [-8.5, 11.0, -8.0], r: 4.8, s: [1.15, 1.4, 1.05], rot: [0.15, 0.6, -0.1] },
+    { p: [-7.5, 15.5, -10.8], r: 4.2, s: [1.0, 1.55, 1.0], rot: [-0.08, 0.3, 0.12] },
 
-    // Ostflanke (rechts vom Tunneleingang)
-    { p: [4.6, 2.3, -0.8], r: 3.6, s: [1.15, 1.35, 1.2], rot: [0.1, -0.5, 0] },
-    { p: [6.0, 5.4, -3.4], r: 4.3, s: [1.2, 1.3, 1.1], rot: [0.12, 0.4, -0.08] },
-    { p: [7.2, 9.5, -6.5], r: 4.9, s: [1.2, 1.4, 1.05], rot: [-0.15, -0.5, 0.1] },
-    { p: [7.0, 14.2, -9.5], r: 4.6, s: [1.1, 1.5, 1.05], rot: [0.1, -0.4, -0.1] },
+    // Ostflanke (weit rechts vom Stollen: X >= +8.0, lässt das Stollenportal komplett frei)
+    { p: [8.8, 3.2, -2.2], r: 3.2, s: [1.0, 1.35, 1.1], rot: [0.1, -0.5, 0] },
+    { p: [8.2, 7.0, -5.0], r: 4.4, s: [1.15, 1.3, 1.1], rot: [0.12, 0.4, -0.08] },
+    { p: [8.5, 11.2, -8.2], r: 4.9, s: [1.2, 1.4, 1.05], rot: [-0.15, -0.5, 0.1] },
+    { p: [7.8, 15.6, -11.0], r: 4.6, s: [1.1, 1.5, 1.05], rot: [0.1, -0.4, -0.1] },
 
-    // Kolossale hintere Gebirgswand (Kamm-Abschluss nach Norden)
-    { p: [-10.5, 12.0, -13.5], r: 6.8, s: [1.25, 1.45, 1.1], rot: [0.1, 0.6, 0] },
-    { p: [0.0, 14.5, -14.8], r: 7.8, s: [1.3, 1.5, 1.15], rot: [-0.05, 0.2, 0] },
-    { p: [10.8, 12.5, -14.0], r: 7.0, s: [1.25, 1.45, 1.1], rot: [0.1, -0.5, 0] },
+    // Kolossale hintere Bergwand (schließt den Horizont nach Norden ab)
+    { p: [-11.5, 13.5, -15.5], r: 7.0, s: [1.25, 1.45, 1.1], rot: [0.1, 0.6, 0] },
+    { p: [0.0, 16.2, -16.5], r: 8.0, s: [1.3, 1.5, 1.15], rot: [-0.05, 0.2, 0] },
+    { p: [11.5, 14.0, -16.0], r: 7.2, s: [1.25, 1.45, 1.1], rot: [0.1, -0.5, 0] },
 
-    // Tief verankertes Felsfundament (verhindert Boden-Clipping und Spalten)
-    { p: [-5.5, -0.8, -1.5], r: 3.8, s: [1.3, 1.0, 1.3], rot: [0, 0, 0] },
-    { p: [5.5, -0.8, -1.5], r: 3.8, s: [1.3, 1.0, 1.3], rot: [0, 0, 0] },
-    { p: [0.0, -1.0, -6.0], r: 6.0, s: [1.5, 1.0, 1.3], rot: [0, 0, 0] },
+    // Fundamente tief unten (Z <= -4.0, unter Bodenniveau zur perfekten Hangabdichtung)
+    { p: [-8.5, -1.0, -4.5], r: 3.5, s: [1.1, 1.0, 1.1], rot: [0, 0, 0] },
+    { p: [8.5, -1.0, -4.5], r: 3.5, s: [1.1, 1.0, 1.1], rot: [0, 0, 0] },
+    { p: [0.0, -1.5, -7.8], r: 6.0, s: [1.4, 1.0, 1.2], rot: [0, 0, 0] },
   ];
 
   const rockGeos: THREE.BufferGeometry[] = [];
@@ -88,7 +93,6 @@ function buildMountainBackdrop(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE
       const x = pos.getX(i);
       const y = pos.getY(i);
       const z = pos.getZ(i);
-      // Felsverzerrung für organisch gebrochene Kanten
       const fluting = 1.0 + Math.sin(x * 1.6 + seed) * 0.08 + Math.cos(z * 1.4 + y * 0.8) * 0.06;
       pos.setXYZ(i, x * s.s[0] * fluting, y * s.s[1] * fluting, z * s.s[2] * fluting);
     }
@@ -100,50 +104,51 @@ function buildMountainBackdrop(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE
     rockGeos.push(toNonIndexed(geo));
   }
 
-  // 2. Spezifikationen der strahlend weißen Schneehauben auf Gipfeln, Graten und Terrassen
+  // 2. Spezifikationen der strahlend weißen Schneehauben auf Gipfeln und Kämmen
   const snowSpecs: Array<{
     p: [number, number, number];
     r: number;
     s: [number, number, number];
     rot: [number, number, number];
+    thickness?: number;
   }> = [
-    // Hauptgipfel-Schnee
-    { p: [0.2, 17.5, -9.5], r: 3.5, s: [1.05, 1.35, 1.05], rot: [0.05, 0.8, -0.1] },
-    { p: [0.0, 14.8, -9.0], r: 5.4, s: [1.2, 1.25, 1.1], rot: [0.12, 0.5, -0.05] },
+    // Hauptgipfel-Schnee (Gipfelhöhe bis 25 Meter)
+    { p: [0.2, 19.5, -11.0], r: 3.5, s: [1.05, 1.35, 1.05], rot: [0.05, 0.8, -0.1], thickness: 0.6 },
+    { p: [0.0, 16.8, -10.5], r: 5.4, s: [1.2, 1.25, 1.1], rot: [0.12, 0.5, -0.05], thickness: 0.5 },
 
     // Westgipfel-Schnee
-    { p: [-6.5, 14.5, -9.2], r: 4.0, s: [1.05, 1.4, 1.05], rot: [-0.08, 0.3, 0.12] },
+    { p: [-7.5, 16.5, -10.8], r: 4.0, s: [1.05, 1.4, 1.05], rot: [-0.08, 0.3, 0.12], thickness: 0.6 },
 
     // Ostgipfel-Schnee
-    { p: [7.0, 15.0, -9.5], r: 4.4, s: [1.1, 1.35, 1.05], rot: [0.1, -0.4, -0.1] },
+    { p: [7.8, 16.6, -11.0], r: 4.4, s: [1.1, 1.35, 1.05], rot: [0.1, -0.4, -0.1], thickness: 0.6 },
 
     // Hinterer Bergkamm-Schnee
-    { p: [-10.5, 13.5, -13.5], r: 6.4, s: [1.2, 1.3, 1.1], rot: [0.1, 0.6, 0] },
-    { p: [0.0, 16.5, -14.8], r: 7.4, s: [1.25, 1.35, 1.15], rot: [-0.05, 0.2, 0] },
-    { p: [10.8, 14.2, -14.0], r: 6.6, s: [1.2, 1.3, 1.1], rot: [0.1, -0.5, 0] },
+    { p: [-11.5, 15.0, -15.5], r: 6.4, s: [1.2, 1.3, 1.1], rot: [0.1, 0.6, 0], thickness: 0.5 },
+    { p: [0.0, 18.2, -16.5], r: 7.4, s: [1.25, 1.35, 1.15], rot: [-0.05, 0.2, 0], thickness: 0.55 },
+    { p: [11.5, 15.6, -16.0], r: 6.6, s: [1.2, 1.3, 1.1], rot: [0.1, -0.5, 0], thickness: 0.5 },
 
     // Mittlere Felsbänder und Terrassen
-    { p: [-5.8, 6.6, -3.2], r: 3.8, s: [1.2, 0.9, 1.1], rot: [-0.1, -0.4, 0.08] },
-    { p: [6.0, 6.8, -3.4], r: 3.9, s: [1.2, 0.9, 1.1], rot: [0.12, 0.4, -0.08] },
-    { p: [-0.5, 10.6, -6.5], r: 5.0, s: [1.25, 0.9, 1.1], rot: [-0.08, -0.3, 0.05] },
+    { p: [-8.2, 8.2, -5.0], r: 3.8, s: [1.2, 0.9, 1.1], rot: [-0.1, -0.4, 0.08], thickness: 0.45 },
+    { p: [8.2, 8.4, -5.0], r: 3.9, s: [1.2, 0.9, 1.1], rot: [0.12, 0.4, -0.08], thickness: 0.45 },
+    { p: [-0.5, 12.8, -7.8], r: 5.0, s: [1.25, 0.9, 1.1], rot: [-0.08, -0.3, 0.05], thickness: 0.48 },
 
-    // Schneeauflage direkt über dem Stollenportal (schließt bündig an das Tunneldach an)
-    { p: [0.0, 6.6, -1.8], r: 3.6, s: [1.5, 0.75, 1.1], rot: [0.08, 0.1, 0] },
+    // Schneehaube auf dem Felsvorsprung über dem Tunnel (weit über dem Portal bei Y = 10.2)
+    { p: [0.0, 10.2, -3.8], r: 3.8, s: [1.35, 0.7, 1.0], rot: [0.08, 0.1, 0], thickness: 0.42 },
   ];
 
   const snowGeos: THREE.BufferGeometry[] = [];
   for (let idx = 0; idx < snowSpecs.length; idx++) {
     const s = snowSpecs[idx];
-    // Obere Halbkugel als geschwungene Schneehaube
     const geo = new THREE.SphereGeometry(s.r, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.46);
     const pos = geo.attributes.position;
     const seed = idx * 23 + 205;
+    const thickness = s.thickness ?? 0.5;
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
       const y = pos.getY(i);
       const z = pos.getZ(i);
       const wave = 1.0 + Math.sin(x * 1.8 + seed) * 0.06 + Math.cos(z * 1.6) * 0.05;
-      pos.setXYZ(i, x * s.s[0] * wave, y * s.s[1] * wave, z * s.s[2] * wave);
+      pos.setXYZ(i, x * s.s[0] * wave, y * s.s[1] * thickness * wave, z * s.s[2] * wave);
     }
     geo.rotateX(s.rot[0]);
     geo.rotateY(s.rot[1]);
@@ -155,10 +160,10 @@ function buildMountainBackdrop(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE
 
   // 3. Glänzende Blaueis-Akzente in geschützten Felsnischen
   const iceSpecs: Array<{ p: [number, number, number]; r: number; s: [number, number, number] }> = [
-    { p: [-3.2, 4.2, -1.4], r: 1.4, s: [0.9, 1.4, 0.6] },
-    { p: [3.4, 4.4, -1.5], r: 1.5, s: [0.9, 1.5, 0.6] },
-    { p: [-1.2, 8.8, -4.8], r: 1.8, s: [1.2, 0.8, 0.7] },
-    { p: [1.6, 9.0, -5.0], r: 1.7, s: [1.1, 0.9, 0.6] },
+    { p: [-7.2, 5.2, -3.8], r: 1.4, s: [0.9, 1.4, 0.6] },
+    { p: [7.4, 5.4, -3.8], r: 1.5, s: [0.9, 1.5, 0.6] },
+    { p: [-1.2, 9.8, -5.8], r: 1.8, s: [1.2, 0.8, 0.7] },
+    { p: [1.6, 10.0, -6.0], r: 1.7, s: [1.1, 0.9, 0.6] },
   ];
 
   const iceGeos: THREE.BufferGeometry[] = [];
@@ -204,13 +209,11 @@ function buildMountainBackdrop(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE
 
 /**
  * Erstellt die 3D-Szenerie am Ende des 1. Weges (Bergpfad / Mine):
- * - Ein kolossales, schneebedecktes Gebirgsmassiv im Hintergrund (bis zu 26m hoch),
- *   das den Mineneingang organisch und nahtlos einbettet.
- * - Lädt das schneebedeckte Minen-Stollen-Modell (`/assets/models/snowy mine tunnel 3d model.glb`)
- *   mit hölzernem Stollenportal, Felsformationen und tiefem Stollenschlund.
- * - Die Öffnung des Tunnels zeigt exakt nach vorn (+Z) und wird über die Szenen-Rotation
- *   direkt auf den heraufführenden Weg und den Betrachter ausgerichtet.
- * - Im Inneren des Stollens glimmt ein warmes Grubenlaternen-Licht, flankiert von funkelnden Silbererzen.
+ * - Der Mineneingang ist weit nach vorn herausgezogen (+Z), sodass das gesamte hölzerne
+ *   Stollenportal, der Torbogen und die Schneeauflagen vollkommen frei und unverdeckt dastehen.
+ * - Das kolossale schneebedeckte Bergmassiv im Hintergrund (bis 26m hoch) schließt hinten
+ *   an das Tunnelende an, ohne den sichtbaren Eingang zu verdecken.
+ * - Warmes Grubenlaternen-Licht im Stolleninneren und funkelnde Silbererz-Drusen am Portal.
  */
 export function createMountainCave(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE.Group {
   const group = new THREE.Group();
@@ -232,11 +235,19 @@ export function createMountainCave(onMeshLoaded?: (mesh: THREE.Mesh) => void): T
     emissiveIntensity: 0.75,
   });
 
-  // 1. Das hohe, schneebedeckte Bergmassiv im Hintergrund errichten (sofort sichtbar!)
+  // 1. Das hohe, schneebedeckte Bergmassiv im Hintergrund errichten (hinter dem Tunneleingang)
   const mountainBackdrop = buildMountainBackdrop(onMeshLoaded);
   group.add(mountainBackdrop);
 
-  // 2. Temporärer dezenter Portal-Platzhalter während des GLB-Ladevorgangs
+  // 2. Untergruppe für den Mineneingang: Wird um +1.8m nach vorn (+Z) herausgezogen,
+  // damit der gesamte Eingang mit Stollenportal, Holzstützen und Schneebogen frei im Freien steht!
+  const tunnelGroup = new THREE.Group();
+  tunnelGroup.name = 'MineTunnelGroup';
+  const tunnelOffsetZ = 1.8;
+  tunnelGroup.position.set(0, 0, tunnelOffsetZ);
+  group.add(tunnelGroup);
+
+  // Temporärer dezenter Portal-Platzhalter während des GLB-Ladevorgangs
   const fallback = new THREE.Group();
   const fallbackArch = new THREE.Mesh(
     new THREE.BoxGeometry(4.2, 3.6, 2.5),
@@ -247,7 +258,7 @@ export function createMountainCave(onMeshLoaded?: (mesh: THREE.Mesh) => void): T
   fallbackArch.receiveShadow = true;
   fallbackArch.userData = { interactableType: 'cave' };
   fallback.add(fallbackArch);
-  group.add(fallback);
+  tunnelGroup.add(fallback);
 
   // 3. Lade das detaillierte 3D-Modell des schneebedeckten Minentunnels
   const loader = new GLTFLoader();
@@ -285,10 +296,10 @@ export function createMountainCave(onMeshLoaded?: (mesh: THREE.Mesh) => void): T
         }
       });
 
-      // Platzhalter entfernen und fertiges Minenmodell einfügen
-      group.remove(fallback);
+      // Platzhalter entfernen und fertiges Minenmodell in die herausgezogene Tunnelgruppe einfügen
+      tunnelGroup.remove(fallback);
       disposeObject3D(fallback);
-      group.add(model);
+      tunnelGroup.add(model);
     },
     undefined,
     (err) => {
@@ -302,12 +313,12 @@ export function createMountainCave(onMeshLoaded?: (mesh: THREE.Mesh) => void): T
     caveDarkMat
   );
   tunnelBacking.position.set(0, 1.9, -1.8);
-  group.add(tunnelBacking);
+  tunnelGroup.add(tunnelBacking);
 
   // 5. Warmes, atmosphärisches Grubenlicht aus der Tiefe des Minenstollens
   const mineInteriorLight = new THREE.PointLight(0xffaa44, 1.25, 8.5);
   mineInteriorLight.position.set(0.3, 2.1, 0.4);
-  group.add(mineInteriorLight);
+  tunnelGroup.add(mineInteriorLight);
 
   // 6. Funkelnde Silbererz-Drusen an den Felsrändern des Stolleneingangs
   for (const [vx, vy, vz, rotZ] of [
@@ -321,7 +332,7 @@ export function createMountainCave(onMeshLoaded?: (mesh: THREE.Mesh) => void): T
     vein.scale.set(1.5, 0.7, 0.8);
     vein.rotation.z = rotZ;
     vein.userData = { interactableType: 'cave' };
-    group.add(vein);
+    tunnelGroup.add(vein);
   }
 
   // Alle statischen Meshes für Raycasting markieren

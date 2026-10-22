@@ -115,11 +115,11 @@ export class CrossroadsState {
   private readonly cavePos: Vector2D = { x: CAVE_ENTRANCE_POS.x, z: CAVE_ENTRANCE_POS.z };
   private readonly caveCollisionRadius = 3.0;
   // Mindestabstand vor der Felsfront/Stollenöffnung im lokalen Koordinatensystem des Berges
-  private readonly caveFrontWallLz = 1.55;
+  private readonly caveFrontWallLz = 3.35;
   private readonly caveLocalRockColliders: readonly { lx: number; lz: number; radius: number }[] = [
-    { lx: 0, lz: -1.45, radius: 3.0 }, // Stollenmundloch & Felsüberhang
-    { lx: -3.5, lz: -2.1, radius: 3.65 }, // Linke Felsflanke
-    { lx: 3.6, lz: -2.2, radius: 3.85 }, // Rechte Felsflanke
+    { lx: 0, lz: 0.35, radius: 3.0 }, // Stollenhinterwand & Felsüberhang
+    { lx: -5.0, lz: -0.5, radius: 3.8 }, // Linke Felsflanke
+    { lx: 5.0, lz: -0.5, radius: 3.8 }, // Rechte Felsflanke
   ];
 
   // Auf Weg 1: Felsbrocken, der den Silberstollen-Pfad blockiert
