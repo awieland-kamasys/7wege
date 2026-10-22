@@ -60,7 +60,7 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
   const loader = new GLTFLoader();
 
   // ==========================================
-  // 1. MITTELALTERLICHE BURG (medieval castle 3d model.glb)
+  // 1. MITTELALTERLICHE BURG (medieval castle 3d model neu.glb)
   // ==========================================
   const castleGroup = new THREE.Group();
   castleGroup.name = 'MedievalCastle';
@@ -93,10 +93,10 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
   group.add(castleGroup);
 
   loader.load(
-    '/assets/models/medieval castle 3d model.glb',
+    '/assets/models/medieval castle 3d model neu.glb',
     (gltf) => {
       const model = gltf.scene;
-      // Stattliche Skalierung (Breite ca. 8.2m, Höhe ca. 5.6m, Tiefe ca. 7.4m)
+      // Stattliche Skalierung (Breite ca. 8.2m, Höhe ca. 5.6m, Tiefe ca. 6.2m)
       model.scale.setScalar(8.2);
       // Drehung: um 180 Grad gedreht gegenüber der ursprünglichen Ausrichtung
       model.rotation.y = Math.PI * 0.25;
@@ -130,7 +130,7 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
     },
     undefined,
     (err) => {
-      console.warn('Modell medieval castle 3d model.glb konnte nicht geladen werden:', err);
+      console.warn('Modell medieval castle 3d model neu.glb konnte nicht geladen werden:', err);
     }
   );
 
