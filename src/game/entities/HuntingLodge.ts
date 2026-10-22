@@ -119,7 +119,7 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
     new THREE.BoxGeometry(3.4, 0.30, 3.2),
     soilMat
   );
-  gardenFallback.rotation.y = Math.PI;
+  gardenFallback.rotation.y = Math.PI * 0.5;
   gardenFallback.position.set(0, 0.15, 0);
   gardenFallback.castShadow = true;
   gardenFallback.receiveShadow = true;
@@ -137,8 +137,8 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
       const model = gltf.scene;
       // Stattliche Skalierung passend zur Szene vor der Burg (Breite ca. 3.5m, Tiefe ca. 3.35m, Höhe ca. 1.1m)
       model.scale.setScalar(3.5);
-      // Drehung: um 180 Grad gedreht
-      model.rotation.y = Math.PI;
+      // Drehung: um 90 Grad gedreht (um 90 Grad zurück von 180 Grad)
+      model.rotation.y = Math.PI * 0.5;
 
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
