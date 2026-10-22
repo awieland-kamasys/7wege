@@ -463,8 +463,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.huntingLodge.group);
 
-    // Der Wilde Jäger (NPC) an der Jagdhütte
-    this.wildHunterNpc = createWildHunterNpc();
+    // Der Wilde Jäger (NPC) an der Jagdhütte (3D-Waldläufer-Modell)
+    this.wildHunterNpc = createWildHunterNpc((mesh) => {
+      this.pickableObjects.push(mesh);
+    });
     this.wildHunterNpc.group.position.set(
       WILD_HUNTER_NPC_POS.x,
       getTerrainHeight(WILD_HUNTER_NPC_POS.x, WILD_HUNTER_NPC_POS.z),
@@ -1096,38 +1098,19 @@ export class CrossroadsScene {
       this.scene.add(burnedCrownLightMesh);
     }
 
-    // 6. Nistkästen gezielt an Bäumen entlang der Wege und der zentralen Lichtung platzieren
+    // 6. Nistkästen ausschließlich an den Bäumen der zentralen 7-Wege-Lichtung platzieren und zur Schutzhütte (0, 0) ausrichten
     const birdhouseInstances: BirdhouseInstance[] = [];
 
-    // Bäume am Wegesrand (birdhouseAngle ist bereits direkt zum Pfad hin ausgerichtet)
-    const roadsideTrees = normalTrees.filter((t) => t.birdhouseAngle !== undefined);
-    for (let i = 0; i < roadsideTrees.length; i++) {
-      if (i % 2 === 0) {
-        const t = roadsideTrees[i];
-        const angle = t.birdhouseAngle!;
-        // Auf Stammhöhe (ca. 0.92m) frei und unbedeckt unter den Nadelästen montieren (keine Überlappung mit der Krone!)
-        const trunkRadiusAtHeight = 0.272 * t.scale;
-        const bx = t.x + Math.sin(angle) * trunkRadiusAtHeight;
-        const bz = t.z + Math.cos(angle) * trunkRadiusAtHeight;
-
-        birdhouseInstances.push({
-          x: bx,
-          y: getTerrainHeight(bx, bz) + 0.92 * t.scale,
-          z: bz,
-          rotationY: angle,
-          scale: t.scale * 1.05,
-        });
-      }
-    }
-
-    // Bäume um die zentrale Waldkreuzung und Schutzhütte (Blick zur Lichtungsmitte 0, 0)
-    const centralTrees = normalTrees.filter((t) => {
+    // Alle Bäume an der 7-Wege-Lichtung rund um die Schutzhütte (Radius 5.2m bis 17.5m um das Zentrum 0, 0)
+    const clearingTrees = normalTrees.filter((t) => {
       const dist = Math.hypot(t.x, t.z);
-      return dist > 5.0 && dist < 18.0 && t.birdhouseAngle === undefined;
+      return dist > 5.2 && dist < 17.5;
     });
-    for (let i = 0; i < centralTrees.length; i++) {
-      if (i % 3 === 0) {
-        const t = centralTrees[i];
+
+    for (let i = 0; i < clearingTrees.length; i++) {
+      if (i % 2 === 0) {
+        const t = clearingTrees[i];
+        // Exakt zur Schutzhütte im Zentrum (0, 0) ausrichten
         const angle = Math.atan2(0 - t.x, 0 - t.z);
         const trunkRadiusAtHeight = 0.272 * t.scale;
         const bx = t.x + Math.sin(angle) * trunkRadiusAtHeight;

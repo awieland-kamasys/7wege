@@ -331,7 +331,7 @@ export const HUNTING_LODGE_POS = {
 } as const;
 
 /**
- * Position des Wilden Jägers (mit Pferd und Jagdhund) an der Jagdhütte.
+ * Position des Wilden Jägers an der Jagdhütte.
  */
 export const WILD_HUNTER_NPC_POS: PathPoint2D = {
   x: -41.8,

@@ -76,12 +76,6 @@ export function createHuntingLodge(): HuntingLodgeEntity {
     roughness: 0.6,
   });
 
-  // Tier-Materialien (Pferd & Hund)
-  const horseCoatMat = new THREE.MeshStandardMaterial({ color: 0x4a2810, roughness: 0.75 });
-  const horseManeMat = new THREE.MeshStandardMaterial({ color: 0x1f1107, roughness: 0.9 });
-  const horseLeatherMat = new THREE.MeshStandardMaterial({ color: 0x261609, roughness: 0.6 });
-  const dogFurMat = new THREE.MeshStandardMaterial({ color: 0x6e3816, roughness: 0.8 });
-  const dogPatchMat = new THREE.MeshStandardMaterial({ color: 0xe8e1d5, roughness: 0.8 });
   const smokeMat = new THREE.MeshStandardMaterial({
     color: 0xd4d8d6,
     roughness: 0.9,
@@ -455,195 +449,7 @@ export function createHuntingLodge(): HuntingLodgeEntity {
   group.add(gardenGroup);
 
   // ==========================================
-  // 3. DAS JAGDPFERD DES WILDEN JÄGERS
-  // ==========================================
-  const horseGroup = new THREE.Group();
-  horseGroup.position.set(0.6, 0, -2.4);
-  horseGroup.rotation.y = 0.45;
-
-  // Rumpf
-  const horseBody = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.42, 1.25, 8, 10),
-    horseCoatMat
-  );
-  horseBody.rotation.x = Math.PI / 2;
-  horseBody.position.y = 1.35;
-  horseBody.castShadow = true;
-  horseGroup.add(horseBody);
-
-  // Satteldecke / Reitzeug
-  const saddle = new THREE.Mesh(
-    new THREE.BoxGeometry(0.68, 0.2, 0.62),
-    horseLeatherMat
-  );
-  saddle.position.set(0, 1.58, 0.05);
-  saddle.castShadow = true;
-  horseGroup.add(saddle);
-
-  // Hals
-  const horseNeck = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.24, 0.34, 0.85, 8),
-    horseCoatMat
-  );
-  horseNeck.position.set(0, 1.82, 0.65);
-  horseNeck.rotation.x = -0.55;
-  horseNeck.castShadow = true;
-  horseGroup.add(horseNeck);
-
-  // Kopf
-  const horseHead = new THREE.Mesh(
-    new THREE.ConeGeometry(0.22, 0.68, 8),
-    horseCoatMat
-  );
-  horseHead.position.set(0, 2.12, 0.98);
-  horseHead.rotation.x = 1.2;
-  horseHead.castShadow = true;
-  horseGroup.add(horseHead);
-
-  // Ohren
-  for (const side of [-1, 1]) {
-    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 5), horseCoatMat);
-    ear.position.set(side * 0.1, 2.38, 0.88);
-    ear.rotation.z = -side * 0.25;
-    horseGroup.add(ear);
-  }
-
-  // Mähne
-  const mane = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.72, 0.18),
-    horseManeMat
-  );
-  mane.position.set(0, 1.95, 0.58);
-  mane.rotation.x = -0.55;
-  horseGroup.add(mane);
-
-  // Vier Pferdebeine
-  const legPositions: [number, number][] = [
-    [-0.26, 0.48],
-    [0.26, 0.48],
-    [-0.26, -0.48],
-    [0.26, -0.48],
-  ];
-  for (const [lx, lz] of legPositions) {
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.09, 0.075, 1.35, 7),
-      horseCoatMat
-    );
-    leg.position.set(lx, 0.68, lz);
-    leg.castShadow = true;
-    horseGroup.add(leg);
-
-    // Huf
-    const hoof = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.095, 0.12, 7),
-      horseManeMat
-    );
-    hoof.position.set(lx, 0.06, lz);
-    horseGroup.add(hoof);
-  }
-
-  // Animierter Schweif
-  const horseTail = new THREE.Mesh(
-    new THREE.ConeGeometry(0.12, 0.78, 6),
-    horseManeMat
-  );
-  horseTail.position.set(0, 1.32, -0.72);
-  horseTail.rotation.x = 0.35;
-  horseTail.castShadow = true;
-  horseGroup.add(horseTail);
-
-  horseGroup.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh) {
-      child.userData = { interactableType: 'wild_hunter' };
-    }
-  });
-  group.add(horseGroup);
-
-  // ==========================================
-  // 4. DER TREUE JAGDHUND
-  // ==========================================
-  const dogGroup = new THREE.Group();
-  dogGroup.position.set(1.2, 0, -0.9);
-  dogGroup.rotation.y = 1.95;
-
-  // Körper
-  const dogBody = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.18, 0.54, 7, 8),
-    dogFurMat
-  );
-  dogBody.rotation.x = Math.PI / 2;
-  dogBody.position.y = 0.45;
-  dogBody.castShadow = true;
-  dogGroup.add(dogBody);
-
-  // Weiße Brustpartie
-  const dogChest = new THREE.Mesh(
-    new THREE.SphereGeometry(0.19, 7, 7),
-    dogPatchMat
-  );
-  dogChest.position.set(0, 0.46, 0.18);
-  dogChest.scale.set(0.9, 1.0, 0.8);
-  dogGroup.add(dogChest);
-
-  // Kopf mit Schnauze
-  const dogHead = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 8), dogFurMat);
-  dogHead.position.set(0, 0.65, 0.38);
-  dogHead.castShadow = true;
-  dogGroup.add(dogHead);
-
-  const dogSnout = new THREE.Mesh(
-    new THREE.BoxGeometry(0.11, 0.09, 0.16),
-    dogPatchMat
-  );
-  dogSnout.position.set(0, 0.62, 0.5);
-  dogGroup.add(dogSnout);
-
-  // Schlappohren
-  for (const side of [-1, 1]) {
-    const ear = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.04, 0.14, 4, 6),
-      dogFurMat
-    );
-    ear.position.set(side * 0.12, 0.62, 0.36);
-    ear.rotation.z = -side * 0.45;
-    dogGroup.add(ear);
-  }
-
-  // 4 Hundeläufe
-  for (const [dx, dz] of [
-    [-0.12, 0.22],
-    [0.12, 0.22],
-    [-0.12, -0.2],
-    [0.12, -0.2],
-  ]) {
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.042, 0.038, 0.42, 6),
-      dogPatchMat
-    );
-    leg.position.set(dx, 0.21, dz);
-    leg.castShadow = true;
-    dogGroup.add(leg);
-  }
-
-  // Animierte Rute (Schwanz)
-  const dogTail = new THREE.Mesh(
-    new THREE.ConeGeometry(0.04, 0.32, 5),
-    dogFurMat
-  );
-  dogTail.position.set(0, 0.52, -0.32);
-  dogTail.rotation.x = 0.75;
-  dogTail.castShadow = true;
-  dogGroup.add(dogTail);
-
-  dogGroup.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh) {
-      child.userData = { interactableType: 'wild_hunter' };
-    }
-  });
-  group.add(dogGroup);
-
-  // ==========================================
-  // UPDATE LOOP (Rauch, Schweifwedeln & Kräuter)
+  // UPDATE LOOP (Kaminrauch & Kräuter)
   // ==========================================
   const update = (elapsedSeconds: number): void => {
     // 1. Kaminrauch aufsteigen und wabern lassen
@@ -660,21 +466,13 @@ export function createHuntingLodge(): HuntingLodgeEntity {
       );
     }
 
-    // 2. Pferdeschweif wedelt ruhig
-    horseTail.rotation.z = Math.sin(elapsedSeconds * 1.8) * 0.22;
-    horseNeck.rotation.x = -0.55 + Math.sin(elapsedSeconds * 1.2) * 0.04;
-
-    // 3. Jagdhund wedelt lebhaft mit dem Schwanz und atmet
-    dogTail.rotation.y = Math.sin(elapsedSeconds * 6.0) * 0.45;
-    dogBody.scale.y = 1.0 + Math.sin(elapsedSeconds * 3.0) * 0.03;
-
-    // 4. Sanftes Wogen der Kräuter im Wind
+    // 2. Sanftes Wogen der Kräuter im Wind
     const wind = Math.sin(elapsedSeconds * 2.2);
     for (let h = 0; h < herbStems.length; h++) {
       herbStems[h].rotation.z = wind * (0.04 + (h % 3) * 0.015);
     }
 
-    // 5. Mondwurz-Pulsieren
+    // 3. Mondwurz-Pulsieren
     moonwortLight.intensity = 0.85 + Math.sin(elapsedSeconds * 2.5) * 0.35;
   };
 

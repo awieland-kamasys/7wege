@@ -187,9 +187,6 @@ export class CrossroadsState {
   private readonly huntingCabinCenter: Vector2D = { x: -46.6, z: 26.0 };
   private readonly huntingCabinHalfWidth = 2.3;
   private readonly huntingCabinHalfDepth = 2.0;
-  // Jagdpferd steht bei (-43.6, 20.4)
-  private readonly horsePos: Vector2D = { x: -43.6, z: 20.4 };
-  private readonly horseCollisionRadius = 0.85;
 
   // Am Ende des 7. Weges: Das geschlossene Tor mit flankierenden Steinmauern
   private readonly gatePos: Vector2D = { x: CLOSED_GATE_POS.x, z: CLOSED_GATE_POS.z };
@@ -990,11 +987,6 @@ export class CrossroadsState {
     if (Math.abs(x - (-48.8)) < 0.65 - eps && Math.abs(z - 25.4) < 0.65 - eps) {
       return true;
     }
-    // Jagdhund neben dem Wilden Jäger bei (-41.2, 22.4)
-    if (Math.hypot(x - (-41.2), z - 22.4) < 0.45 - eps) {
-      return true;
-    }
-
     // Der Wilde Jäger an der Jagdhütte auf Weg 6
     if (
       Math.hypot(x - this.wildHunterPos.x, z - this.wildHunterPos.z) <
@@ -1007,14 +999,6 @@ export class CrossroadsState {
     if (
       Math.hypot(x - this.woodWomanLodgePos.x, z - this.woodWomanLodgePos.z) <
       this.woodWomanLodgeCollisionRadius - eps
-    ) {
-      return true;
-    }
-
-    // Das Jagdpferd neben der Jagdhütte
-    if (
-      Math.hypot(x - this.horsePos.x, z - this.horsePos.z) <
-      this.horseCollisionRadius - eps
     ) {
       return true;
     }
@@ -1579,16 +1563,6 @@ export class CrossroadsState {
       resolvedX = afterLodgeWoman.x;
       resolvedZ = afterLodgeWoman.z;
 
-      // Jagdpferd neben der Hütte
-      const afterHorse = this.pushOutOfCircle(
-        resolvedX,
-        resolvedZ,
-        this.horsePos,
-        this.horseCollisionRadius
-      );
-      resolvedX = afterHorse.x;
-      resolvedZ = afterHorse.z;
-
       // Eingezäunter Kräutergarten auf Weg 6 (AABB um -46.7, 21.0)
       const relGardenX = resolvedX - (-46.7);
       const relGardenZ = resolvedZ - 21.0;
@@ -1614,16 +1588,6 @@ export class CrossroadsState {
           resolvedZ = 25.4 + (relChimneyZ >= 0 ? 0.65 : -0.65);
         }
       }
-
-      // Jagdhund neben dem Wilden Jäger bei (-41.2, 22.4)
-      const afterDog = this.pushOutOfCircle(
-        resolvedX,
-        resolvedZ,
-        { x: -41.2, z: 22.4 },
-        0.45
-      );
-      resolvedX = afterDog.x;
-      resolvedZ = afterDog.z;
 
       // Jagdhütte selbst (AABB um huntingCabinCenter)
       const relCabinX = resolvedX - this.huntingCabinCenter.x;
