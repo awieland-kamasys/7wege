@@ -34,7 +34,7 @@ export function createWildHunterNpc(
     new THREE.OctahedronGeometry(0.15, 0),
     indicatorMat
   );
-  indicator.position.y = 2.08;
+  indicator.position.y = 2.35;
   group.add(indicator);
 
   // 2. Temporäre dezente Platzhalter-Geometrie während des Ladens des GLB-Modells
@@ -44,10 +44,10 @@ export function createWildHunterNpc(
     roughness: 0.85,
   });
   const fallbackBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.24, 0.36, 1.45, 8),
+    new THREE.CylinderGeometry(0.25, 0.38, 1.65, 8),
     fallbackMat
   );
-  fallbackBody.position.y = 0.725;
+  fallbackBody.position.y = 0.825;
   fallbackBody.castShadow = true;
   fallbackBody.userData = { interactableType: 'wild_hunter' };
   fallbackGroup.add(fallbackBody);
@@ -63,8 +63,8 @@ export function createWildHunterNpc(
     (gltf) => {
       const model = gltf.scene;
 
-      // Skalierung: Originalmodell ist 1.00m hoch -> 1.80x für stattliche Körpergröße des Jägers
-      model.scale.setScalar(1.80);
+      // Skalierung: Originalmodell ist 1.00m hoch -> 2.05x für hünenhafte Körpergröße des Jägers (einen Kopf größer)
+      model.scale.setScalar(2.05);
 
       // Bounding-Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
       model.updateMatrixWorld(true);
@@ -112,7 +112,7 @@ export function createWildHunterNpc(
     isHighlighted: boolean
   ): void => {
     // Kristall-Animation
-    indicator.position.y = 2.08 + Math.sin(elapsedSeconds * 2.6) * 0.06;
+    indicator.position.y = 2.35 + Math.sin(elapsedSeconds * 2.6) * 0.06;
     indicator.rotation.y = elapsedSeconds * 1.4;
 
     indicatorMat.emissiveIntensity = isHighlighted ? 1.25 : 0.65;

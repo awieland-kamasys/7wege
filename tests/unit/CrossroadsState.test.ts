@@ -954,5 +954,47 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     // 3. Kräutergarten-Zaun auf Weg 6 (-46.7, 21.0)
     expect(state.isCollidingWithObstacles(-46.7, 21.0)).toBe(true);
   });
-});
+  it('kehrt per returnToClearing mit doppelter Geschwindigkeit (13 m/s) autonom zur 7-Wegekreuzung zurück', () => {
+    const state = new CrossroadsState();
 
+    // Spielfigur befindet sich am Beginn des Tests auf Weg 7 (ca. 27m von der Kreuzung)
+    expect(state.isOnClearing()).toBe(false);
+    expect(state.isReturning()).toBe(false);
+
+    // Automatischen Rücklauf starten
+    const target = state.returnToClearing();
+    expect(target.x).toBeCloseTo(0, 2);
+    expect(target.z).toBeCloseTo(4.8, 2);
+    expect(state.isReturning()).toBe(true);
+
+    // 1 Schritt mit 0.1 Sekunden
+    const startPos = state.getPlayerPosition();
+    state.updateAutoWalk(0.1);
+    const posAfterStep = state.getPlayerPosition();
+    const distMoved = Math.hypot(posAfterStep.x - startPos.x, posAfterStep.z - startPos.z);
+    // Bei 13.0 m/s und dt=0.1s muss sich die Figur ca. 1.3m vorwärts bewegen (deutlich mehr als 6.5 * 0.1 = 0.65m)
+    expect(distMoved).toBeGreaterThan(1.0);
+
+    // Nach ausreichend Zeit erreicht die Spielfigur die Lichtung
+    for (let i = 0; i < 40; i++) {
+      state.updateAutoWalk(0.1);
+    }
+    expect(state.isOnClearing()).toBe(true);
+
+    // Vollständiger Rücklauf bis zum Zielpunkt (0, 4.8)
+    for (let i = 0; i < 30; i++) {
+      state.updateAutoWalk(0.1);
+    }
+    expect(state.getTargetPosition()).toBeNull();
+    expect(state.isReturning()).toBe(false);
+    const finalPos = state.getPlayerPosition();
+    expect(Math.hypot(finalPos.x - 0, finalPos.z - 4.8)).toBeLessThan(0.25);
+
+    // Manuelle Eingabe während des Rücklaufs bricht den Rücklauf ab
+    state.movePlayerToPathEntrance(2, 20);
+    state.returnToClearing();
+    expect(state.isReturning()).toBe(true);
+    state.clearTargetPosition();
+    expect(state.isReturning()).toBe(false);
+  });
+});

@@ -80,8 +80,8 @@ export class HudOverlay {
     this.returnToClearingBtn.type = 'button';
     this.returnToClearingBtn.className = 'active-path-return-btn';
     this.returnToClearingBtn.textContent = '↩ Zur 7-Wegekreuzung';
-    this.returnToClearingBtn.title = 'Per Klick zurück zur 7-Wegekreuzung springen';
-    this.returnToClearingBtn.setAttribute('aria-label', 'Zurück zur 7-Wegekreuzung springen');
+    this.returnToClearingBtn.title = 'Per Klick im Dauerlauf (doppeltes Tempo) zurück zur 7-Wegekreuzung laufen';
+    this.returnToClearingBtn.setAttribute('aria-label', 'Zurück zur 7-Wegekreuzung laufen');
     this.returnToClearingBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.callbacks.onReturnToClearing();

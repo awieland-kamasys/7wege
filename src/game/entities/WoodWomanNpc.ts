@@ -60,7 +60,7 @@ export function createWoodWomanNpc(
     new THREE.OctahedronGeometry(0.15, 0),
     indicatorMat
   );
-  indicator.position.y = 1.95;
+  indicator.position.y = 1.72;
   group.add(indicator);
 
   // 2. Temporäre dezente Platzhalter-Geometrie während des Ladens des GLB-Modells
@@ -70,10 +70,10 @@ export function createWoodWomanNpc(
     roughness: 0.88,
   });
   const fallbackBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.24, 0.38, 1.35, 8),
+    new THREE.CylinderGeometry(0.22, 0.35, 1.18, 8),
     fallbackMat
   );
-  fallbackBody.position.y = 0.675;
+  fallbackBody.position.y = 0.59;
   fallbackBody.castShadow = true;
   fallbackBody.userData = { interactableType };
   fallbackGroup.add(fallbackBody);
@@ -90,8 +90,8 @@ export function createWoodWomanNpc(
       (gltf) => {
         const model = gltf.scene;
 
-        // Skalierung: Originalmodell ist 1.00m hoch -> 1.68x für natürliche Körpergröße einer Walddruidin
-        model.scale.setScalar(1.68);
+        // Skalierung: Originalmodell ist 1.00m hoch -> 1.46x für zierlichere Gestalt der Walddruidin (einen Kopf kleiner)
+        model.scale.setScalar(1.46);
 
         // Bounding-Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
         model.updateMatrixWorld(true);
@@ -146,7 +146,7 @@ export function createWoodWomanNpc(
     isHighlighted: boolean
   ): void => {
     // Sanftes Schweben und Rotieren des Kristalls
-    indicator.position.y = 1.95 + Math.sin(elapsedSeconds * 2.5) * 0.05;
+    indicator.position.y = 1.72 + Math.sin(elapsedSeconds * 2.5) * 0.05;
     indicator.rotation.y = elapsedSeconds * 1.3;
 
     indicatorMat.emissiveIntensity = isHighlighted ? 1.25 : 0.6;

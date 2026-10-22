@@ -200,6 +200,7 @@ export class CrossroadsState {
   private targetPos: Vector2D | null = null;
   private selectedPathId: number | null = 7;
   private chestOpen = false;
+  private isReturningToClearing = false;
 
   public getPlayerPosition(): Readonly<Vector2D> {
     return { ...this.playerPos };
@@ -566,11 +567,29 @@ export class CrossroadsState {
   }
 
   /**
+   * Gibt an, ob die Spielfigur aktuell mit doppelter Geschwindigkeit
+   * selbsttätig zur 7-Wegekreuzung zurückläuft.
+   */
+  public isReturning(): boolean {
+    return this.isReturningToClearing;
+  }
+
+  /**
+   * Startet den automatischen Rücklauf zur zentralen Waldkreuzung mit doppelter
+   * normaler Geschwindigkeit (13.0 m/s statt 6.5 m/s) entlang der geschwungenen Pfade.
+   */
+  public returnToClearing(): Readonly<Vector2D> {
+    this.selectedPathId = null;
+    const target = this.setTargetPosition(0, 4.8);
+    this.isReturningToClearing = true;
+    return target;
+  }
+
+  /**
    * Lässt die Spielfigur zurück auf die zentrale Waldkreuzung laufen.
    */
   public setTargetToClearing(): Readonly<Vector2D> {
-    this.selectedPathId = null;
-    return this.setTargetPosition(0, 4.2);
+    return this.returnToClearing();
   }
 
   /**
@@ -579,6 +598,7 @@ export class CrossroadsState {
   public jumpToClearing(): Readonly<Vector2D> {
     this.selectedPathId = null;
     this.targetPos = null;
+    this.isReturningToClearing = false;
     this.playerPos = { x: 0, z: 4.8 };
     return this.getPlayerPosition();
   }
@@ -1841,6 +1861,7 @@ export class CrossroadsState {
    * Setzt ein Ziel für die Mausbewegung (Click-to-Move) auf einen gültigen Punkt auf Weg oder Kreuzung.
    */
   public setTargetPosition(x: number, z: number): Readonly<Vector2D> {
+    this.isReturningToClearing = false;
     const onSurface = this.projectOntoWalkableSurface(x, z, null);
     const collisionFree = this.resolveObstacleCollisions(onSurface.x, onSurface.z);
     const projectedBack = this.projectOntoWalkableSurface(collisionFree.x, collisionFree.z, null);
@@ -1850,6 +1871,7 @@ export class CrossroadsState {
 
   public clearTargetPosition(): void {
     this.targetPos = null;
+    this.isReturningToClearing = false;
   }
 
   /**
@@ -2038,12 +2060,17 @@ export class CrossroadsState {
   }
 
   /**
-   * Aktualisiert die schrittweise Bewegung zum Zielpunkt (Click-to-Move).
+   * Aktualisiert die schrittweise Bewegung zum Zielpunkt (Click-to-Move bzw. automatischer Rücklauf).
+   * Bei aktivem Rücklauf zur 7-Wegekreuzung wird die doppelte Geschwindigkeit (13.0 m/s) verwendet.
    */
-  public updateAutoWalk(dtSeconds: number, speed = 6.5): Readonly<Vector2D> {
+  public updateAutoWalk(dtSeconds: number, speed?: number): Readonly<Vector2D> {
     if (!this.targetPos || dtSeconds <= 0) {
+      this.isReturningToClearing = false;
       return this.getPlayerPosition();
     }
+
+    const effectiveSpeed =
+      speed !== undefined ? speed : (this.isReturningToClearing ? 13.0 : 6.5);
 
     let effectiveTarget = this.targetPos;
     const playerDist = Math.hypot(this.playerPos.x, this.playerPos.z);
@@ -2190,7 +2217,7 @@ export class CrossroadsState {
     const dx = effectiveTarget.x - this.playerPos.x;
     const dz = effectiveTarget.z - this.playerPos.z;
     const dist = Math.hypot(dx, dz);
-    const maxStep = speed * dtSeconds;
+    const maxStep = effectiveSpeed * dtSeconds;
 
     if (dist <= maxStep || dist < 0.05) {
       const prevPos = { ...this.playerPos };
@@ -2200,11 +2227,13 @@ export class CrossroadsState {
         Math.hypot(this.playerPos.x - this.targetPos.x, this.playerPos.z - this.targetPos.z) < 0.15
       ) {
         this.targetPos = null;
+        this.isReturningToClearing = false;
       } else if (
         effectiveTarget === this.targetPos &&
         Math.hypot(this.playerPos.x - prevPos.x, this.playerPos.z - prevPos.z) < 0.001
       ) {
         this.targetPos = null;
+        this.isReturningToClearing = false;
       }
       return this.getPlayerPosition();
     }

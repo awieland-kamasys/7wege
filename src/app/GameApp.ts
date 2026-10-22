@@ -61,7 +61,7 @@ export class GameApp {
         this.state.setTargetToPathEntrance(pathId);
       },
       onReturnToClearing: () => {
-        this.jumpToClearing();
+        this.returnToClearing();
       },
       onTalkToNpc: () => {
         this.initiateTalkToNpc();
@@ -138,6 +138,16 @@ export class GameApp {
     } else {
       this.sound.playChestCloseSound();
     }
+  }
+
+  /**
+   * Lässt die Spielfigur mit doppelter Geschwindigkeit (13.0 m/s)
+   * flüssig zur zentralen 7-Wegekreuzung zurücklaufen.
+   */
+  public returnToClearing(): void {
+    this.closeDialogueAndSpeech();
+    this.clearPendingActions();
+    this.state.returnToClearing();
   }
 
   public jumpToClearing(): void {
@@ -409,9 +419,9 @@ export class GameApp {
       this.state.setTargetToPathEntrance(pathId);
     }
 
-    // Schneller Rücksprung zur 7-Wegekreuzung per Taste 0 oder Backspace (wenn auf Wegen unterwegs und kein Dialog offen)
+    // Schneller Rücklauf zur 7-Wegekreuzung per Taste 0 oder Backspace (wenn auf Wegen unterwegs und kein Dialog offen)
     if (!this.dialogue.isOpen() && !this.state.isOnClearing() && (key === '0' || key === 'backspace')) {
-      this.jumpToClearing();
+      this.returnToClearing();
       return;
     }
   };
