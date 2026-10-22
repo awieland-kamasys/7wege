@@ -285,7 +285,7 @@ export function createMountainCave(onMeshLoaded?: (mesh: THREE.Mesh) => void): T
   // 3. Lade das detaillierte 3D-Modell des schneebedeckten Minentunnels
   const loader = new GLTFLoader();
   loader.load(
-    '/assets/models/snowy mine tunnel 3d model.glb',
+    '/assets/models/snowy mine tunnel 3d model_ohne.glb',
     (gltf) => {
       const model = gltf.scene;
 
@@ -328,7 +328,7 @@ export function createMountainCave(onMeshLoaded?: (mesh: THREE.Mesh) => void): T
     },
     undefined,
     (err) => {
-      console.warn('Minenmodell snowy mine tunnel 3d model.glb konnte nicht geladen werden:', err);
+      console.warn('Minenmodell snowy mine tunnel 3d model_ohne.glb konnte nicht geladen werden:', err);
     }
   );
 
