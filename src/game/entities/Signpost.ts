@@ -60,7 +60,7 @@ export function createSignpost(): SignpostEntity {
   group.add(base);
 
   // Holzpfosten
-  const postHeight = 3.1;
+  const postHeight = 3.25;
   const post = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, postHeight, 12), postMaterial);
   post.position.y = postHeight / 2 + 0.2;
   post.castShadow = true;
@@ -131,7 +131,8 @@ export function createSignpost(): SignpostEntity {
   // Sieben Schilder gestaffelt am Pfosten, jeweils in Richtung ihres Weges gedreht
   SEVEN_PATHS.forEach((path, index) => {
     const signPivot = new THREE.Group();
-    const yPos = 2.95 - index * 0.24;
+    // Größere Schilderhöhe (0.24m statt 0.16m) mit angepasster Höhenstaffelung
+    const yPos = 3.08 - index * 0.25;
     signPivot.position.set(0, yPos, 0);
     // Drehung passend zur Wegrichtung (0 Rad = Norden / -Z)
     signPivot.rotation.y = -path.angleRad + Math.PI / 2;
@@ -143,17 +144,18 @@ export function createSignpost(): SignpostEntity {
     });
     signMaterials.set(path.id, mat);
 
-    const board = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.16, 0.06), mat);
-    board.position.x = 0.52;
+    // Deutlich höheres Holzschild (0.24m statt 0.16m)
+    const board = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.24, 0.065), mat);
+    board.position.x = 0.54;
     board.castShadow = true;
     board.userData = { interactableType: 'sign', pathId: path.id };
     signPivot.add(board);
 
-    // Pfeilspitze am Ende des Schildes
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.22, 4), mat);
+    // Pfeilspitze passend zur vergrößerten Schildhöhe
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.165, 0.26, 4), mat);
     tip.rotation.z = -Math.PI / 2;
     tip.rotation.x = Math.PI / 4;
-    tip.position.x = 1.08;
+    tip.position.x = 1.15;
     tip.userData = { interactableType: 'sign', pathId: path.id };
     signPivot.add(tip);
 

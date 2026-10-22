@@ -743,16 +743,16 @@ export class CrossroadsScene {
     group.add(pedestal);
     this.pickableObjects.push(pedestal);
 
-    // Facettierter, transparenter und spiegelnder Edelstein-Kristall
+    // Facettierter, opaker und spiegelnder Edelstein-Kristall mit brillanter Klarlack-Spiegelung
     const gemMat = new THREE.MeshPhysicalMaterial({
       color: colorHex,
-      roughness: 0.08,
-      metalness: 0.35,
+      roughness: 0.12,
+      metalness: 0.18,
       clearcoat: 1.0,
-      clearcoatRoughness: 0.05,
+      clearcoatRoughness: 0.06,
       reflectivity: 0.95,
-      transparent: true,
-      opacity: 0.82,
+      transparent: false,
+      opacity: 1.0,
       emissive: 0x000000,
       emissiveIntensity: 0,
       flatShading: true,
