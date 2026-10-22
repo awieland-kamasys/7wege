@@ -14,6 +14,7 @@ Alle externen Modelle, Texturen, Bilder, Schriften und Audio-Dateien hier dokume
 | Lagerfeuer-Szene Holzfällercamp (`campfire scene 3d model.glb`, 3D-Modell mit Feuerstelle, Scheiten, Kochtopf und Sitzstämmen) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/campfire scene 3d model.glb` | aktiv |
 | Das Holzweibchen / Walddruidin 3D-Charakter (`forest druid 3d model.glb`, 2,15 MB, Tripo 3D PBR-Modell mit Druidenrobe und Geweih/Krone) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/forest druid 3d model.glb` | aktiv |
 | Verziertes Tor 3D-Modell (`ornate gate 3d model.glb`, 1,98 MB, prunkvolles Schmiedetor) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/ornate gate 3d model.glb` | aktiv |
+| Stilisierter Nadelbaum 3D-Modell (`low poly tree model.glb`, 2,48 MB, 9.846 Dreiecke, 2048x2048 PBR-Textur) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/low poly tree model.glb` | Testbetrieb / aktiv |
 
 
 ## Regeln

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
   CAVE_ENTRANCE_POS,
   DEVIL_NPC_POS,
@@ -111,6 +112,36 @@ interface ForestTreeInstance {
   isBurned: boolean;
   birdhouseAngle?: number;
 }
+
+interface HeroTreeConfig {
+  x: number;
+  z: number;
+  scale: number;
+  rotY: number;
+}
+
+/**
+ * Testgruppe von 12 markanten Bäumen mit dem hochdetaillierten 3D-Modell `low poly tree model.glb`.
+ * Platziert direkt entlang des Startpfades auf Weg 7 und um die zentrale Schutzhütte,
+ * um den visuellen Eindruck und die Live-Performance im Spiel vergleichend zu evaluieren.
+ */
+const HERO_TREE_CONFIGS: readonly HeroTreeConfig[] = [
+  // Gruppe 1: Entlang des Startweges (Weg 7) links und rechts vom Spieler im Startblickfeld
+  { x: -22.5, z: -14.8, scale: 5.4, rotY: 1.1 },
+  { x: -18.2, z: -11.5, scale: 5.6, rotY: 2.3 },
+  { x: -13.5, z: -8.8, scale: 5.2, rotY: 0.7 },
+  { x: -17.2, z: -19.4, scale: 5.5, rotY: 3.4 },
+  { x: -12.8, z: -15.8, scale: 5.8, rotY: 4.8 },
+  { x: -8.5, z: -12.4, scale: 5.3, rotY: 1.9 },
+
+  // Gruppe 2: Um die zentrale Schutzhütte und die Kreuzungseingänge
+  { x: -5.8, z: -5.2, scale: 5.5, rotY: 0.4 },
+  { x: -6.4, z: 2.8, scale: 5.4, rotY: 2.9 },
+  { x: 4.6, z: -5.8, scale: 5.7, rotY: 3.7 },
+  { x: 6.8, z: 2.5, scale: 5.3, rotY: 5.2 },
+  { x: 5.4, z: 6.8, scale: 5.6, rotY: 1.6 },
+  { x: -4.8, z: 6.2, scale: 5.2, rotY: 4.1 },
+];
 
 /**
  * Three.js-Szene der Waldkreuzung mit 7 Wegen,
@@ -555,6 +586,7 @@ export class CrossroadsScene {
     this.buildCurvedPath6Trees();
     this.buildCurvedPath7Trees();
     this.buildInstancedForest();
+    this.buildHeroGLBTrees();
     this.buildPath7Wildflowers();
     this.buildForestMushrooms();
     this.buildHellChasmBackdropRocks();
@@ -869,6 +901,15 @@ export class CrossroadsScene {
     return { dark: this.defaultCrownDarkMat, light: this.defaultCrownLightMat };
   }
 
+  private isNearHeroTree(x: number, z: number, minDist = 2.5): boolean {
+    for (const h of HERO_TREE_CONFIGS) {
+      if (Math.hypot(x - h.x, z - h.z) < minDist) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private addTreeToForest(
     x: number,
     z: number,
@@ -877,6 +918,9 @@ export class CrossroadsScene {
     isBurned = false,
     birdhouseAngle?: number
   ): void {
+    if (this.isNearHeroTree(x, z, 2.5)) {
+      return; // Platz für das detailreiche GLB-Hero-Baummodell freihalten
+    }
     this.treeInstances.push({ x, z, scale, useDarkCrown, isBurned, birdhouseAngle });
   }
 
@@ -1060,6 +1104,63 @@ export class CrossroadsScene {
       const mergedBirdhouses = buildMergedBirdhouses(birdhouseInstances);
       this.scene.add(mergedBirdhouses);
     }
+  }
+
+  /**
+   * Lädt das 3D-Modell `low poly tree model.glb` und instanziiert eine Testgruppe von
+   * 12 markanten Bäumen direkt entlang von Weg 7 und um die zentrale Schutzhütte,
+   * um den visuellen Eindruck und die Live-Performance im Spiel vergleichend zu evaluieren.
+   */
+  private buildHeroGLBTrees(): void {
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/low poly tree model.glb',
+      (gltf) => {
+        let sourceMesh: THREE.Mesh | null = null;
+        gltf.scene.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh && !sourceMesh) {
+            sourceMesh = child as THREE.Mesh;
+          }
+        });
+
+        if (!sourceMesh) {
+          console.warn('Kein Mesh in low poly tree model.glb gefunden.');
+          return;
+        }
+
+        const geo = (sourceMesh as THREE.Mesh).geometry.clone();
+        // Modell leicht im Boden versenken (-0.03 bei Einheitsgröße), damit die Wurzelbasis fest im Erdreich sitzt
+        geo.translate(0, -0.03, 0);
+
+        const mat = (sourceMesh as THREE.Mesh).material as THREE.MeshStandardMaterial;
+        if (mat) {
+          mat.roughness = 0.82;
+        }
+
+        const count = HERO_TREE_CONFIGS.length;
+        const instancedMesh = new THREE.InstancedMesh(geo, mat, count);
+        instancedMesh.name = 'InstancedHeroGLBTrees';
+        instancedMesh.castShadow = true;
+        instancedMesh.receiveShadow = true;
+
+        const dummy = new THREE.Object3D();
+        HERO_TREE_CONFIGS.forEach((t, index) => {
+          const gy = getTerrainHeight(t.x, t.z);
+          dummy.position.set(t.x, gy, t.z);
+          dummy.scale.set(t.scale, t.scale, t.scale);
+          dummy.rotation.y = t.rotY;
+          dummy.updateMatrix();
+          instancedMesh.setMatrixAt(index, dummy.matrix);
+        });
+
+        instancedMesh.instanceMatrix.needsUpdate = true;
+        this.scene.add(instancedMesh);
+      },
+      undefined,
+      (err) => {
+        console.warn('Hero-Bäume konnten nicht geladen werden:', err);
+      }
+    );
   }
 
   private isNearCurvedCorridor(
