@@ -177,6 +177,66 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
   group.add(gardenGroup);
 
   // ==========================================
+  // 3. ISOMETRISCHER GARTEN (isometric garden 3d model.glb)
+  // Platziert neben der Burgruine an der südlichen Flanke
+  // ==========================================
+  const isoGardenGroup = new THREE.Group();
+  isoGardenGroup.name = 'IsometricGarden';
+  isoGardenGroup.position.set(-1.8, 0, 4.6);
+
+  // Temporärer Platzhalter während des Ladens
+  const isoGardenFallback = new THREE.Mesh(
+    new THREE.BoxGeometry(3.2, 0.28, 3.0),
+    soilMat
+  );
+  isoGardenFallback.position.set(0, 0.14, 0);
+  isoGardenFallback.castShadow = true;
+  isoGardenFallback.receiveShadow = true;
+  isoGardenFallback.userData = { interactableType: 'herb_garden' };
+  isoGardenGroup.add(isoGardenFallback);
+
+  loader.load(
+    '/assets/models/isometric garden 3d model.glb',
+    (gltf) => {
+      const model = gltf.scene;
+      model.scale.setScalar(3.4);
+
+      model.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(model);
+      model.position.set(0, -bounds.min.y, 0);
+
+      model.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.userData = { interactableType: 'herb_garden' };
+
+          if (mesh.material && 'roughness' in mesh.material) {
+            const mat = mesh.material as THREE.MeshStandardMaterial;
+            mat.roughness = 0.88;
+            mat.metalness = 0.05;
+          }
+
+          if (onMeshLoaded) {
+            onMeshLoaded(mesh);
+          }
+        }
+      });
+
+      isoGardenGroup.remove(isoGardenFallback);
+      disposeObject3D(isoGardenFallback);
+      isoGardenGroup.add(model);
+    },
+    undefined,
+    (err) => {
+      console.warn('Modell isometric garden 3d model.glb konnte nicht geladen werden:', err);
+    }
+  );
+
+  group.add(isoGardenGroup);
+
+  // ==========================================
   // UPDATE LOOP (Mondwurz-Pulsieren über den Beeten)
   // ==========================================
   const update = (elapsedSeconds: number): void => {

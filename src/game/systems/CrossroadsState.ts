@@ -1046,8 +1046,12 @@ export class CrossroadsState {
     }
 
     // Aufbauten und Garten an der Ruinenlichtung auf Weg 6:
-    // Eingezäunter Kräutergarten vor der Burg (AABB um -42.2, 23.2)
+    // Gartenbeete vor der Burg (AABB um -42.2, 23.2)
     if (Math.abs(x - (-42.2)) < 1.7 - eps && Math.abs(z - 23.2) < 1.6 - eps) {
+      return true;
+    }
+    // Isometrischer Garten neben der Burgruine (AABB um -46.0, 27.4)
+    if (Math.abs(x - (-46.0)) < 1.7 - eps && Math.abs(z - 27.4) < 1.6 - eps) {
       return true;
     }
     // Der Wilde Jäger an der Jagdhütte auf Weg 6
@@ -1626,7 +1630,7 @@ export class CrossroadsState {
       resolvedX = afterLodgeWoman.x;
       resolvedZ = afterLodgeWoman.z;
 
-      // Eingezäunter Kräutergarten vor der Burg auf Weg 6 (AABB um -42.2, 23.2)
+      // Gartenbeete vor der Burg auf Weg 6 (AABB um -42.2, 23.2)
       const relGardenX = resolvedX - (-42.2);
       const relGardenZ = resolvedZ - 23.2;
       if (Math.abs(relGardenX) < 1.75 && Math.abs(relGardenZ) < 1.65) {
@@ -1636,6 +1640,19 @@ export class CrossroadsState {
           resolvedX = -42.2 + (relGardenX >= 0 ? 1.75 : -1.75);
         } else {
           resolvedZ = 23.2 + (relGardenZ >= 0 ? 1.65 : -1.65);
+        }
+      }
+
+      // Isometrischer Garten neben der Burgruine auf Weg 6 (AABB um -46.0, 27.4)
+      const relIsoX = resolvedX - (-46.0);
+      const relIsoZ = resolvedZ - 27.4;
+      if (Math.abs(relIsoX) < 1.75 && Math.abs(relIsoZ) < 1.65) {
+        const penX = 1.75 - Math.abs(relIsoX);
+        const penZ = 1.65 - Math.abs(relIsoZ);
+        if (penX < penZ) {
+          resolvedX = -46.0 + (relIsoX >= 0 ? 1.75 : -1.75);
+        } else {
+          resolvedZ = 27.4 + (relIsoZ >= 0 ? 1.65 : -1.65);
         }
       }
 
@@ -2367,7 +2384,19 @@ export class CrossroadsState {
       return {
         type: 'herb_garden',
         label:
-          'Umzäunter Kräutergarten vor der Burg – Königs-Salbei, Lavendel und die seltene Mondwurz gedeihen hier in voller Pracht.',
+          'Gartenbeete vor der Burg – Königs-Salbei, Lavendel und die seltene Mondwurz gedeihen hier in voller Pracht.',
+      };
+    }
+
+    const distToIsoGarden = Math.hypot(
+      this.playerPos.x - (-46.0),
+      this.playerPos.z - 27.4
+    );
+    if (distToIsoGarden < 3.2) {
+      return {
+        type: 'herb_garden',
+        label:
+          'Malerischer Garten neben der Burgruine mit Buchsbaumbeeten, Zierpflanzen und duftenden Bergkräutern.',
       };
     }
 
