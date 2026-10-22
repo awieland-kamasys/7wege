@@ -12,6 +12,7 @@ import {
   PATH_3_WAYPOINTS,
   PATH_4_WAYPOINTS,
   PATH_5_WAYPOINTS,
+  PATH_5_FIRE_POS,
   PATH_6_WAYPOINTS,
   PATH_7_WAYPOINTS,
   PathPoint2D,
@@ -114,13 +115,41 @@ export function createTerrainSplatMap(): THREE.CanvasTexture | null {
     ctx.fill();
   }
 
-  // 5. DIE 7 WEGE ALS ZUSAMMENHÄNGENDE LINIENZÜGE (KEINE KRINGEL ODER OVALE!)
-  const allPaths: readonly (readonly PathPoint2D[])[] = [
+  // 5. DIE WEGE ALS ZUSAMMENHÄNGENDE LINIENZÜGE
+  // Weg 5 wird geteilt: Vor dem Feuerhindernis ist er ein normaler Waldweg (rot),
+  // erst ab dem Feuerhindernis beginnt der dunkle Teufelsweg mit glühenden Adern!
+  const path5BeforeFire: PathPoint2D[] = [
+    PATH_5_WAYPOINTS[0],
+    PATH_5_WAYPOINTS[1],
+    { x: PATH_5_FIRE_POS.x, z: PATH_5_FIRE_POS.z },
+  ];
+  const path5AfterFire: PathPoint2D[] = [
+    { x: PATH_5_FIRE_POS.x, z: PATH_5_FIRE_POS.z },
+    PATH_5_WAYPOINTS[2],
+    PATH_5_WAYPOINTS[3],
+    PATH_5_WAYPOINTS[4],
+    PATH_5_WAYPOINTS[5],
+  ];
+
+  // A) Weicher Brandübergang direkt am Feuerhindernis im Grün-Kanal
+  const firePx = worldToPx(PATH_5_FIRE_POS.x, PATH_5_FIRE_POS.z, size);
+  const fireGrad = ctx.createRadialGradient(
+    firePx.x, firePx.y, (0.8 / 240) * size,
+    firePx.x, firePx.y, (3.2 / 240) * size
+  );
+  fireGrad.addColorStop(0, 'rgba(0, 255, 0, 0.85)');
+  fireGrad.addColorStop(1, 'rgba(0, 255, 0, 0.0)');
+  ctx.fillStyle = fireGrad;
+  ctx.beginPath();
+  ctx.arc(firePx.x, firePx.y, (3.2 / 240) * size, 0, Math.PI * 2);
+  ctx.fill();
+
+  const normalPaths: readonly (readonly PathPoint2D[])[] = [
     PATH_1_WAYPOINTS,
     PATH_2_WAYPOINTS,
     PATH_3_WAYPOINTS,
     PATH_4_WAYPOINTS,
-    PATH_5_WAYPOINTS,
+    path5BeforeFire,
     PATH_6_WAYPOINTS,
     PATH_7_WAYPOINTS,
   ];
@@ -128,41 +157,61 @@ export function createTerrainSplatMap(): THREE.CanvasTexture | null {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  for (let pIdx = 0; pIdx < allPaths.length; pIdx++) {
-    const wps = allPaths[pIdx];
-    const isPath5 = pIdx === 4;
-
+  // 1. Normale Waldwege (reiner Rotkanal = Wiese zu Lehmkieselweg, 0% Lava)
+  for (const wps of normalPaths) {
     const pxPts = wps.map((pt) => worldToPx(pt.x, pt.z, size));
     if (pxPts.length < 2) continue;
 
-    // A) Weicher Außensaum (natürliche Verwachsung mit dem Gras)
-    ctx.strokeStyle = isPath5 ? 'rgba(255, 160, 0, 0.45)' : 'rgba(255, 0, 0, 0.45)';
-    ctx.lineWidth = ((2.7 / 240) * size); // ca. 23 Pixel
+    // Weicher Außensaum
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.45)';
+    ctx.lineWidth = ((2.7 / 240) * size);
     ctx.beginPath();
     ctx.moveTo(pxPts[0].x, pxPts[0].y);
-    for (let i = 1; i < pxPts.length; i++) {
-      ctx.lineTo(pxPts[i].x, pxPts[i].y);
-    }
+    for (let i = 1; i < pxPts.length; i++) ctx.lineTo(pxPts[i].x, pxPts[i].y);
     ctx.stroke();
 
-    // B) Haupt-Gehfläche (feste, gleichmäßige Trittschicht)
-    ctx.strokeStyle = isPath5 ? 'rgba(255, 200, 0, 0.85)' : 'rgba(255, 0, 0, 0.85)';
-    ctx.lineWidth = ((1.85 / 240) * size); // ca. 16 Pixel
+    // Haupt-Gehfläche
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.85)';
+    ctx.lineWidth = ((1.85 / 240) * size);
     ctx.beginPath();
     ctx.moveTo(pxPts[0].x, pxPts[0].y);
-    for (let i = 1; i < pxPts.length; i++) {
-      ctx.lineTo(pxPts[i].x, pxPts[i].y);
-    }
+    for (let i = 1; i < pxPts.length; i++) ctx.lineTo(pxPts[i].x, pxPts[i].y);
     ctx.stroke();
 
-    // C) Kern-Linie (ausgetretene Mitte)
-    ctx.strokeStyle = isPath5 ? 'rgba(255, 255, 0, 1.0)' : 'rgba(255, 0, 0, 1.0)';
-    ctx.lineWidth = ((1.1 / 240) * size); // ca. 9 Pixel
+    // Kern-Linie
+    ctx.strokeStyle = 'rgba(255, 0, 0, 1.0)';
+    ctx.lineWidth = ((1.1 / 240) * size);
     ctx.beginPath();
     ctx.moveTo(pxPts[0].x, pxPts[0].y);
-    for (let i = 1; i < pxPts.length; i++) {
-      ctx.lineTo(pxPts[i].x, pxPts[i].y);
-    }
+    for (let i = 1; i < pxPts.length; i++) ctx.lineTo(pxPts[i].x, pxPts[i].y);
+    ctx.stroke();
+  }
+
+  // 2. Teufelsweg ab dem Feuerhindernis bis zum Höllenschlund (mit Grünkanal = dunkler Obsidianpfad & Magma-Adern)
+  const darkPxPts = path5AfterFire.map((pt) => worldToPx(pt.x, pt.z, size));
+  if (darkPxPts.length >= 2) {
+    // Außensaum
+    ctx.strokeStyle = 'rgba(255, 160, 0, 0.45)';
+    ctx.lineWidth = ((2.8 / 240) * size);
+    ctx.beginPath();
+    ctx.moveTo(darkPxPts[0].x, darkPxPts[0].y);
+    for (let i = 1; i < darkPxPts.length; i++) ctx.lineTo(darkPxPts[i].x, darkPxPts[i].y);
+    ctx.stroke();
+
+    // Hauptgehfläche
+    ctx.strokeStyle = 'rgba(255, 200, 0, 0.85)';
+    ctx.lineWidth = ((1.9 / 240) * size);
+    ctx.beginPath();
+    ctx.moveTo(darkPxPts[0].x, darkPxPts[0].y);
+    for (let i = 1; i < darkPxPts.length; i++) ctx.lineTo(darkPxPts[i].x, darkPxPts[i].y);
+    ctx.stroke();
+
+    // Kernlinie
+    ctx.strokeStyle = 'rgba(255, 255, 0, 1.0)';
+    ctx.lineWidth = ((1.15 / 240) * size);
+    ctx.beginPath();
+    ctx.moveTo(darkPxPts[0].x, darkPxPts[0].y);
+    for (let i = 1; i < darkPxPts.length; i++) ctx.lineTo(darkPxPts[i].x, darkPxPts[i].y);
     ctx.stroke();
   }
 

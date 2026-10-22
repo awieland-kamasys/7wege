@@ -590,10 +590,10 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
 }
 
 /**
- * Erzeugt eine detailreiche Nadelbaum-Textur (Tannennadeln / Fichtenfoliage) für die Baumkronen:
- * - Saftiges, sonniges Sommerwaldgrün mit lebendigen Lichtschattierungen
- * - Feine Nadelbüschel, sonnenbeschienene Nadelspitzen und frischer Sommeraustrieb
- * - Bump-Map für plastische Tiefenwirkung im Sonnenlicht
+ * Erzeugt eine authentische Nadelbaum-Textur (Fichten- & Tannenzweige) mit ausgeprägten Astetagen:
+ * - Kühles, edles Waldtannengrün mit feinen Nadelkämmen (klar von der Sommerwiese differenziert!)
+ * - Horizontale Astquirl-Stockwerke, holzige Zweigachsen und fächerförmig herabhängende Nadelbüschel
+ * - Silbrige Nadelwachs-Lichtkanten und plastische Relief-Bump-Map für echte Nadelbaum-Silhouette
  */
 export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
   if (cachedPineFoliageTexture) {
@@ -615,8 +615,8 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
   bumpCanvas.height = size;
   const bumpCtx = bumpCanvas.getContext('2d');
 
-  // 1. Grundfläche: Saftiges, sonniges Sommerwald-Nadelgrün
-  ctx.fillStyle = '#3e7d44';
+  // 1. Grundfläche: Kühles, tiefes Waldtannengrün (deutlich kühler und nadeliger als die Sommerwiese)
+  ctx.fillStyle = '#1c452b';
   ctx.fillRect(0, 0, size, size);
 
   if (bumpCtx) {
@@ -632,62 +632,93 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
       return (s - 1) / 2147483646;
     };
   };
-  const random = rng(777);
+  const random = rng(888);
 
-  // 2. Weiche Ast- und Lichtschattierungen
-  for (let i = 0; i < 70; i++) {
-    const cx = random() * size;
-    const cy = random() * size;
-    const r = 20 + random() * 40;
-    const isDark = random() > 0.55;
-    const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
-    if (isDark) {
-      grad.addColorStop(0, 'rgba(38, 78, 42, 0.45)');
-      grad.addColorStop(1, 'rgba(38, 78, 42, 0)');
-    } else {
-      grad.addColorStop(0, 'rgba(115, 205, 125, 0.55)');
-      grad.addColorStop(1, 'rgba(115, 205, 125, 0)');
+  // 2. Horizontale Astquirl-Stockwerke (6 Etagen mit Astschatten)
+  const tierCount = 6;
+  const tierHeight = size / tierCount;
+  for (let t = 0; t < tierCount; t++) {
+    const tierY = t * tierHeight;
+
+    // Tiefer Schatten unter der Astetage
+    const shadowGrad = ctx.createLinearGradient(0, tierY + tierHeight * 0.55, 0, tierY + tierHeight);
+    shadowGrad.addColorStop(0, 'rgba(12, 28, 16, 0.0)');
+    shadowGrad.addColorStop(1, 'rgba(10, 24, 14, 0.65)');
+    ctx.fillStyle = shadowGrad;
+    ctx.fillRect(0, tierY + tierHeight * 0.55, size, tierHeight * 0.45);
+
+    if (bumpCtx) {
+      const bGrad = bumpCtx.createLinearGradient(0, tierY, 0, tierY + tierHeight);
+      bGrad.addColorStop(0, 'rgb(180, 180, 180)');
+      bGrad.addColorStop(0.65, 'rgb(210, 210, 210)');
+      bGrad.addColorStop(1, 'rgb(65, 65, 65)');
+      bumpCtx.fillStyle = bGrad;
+      bumpCtx.fillRect(0, tierY, size, tierHeight);
     }
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fill();
   }
 
-  // 3. Feine Nadelbüschel (Fächerförmig angeordnete Nadelstränge im Sonnenlicht)
-  for (let i = 0; i < 550; i++) {
+  // 3. Verholzte Astachsen in jeder Etage
+  for (let t = 0; t < tierCount; t++) {
+    const baseY = t * tierHeight + tierHeight * 0.35;
+    for (let b = 0; b < 5; b++) {
+      const startX = (b / 5) * size + random() * 40;
+      const branchLen = 45 + random() * 65;
+      const angle = (random() - 0.5) * 0.35;
+
+      ctx.strokeStyle = 'rgba(72, 46, 28, 0.85)';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(startX, baseY);
+      ctx.lineTo(startX + Math.cos(angle) * branchLen, baseY + Math.sin(angle) * branchLen + 4);
+      ctx.stroke();
+
+      if (bumpCtx) {
+        bumpCtx.strokeStyle = 'rgba(230, 230, 230, 0.7)';
+        bumpCtx.lineWidth = 2.4;
+        bumpCtx.beginPath();
+        bumpCtx.moveTo(startX, baseY);
+        bumpCtx.lineTo(startX + Math.cos(angle) * branchLen, baseY + Math.sin(angle) * branchLen + 4);
+        bumpCtx.stroke();
+      }
+    }
+  }
+
+  // 4. Dichte fächerförmige Nadelkämme (kammartige Fichten- und Tannennadeln)
+  const needleGroupCount = 750;
+  for (let i = 0; i < needleGroupCount; i++) {
     const bx = random() * size;
     const by = random() * size;
-    const baseAngle = random() * Math.PI * 2;
-    const needleCount = 5 + Math.floor(random() * 5);
-    const branchLen = 8 + random() * 14;
+    // Nadeln neigen sich nach außen und leicht nach unten
+    const baseAngle = Math.PI * 0.5 + (random() - 0.5) * 1.35;
+    const needleCount = 6 + Math.floor(random() * 6);
+    const branchLen = 9 + random() * 16;
 
     for (let n = 0; n < needleCount; n++) {
-      const spread = (n - needleCount / 2) * 0.18;
+      const spread = (n - needleCount / 2) * 0.16;
       const angle = baseAngle + spread;
-      const len = branchLen * (0.8 + random() * 0.4);
+      const len = branchLen * (0.75 + random() * 0.45);
       const ex = bx + Math.cos(angle) * len;
       const ey = by + Math.sin(angle) * len;
 
-      const shade = random();
+      const r = random();
       let color: string;
       let bumpColor: string;
-      if (shade > 0.6) {
-        // Helle Nadelspitze (sonnenbeschienener Sommeraustrieb)
-        color = 'rgba(135, 228, 142, 0.95)';
-        bumpColor = 'rgba(235, 235, 235, 0.7)';
-      } else if (shade > 0.25) {
-        // Mittleres, saftiges Waldgrün
-        color = 'rgba(75, 155, 82, 0.9)';
-        bumpColor = 'rgba(175, 175, 175, 0.5)';
+      if (r > 0.65) {
+        // Frischer Nadelkamm mit sonnigem Wachsglanz (kühles Nadelgrün)
+        color = 'rgba(105, 195, 135, 0.95)';
+        bumpColor = 'rgba(240, 240, 240, 0.8)';
+      } else if (r > 0.28) {
+        // Kräftiges Tannengrün
+        color = 'rgba(48, 115, 68, 0.92)';
+        bumpColor = 'rgba(185, 185, 185, 0.6)';
       } else {
-        // Sanfter Schatten im Geäst (kein Schwarz!)
-        color = 'rgba(42, 95, 48, 0.85)';
-        bumpColor = 'rgba(45, 45, 45, 0.6)';
+        // Nadelunterseite / Schatten
+        color = 'rgba(22, 58, 34, 0.88)';
+        bumpColor = 'rgba(50, 50, 50, 0.6)';
       }
 
       ctx.strokeStyle = color;
-      ctx.lineWidth = 1.35;
+      ctx.lineWidth = 1.45;
       ctx.beginPath();
       ctx.moveTo(bx, by);
       ctx.lineTo(ex, ey);
@@ -695,7 +726,7 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
 
       if (bumpCtx) {
         bumpCtx.strokeStyle = bumpColor;
-        bumpCtx.lineWidth = 1.35;
+        bumpCtx.lineWidth = 1.45;
         bumpCtx.beginPath();
         bumpCtx.moveTo(bx, by);
         bumpCtx.lineTo(ex, ey);
@@ -704,12 +735,25 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
     }
   }
 
-  // 4. Feine Nadelkörnung / Tannennadel-Noise mit sonnigen Glanzpunkten
-  for (let i = 0; i < 1500; i++) {
+  // 5. Silbrige Nadelspitzen für echten Tannengrund
+  for (let i = 0; i < 600; i++) {
+    const sx = random() * size;
+    const sy = random() * size;
+    const slen = 3 + random() * 6;
+    ctx.strokeStyle = 'rgba(135, 218, 160, 0.65)';
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(sx + slen, sy + (random() - 0.5) * 2);
+    ctx.stroke();
+  }
+
+  // 6. Feine Nadelkörnung
+  for (let i = 0; i < 2000; i++) {
     const nx = random() * size;
     const ny = random() * size;
     const isLight = random() > 0.55;
-    ctx.fillStyle = isLight ? 'rgba(155, 235, 162, 0.45)' : 'rgba(38, 85, 45, 0.35)';
+    ctx.fillStyle = isLight ? 'rgba(125, 205, 150, 0.38)' : 'rgba(18, 48, 28, 0.4)';
     ctx.fillRect(nx, ny, 1.2, 1.2);
   }
 

@@ -18,6 +18,7 @@ import {
   PATH_4_END_CLEARING,
   PATH_4_WAYPOINTS,
   PATH_5_END_CLEARING,
+  PATH_5_FIRE_POS,
   PATH_5_WAYPOINTS,
   PATH_6_END_CLEARING,
   PATH_6_WAYPOINTS,
@@ -823,23 +824,23 @@ export class CrossroadsScene {
     if (!this.defaultCrownDarkMat || !this.defaultCrownLightMat) {
       const foliageTex = createPineFoliageTexture();
       if (foliageTex.map) {
-        foliageTex.map.repeat.set(2.5, 2.5);
+        foliageTex.map.repeat.set(3.2, 4.0);
         foliageTex.map.colorSpace = THREE.SRGBColorSpace;
       }
-      if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(2.5, 2.5);
+      if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(3.2, 4.0);
       this.defaultCrownDarkMat = new THREE.MeshStandardMaterial({
-        color: 0xd6edd6,
+        color: 0x9bc2a0,
         map: foliageTex.map ?? undefined,
         bumpMap: foliageTex.bumpMap ?? undefined,
-        bumpScale: 0.065,
-        roughness: 0.78,
+        bumpScale: 0.08,
+        roughness: 0.74,
       });
       this.defaultCrownLightMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
+        color: 0xbfe4c4,
         map: foliageTex.map ?? undefined,
         bumpMap: foliageTex.bumpMap ?? undefined,
-        bumpScale: 0.065,
-        roughness: 0.72,
+        bumpScale: 0.08,
+        roughness: 0.68,
       });
     }
     return { dark: this.defaultCrownDarkMat, light: this.defaultCrownLightMat };
@@ -1451,8 +1452,10 @@ export class CrossroadsScene {
             continue;
           }
 
-          if ((i + Math.round(dist)) % 3 === 0) {
-            // Basaltfelsformation am Wegesrand
+          const isBeyondFire = tz >= PATH_5_FIRE_POS.z;
+
+          if (isBeyondFire && (i + Math.round(dist)) % 3 === 0) {
+            // Basaltfelsformation am Wegesrand erst ab dem Feuerhindernis
             const rock = new THREE.Mesh(
               new THREE.ConeGeometry(0.8 + (i % 2) * 0.4, 1.8 + (i % 3) * 0.5, 5),
               basaltMat
@@ -1462,9 +1465,9 @@ export class CrossroadsScene {
             rock.castShadow = true;
             this.scene.add(rock);
           } else {
-            // Verbrannter Nadelbaum (isBurned = true)
+            // Vor dem Feuer: normale lebendige Sommerbäume (isBurned = false); ab dem Feuer: verbrannt (isBurned = true)
             const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.16;
-            this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, true);
+            this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, isBeyondFire);
           }
         }
       }
