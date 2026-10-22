@@ -748,16 +748,16 @@ export class CrossroadsScene {
       if (!this.burnedTrunkMat) {
         const barkTex = createBarkTexture();
         if (barkTex.map) {
-          barkTex.map.repeat.set(1.5, 2.5);
+          barkTex.map.repeat.set(2.5, 3.5);
         }
         if (barkTex.bumpMap) {
-          barkTex.bumpMap.repeat.set(1.5, 2.5);
+          barkTex.bumpMap.repeat.set(2.5, 3.5);
         }
         this.burnedTrunkMat = new THREE.MeshStandardMaterial({
           color: 0x221a18,
           map: barkTex.map ?? undefined,
           bumpMap: barkTex.bumpMap ?? undefined,
-          bumpScale: 0.1,
+          bumpScale: 0.06,
           roughness: 0.95,
         });
       }
@@ -767,18 +767,18 @@ export class CrossroadsScene {
     if (!this.defaultTrunkMat) {
       const barkTex = createBarkTexture();
       if (barkTex.map) {
-        barkTex.map.repeat.set(1.5, 2.5);
+        barkTex.map.repeat.set(2.5, 3.5);
         barkTex.map.colorSpace = THREE.SRGBColorSpace;
       }
       if (barkTex.bumpMap) {
-        barkTex.bumpMap.repeat.set(1.5, 2.5);
+        barkTex.bumpMap.repeat.set(2.5, 3.5);
       }
       this.defaultTrunkMat = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         map: barkTex.map ?? undefined,
         bumpMap: barkTex.bumpMap ?? undefined,
-        bumpScale: 0.055,
-        roughness: 0.82,
+        bumpScale: 0.04,
+        roughness: 0.88,
       });
     }
     return this.defaultTrunkMat;
@@ -1096,27 +1096,49 @@ export class CrossroadsScene {
       this.scene.add(burnedCrownLightMesh);
     }
 
-    // 6. Nistkästen an jedem 10. lebenden Baum sammeln und in genau 3 Meshes verschmelzen
+    // 6. Nistkästen gezielt an Bäumen entlang der Wege und der zentralen Lichtung platzieren
     const birdhouseInstances: BirdhouseInstance[] = [];
-    let livingTreeCounter = 0;
-    for (const t of normalTrees) {
-      livingTreeCounter++;
-      if (livingTreeCounter % 10 === 0) {
-        const trunkRadiusAtHeight = 0.274 * t.scale;
-        const angle =
-          t.birdhouseAngle !== undefined
-            ? t.birdhouseAngle
-            : (livingTreeCounter * 1.618) % (Math.PI * 2);
 
+    // Bäume am Wegesrand (birdhouseAngle ist bereits direkt zum Pfad hin ausgerichtet)
+    const roadsideTrees = normalTrees.filter((t) => t.birdhouseAngle !== undefined);
+    for (let i = 0; i < roadsideTrees.length; i++) {
+      if (i % 2 === 0) {
+        const t = roadsideTrees[i];
+        const angle = t.birdhouseAngle!;
+        // Auf Augenhöhe (ca. 1.48m) frei sichtbar unter den ersten Ästen montieren
+        const trunkRadiusAtHeight = 0.215 * t.scale;
         const bx = t.x + Math.sin(angle) * trunkRadiusAtHeight;
         const bz = t.z + Math.cos(angle) * trunkRadiusAtHeight;
 
         birdhouseInstances.push({
           x: bx,
-          y: getTerrainHeight(bx, bz) + 0.82 * t.scale,
+          y: getTerrainHeight(bx, bz) + 1.48 * t.scale,
           z: bz,
           rotationY: angle,
-          scale: t.scale,
+          scale: t.scale * 1.05,
+        });
+      }
+    }
+
+    // Bäume um die zentrale Waldkreuzung und Schutzhütte (Blick zur Lichtungsmitte 0, 0)
+    const centralTrees = normalTrees.filter((t) => {
+      const dist = Math.hypot(t.x, t.z);
+      return dist > 5.0 && dist < 18.0 && t.birdhouseAngle === undefined;
+    });
+    for (let i = 0; i < centralTrees.length; i++) {
+      if (i % 3 === 0) {
+        const t = centralTrees[i];
+        const angle = Math.atan2(0 - t.x, 0 - t.z);
+        const trunkRadiusAtHeight = 0.215 * t.scale;
+        const bx = t.x + Math.sin(angle) * trunkRadiusAtHeight;
+        const bz = t.z + Math.cos(angle) * trunkRadiusAtHeight;
+
+        birdhouseInstances.push({
+          x: bx,
+          y: getTerrainHeight(bx, bz) + 1.48 * t.scale,
+          z: bz,
+          rotationY: angle,
+          scale: t.scale * 1.05,
         });
       }
     }

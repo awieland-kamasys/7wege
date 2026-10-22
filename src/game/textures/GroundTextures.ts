@@ -408,7 +408,7 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
     return { map: null, bumpMap: null };
   }
 
-  const width = 256;
+  const width = 512;
   const height = 512;
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -421,8 +421,8 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
   bumpCanvas.height = height;
   const bumpCtx = bumpCanvas.getContext('2d');
 
-  // 1. Grundfarbe: Warmes, helles Kiefern- und Fichtenborkenbraun im Sonnenlicht
-  ctx.fillStyle = '#8a6242';
+  // 1. Grundfarbe: Natürliches, erdiges Fichten- und Kiefernrindenbraun
+  ctx.fillStyle = '#483424';
   ctx.fillRect(0, 0, width, height);
 
   if (bumpCtx) {
@@ -440,42 +440,54 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
   };
   const random = rng(108);
 
-  // 2. Vertikale Holzfaser- und Rindenstränge
-  for (let x = 0; x < width; x += 3 + random() * 4) {
-    const strandWidth = 2 + random() * 5;
-    const isDark = random() > 0.4;
-    const shade = isDark ? 0.2 + random() * 0.35 : 0.12 + random() * 0.22;
+  // Sanfte Helligkeitswolken für organische Farbverläufe im Holz
+  for (let i = 0; i < 40; i++) {
+    const cx = random() * width;
+    const cy = random() * height;
+    const rad = 30 + random() * 60;
+    const isLighter = random() > 0.45;
+    ctx.fillStyle = isLighter ? 'rgba(92, 68, 48, 0.28)' : 'rgba(42, 28, 18, 0.32)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 2. Feine vertikale Holzfasern (dicht gewoben, schmal und organisch)
+  for (let x = 0; x < width; x += 1.5 + random() * 2.5) {
+    const strandWidth = 1.0 + random() * 2.2;
+    const isDark = random() > 0.42;
+    const alpha = isDark ? 0.15 + random() * 0.22 : 0.10 + random() * 0.18;
     ctx.fillStyle = isDark
-      ? `rgba(105, 72, 46, ${shade})`
-      : `rgba(205, 168, 128, ${shade})`;
+      ? `rgba(38, 24, 16, ${alpha})`
+      : `rgba(110, 80, 56, ${alpha})`;
 
     ctx.beginPath();
     ctx.moveTo(x, 0);
     let curX = x;
-    for (let y = 0; y <= height; y += 32) {
-      curX += (random() - 0.5) * 4;
+    for (let y = 0; y <= height; y += 16) {
+      curX += (random() - 0.5) * 2.2;
       ctx.lineTo(curX, y);
     }
     ctx.lineTo(curX + strandWidth, height);
-    for (let y = height; y >= 0; y -= 32) {
-      curX += (random() - 0.5) * 4;
+    for (let y = height; y >= 0; y -= 16) {
+      curX += (random() - 0.5) * 2.2;
       ctx.lineTo(curX + strandWidth, y);
     }
     ctx.closePath();
     ctx.fill();
 
     if (bumpCtx) {
-      bumpCtx.fillStyle = isDark ? 'rgba(40, 40, 40, 0.45)' : 'rgba(215, 215, 215, 0.4)';
+      bumpCtx.fillStyle = isDark ? 'rgba(50, 50, 50, 0.35)' : 'rgba(200, 200, 200, 0.25)';
       bumpCtx.beginPath();
       bumpCtx.moveTo(x, 0);
       curX = x;
-      for (let y = 0; y <= height; y += 32) {
-        curX += (random() - 0.5) * 4;
+      for (let y = 0; y <= height; y += 16) {
+        curX += (random() - 0.5) * 2.2;
         bumpCtx.lineTo(curX, y);
       }
       bumpCtx.lineTo(curX + strandWidth, height);
-      for (let y = height; y >= 0; y -= 32) {
-        curX += (random() - 0.5) * 4;
+      for (let y = height; y >= 0; y -= 16) {
+        curX += (random() - 0.5) * 2.2;
         bumpCtx.lineTo(curX + strandWidth, y);
       }
       bumpCtx.closePath();
@@ -483,92 +495,102 @@ export function createBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap:
     }
   }
 
-  // 3. Ausgeprägte Längsfurchen mit sonniger Lichtkante
-  for (let i = 0; i < 45; i++) {
+  // 3. Natürliche Rindenfurchen (schmale Risse mit feinen, dezenten Rindenrücken)
+  for (let i = 0; i < 90; i++) {
     const fx = random() * width;
-    const fy = random() * (height - 60);
-    const flen = 40 + random() * 90;
-    const fw = 1.5 + random() * 2.5;
+    const fy = random() * (height - 40);
+    const flen = 30 + random() * 80;
+    const fw = 1.0 + random() * 1.8;
 
-    ctx.strokeStyle = 'rgba(62, 38, 22, 0.65)';
+    // Dunkler Rindenriss
+    ctx.strokeStyle = 'rgba(25, 15, 10, 0.55)';
     ctx.lineWidth = fw;
     ctx.beginPath();
     ctx.moveTo(fx, fy);
     ctx.bezierCurveTo(
-      fx + (random() - 0.5) * 8, fy + flen * 0.33,
-      fx + (random() - 0.5) * 8, fy + flen * 0.66,
-      fx + (random() - 0.5) * 6, fy + flen
+      fx + (random() - 0.5) * 5, fy + flen * 0.33,
+      fx + (random() - 0.5) * 5, fy + flen * 0.66,
+      fx + (random() - 0.5) * 4, fy + flen
     );
     ctx.stroke();
 
-    // Helle Lichtkante direkt neben der Furche für Sonnenreflex
-    ctx.strokeStyle = 'rgba(235, 205, 165, 0.65)';
-    ctx.lineWidth = fw * 0.7;
+    // Dezente, warme Kantenaufhellung (kein grelles Weiß!)
+    ctx.strokeStyle = 'rgba(132, 98, 70, 0.28)';
+    ctx.lineWidth = fw * 0.8;
     ctx.beginPath();
     ctx.moveTo(fx + fw + 0.5, fy);
     ctx.bezierCurveTo(
-      fx + fw + 0.5 + (random() - 0.5) * 8, fy + flen * 0.33,
-      fx + fw + 0.5 + (random() - 0.5) * 8, fy + flen * 0.66,
-      fx + fw + 0.5 + (random() - 0.5) * 6, fy + flen
+      fx + fw + 0.5 + (random() - 0.5) * 5, fy + flen * 0.33,
+      fx + fw + 0.5 + (random() - 0.5) * 5, fy + flen * 0.66,
+      fx + fw + 0.5 + (random() - 0.5) * 4, fy + flen
     );
     ctx.stroke();
 
     if (bumpCtx) {
-      // Tiefe Rille in der Bump-Map (dunkel)
-      bumpCtx.strokeStyle = 'rgba(25, 25, 25, 0.85)';
+      bumpCtx.strokeStyle = 'rgba(20, 20, 20, 0.7)';
       bumpCtx.lineWidth = fw;
       bumpCtx.beginPath();
       bumpCtx.moveTo(fx, fy);
       bumpCtx.bezierCurveTo(
-        fx + (random() - 0.5) * 8, fy + flen * 0.33,
-        fx + (random() - 0.5) * 8, fy + flen * 0.66,
-        fx + (random() - 0.5) * 6, fy + flen
+        fx + (random() - 0.5) * 5, fy + flen * 0.33,
+        fx + (random() - 0.5) * 5, fy + flen * 0.66,
+        fx + (random() - 0.5) * 4, fy + flen
       );
       bumpCtx.stroke();
 
-      // Erhabene Kante in der Bump-Map (hell)
-      bumpCtx.strokeStyle = 'rgba(235, 235, 235, 0.65)';
-      bumpCtx.lineWidth = fw * 0.7;
+      bumpCtx.strokeStyle = 'rgba(210, 210, 210, 0.4)';
+      bumpCtx.lineWidth = fw * 0.8;
       bumpCtx.beginPath();
       bumpCtx.moveTo(fx + fw + 0.5, fy);
       bumpCtx.bezierCurveTo(
-        fx + fw + 0.5 + (random() - 0.5) * 8, fy + flen * 0.33,
-        fx + fw + 0.5 + (random() - 0.5) * 8, fy + flen * 0.66,
-        fx + fw + 0.5 + (random() - 0.5) * 6, fy + flen
+        fx + fw + 0.5 + (random() - 0.5) * 5, fy + flen * 0.33,
+        fx + fw + 0.5 + (random() - 0.5) * 5, fy + flen * 0.66,
+        fx + fw + 0.5 + (random() - 0.5) * 4, fy + flen
       );
       bumpCtx.stroke();
     }
   }
 
-  // 4. Horizontale Rindenrisse und Schuppungen
-  for (let i = 0; i < 60; i++) {
+  // 4. Feine Fichten- und Kiefernborkenschuppen (horizontale Plättchenkanten)
+  for (let i = 0; i < 110; i++) {
     const rx = random() * width;
     const ry = random() * height;
-    const rlen = 6 + random() * 16;
-    ctx.strokeStyle = 'rgba(75, 48, 28, 0.55)';
-    ctx.lineWidth = 1.2;
+    const rlen = 8 + random() * 18;
+    ctx.strokeStyle = 'rgba(28, 18, 12, 0.45)';
+    ctx.lineWidth = 1.0;
     ctx.beginPath();
     ctx.moveTo(rx, ry);
-    ctx.lineTo(rx + rlen, ry + (random() - 0.5) * 3);
+    ctx.lineTo(rx + rlen, ry + (random() - 0.5) * 2.5);
     ctx.stroke();
 
     if (bumpCtx) {
-      bumpCtx.strokeStyle = 'rgba(35, 35, 35, 0.7)';
-      bumpCtx.lineWidth = 1.2;
+      bumpCtx.strokeStyle = 'rgba(35, 35, 35, 0.5)';
+      bumpCtx.lineWidth = 1.0;
       bumpCtx.beginPath();
       bumpCtx.moveTo(rx, ry);
-      bumpCtx.lineTo(rx + rlen, ry + (random() - 0.5) * 3);
+      bumpCtx.lineTo(rx + rlen, ry + (random() - 0.5) * 2.5);
       bumpCtx.stroke();
     }
   }
 
-  // 5. Feines Rauschen (Rinden-Körnung mit warmen Sonnenpartikeln)
-  for (let i = 0; i < 1800; i++) {
+  // 5. Zarte Waldmoos- und Flechten-Nuancen (natürlicher Baumstamm-Charakter)
+  for (let i = 0; i < 65; i++) {
+    const mx = random() * width;
+    const my = random() * height;
+    const mRad = 3 + random() * 8;
+    ctx.fillStyle = 'rgba(92, 108, 80, 0.16)';
+    ctx.beginPath();
+    ctx.arc(mx, my, mRad, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 6. Feine Rindenkörnung
+  for (let i = 0; i < 2400; i++) {
     const nx = random() * width;
     const ny = random() * height;
-    const light = random() > 0.55;
-    ctx.fillStyle = light ? 'rgba(225, 195, 155, 0.42)' : 'rgba(95, 62, 38, 0.32)';
-    ctx.fillRect(nx, ny, 1.2, 1.2);
+    const isLight = random() > 0.55;
+    ctx.fillStyle = isLight ? 'rgba(150, 115, 82, 0.22)' : 'rgba(35, 22, 14, 0.22)';
+    ctx.fillRect(nx, ny, 1.0, 1.0);
   }
 
   const texture = new THREE.CanvasTexture(canvas);

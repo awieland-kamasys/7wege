@@ -15,22 +15,24 @@ export interface BirdhouseInstance {
 export class BirdhouseMaterialCache {
   private static instance: BirdhouseMaterialCache;
 
+  // Helles, frisch gezimmertes Nadelholz (Fichte / Kiefer) hebt sich markant vom dunklen Stamm ab
   public readonly woodMat = new THREE.MeshStandardMaterial({
-    color: 0x8a6541,
-    roughness: 0.88,
-    metalness: 0.05,
+    color: 0xedd3a8,
+    roughness: 0.76,
+    metalness: 0.02,
     flatShading: true,
   });
 
+  // Stilvolles, wetterfestes Schutzdach in sattem Waldgrün / Moosschiefer
   public readonly roofMat = new THREE.MeshStandardMaterial({
-    color: 0x3d2c1d,
-    roughness: 0.78,
-    metalness: 0.1,
+    color: 0x324636,
+    roughness: 0.68,
+    metalness: 0.08,
     flatShading: true,
   });
 
   public readonly holeMat = new THREE.MeshBasicMaterial({
-    color: 0x110c08,
+    color: 0x14100c,
   });
 
   private constructor() {}
