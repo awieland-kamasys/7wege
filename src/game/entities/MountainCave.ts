@@ -234,11 +234,12 @@ export function createMountainCave(onMeshLoaded?: (mesh: THREE.Mesh) => void): T
     emissiveIntensity: 0.75,
   });
 
-  // 1. Das hohe, schneebedeckte Bergmassiv im Hintergrund errichten (hinter dem Tunneleingang)
+  // 1. Das hohe, schneebedeckte Bergmassiv im Hintergrund errichten (2 Meter nach vorn geschoben, damit der Eingang organisch im Felsmassiv sitzt)
   const mountainBackdrop = buildMountainBackdrop(onMeshLoaded);
+  mountainBackdrop.position.set(0, 0, 2.0);
   group.add(mountainBackdrop);
 
-  // 2. Untergruppe für den Mineneingang: Exakt um 2 Meter weiter nach hinten gesetzt (tunnelOffsetZ = -0.2)
+  // 2. Untergruppe für den Mineneingang: Bleibt exakt an ihrer Position (tunnelOffsetZ = -0.2)
   const tunnelGroup = new THREE.Group();
   tunnelGroup.name = 'MineTunnelGroup';
   const tunnelOffsetZ = -0.2;
