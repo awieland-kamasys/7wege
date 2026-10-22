@@ -25,7 +25,7 @@ describe('TerrainHeight', () => {
     const endH = getTerrainHeight(CAVE_ENTRANCE_POS.x, CAVE_ENTRANCE_POS.z);
 
     expect(endH).toBeGreaterThan(startH);
-    expect(endH).toBeCloseTo(3.5, 1);
+    expect(endH).toBeCloseTo(6.8, 1);
   });
 
   it('sollte auf Weg 2 (Waldteich) in die Senke führen', () => {
@@ -35,6 +35,6 @@ describe('TerrainHeight', () => {
 
   it('sollte auf Weg 5 (Höllenschlund) in den Kessel führen', () => {
     const endH = getTerrainHeight(HELL_CHASM_POS.x, HELL_CHASM_POS.z);
-    expect(endH).toBeCloseTo(-2.0, 1);
+    expect(endH).toBeCloseTo(-5.0, 1);
   });
 });

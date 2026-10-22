@@ -56,14 +56,12 @@ import { createPathLog, PathLogEntity } from '../entities/PathLog';
 import { createPathFire, PathFireEntity } from '../entities/PathFire';
 import { createPathHerbs, PathHerbsEntity } from '../entities/PathHerbs';
 import {
-  createGrassTexture,
-  createPathTexture,
   createBarkTexture,
   createPineFoliageTexture,
   createStoneTexture,
   createVeinedLavaRockTexture,
-  createBrickTexture,
 } from '../textures/GroundTextures';
+import { createCompositeTerrainTexture } from '../textures/CompositeTerrainTexture';
 import { createWoodWomanNpc, WoodWomanNpcEntity } from '../entities/WoodWomanNpc';
 import { buildMergedMushroomClusters, MushroomClusterOptions, MushroomType } from '../entities/MushroomCluster';
 import { buildMergedBirdhouses, BirdhouseInstance } from '../entities/Birdhouse';
@@ -150,7 +148,6 @@ export class CrossroadsScene {
   private readonly path5Fire: PathFireEntity;
   private readonly path6Herbs: PathHerbsEntity;
   private readonly treasureChest: TreasureChestEntity;
-  private readonly pathMeshes = new Map<number, THREE.MeshStandardMaterial[]>();
   private readonly pathGemstones = new Map<
     number,
     {
@@ -187,10 +184,7 @@ export class CrossroadsScene {
   private readonly gemstonePulseTimers = new Map<number, number>();
   private lastPlayerPos: Vector2D = { ...START_PLAYER_POS };
   private elapsedSeconds = 0;
-  private hellGroundOuterMat: THREE.MeshStandardMaterial | null = null;
-  private hellGroundInnerMat: THREE.MeshStandardMaterial | null = null;
-  private hellMeadowGlowMat: THREE.MeshStandardMaterial | null = null;
-  private path5SegmentMats: THREE.MeshStandardMaterial[] = [];
+  private groundMaterial: THREE.MeshStandardMaterial | null = null;
 
   // Nebelfarben: Heller Waldnebel auf der Lichtung und finster-dunkelroter Nebel im Höllenschlund
   private readonly defaultFogColor = new THREE.Color(0xdce2e0);
@@ -589,40 +583,10 @@ export class CrossroadsScene {
   }
 
   private buildTerrainAndPaths(): void {
-    // 1. Texturen für Waldboden und Wegestrukturen generieren
-    const grassTex = createGrassTexture();
-    if (grassTex.map) {
-      grassTex.map.repeat.set(55, 55);
-    }
-    if (grassTex.bumpMap) {
-      grassTex.bumpMap.repeat.set(55, 55);
-    }
+    // 1. Hochaufgelöste Composite-Geländetextur (Wald, Lichtung, 7 Wege, Schauplätze & dunkelrotadrige Lavazone)
+    const terrainTex = createCompositeTerrainTexture();
 
-    const pathTex = createPathTexture();
-    if (pathTex.map) {
-      pathTex.map.repeat.set(2, 6);
-    }
-    if (pathTex.bumpMap) {
-      pathTex.bumpMap.repeat.set(2, 6);
-    }
-
-    const clearingTex = createPathTexture();
-    if (clearingTex.map) {
-      clearingTex.map.repeat.set(6, 6);
-    }
-    if (clearingTex.bumpMap) {
-      clearingTex.bumpMap.repeat.set(6, 6);
-    }
-
-    const endClearingTex = createPathTexture();
-    if (endClearingTex.map) {
-      endClearingTex.map.repeat.set(4, 4);
-    }
-    if (endClearingTex.bumpMap) {
-      endClearingTex.bumpMap.repeat.set(4, 4);
-    }
-
-    // Weitläufiges 3D-Gelände mit natürlicher Höhenmap und plastischem Relief
+    // 2. Weitläufiges 3D-Gelände mit natürlicher Höhenmap und plastischem Relief
     const groundGeo = new THREE.PlaneGeometry(240, 240, 160, 160);
     groundGeo.rotateX(-Math.PI / 2);
     const posAttr = groundGeo.attributes.position;
@@ -634,292 +598,31 @@ export class CrossroadsScene {
     }
     groundGeo.computeVertexNormals();
 
-    const ground = new THREE.Mesh(
-      groundGeo,
-      new THREE.MeshStandardMaterial({
-        color: 0x3d6842,
-        map: grassTex.map ?? undefined,
-        bumpMap: grassTex.bumpMap ?? undefined,
-        bumpScale: 0.045,
-        roughness: 0.92,
-      })
-    );
+    this.groundMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: terrainTex.map ?? undefined,
+      emissiveMap: terrainTex.emissiveMap ?? undefined,
+      emissive: new THREE.Color(0xffffff),
+      emissiveIntensity: 1.0,
+      bumpMap: terrainTex.bumpMap ?? undefined,
+      bumpScale: 0.045,
+      roughness: 0.88,
+    });
+
+    const ground = new THREE.Mesh(groundGeo, this.groundMaterial);
     ground.receiveShadow = true;
     ground.userData = { interactableType: 'ground' };
     this.scene.add(ground);
     this.pickableObjects.push(ground);
 
-    // Glühende Wiese & feuriger Magmaboden im Bereich des Höllenschlunds / Lavasees (Weg 5 / Teufel)
-    const lavaRockTex = createVeinedLavaRockTexture();
-    if (lavaRockTex.map) lavaRockTex.map.repeat.set(2.5, 2.5);
-    if (lavaRockTex.emissiveMap) lavaRockTex.emissiveMap.repeat.set(2.5, 2.5);
-    if (lavaRockTex.bumpMap) lavaRockTex.bumpMap.repeat.set(2.5, 2.5);
-
-    const hellGroundY = getTerrainHeight(HELL_CHASM_POS.x, HELL_CHASM_POS.z);
-
-    // 1. Äußerer weicher Glüh-Saum der Wiese (großflächiges Glühen im Gras)
-    this.hellMeadowGlowMat = new THREE.MeshStandardMaterial({
-      color: 0x423424, // Feurig getönte Waldwiese
-      map: grassTex.map ?? undefined,
-      emissive: new THREE.Color(0x661802),
-      emissiveIntensity: 0.4,
-      bumpMap: grassTex.bumpMap ?? undefined,
-      bumpScale: 0.035,
-      roughness: 0.94,
-    });
-    const ashGroundMeadowGlow = new THREE.Mesh(
-      new THREE.CircleGeometry(36, 40),
-      this.hellMeadowGlowMat
-    );
-    ashGroundMeadowGlow.position.set(HELL_CHASM_POS.x, hellGroundY + 0.007, HELL_CHASM_POS.z - 2.5);
-    ashGroundMeadowGlow.rotation.x = -Math.PI / 2;
-    ashGroundMeadowGlow.receiveShadow = true;
-    this.scene.add(ashGroundMeadowGlow);
-
-    // 2. Glühende Brandwiese (starker Glut-Schein in den Gräsern)
-    this.hellGroundOuterMat = new THREE.MeshStandardMaterial({
-      color: 0x5a2012, // Kräftig feuerrotes, sengendes Brandgras
-      map: grassTex.map ?? undefined,
-      emissiveMap: lavaRockTex.emissiveMap ?? undefined,
-      emissive: new THREE.Color(0xb52c04),
-      emissiveIntensity: 0.72,
-      bumpMap: grassTex.bumpMap ?? undefined,
-      bumpScale: 0.04,
-      roughness: 0.9,
-    });
-    const ashGroundOuter = new THREE.Mesh(
-      new THREE.CircleGeometry(28, 40),
-      this.hellGroundOuterMat
-    );
-    ashGroundOuter.position.set(HELL_CHASM_POS.x, hellGroundY + 0.012, HELL_CHASM_POS.z - 1.8);
-    ashGroundOuter.rotation.x = -Math.PI / 2;
-    ashGroundOuter.receiveShadow = true;
-    this.scene.add(ashGroundOuter);
-
-    // 3. Innerer feurig glühender Magma- und Vulkanboden direkt um den Lavasee
-    // Als Ring ausgeführt (Innenradius 7.6m), damit das Kraterbecken und die Lava frei bleiben
-    // und der Magmaboden nahtlos unter den Felsen des Kraterrandes anschließt.
-    this.hellGroundInnerMat = new THREE.MeshStandardMaterial({
-      color: 0x6e1806, // Tief feuerroter Vulkangrund mit Magma-Adern
-      map: lavaRockTex.map ?? undefined,
-      emissiveMap: lavaRockTex.emissiveMap ?? undefined,
-      emissive: new THREE.Color(0xff3300),
-      emissiveIntensity: 1.4,
-      bumpMap: lavaRockTex.bumpMap ?? undefined,
-      bumpScale: 0.06,
-      roughness: 0.82,
-    });
-    const ashGroundInner = new THREE.Mesh(
-      new THREE.RingGeometry(7.6, 18.5, 48),
-      this.hellGroundInnerMat
-    );
-    ashGroundInner.position.set(HELL_CHASM_POS.x, hellGroundY + 0.018, HELL_CHASM_POS.z);
-    ashGroundInner.rotation.x = -Math.PI / 2;
-    ashGroundInner.receiveShadow = true;
-    this.scene.add(ashGroundInner);
-
-    // Zentrale Waldkreuzung mit Schotter-/Kieselstruktur (begehbare Lichtung)
-    const clearing = new THREE.Mesh(
-      new THREE.CylinderGeometry(6.8, 7.0, 0.06, 36),
-      new THREE.MeshStandardMaterial({
-        color: 0x826d55,
-        map: clearingTex.map ?? undefined,
-        bumpMap: clearingTex.bumpMap ?? undefined,
-        bumpScale: 0.035,
-        roughness: 0.88,
-      })
-    );
-    clearing.position.y = 0.03;
-    clearing.receiveShadow = true;
-    clearing.userData = { interactableType: 'ground' };
-    this.scene.add(clearing);
-    this.pickableObjects.push(clearing);
-
+    // 3. Sockel mit leuchtenden Edelsteinen an den Eingängen aller 7 Wege an der Kreuzung
     SEVEN_PATHS.forEach((pathData) => {
-      // Standard-Wegmaterial mit Kiesel-/Sandstruktur
-      const mat = new THREE.MeshStandardMaterial({
-        color: 0x826d55,
-        map: pathTex.map ?? undefined,
-        bumpMap: pathTex.bumpMap ?? undefined,
-        bumpScale: 0.035,
-        roughness: 0.88,
-        emissive: 0x000000,
-      });
-
-      const defaultClearingMat = new THREE.MeshStandardMaterial({
-        color: 0x826d55,
-        map: endClearingTex.map ?? undefined,
-        bumpMap: endClearingTex.bumpMap ?? undefined,
-        bumpScale: 0.035,
-        roughness: 0.88,
-        emissive: 0x000000,
-      });
-
-      if (pathData.id === 1) {
-        this.pathMeshes.set(1, [mat, defaultClearingMat]);
-        // Weg 1: Verlängerter Weg mit Rechtskurve entlang PATH_1_WAYPOINTS bis zum Berg
-        this.buildCurvedPathMeshes(
-          1,
-          PATH_1_WAYPOINTS,
-          PATH_1_END_CLEARING,
-          pathData.angleRad,
-          mat,
-          pathData.colorHex,
-          undefined,
-          defaultClearingMat
-        );
-        return;
-      }
-
-      if (pathData.id === 2) {
-        this.pathMeshes.set(2, [mat, defaultClearingMat]);
-        // Weg 2: Geschwungener Pfad entlang PATH_2_WAYPOINTS bis zum Waldteich mit der Nixe
-        this.buildCurvedPathMeshes(
-          2,
-          PATH_2_WAYPOINTS,
-          PATH_2_END_CLEARING,
-          pathData.angleRad,
-          mat,
-          pathData.colorHex,
-          undefined,
-          defaultClearingMat
-        );
-        return;
-      }
-
-      if (pathData.id === 3) {
-        this.pathMeshes.set(3, [mat, defaultClearingMat]);
-        // Weg 3: Pfad entlang PATH_3_WAYPOINTS über die Wehrbrücke bis zum Riesen
-        this.buildCurvedPathMeshes(
-          3,
-          PATH_3_WAYPOINTS,
-          { x: PATH_3_END_CLEARING.x, z: PATH_3_END_CLEARING.z, radius: 3.1 },
-          pathData.angleRad,
-          mat,
-          pathData.colorHex,
-          undefined,
-          defaultClearingMat
-        );
-        return;
-      }
-
-      if (pathData.id === 4) {
-        this.pathMeshes.set(4, [mat, defaultClearingMat]);
-        // Weg 4: Pfad entlang PATH_4_WAYPOINTS bis zum Holzfällerlager auf der Waldlichtung
-        this.buildCurvedPathMeshes(
-          4,
-          PATH_4_WAYPOINTS,
-          PATH_4_END_CLEARING,
-          pathData.angleRad,
-          mat,
-          pathData.colorHex,
-          undefined,
-          defaultClearingMat
-        );
-        return;
-      }
-
-      if (pathData.id === 5) {
-        // Weg 5: Pfad entlang PATH_5_WAYPOINTS bis zum Lavasee / Höllenschlund
-        // Feuerroter Farbverlauf von feurigem Glut-Terrakotta an der Kreuzung bis zu loderndem Magma-Feuerrot am Lavasee
-        const lavaRockTex = createVeinedLavaRockTexture();
-        if (lavaRockTex.map) lavaRockTex.map.repeat.set(1.5, 3.0);
-        if (lavaRockTex.emissiveMap) lavaRockTex.emissiveMap.repeat.set(1.5, 3.0);
-        if (lavaRockTex.bumpMap) lavaRockTex.bumpMap.repeat.set(1.5, 3.0);
-
-        const path5Configs = [
-          { color: 0xba4420, emissive: 0x661400, intensity: 0.4 },  // Nahe Kreuzung: Feuriges Rost-/Glutrot
-          { color: 0xcd3412, emissive: 0x881a00, intensity: 0.62 }, // Erste Kurve: Kräftiges Feuerrot
-          { color: 0xdf2808, emissive: 0xaa2000, intensity: 0.85 }, // Pfadmitte: Intensives Magmarot
-          { color: 0xee2200, emissive: 0xcc2600, intensity: 1.08 }, // Ausläufer: Loderndes Karminrot
-          { color: 0xf82400, emissive: 0xee2c00, intensity: 1.3 },  // Kraterrand: Glühendes Höllenfeuerrot
-        ];
-
-        const segMats = path5Configs.map(
-          (cfg) =>
-            new THREE.MeshStandardMaterial({
-              color: cfg.color,
-              map: pathTex.map ?? undefined,
-              emissiveMap: lavaRockTex.emissiveMap ?? undefined,
-              emissive: new THREE.Color(cfg.emissive),
-              emissiveIntensity: cfg.intensity,
-              bumpMap: pathTex.bumpMap ?? undefined,
-              bumpScale: 0.04,
-              roughness: 0.8,
-            })
-        );
-        this.path5SegmentMats = segMats;
-
-        const endClearingMat = new THREE.MeshStandardMaterial({
-          color: 0xee2000,
-          map: lavaRockTex.map ?? undefined,
-          emissiveMap: lavaRockTex.emissiveMap ?? undefined,
-          emissive: new THREE.Color(0xdd2800),
-          emissiveIntensity: 1.25,
-          bumpMap: lavaRockTex.bumpMap ?? undefined,
-          bumpScale: 0.05,
-          roughness: 0.8,
-        });
-
-        this.pathMeshes.set(5, [...segMats, endClearingMat]);
-
-        this.buildCurvedPathMeshes(
-          5,
-          PATH_5_WAYPOINTS,
-          PATH_5_END_CLEARING,
-          pathData.angleRad,
-          mat,
-          pathData.colorHex,
-          segMats,
-          endClearingMat
-        );
-        return;
-      }
-
-      if (pathData.id === 6) {
-        this.pathMeshes.set(6, [mat, defaultClearingMat]);
-        // Weg 6: Pfad entlang PATH_6_WAYPOINTS bis zur Jagdhütte und dem Kräutergarten
-        this.buildCurvedPathMeshes(
-          6,
-          PATH_6_WAYPOINTS,
-          PATH_6_END_CLEARING,
-          pathData.angleRad,
-          mat,
-          pathData.colorHex,
-          undefined,
-          defaultClearingMat
-        );
-        return;
-      }
-
-      if (pathData.id === 7) {
-        // Runder Vorplatz vor dem Steintor mit Backstein-Pflastertextur
-        const brickTex = createBrickTexture();
-        if (brickTex.map) brickTex.map.repeat.set(5.5, 5.5);
-        if (brickTex.bumpMap) brickTex.bumpMap.repeat.set(5.5, 5.5);
-
-        const brickClearingMat = new THREE.MeshStandardMaterial({
-          color: 0xa44a2b, // Warmer Backstein- und Klinkerton
-          map: brickTex.map ?? undefined,
-          bumpMap: brickTex.bumpMap ?? undefined,
-          bumpScale: 0.06,
-          roughness: 0.82,
-        });
-
-        this.pathMeshes.set(7, [mat, brickClearingMat]);
-        // Weg 7: Pfad entlang PATH_7_WAYPOINTS bis zum geschlossenen Tor
-        this.buildCurvedPathMeshes(
-          7,
-          PATH_7_WAYPOINTS,
-          PATH_7_END_CLEARING,
-          pathData.angleRad,
-          mat,
-          pathData.colorHex,
-          undefined,
-          brickClearingMat
-        );
-        return;
-      }
+      const entrancePivot = new THREE.Group();
+      entrancePivot.rotation.y = -pathData.angleRad;
+      const gemGroup = this.createPathGemstone(pathData.id, pathData.colorHex);
+      gemGroup.position.set(1.45, 0, -6.8);
+      entrancePivot.add(gemGroup);
+      this.scene.add(entrancePivot);
     });
   }
 
@@ -971,112 +674,51 @@ export class CrossroadsScene {
     return group;
   }
 
-  private buildCurvedPathMeshes(
-    pathId: number,
-    waypoints: readonly PathPoint2D[],
-    clearing: { x: number; z: number; radius: number },
-    entranceAngleRad: number,
-    mat: THREE.MeshStandardMaterial,
-    markerColorHex: number,
-    segmentMats?: THREE.MeshStandardMaterial[],
-    clearingMat?: THREE.MeshStandardMaterial
-  ): void {
-    const pathWidth = 2.2;
-    const geometriesToMerge: THREE.BufferGeometry[] = [];
+  /**
+   * Ermittelt anhand der 3D-Koordinaten, ob ein Punkt auf einem der 7 Pfade oder dessen Endplatz liegt.
+   */
+  public getPathAtPosition(x: number, z: number, maxDist = 1.8): number | null {
+    // Auf der zentralen Lichtung (Radius <= 6.8m) ist kein spezifischer Pfad aktiv
+    if (Math.hypot(x, z) < 6.8) {
+      return null;
+    }
 
-    for (let i = 0; i < waypoints.length - 1; i++) {
-      // Auf Weg 3 führt das letzte Segment direkt über die Holzbrücke (WeirBridgeScene),
-      // daher dort keinen Erdstreifen quer durch das Bachbett legen.
-      if (pathId === 3 && i === waypoints.length - 2) {
-        continue;
+    const allPaths: Array<{
+      id: number;
+      waypoints: readonly PathPoint2D[];
+      endClearing?: { x: number; z: number; radius: number };
+    }> = [
+      { id: 1, waypoints: PATH_1_WAYPOINTS, endClearing: PATH_1_END_CLEARING },
+      { id: 2, waypoints: PATH_2_WAYPOINTS, endClearing: PATH_2_END_CLEARING },
+      { id: 3, waypoints: PATH_3_WAYPOINTS, endClearing: PATH_3_END_CLEARING },
+      { id: 4, waypoints: PATH_4_WAYPOINTS, endClearing: PATH_4_END_CLEARING },
+      { id: 5, waypoints: PATH_5_WAYPOINTS, endClearing: PATH_5_END_CLEARING },
+      { id: 6, waypoints: PATH_6_WAYPOINTS, endClearing: PATH_6_END_CLEARING },
+      { id: 7, waypoints: PATH_7_WAYPOINTS, endClearing: PATH_7_END_CLEARING },
+    ];
+
+    for (const p of allPaths) {
+      if (p.endClearing && Math.hypot(x - p.endClearing.x, z - p.endClearing.z) <= p.endClearing.radius) {
+        return p.id;
       }
+      for (let i = 0; i < p.waypoints.length - 1; i++) {
+        const a = p.waypoints[i];
+        const b = p.waypoints[i + 1];
+        const abx = b.x - a.x;
+        const abz = b.z - a.z;
+        const lenSq = abx * abx + abz * abz;
+        if (lenSq < 0.001) continue;
 
-      const a = waypoints[i];
-      const b = waypoints[i + 1];
-      const dx = b.x - a.x;
-      const dz = b.z - a.z;
-      const segLength = Math.hypot(dx, dz) + 0.35;
-      const midX = (a.x + b.x) / 2;
-      const midZ = (a.z + b.z) / 2;
-      const angleY = Math.atan2(dx, dz);
-
-      const yA = getTerrainHeight(a.x, a.z);
-      const yB = getTerrainHeight(b.x, b.z);
-      const horizDist = Math.hypot(dx, dz);
-      const pitch = -Math.atan2(yB - yA, horizDist);
-      const midY = (yA + yB) / 2;
-
-      const boxGeo = new THREE.BoxGeometry(pathWidth, 0.06, segLength);
-      boxGeo.rotateX(pitch);
-      boxGeo.rotateY(angleY);
-      boxGeo.translate(midX, midY + 0.035, midZ);
-
-      const jointGeo = new THREE.CylinderGeometry(pathWidth / 2, pathWidth / 2, 0.06, 16);
-      jointGeo.translate(b.x, yB + 0.035, b.z);
-
-      if (segmentMats) {
-        // Pfad mit individuellen Segment-Materialien (z.B. Weg 5 feuriger Übergang):
-        // Box und Gelenkplatte pro Segment zu einem einzigen Mesh verschmelzen
-        const segMat = segmentMats[i] ?? mat;
-        const mergedSegGeo = BufferGeometryUtils.mergeGeometries([boxGeo, jointGeo], false);
-        boxGeo.dispose();
-        jointGeo.dispose();
-
-        if (mergedSegGeo) {
-          const segMesh = new THREE.Mesh(mergedSegGeo, segMat);
-          segMesh.receiveShadow = true;
-          segMesh.userData = { interactableType: 'path', pathId };
-          this.scene.add(segMesh);
-          this.pickableObjects.push(segMesh);
+        const t = Math.max(0, Math.min(1, ((x - a.x) * abx + (z - a.z) * abz) / lenSq));
+        const projX = a.x + t * abx;
+        const projZ = a.z + t * abz;
+        if (Math.hypot(x - projX, z - projZ) <= maxDist) {
+          return p.id;
         }
-      } else {
-        // Einheitliches Pfadmaterial: Alle Segmente und Gelenke des Pfades für 1 Draw Call sammeln
-        geometriesToMerge.push(boxGeo, jointGeo);
       }
     }
 
-    // Wenn keine individuellen Segmentmaterialien vorliegen, den gesamten Pfad in 1 Mesh bündeln
-    if (!segmentMats && geometriesToMerge.length > 0) {
-      const mergedPathGeo = BufferGeometryUtils.mergeGeometries(geometriesToMerge, false);
-      for (const g of geometriesToMerge) {
-        g.dispose();
-      }
-      if (mergedPathGeo) {
-        const pathMesh = new THREE.Mesh(mergedPathGeo, mat);
-        pathMesh.receiveShadow = true;
-        pathMesh.userData = { interactableType: 'path', pathId };
-        this.scene.add(pathMesh);
-        this.pickableObjects.push(pathMesh);
-      }
-    }
-
-    // Vorplatz am Ende des Kurvenweges (falls für diesen Weg vorgesehen)
-    // Weg 2 (Nixenteich) und Weg 5 (Lavateich des Teufels) führen direkt an ihr Ziel ohne runden Vorplatz
-    if (pathId !== 2 && pathId !== 5) {
-      const endClearingY = getTerrainHeight(clearing.x, clearing.z);
-      const endClearing = new THREE.Mesh(
-        new THREE.CylinderGeometry(
-          clearing.radius,
-          clearing.radius + 0.2,
-          0.06,
-          28
-        ),
-        clearingMat ?? mat
-      );
-      endClearing.position.set(clearing.x, endClearingY + 0.035, clearing.z);
-      endClearing.receiveShadow = true;
-      endClearing.userData = { interactableType: 'path', pathId };
-      this.scene.add(endClearing);
-      this.pickableObjects.push(endClearing);
-    }
-
-    // Edelstein auf Sockel rechts am Wegeingang an der Kreuzung
-    const entrancePivot = new THREE.Group();
-    entrancePivot.rotation.y = -entranceAngleRad;
-    const gemGroup = this.createPathGemstone(pathId, markerColorHex);
-    gemGroup.position.set(1.45, 0, -6.8);
-    entrancePivot.add(gemGroup);
-    this.scene.add(entrancePivot);
+    return null;
   }
 
   private defaultTrunkMat: THREE.MeshStandardMaterial | null = null;
@@ -2604,9 +2246,14 @@ export class CrossroadsScene {
     }
 
     const firstHit = hits[0];
+    const hitPoint: Vector2D = { x: firstHit.point.x, z: firstHit.point.z };
+    const pathId = this.getPathAtPosition(hitPoint.x, hitPoint.z);
+    if (pathId !== null) {
+      return { kind: 'path', pathId, point: hitPoint };
+    }
     return {
       kind: 'ground',
-      point: { x: firstHit.point.x, z: firstHit.point.z },
+      point: hitPoint,
     };
   }
 
@@ -2737,29 +2384,11 @@ export class CrossroadsScene {
 
     // Wegweiser und ausgewählten/gehoverten Pfad optisch hervorheben
     this.signpost.highlightSign(selectedPathId, this.hoveredPathId);
-    this.pathMeshes.forEach((mats, id) => {
-      if (id === 5) return; // Weg 5 behält sein intensives feuerrotes Glut-Emissive
-      const emColor =
-        id === selectedPathId ? 0x2c220c : id === this.hoveredPathId ? 0x1b1507 : 0x000000;
-      for (const m of mats) {
-        m.emissive.setHex(emColor);
-      }
-    });
 
-    // Dynamisches Glühen der Wiese und des feuerroten Weges im Bereich des Lavasees
+    // Dynamisches Glühen der Magma-Adern im Basaltkessel des Höllenschlunds
     const groundPulse = 0.88 + 0.22 * Math.sin(this.elapsedSeconds * 2.8) + 0.1 * Math.cos(this.elapsedSeconds * 4.6);
-    if (this.hellGroundInnerMat) {
-      this.hellGroundInnerMat.emissiveIntensity = 1.4 * groundPulse;
-    }
-    if (this.hellGroundOuterMat) {
-      this.hellGroundOuterMat.emissiveIntensity = 0.72 * groundPulse;
-    }
-    if (this.hellMeadowGlowMat) {
-      this.hellMeadowGlowMat.emissiveIntensity = 0.4 * groundPulse;
-    }
-    for (let p = 0; p < this.path5SegmentMats.length; p++) {
-      const baseInt = 0.4 + p * 0.22;
-      this.path5SegmentMats[p].emissiveIntensity = baseInt * groundPulse;
+    if (this.groundMaterial) {
+      this.groundMaterial.emissiveIntensity = 1.35 * groundPulse;
     }
 
     // Edelstein am jeweils aktiven Storyweg (Weg 1 bis 7 bzw. aktuell gewählter Storyweg) leuchten lassen
