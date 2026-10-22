@@ -915,7 +915,7 @@ export class CrossroadsScene {
     trunkGeo.computeVertexNormals();
     trunkGeo.translate(0, 0.85, 0);
 
-    // 2. Mehrstufige Krone mit 5 gestaffelten, gezackten Nadelast-Etagen, organischem Überhang und Tiefenschatten
+    // 2. Mehrstufige Krone mit 5 gestaffelten, facettierten Nadelast-Etagen, organischem Überhang und Tiefenschatten
     const createBranchedTier = (
       radius: number,
       height: number,
@@ -924,7 +924,11 @@ export class CrossroadsScene {
       rotY: number,
       yCenter: number
     ): THREE.BufferGeometry => {
-      const geo = new THREE.ConeGeometry(radius, height, numBranches * 2, 2, false);
+      // 4 Segmente pro Ast garantieren sauber facettierte Äste (Bucht -> Flanke -> Spitze -> Flanke -> Bucht)
+      const segmentsPerBranch = 4;
+      const radialSegments = numBranches * segmentsPerBranch;
+      const heightSegments = 3;
+      const geo = new THREE.ConeGeometry(radius, height, radialSegments, heightSegments, false);
       const pos = geo.attributes.position;
       const colors = new Float32Array(pos.count * 3);
 
@@ -933,26 +937,35 @@ export class CrossroadsScene {
         const y = pos.getY(i);
         const z = pos.getZ(i);
 
+        const planarDist = Math.hypot(x, z);
         let shade = 1.0;
-        // Basis / unterer Astkranz: Astspitzen springen hervor und neigen sich leicht nach unten (Tannen-Überhang)
-        if (y < -height * 0.35) {
+
+        if (planarDist > 0.001) {
           const angle = Math.atan2(z, x);
-          const wave = Math.sin(angle * numBranches);
-          const rFactor = 1.0 + wave * branchDepth;
-          const yDrop = wave > 0 ? wave * 0.14 * height : wave * 0.05 * height;
-          pos.setXYZ(i, x * rFactor, y - yDrop, z * rFactor);
-          // Plastischer Tiefenschatten: Astunterseite schattiert (Ambient Occlusion)
-          shade = wave > 0 ? 0.82 : 0.62;
-        } else if (y < height * 0.1 && y > -height * 0.1) {
-          // Mittlerer Ring: sanfter konkaver Schwung der Nadelzweige
-          const angle = Math.atan2(z, x);
-          const wave = Math.sin(angle * numBranches);
-          const rFactor = 1.0 + Math.max(0, wave) * (branchDepth * 0.45);
-          pos.setXYZ(i, x * rFactor, y, z * rFactor);
-          shade = 0.92;
-        } else {
-          // Sonnenbeschienene Ast-Spitze
-          shade = 1.08;
+          // Math.cos garantiert: Astspitze liegt bei cos = +1, Bucht bei cos = -1 (keine Nullstellen-Auslöschung!)
+          const cosWave = Math.cos(angle * numBranches);
+          const normY = y / height;
+
+          if (normY < -0.3) {
+            // Unterer Astkranz: Astspitzen ragen kräftig nach außen
+            const rFactor = 1.0 + (cosWave > 0 ? cosWave * branchDepth : cosWave * branchDepth * 0.55);
+            // Sanfter, nadelbaumtypischer Ast-Überhang (dezent nach unten geneigt, keine senkrechten Schuppen)
+            const tipDip = cosWave > 0 ? cosWave * 0.06 * height : 0;
+            pos.setXYZ(i, x * rFactor, y - tipDip, z * rFactor);
+            // Plastischer Tiefenschatten (Ambient Occlusion) an den Astunterseiten
+            shade = cosWave > 0 ? 0.82 : 0.62;
+          } else if (normY < 0.1) {
+            // Mittlerer Ast-Rücken: wölbt sich ebenfalls sternförmig nach außen für ein echtes Astvolumen
+            const rFactor = 1.0 + (cosWave > 0 ? cosWave * branchDepth * 0.55 : cosWave * branchDepth * 0.25);
+            const midDip = cosWave > 0 ? cosWave * 0.02 * height : 0;
+            pos.setXYZ(i, x * rFactor, y - midDip, z * rFactor);
+            shade = 0.90;
+          } else {
+            // Obere Astschräge / Wipfelübergang
+            const rFactor = 1.0 + (cosWave > 0 ? cosWave * branchDepth * 0.20 : 0);
+            pos.setXYZ(i, x * rFactor, y, z * rFactor);
+            shade = 1.08;
+          }
         }
 
         colors[i * 3] = shade;
@@ -971,11 +984,11 @@ export class CrossroadsScene {
     };
 
     const crownLayers: THREE.BufferGeometry[] = [
-      createBranchedTier(1.80, 1.95, 8, 0.32, 0.0, 2.25),
-      createBranchedTier(1.55, 1.80, 7, 0.30, 0.28, 3.00),
-      createBranchedTier(1.25, 1.65, 6, 0.28, -0.32, 3.75),
-      createBranchedTier(0.95, 1.50, 5, 0.26, 0.42, 4.45),
-      createBranchedTier(0.58, 1.40, 5, 0.20, -0.18, 5.15),
+      createBranchedTier(1.85, 1.45, 8, 0.35, 0.0, 2.10),
+      createBranchedTier(1.60, 1.35, 7, 0.33, 0.28, 2.80),
+      createBranchedTier(1.30, 1.25, 6, 0.31, -0.35, 3.48),
+      createBranchedTier(0.98, 1.15, 5, 0.28, 0.45, 4.12),
+      createBranchedTier(0.62, 1.15, 4, 0.24, -0.22, 4.70),
     ];
 
     const mergedCrownGeo = BufferGeometryUtils.mergeGeometries(crownLayers);
