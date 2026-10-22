@@ -71,6 +71,7 @@ import { buildMergedTreeStumps, TreeStumpInstance } from '../entities/TreeStump'
 import { buildMergedMushroomClusters, MushroomClusterOptions, MushroomType } from '../entities/MushroomCluster';
 import { buildMergedBirdhouses, BirdhouseInstance } from '../entities/Birdhouse';
 import { buildMergedFlowerClusters, FlowerClusterOptions, FlowerType } from '../entities/ForestFlowers';
+import { buildMergedForestBushes, ForestBushInstance, BushType } from '../entities/ForestBush';
 import { Vector2D } from '../systems/CrossroadsState';
 import { disposeObject3D } from '../utils/threeUtils';
 import { getTerrainHeight } from '../utils/terrainHeight';
@@ -644,6 +645,7 @@ export class CrossroadsScene {
     this.buildForestMushrooms();
     this.buildHellChasmBackdropRocks();
     this.buildSnowfallSystem();
+    this.buildNixiePondBushes();
 
     // Zielmarkierung für Maus-Bewegung (Click-to-Move)
     this.targetMarker = this.createTargetMarker();
@@ -2178,6 +2180,86 @@ export class CrossroadsScene {
     if (mushroomSpots.length > 0) {
       const mergedMushrooms = buildMergedMushroomClusters(mushroomSpots);
       this.scene.add(mergedMushrooms);
+    }
+  }
+
+  /**
+   * Platziert malerische, üppige Wald- und Uferbüsche (Beerensträucher, Farne, dichte Laubbüsche)
+   * unter den Bäumen und im ansteigenden Waldhang hinter dem Nixenteich.
+   */
+  private buildNixiePondBushes(): void {
+    const bushInstances: ForestBushInstance[] = [];
+
+    // Halbring hinter dem Teich: Winkel von Nordosten über Osten bis Südosten (-1.70 bis +1.80)
+    const angles = [
+      -1.70, -1.45, -1.20, -0.95, -0.70, -0.45, -0.20,
+       0.05,  0.30,  0.55,  0.80,  1.05,  1.30,  1.55,  1.80
+    ];
+
+    angles.forEach((angle, idx) => {
+      // 1. Buschreihe: Am Ufersaum direkt hinter dem Teich vor der ersten Baumreihe (Radius 4.9 bis 5.6 m)
+      const r1 = 4.9 + (idx % 3) * 0.32;
+      const bx1 = POND_CENTER_POS.x + Math.cos(angle) * r1;
+      const bz1 = POND_CENTER_POS.z + Math.sin(angle) * r1;
+
+      if (!this.isNearCurvedCorridor(bx1, bz1, PATH_2_WAYPOINTS, undefined, 2.0)) {
+        const types: BushType[] = ['fern_bush', 'berry_bush', 'lush_bush'];
+        bushInstances.push({
+          x: bx1,
+          z: bz1,
+          scale: 0.90 + (idx % 4) * 0.14,
+          rotationY: angle + 0.6,
+          type: types[idx % types.length],
+        });
+      }
+
+      // 2. Buschreihe: Direkt unter den Bäumen der ersten und zweiten Reihe (Radius 6.4 bis 7.8 m)
+      if (idx % 2 === 0) {
+        const r2 = 6.4 + ((idx * 2) % 3) * 0.52;
+        const offsetAngle = angle + 0.12;
+        const bx2 = POND_CENTER_POS.x + Math.cos(offsetAngle) * r2;
+        const bz2 = POND_CENTER_POS.z + Math.sin(offsetAngle) * r2;
+
+        if (
+          !this.isNearCurvedCorridor(bx2, bz2, PATH_2_WAYPOINTS, undefined, 2.0) &&
+          !this.isNearPath3Corridor(bx2, bz2, 2.4)
+        ) {
+          const types: BushType[] = ['lush_bush', 'berry_bush', 'fern_bush'];
+          bushInstances.push({
+            x: bx2,
+            z: bz2,
+            scale: 1.15 + (idx % 3) * 0.18,
+            rotationY: angle - 0.4,
+            type: types[(idx + 1) % types.length],
+          });
+        }
+      }
+
+      // 3. Buschreihe: Ausladende, üppige Hintergrundbüsche am dichten Waldhang hinter den Bäumen (Radius 8.2 bis 9.3 m)
+      if (idx % 3 === 0) {
+        const r3 = 8.2 + (idx % 2) * 0.75;
+        const offsetAngle = angle - 0.08;
+        const bx3 = POND_CENTER_POS.x + Math.cos(offsetAngle) * r3;
+        const bz3 = POND_CENTER_POS.z + Math.sin(offsetAngle) * r3;
+
+        if (
+          !this.isNearCurvedCorridor(bx3, bz3, PATH_2_WAYPOINTS, undefined, 2.0) &&
+          !this.isNearPath3Corridor(bx3, bz3, 2.4)
+        ) {
+          bushInstances.push({
+            x: bx3,
+            z: bz3,
+            scale: 1.35 + (idx % 2) * 0.22,
+            rotationY: angle + 1.2,
+            type: 'lush_bush',
+          });
+        }
+      }
+    });
+
+    if (bushInstances.length > 0) {
+      const bushesGroup = buildMergedForestBushes(bushInstances);
+      this.scene.add(bushesGroup);
     }
   }
 
