@@ -75,7 +75,7 @@ export const CAVE_ENTRANCE_POS = {
  */
 export const GREY_MAN_NPC_POS: PathPoint2D = {
   x: 23.2,
-  z: -43.9,
+  z: -46.0,
 };
 
 /**
