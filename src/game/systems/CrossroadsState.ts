@@ -183,13 +183,10 @@ export class CrossroadsState {
   private readonly wildHunterCollisionRadius = 0.55;
   private readonly woodWomanLodgePos: Vector2D = { ...WOOD_WOMAN_LODGE_NPC_POS };
   private readonly woodWomanLodgeCollisionRadius = 0.55;
-  // Ruinen auf Weg 6: Verfallener Steinturm (-47.0, 26.0) und Mauerruine (-47.0, 20.0)
-  private readonly stoneTowerCenter: Vector2D = { x: -47.0, z: 26.0 };
-  private readonly stoneTowerHalfWidth = 2.5;
-  private readonly stoneTowerHalfDepth = 2.5;
-  private readonly stoneRuinCenter: Vector2D = { x: -47.0, z: 20.0 };
-  private readonly stoneRuinHalfWidth = 2.5;
-  private readonly stoneRuinHalfDepth = 2.3;
+  // Mittelalterliche Burg auf Weg 6 (-47.0, 23.2)
+  private readonly castleCenter: Vector2D = { x: -47.0, z: 23.2 };
+  private readonly castleHalfWidth = 3.6;
+  private readonly castleHalfDepth = 3.8;
 
   // Am Ende des 7. Weges: Das geschlossene Tor mit flankierenden Steinmauern
   private readonly gatePos: Vector2D = { x: CLOSED_GATE_POS.x, z: CLOSED_GATE_POS.z };
@@ -1069,18 +1066,10 @@ export class CrossroadsState {
       return true;
     }
 
-    // Ruine 1: Verfallener Steinturm
+    // Mittelalterliche Burg auf Weg 6
     if (
-      Math.abs(x - this.stoneTowerCenter.x) < this.stoneTowerHalfWidth - eps &&
-      Math.abs(z - this.stoneTowerCenter.z) < this.stoneTowerHalfDepth - eps
-    ) {
-      return true;
-    }
-
-    // Ruine 2: Steinerne Mauerruine
-    if (
-      Math.abs(x - this.stoneRuinCenter.x) < this.stoneRuinHalfWidth - eps &&
-      Math.abs(z - this.stoneRuinCenter.z) < this.stoneRuinHalfDepth - eps
+      Math.abs(x - this.castleCenter.x) < this.castleHalfWidth - eps &&
+      Math.abs(z - this.castleCenter.z) < this.castleHalfDepth - eps
     ) {
       return true;
     }
@@ -1663,21 +1652,16 @@ export class CrossroadsState {
         }
       }
 
-      // Ruinen-Kollision (AABB um Steinturm und Mauerruine)
-      for (const ruin of [
-        { center: this.stoneTowerCenter, hw: this.stoneTowerHalfWidth, hd: this.stoneTowerHalfDepth },
-        { center: this.stoneRuinCenter, hw: this.stoneRuinHalfWidth, hd: this.stoneRuinHalfDepth },
-      ]) {
-        const relRuinX = resolvedX - ruin.center.x;
-        const relRuinZ = resolvedZ - ruin.center.z;
-        if (Math.abs(relRuinX) < ruin.hw && Math.abs(relRuinZ) < ruin.hd) {
-          const penX = ruin.hw - Math.abs(relRuinX);
-          const penZ = ruin.hd - Math.abs(relRuinZ);
-          if (penX < penZ) {
-            resolvedX = ruin.center.x + (relRuinX >= 0 ? ruin.hw : -ruin.hw);
-          } else {
-            resolvedZ = ruin.center.z + (relRuinZ >= 0 ? ruin.hd : -ruin.hd);
-          }
+      // Burg-Kollision (AABB um die mittelalterliche Burg auf Weg 6)
+      const relCastleX = resolvedX - this.castleCenter.x;
+      const relCastleZ = resolvedZ - this.castleCenter.z;
+      if (Math.abs(relCastleX) < this.castleHalfWidth && Math.abs(relCastleZ) < this.castleHalfDepth) {
+        const penX = this.castleHalfWidth - Math.abs(relCastleX);
+        const penZ = this.castleHalfDepth - Math.abs(relCastleZ);
+        if (penX < penZ) {
+          resolvedX = this.castleCenter.x + (relCastleX >= 0 ? this.castleHalfWidth : -this.castleHalfWidth);
+        } else {
+          resolvedZ = this.castleCenter.z + (relCastleZ >= 0 ? this.castleHalfDepth : -this.castleHalfDepth);
         }
       }
 
@@ -2408,7 +2392,7 @@ export class CrossroadsState {
       return {
         type: 'hunting_lodge',
         label:
-          'Uralte Steinruinen an der Waldlichtung des Wilden Jägers – verfallener Steinturm und verwitterte Mauern.',
+          'Mittelalterliche Burg an der Waldlichtung des Wilden Jägers mit wehrhaften Türmen, Zinnen und Kräutergarten.',
       };
     }
 
