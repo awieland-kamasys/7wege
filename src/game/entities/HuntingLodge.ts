@@ -116,6 +116,7 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
 
   // Temporärer Platzhalter während des Ladens (zwei stilisierte Holzbeete mit Erde)
   const gardenFallback = new THREE.Group();
+  gardenFallback.rotation.y = Math.PI;
   for (const bz of [-0.85, 0.85]) {
     const bed = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.32, 1.2), soilMat);
     bed.position.set(0, 0.16, bz);
@@ -137,6 +138,8 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
       const model = gltf.scene;
       // Stattliche Skalierung passend zur Szene vor der Burg (Breite ca. 3.8m, Tiefe ca. 3.4m, Höhe ca. 1.1m)
       model.scale.setScalar(3.8);
+      // Drehung: um 180 Grad gegen den Uhrzeigersinn gedreht
+      model.rotation.y = Math.PI;
 
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
