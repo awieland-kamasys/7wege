@@ -777,8 +777,8 @@ export class CrossroadsScene {
         color: 0xffffff,
         map: barkTex.map ?? undefined,
         bumpMap: barkTex.bumpMap ?? undefined,
-        bumpScale: 0.04,
-        roughness: 0.88,
+        bumpScale: 0.032,
+        roughness: 0.78,
       });
     }
     return this.defaultTrunkMat;
@@ -1105,14 +1105,14 @@ export class CrossroadsScene {
       if (i % 2 === 0) {
         const t = roadsideTrees[i];
         const angle = t.birdhouseAngle!;
-        // Auf Augenhöhe (ca. 1.48m) frei sichtbar unter den ersten Ästen montieren
-        const trunkRadiusAtHeight = 0.215 * t.scale;
+        // Auf Stammhöhe (ca. 0.92m) frei und unbedeckt unter den Nadelästen montieren (keine Überlappung mit der Krone!)
+        const trunkRadiusAtHeight = 0.272 * t.scale;
         const bx = t.x + Math.sin(angle) * trunkRadiusAtHeight;
         const bz = t.z + Math.cos(angle) * trunkRadiusAtHeight;
 
         birdhouseInstances.push({
           x: bx,
-          y: getTerrainHeight(bx, bz) + 1.48 * t.scale,
+          y: getTerrainHeight(bx, bz) + 0.92 * t.scale,
           z: bz,
           rotationY: angle,
           scale: t.scale * 1.05,
@@ -1129,13 +1129,13 @@ export class CrossroadsScene {
       if (i % 3 === 0) {
         const t = centralTrees[i];
         const angle = Math.atan2(0 - t.x, 0 - t.z);
-        const trunkRadiusAtHeight = 0.215 * t.scale;
+        const trunkRadiusAtHeight = 0.272 * t.scale;
         const bx = t.x + Math.sin(angle) * trunkRadiusAtHeight;
         const bz = t.z + Math.cos(angle) * trunkRadiusAtHeight;
 
         birdhouseInstances.push({
           x: bx,
-          y: getTerrainHeight(bx, bz) + 1.48 * t.scale,
+          y: getTerrainHeight(bx, bz) + 0.92 * t.scale,
           z: bz,
           rotationY: angle,
           scale: t.scale * 1.05,
