@@ -555,12 +555,17 @@ export class CrossroadsScene {
     this.playerGroup.rotation.y = Math.atan2(21.0, 18.4);
     this.scene.add(this.playerGroup);
 
-    // Initiale Kamera-Ausrichtung hinter dem Spieler mit Blickrichtung zur Kreuzung
+    // Initiale Kamera-Ausrichtung hinter dem Spieler mit Blickrichtung zur Kreuzung (bodengeerdet)
     const targetY = startY + 1.1;
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
-    const camHeight = Math.max(startY + 0.55, targetY + Math.sin(this.cameraPitch) * this.cameraDistance);
     const initCamX = START_PLAYER_POS.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
     const initCamZ = START_PLAYER_POS.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
+    const initCamGroundY = getTerrainHeight(initCamX, initCamZ);
+    const camHeight = Math.max(
+      initCamGroundY + 0.75,
+      startY + 0.75,
+      targetY + Math.sin(this.cameraPitch) * this.cameraDistance
+    );
     this.camera.position.set(initCamX, camHeight, initCamZ);
     this.camera.lookAt(START_PLAYER_POS.x, targetY, START_PLAYER_POS.z);
 
@@ -870,19 +875,47 @@ export class CrossroadsScene {
     const { dark: normalCrownDarkMat, light: normalCrownLightMat } = this.getCrownMaterials(false);
     const { dark: burnedCrownDarkMat, light: burnedCrownLightMat } = this.getCrownMaterials(true);
 
-    // 1. Geteilte Einheitsgeometrien mit Verankerung im Boden (reicht 0.35m unter y = 0, damit an Hängen keine Wurzelkanten schweben!)
-    const trunkGeo = new THREE.CylinderGeometry(0.22, 0.35, 2.3, 8);
+    // 1. Detaillierterer Nadelbaum-Stamm (10 Segmente, leicht konischer Wurzelansatz, reicht 0.45m tief in den Boden)
+    const trunkGeo = new THREE.CylinderGeometry(0.20, 0.38, 2.5, 10);
     trunkGeo.translate(0, 0.8, 0);
 
-    const cone1 = new THREE.ConeGeometry(1.35, 2.6, 9);
-    cone1.translate(0, 2.6, 0);
+    // 2. Mehrstufige Krone mit 5 gestaffelten, versetzt verdrehten Nadelast-Etagen
+    // 13 Segmente pro Etage und versetzte Drehwinkel brechen das Licht lebendig wie echte Tannenzweige
+    const crownLayers: THREE.BufferGeometry[] = [];
 
-    const cone2 = new THREE.ConeGeometry(1.0, 2.2, 9);
-    cone2.translate(0, 4.0, 0);
+    // Etage 1 (breiteste Basissäume): Radius 1.65, Höhe 1.85
+    const cone1 = new THREE.ConeGeometry(1.65, 1.85, 13);
+    cone1.translate(0, 2.25, 0);
+    crownLayers.push(cone1);
 
-    const mergedCrownGeo = BufferGeometryUtils.mergeGeometries([cone1, cone2]);
-    cone1.dispose();
-    cone2.dispose();
+    // Etage 2: Radius 1.40, Höhe 1.70, leicht gedreht
+    const cone2 = new THREE.ConeGeometry(1.40, 1.70, 13);
+    cone2.rotateY(0.25);
+    cone2.translate(0, 2.95, 0);
+    crownLayers.push(cone2);
+
+    // Etage 3: Radius 1.15, Höhe 1.55, gegenläufig gedreht
+    const cone3 = new THREE.ConeGeometry(1.15, 1.55, 13);
+    cone3.rotateY(-0.22);
+    cone3.translate(0, 3.65, 0);
+    crownLayers.push(cone3);
+
+    // Etage 4: Radius 0.88, Höhe 1.40
+    const cone4 = new THREE.ConeGeometry(0.88, 1.40, 13);
+    cone4.rotateY(0.38);
+    cone4.translate(0, 4.30, 0);
+    crownLayers.push(cone4);
+
+    // Etage 5 (Wipfel / Baumspitze): Schlanker Spitzenkegel
+    const cone5 = new THREE.ConeGeometry(0.55, 1.30, 11);
+    cone5.rotateY(-0.15);
+    cone5.translate(0, 4.95, 0);
+    crownLayers.push(cone5);
+
+    const mergedCrownGeo = BufferGeometryUtils.mergeGeometries(crownLayers);
+    for (const geo of crownLayers) {
+      geo.dispose();
+    }
 
     if (!mergedCrownGeo) {
       console.error('Kronengeometrie konnte nicht zusammengeführt werden.');
@@ -2049,9 +2082,14 @@ export class CrossroadsScene {
 
     const targetY = groundY + 1.1;
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
-    const camHeight = Math.max(groundY + 0.55, targetY + Math.sin(this.cameraPitch) * this.cameraDistance);
     const targetCamX = playerPos.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
     const targetCamZ = playerPos.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
+    const camGroundY = getTerrainHeight(targetCamX, targetCamZ);
+    const camHeight = Math.max(
+      camGroundY + 0.75,
+      groundY + 0.75,
+      targetY + Math.sin(this.cameraPitch) * this.cameraDistance
+    );
 
     this.camera.position.set(targetCamX, camHeight, targetCamZ);
     this.camera.lookAt(playerPos.x, targetY, playerPos.z);
@@ -2484,12 +2522,26 @@ export class CrossroadsScene {
     // Sanfte Verfolgerkamera mit Maus-Orbit, Neigung (Pitch) und Zoom (Distanz)
     const targetY = groundY + 1.1;
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
-    const camHeight = Math.max(groundY + 0.55, targetY + Math.sin(this.cameraPitch) * this.cameraDistance);
     const targetCamX = playerPos.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
     const targetCamZ = playerPos.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
 
+    // Geländehöhe an der Kameraposition prüfen (Kamera darf niemals in den Boden einsinken!)
+    const targetCamGroundY = getTerrainHeight(targetCamX, targetCamZ);
+    const camHeight = Math.max(
+      targetCamGroundY + 0.75,
+      groundY + 0.75,
+      targetY + Math.sin(this.cameraPitch) * this.cameraDistance
+    );
+
     this.tempTargetCamPos.set(targetCamX, camHeight, targetCamZ);
     this.camera.position.lerp(this.tempTargetCamPos, 0.14);
+
+    // Absoluter Bodenschutz: Auch während der weichen Lerp-Bewegung immer mindestens 0.75m über dem Terrain bleiben
+    const currentCamGroundY = getTerrainHeight(this.camera.position.x, this.camera.position.z);
+    if (this.camera.position.y < currentCamGroundY + 0.75) {
+      this.camera.position.y = currentCamGroundY + 0.75;
+    }
+
     this.camera.lookAt(playerPos.x, targetY, playerPos.z);
 
     this.renderer.render(this.scene, this.camera);

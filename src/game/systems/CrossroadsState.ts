@@ -1541,62 +1541,45 @@ export class CrossroadsState {
       resolvedX = afterWoodWoman.x;
       resolvedZ = afterWoodWoman.z;
 
-      // Aufbauten im Holzfällerlager auf Weg 4:
-      // 1. Brennholz-Unterstand (AABB bei 12.8, 44.0)
-      const relShedX = resolvedX - 12.8;
-      const relShedZ = resolvedZ - 44.0;
-      if (Math.abs(relShedX) < 1.5 && Math.abs(relShedZ) < 0.9) {
-        const penX = 1.5 - Math.abs(relShedX);
-        const penZ = 0.9 - Math.abs(relShedZ);
-        if (penX < penZ) {
-          resolvedX = 12.8 + (relShedX >= 0 ? 1.5 : -1.5);
-        } else {
-          resolvedZ = 44.0 + (relShedZ >= 0 ? 0.9 : -0.9);
-        }
-      }
-
-      // 2. Stammpolter & Sägebock (AABB bei 20.25, 43.5)
-      const relLogPileX = resolvedX - 20.25;
-      const relLogPileZ = resolvedZ - 43.5;
-      if (Math.abs(relLogPileX) < 1.7 && Math.abs(relLogPileZ) < 1.3) {
-        const penX = 1.7 - Math.abs(relLogPileX);
-        const penZ = 1.3 - Math.abs(relLogPileZ);
-        if (penX < penZ) {
-          resolvedX = 20.25 + (relLogPileX >= 0 ? 1.7 : -1.7);
-        } else {
-          resolvedZ = 43.5 + (relLogPileZ >= 0 ? 1.3 : -1.3);
-        }
-      }
-
-      // 3. Hackklotz mit Axt bei (14.85, 45.35)
-      const afterChoppingBlock = this.pushOutOfCircle(
-        resolvedX,
-        resolvedZ,
-        { x: 14.85, z: 45.35 },
-        0.55
-      );
-      resolvedX = afterChoppingBlock.x;
-      resolvedZ = afterChoppingBlock.z;
-
-      // 4. Feuerstelle im Steinkreis bei (18.55, 45.45)
+      // Aufbauten der Lagerfeuer-Szene (Holzfällercamp auf Weg 4):
+      // 1. Zentrale Feuerstelle mit Kessel und Glutkreis bei (16.5, 43.8)
       const afterCampfire = this.pushOutOfCircle(
         resolvedX,
         resolvedZ,
-        { x: 18.55, z: 45.45 },
-        0.65
+        this.lumberCampPos,
+        0.85
       );
       resolvedX = afterCampfire.x;
       resolvedZ = afterCampfire.z;
 
-      // 5. Großer Urwaldstumpf bei (16.8, 45.35)
-      const afterBigStump = this.pushOutOfCircle(
+      // 2. Hintere Haupt-Sitzbank und Holzstapel bei (16.5, 45.4)
+      const afterRearBench = this.pushOutOfCircle(
         resolvedX,
         resolvedZ,
-        { x: 16.8, z: 45.35 },
+        { x: 16.5, z: 45.4 },
+        0.95
+      );
+      resolvedX = afterRearBench.x;
+      resolvedZ = afterRearBench.z;
+
+      // 3. Linke und rechte Sitzbänke/Stämme des Camps
+      const afterLeftBench = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        { x: 14.7, z: 43.8 },
         0.85
       );
-      resolvedX = afterBigStump.x;
-      resolvedZ = afterBigStump.z;
+      resolvedX = afterLeftBench.x;
+      resolvedZ = afterLeftBench.z;
+
+      const afterRightBench = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        { x: 18.3, z: 43.8 },
+        0.85
+      );
+      resolvedX = afterRightBench.x;
+      resolvedZ = afterRightBench.z;
 
       // Teufel-Kollision am Ende von Weg 5
       const afterDevil = this.pushOutOfCircle(
@@ -2015,7 +1998,7 @@ export class CrossroadsState {
    */
   public setTargetToWoodWoman(): Readonly<Vector2D> {
     this.selectPath(4);
-    return this.setTargetPosition(this.woodWomanPos.x - 0.25, this.woodWomanPos.z - 1.25);
+    return this.setTargetPosition(this.woodWomanPos.x + 0.55, this.woodWomanPos.z - 0.85);
   }
 
   /**
