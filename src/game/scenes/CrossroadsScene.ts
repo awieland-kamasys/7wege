@@ -213,13 +213,13 @@ export class CrossroadsScene {
     this.scene.background = this.currentFogColor;
     this.scene.fog = new THREE.Fog(this.defaultFogColor.getHex(), 10.0, 25.0);
 
-    // Far-Plane auf 38m optimiert: dichter Nebel verdeckt ohnehin alles ab 25m,
-    // dadurch werden weiter entfernte Objekte automatisch per Frustum-Culling verworfen.
+    // Far-Plane auf 75m gesetzt: erlaubt am weiten Lavasee freie Sicht über den gesamten Krater,
+    // während im Wald der dichte 25m-Nebel für automatische Verdeckung sorgt.
     this.camera = new THREE.PerspectiveCamera(
       55,
       window.innerWidth / window.innerHeight,
       0.1,
-      38
+      75.0
     );
 
     this.renderer = new THREE.WebGLRenderer({
@@ -2490,8 +2490,8 @@ export class CrossroadsScene {
         this.isWoodWomanHovered || isDialogueActive
       );
     }
-    // Weg 5: Höllenschlund & Teufel
-    if (distHell < 33) {
+    // Weg 5: Höllenschlund & Teufel (bereits ab 58m aktiv, damit der Krater vom Rand aus lebendig wirkt)
+    if (distHell < 58) {
       this.hellChasm.update(this.elapsedSeconds);
       this.devilNpc.update(
         this.elapsedSeconds,
@@ -2589,19 +2589,23 @@ export class CrossroadsScene {
 
     // Dynamische Nebel- und Himmelanpassung:
     // Nähert sich die Spielfigur dem Höllenschlund am Ende des 5. Weges, färbt sich der Nebel unheilvoll dunkelrot/schwarz
+    // und die Sichtweite öffnet sich weit über das gesamte Lavabecken hinweg!
     const distToDevil = Math.hypot(playerPos.x - DEVIL_NPC_POS.x, playerPos.z - DEVIL_NPC_POS.z);
-    // Ab 36m beginnt die Verfinsterung, bei <= 14m ist voller aschig-dunkler Höllennebel
-    const hellFogFactor = 1.0 - Math.min(1.0, Math.max(0.0, (distToDevil - 14.0) / 22.0));
+    // Ab 42m beginnt die unheilvolle Rot-Verfärbung, ab <= 16m ist man voll im Lavakessel
+    const hellFogFactor = 1.0 - Math.min(1.0, Math.max(0.0, (distToDevil - 16.0) / 26.0));
     this.tempTargetFogColor.copy(this.defaultFogColor).lerp(this.hellFogColor, hellFogFactor);
     this.currentFogColor.lerp(this.tempTargetFogColor, 0.05);
 
     this.scene.background = this.currentFogColor;
     if (this.scene.fog) {
       (this.scene.fog as THREE.Fog).color.copy(this.currentFogColor);
-      const targetFar = THREE.MathUtils.lerp(25.0, 19.0, hellFogFactor);
-      const targetNear = THREE.MathUtils.lerp(10.0, 6.5, hellFogFactor);
-      (this.scene.fog as THREE.Fog).far = THREE.MathUtils.lerp((this.scene.fog as THREE.Fog).far, targetFar, 0.05);
-      (this.scene.fog as THREE.Fog).near = THREE.MathUtils.lerp((this.scene.fog as THREE.Fog).near, targetNear, 0.05);
+      // Im dichten Wald: near = 10.0m, far = 25.0m (geheimnisvoll dichter Waldnebel)
+      // Am Lavasee: weite, monumentale Sicht über den gesamten Krater (near = 22.0m, far = 60.0m),
+      // sodass der Teufel auf seinem Obsidianfelsen bereits vom Kraterrand aus glasklar zu sehen ist!
+      const targetFar = THREE.MathUtils.lerp(25.0, 60.0, hellFogFactor);
+      const targetNear = THREE.MathUtils.lerp(10.0, 22.0, hellFogFactor);
+      (this.scene.fog as THREE.Fog).far = THREE.MathUtils.lerp((this.scene.fog as THREE.Fog).far, targetFar, 0.06);
+      (this.scene.fog as THREE.Fog).near = THREE.MathUtils.lerp((this.scene.fog as THREE.Fog).near, targetNear, 0.06);
     }
 
     // Sanfte Verfolgerkamera mit Maus-Orbit, Neigung (Pitch) und Zoom (Distanz)
