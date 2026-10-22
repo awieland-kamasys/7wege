@@ -4,6 +4,7 @@ import { DialogueSystem } from '../game/systems/DialogueSystem';
 import { SoundService } from '../game/systems/SoundService';
 import { SpeechService } from '../game/systems/SpeechService';
 import { HudOverlay } from '../ui/HudOverlay';
+import { TerrainPresetKey } from '../game/textures/TerrainPresets';
 
 /**
  * Verbindet Spielzustand, Kommunikationssystem, Sprachausgabe, Soundeffekte, Tastatur- und Mauseingabe, Three.js-Szene und DOM-Oberfläche.
@@ -80,6 +81,9 @@ export class GameApp {
       onToggleSpeech: () => {
         return this.speech.toggleEnabled();
       },
+      onSelectTerrainPreset: (presetKey) => {
+        this.setTerrainPreset(presetKey);
+      },
     });
 
     window.addEventListener('keydown', this.onKeyDown);
@@ -142,6 +146,11 @@ export class GameApp {
     const pos = this.state.jumpToClearing();
     this.scene.snapCameraToPlayer(pos);
     this.sound.playFootstep();
+  }
+
+  public setTerrainPreset(presetKey: TerrainPresetKey): void {
+    this.scene.setTerrainPreset(presetKey);
+    this.hud.setTerrainPreset(presetKey);
   }
 
   private initiateTalkToNpc(): void {
@@ -311,6 +320,24 @@ export class GameApp {
       if (key >= '1' && key <= '8') {
         const optionIdx = Number(key) - 1;
         this.handleDialogueOption(optionIdx);
+        return;
+      }
+    } else {
+      // Wenn kein Gespräch offen ist, schalten die Zahlentasten 1–4 die Boden- und Wegtexturen um
+      if (key === '1') {
+        this.setTerrainPreset('erzgebirge');
+        return;
+      }
+      if (key === '2') {
+        this.setTerrainPreset('sonnig');
+        return;
+      }
+      if (key === '3') {
+        this.setTerrainPreset('mooswald');
+        return;
+      }
+      if (key === '4') {
+        this.setTerrainPreset('smaragd');
         return;
       }
     }

@@ -5,21 +5,30 @@ import {
   createVeinedLavaRockTexture,
 } from './GroundTextures';
 import { createTerrainSplatMap } from './TerrainSplatMap';
+import {
+  DEFAULT_TERRAIN_PRESET,
+  TerrainPresetKey,
+} from './TerrainPresets';
 
 export interface TerrainMaterialController {
   material: THREE.MeshStandardMaterial;
   setLavaPulse: (pulse: number) => void;
+  setPreset: (presetKey: TerrainPresetKey) => void;
+  getCurrentPreset: () => TerrainPresetKey;
 }
 
 /**
  * Erzeugt das Splatmap-Terrain-Material:
- * - Gestochen scharfe gekachelte Waldwiese (65x Wiederholung, sattes Waldgrün, Moos, Erde)
- * - Gestochen scharfe gekachelte Kiesel-/Waldwege (45x Wiederholung)
- * - Gekachelter, tiefschwarzer Basalt- & Obsidianboden mit glühenden roten Magma-Adern am Lavasee (18x Wiederholung)
+ * - Gestochen scharfe gekachelte Waldwiese (55x Wiederholung) mit wählbarem Preset
+ * - Gestochen scharfe gekachelte Kiesel-/Waldwege (38x Wiederholung) mit wählbarem Preset
+ * - Gekachelter, tiefschwarzer Basalt- & Obsidianboden mit glühenden roten Magma-Adern am Lavasee (16x Wiederholung)
  * - 2048x2048 Splatmap für nahtlose, organische Übergänge ohne Unschärfe und ohne Kringel vor der Hütte
+ * - Physikalisch korrekte sRGB-zu-Linear-Farbkorrektur gegen blasse oder verwaschene Farben
  */
-export function createTerrainMaterial(): TerrainMaterialController {
-  const grassTex = createGrassTexture();
+export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_TERRAIN_PRESET): TerrainMaterialController {
+  let currentPreset = initialPreset;
+
+  const grassTex = createGrassTexture(currentPreset);
   if (grassTex.map) {
     grassTex.map.wrapS = THREE.RepeatWrapping;
     grassTex.map.wrapT = THREE.RepeatWrapping;
@@ -29,7 +38,7 @@ export function createTerrainMaterial(): TerrainMaterialController {
     grassTex.bumpMap.wrapT = THREE.RepeatWrapping;
   }
 
-  const pathTex = createPathTexture();
+  const pathTex = createPathTexture(currentPreset);
   if (pathTex.map) {
     pathTex.map.wrapS = THREE.RepeatWrapping;
     pathTex.map.wrapT = THREE.RepeatWrapping;
@@ -74,8 +83,8 @@ export function createTerrainMaterial(): TerrainMaterialController {
     emissiveIntensity: 1.0,
     bumpMap: grassTex.bumpMap ?? undefined,
     bumpScale: 0.045,
-    roughness: 0.88,
-    metalness: 0.08,
+    roughness: 0.90,
+    metalness: 0.05,
   });
 
   material.onBeforeCompile = (shader) => {
@@ -102,22 +111,16 @@ export function createTerrainMaterial(): TerrainMaterialController {
         vec4 colPath = texture2D( uPathMap, vMapUv * 38.0 );
         vec4 colLava = texture2D( uLavaMap, vMapUv * 16.0 );
 
-        // 1. Kräftiges, sattes Waldwiesengrün (früherer atmosphärischer Farbraum mit sattem Grün und Mooskontrast)
-        vec3 grassTint = vec3(0.55, 0.88, 0.58);
-        vec3 richGrass = pow(colGrass.rgb, vec3(1.15)) * grassTint * 1.5;
-
-        // 2. Sandig-lehmiger, warmer Weg (früherer Farbraum 0x826d55 / warmer Lehm- und Ockerton)
-        vec3 pathTint = vec3(1.18, 0.96, 0.72);
-        vec3 warmPath = pow(colPath.rgb, vec3(1.08)) * pathTint * 1.1;
-
-        // 3. Tiefschwarzer Obsidian- und Basaltboden am Lavasee
-        vec3 darkLava = colLava.rgb * 0.9;
+        // Korrekte Konvertierung von sRGB zu Linear für naturgetreue, satte Farbwiedergabe ohne Ausbleichen
+        vec3 grassLinear = pow(colGrass.rgb, vec3(2.2));
+        vec3 pathLinear = pow(colPath.rgb, vec3(2.2));
+        vec3 lavaLinear = pow(colLava.rgb, vec3(2.2));
 
         // 1. Wiese zu Weg mit natürlichem Auslauf
-        vec3 terrainDiff = mix(richGrass, warmPath, splat.r);
+        vec3 terrainDiff = mix(grassLinear, pathLinear, splat.r);
 
         // 2. Zu tiefschwarzem Obsidianboden um den Lavasee
-        terrainDiff = mix(terrainDiff, darkLava, splat.g);
+        terrainDiff = mix(terrainDiff, lavaLinear * 0.85, splat.g);
 
         diffuseColor.rgb *= terrainDiff;
       #endif
@@ -143,5 +146,37 @@ export function createTerrainMaterial(): TerrainMaterialController {
     uniforms.uLavaPulse.value = pulse;
   };
 
-  return { material, setLavaPulse };
+  const setPreset = (presetKey: TerrainPresetKey) => {
+    currentPreset = presetKey;
+    const nextGrass = createGrassTexture(presetKey);
+    const nextPath = createPathTexture(presetKey);
+
+    if (nextGrass.map) {
+      nextGrass.map.wrapS = THREE.RepeatWrapping;
+      nextGrass.map.wrapT = THREE.RepeatWrapping;
+      uniforms.uGrassMap.value = nextGrass.map;
+    }
+    if (nextGrass.bumpMap) {
+      nextGrass.bumpMap.wrapS = THREE.RepeatWrapping;
+      nextGrass.bumpMap.wrapT = THREE.RepeatWrapping;
+      uniforms.uGrassBump.value = nextGrass.bumpMap;
+    }
+
+    if (nextPath.map) {
+      nextPath.map.wrapS = THREE.RepeatWrapping;
+      nextPath.map.wrapT = THREE.RepeatWrapping;
+      uniforms.uPathMap.value = nextPath.map;
+    }
+    if (nextPath.bumpMap) {
+      nextPath.bumpMap.wrapS = THREE.RepeatWrapping;
+      nextPath.bumpMap.wrapT = THREE.RepeatWrapping;
+      uniforms.uPathBump.value = nextPath.bumpMap;
+    }
+
+    material.needsUpdate = true;
+  };
+
+  const getCurrentPreset = () => currentPreset;
+
+  return { material, setLavaPulse, setPreset, getCurrentPreset };
 }

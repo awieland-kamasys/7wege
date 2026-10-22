@@ -62,6 +62,7 @@ import {
   createVeinedLavaRockTexture,
 } from '../textures/GroundTextures';
 import { createTerrainMaterial, TerrainMaterialController } from '../textures/TerrainMaterial';
+import { TerrainPresetKey } from '../textures/TerrainPresets';
 import { createWoodWomanNpc, WoodWomanNpcEntity } from '../entities/WoodWomanNpc';
 import { buildMergedMushroomClusters, MushroomClusterOptions, MushroomType } from '../entities/MushroomCluster';
 import { buildMergedBirdhouses, BirdhouseInstance } from '../entities/Birdhouse';
@@ -205,17 +206,17 @@ export class CrossroadsScene {
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.scene = new THREE.Scene();
-    // Echter Waldnebel: im Nahbereich klar, ab ~9.5m einsetzend, ab 22m im Nebel verborgen
+    // Echter Waldnebel: im Nahbereich (0-16m) vollkommen klar und farbecht, ab 16m einsetzend, ab 38m im Nebel verborgen
     this.scene.background = this.currentFogColor;
-    this.scene.fog = new THREE.Fog(this.defaultFogColor.getHex(), 9.5, 22.0);
+    this.scene.fog = new THREE.Fog(this.defaultFogColor.getHex(), 16.0, 38.0);
 
-    // Far-Plane auf 42m optimiert: dichter Nebel verdeckt ohnehin alles ab 22-32m,
+    // Far-Plane auf 55m optimiert: dichter Nebel verdeckt ohnehin alles ab 38m,
     // dadurch werden weiter entfernte Objekte automatisch per Frustum-Culling verworfen.
     this.camera = new THREE.PerspectiveCamera(
       55,
       window.innerWidth / window.innerHeight,
       0.1,
-      42
+      55
     );
 
     this.renderer = new THREE.WebGLRenderer({
@@ -563,10 +564,10 @@ export class CrossroadsScene {
   }
 
   private setupLights(): void {
-    const ambient = new THREE.AmbientLight(0xdbe3de, 0.64);
+    const ambient = new THREE.AmbientLight(0xdbe3de, 0.52);
     this.scene.add(ambient);
 
-    const sunLight = new THREE.DirectionalLight(0xfff3de, 1.25);
+    const sunLight = new THREE.DirectionalLight(0xfff3de, 0.92);
     sunLight.position.set(16, 36, 14);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 1024;
@@ -2453,8 +2454,8 @@ export class CrossroadsScene {
     this.scene.background = this.currentFogColor;
     if (this.scene.fog) {
       (this.scene.fog as THREE.Fog).color.copy(this.currentFogColor);
-      const targetFar = THREE.MathUtils.lerp(22.0, 32.0, hellFogFactor);
-      const targetNear = THREE.MathUtils.lerp(9.5, 7.5, hellFogFactor);
+      const targetFar = THREE.MathUtils.lerp(38.0, 32.0, hellFogFactor);
+      const targetNear = THREE.MathUtils.lerp(16.0, 8.5, hellFogFactor);
       (this.scene.fog as THREE.Fog).far = THREE.MathUtils.lerp((this.scene.fog as THREE.Fog).far, targetFar, 0.05);
       (this.scene.fog as THREE.Fog).near = THREE.MathUtils.lerp((this.scene.fog as THREE.Fog).near, targetNear, 0.05);
     }
@@ -2522,6 +2523,14 @@ export class CrossroadsScene {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(this.getOptimalPixelRatio());
   };
+
+  public setTerrainPreset(presetKey: TerrainPresetKey): void {
+    this.terrainMatController?.setPreset(presetKey);
+  }
+
+  public getTerrainPreset(): TerrainPresetKey {
+    return this.terrainMatController?.getCurrentPreset() ?? 'erzgebirge';
+  }
 
   public dispose(): void {
     window.removeEventListener('resize', this.onResize);

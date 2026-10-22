@@ -1,4 +1,9 @@
 import * as THREE from 'three';
+import {
+  DEFAULT_TERRAIN_PRESET,
+  TERRAIN_PRESETS,
+  TerrainPresetKey,
+} from './TerrainPresets';
 
 interface TexturePair {
   map: THREE.CanvasTexture | null;
@@ -27,8 +32,8 @@ function cloneLava(bundle: LavaRockBundle): LavaRockBundle {
 }
 
 // Prozedural generierte Texturen werden gecacht, damit aufwendige Canvas-Renderzyklen nur einmalig ablaufen
-let cachedGrassTexture: TexturePair | null = null;
-let cachedPathTexture: TexturePair | null = null;
+const cachedGrassPresets = new Map<TerrainPresetKey, TexturePair>();
+const cachedPathPresets = new Map<TerrainPresetKey, TexturePair>();
 let cachedBarkTexture: TexturePair | null = null;
 let cachedPineFoliageTexture: TexturePair | null = null;
 let cachedStoneTexture: TexturePair | null = null;
@@ -43,14 +48,16 @@ let cachedWoodGrainTexture: TexturePair | null = null;
  * - Feine Grashalme, Moospolster und Erdkrümel für organische Haptik
  * - Nahtlose Ränder für sauberes RepeatWrapping ohne Kantenartefakte
  */
-export function createGrassTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
-  if (cachedGrassTexture) {
-    return clonePair(cachedGrassTexture);
+export function createGrassTexture(presetKey: TerrainPresetKey = DEFAULT_TERRAIN_PRESET): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  const cached = cachedGrassPresets.get(presetKey);
+  if (cached) {
+    return clonePair(cached);
   }
   if (typeof document === 'undefined') {
     return { map: null, bumpMap: null };
   }
 
+  const preset = TERRAIN_PRESETS[presetKey] || TERRAIN_PRESETS[DEFAULT_TERRAIN_PRESET];
   const size = 512;
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -64,7 +71,7 @@ export function createGrassTexture(): { map: THREE.CanvasTexture | null; bumpMap
   const bumpCtx = bumpCanvas.getContext('2d');
 
   // 1. Grundfläche: Waldwiesengrün
-  ctx.fillStyle = '#244528';
+  ctx.fillStyle = preset.grassBaseColor;
   ctx.fillRect(0, 0, size, size);
 
   if (bumpCtx) {
@@ -92,11 +99,11 @@ export function createGrassTexture(): { map: THREE.CanvasTexture | null; bumpMap
 
     const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
     if (isLight) {
-      grad.addColorStop(0, 'rgba(54, 98, 48, 0.45)');
-      grad.addColorStop(1, 'rgba(54, 98, 48, 0)');
+      grad.addColorStop(0, preset.grassShadeLight);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     } else {
-      grad.addColorStop(0, 'rgba(22, 45, 24, 0.55)');
-      grad.addColorStop(1, 'rgba(22, 45, 24, 0)');
+      grad.addColorStop(0, preset.grassShadeDark);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     }
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -128,15 +135,7 @@ export function createGrassTexture(): { map: THREE.CanvasTexture | null; bumpMap
 
   // 3. Tausende feine Grashalme & Fasern
   const bladeCount = 6500;
-  const bladeColors = [
-    '#2e5c32',
-    '#396e3e',
-    '#44804a',
-    '#4e9154',
-    '#204024',
-    '#589e5f',
-    '#294b2d',
-  ];
+  const bladeColors = preset.grassBladeColors;
 
   ctx.lineWidth = 1.25;
   for (let i = 0; i < bladeCount; i++) {
@@ -193,7 +192,7 @@ export function createGrassTexture(): { map: THREE.CanvasTexture | null; bumpMap
     const sx = random() * size;
     const sy = random() * size;
     const sr = 0.8 + random() * 1.6;
-    ctx.fillStyle = random() > 0.6 ? '#4a3d2c' : '#1d331e';
+    ctx.fillStyle = random() > 0.6 ? preset.grassPebbleColor : '#1a2e1b';
     ctx.beginPath();
     ctx.arc(sx, sy, sr, 0, Math.PI * 2);
     ctx.fill();
@@ -212,18 +211,21 @@ export function createGrassTexture(): { map: THREE.CanvasTexture | null; bumpMap
     bumpTexture.needsUpdate = true;
   }
 
-  cachedGrassTexture = { map: texture, bumpMap: bumpTexture };
-  return clonePair(cachedGrassTexture);
+  const pair: TexturePair = { map: texture, bumpMap: bumpTexture };
+  cachedGrassPresets.set(presetKey, pair);
+  return clonePair(pair);
 }
 
-export function createPathTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
-  if (cachedPathTexture) {
-    return clonePair(cachedPathTexture);
+export function createPathTexture(presetKey: TerrainPresetKey = DEFAULT_TERRAIN_PRESET): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  const cached = cachedPathPresets.get(presetKey);
+  if (cached) {
+    return clonePair(cached);
   }
   if (typeof document === 'undefined') {
     return { map: null, bumpMap: null };
   }
 
+  const preset = TERRAIN_PRESETS[presetKey] || TERRAIN_PRESETS[DEFAULT_TERRAIN_PRESET];
   const size = 512;
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -237,7 +239,7 @@ export function createPathTexture(): { map: THREE.CanvasTexture | null; bumpMap:
   const bumpCtx = bumpCanvas.getContext('2d');
 
   // 1. Grundfläche: Warmer Schotter-/Walderdboden
-  ctx.fillStyle = '#826d55';
+  ctx.fillStyle = preset.pathBaseColor;
   ctx.fillRect(0, 0, size, size);
 
   if (bumpCtx) {
@@ -264,11 +266,11 @@ export function createPathTexture(): { map: THREE.CanvasTexture | null; bumpMap:
 
     const grad = ctx.createRadialGradient(cx, cy, 3, cx, cy, r);
     if (isDark) {
-      grad.addColorStop(0, 'rgba(92, 73, 53, 0.45)');
-      grad.addColorStop(1, 'rgba(92, 73, 53, 0)');
+      grad.addColorStop(0, preset.pathShadeDark);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     } else {
-      grad.addColorStop(0, 'rgba(155, 134, 107, 0.38)');
-      grad.addColorStop(1, 'rgba(155, 134, 107, 0)');
+      grad.addColorStop(0, preset.pathShadeLight);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     }
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -300,15 +302,15 @@ export function createPathTexture(): { map: THREE.CanvasTexture | null; bumpMap:
 
   // 3. Hunderte Kieselsteine und Schotter
   const pebbleCount = 1200;
+  const pebblePalette = preset.pathPebbleColors;
   for (let i = 0; i < pebbleCount; i++) {
     const px = random() * size;
     const py = random() * size;
     const pr = 1.0 + random() * 4.2;
-    const shade = 100 + Math.floor(random() * 85);
-    const pebbleColor = `rgb(${shade + 18}, ${shade + 8}, ${shade - 6})`;
+    const pebbleColor = pebblePalette[Math.floor(random() * pebblePalette.length)];
 
     // Schlagschatten des Steins für 3D-Relief
-    ctx.fillStyle = 'rgba(40, 32, 24, 0.35)';
+    ctx.fillStyle = 'rgba(32, 24, 18, 0.45)';
     ctx.beginPath();
     ctx.arc(px + 0.8, py + 0.8, pr, 0, Math.PI * 2);
     ctx.fill();
@@ -321,7 +323,7 @@ export function createPathTexture(): { map: THREE.CanvasTexture | null; bumpMap:
 
     // Glanzkante oben links
     if (pr > 2.0) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
       ctx.beginPath();
       ctx.arc(px - pr * 0.3, py - pr * 0.3, pr * 0.45, 0, Math.PI * 2);
       ctx.fill();
@@ -387,8 +389,9 @@ export function createPathTexture(): { map: THREE.CanvasTexture | null; bumpMap:
     bumpTexture.needsUpdate = true;
   }
 
-  cachedPathTexture = { map: texture, bumpMap: bumpTexture };
-  return clonePair(cachedPathTexture);
+  const pair: TexturePair = { map: texture, bumpMap: bumpTexture };
+  cachedPathPresets.set(presetKey, pair);
+  return clonePair(pair);
 }
 
 /**
