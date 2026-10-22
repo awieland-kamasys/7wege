@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {
   CAVE_ENTRANCE_POS,
   DEVIL_NPC_POS,
@@ -101,6 +102,15 @@ export type ScenePickResult =
   | { kind: 'signpost'; point: Vector2D }
   | { kind: 'ground'; point: Vector2D };
 
+interface ForestTreeInstance {
+  x: number;
+  z: number;
+  scale: number;
+  useDarkCrown: boolean;
+  isBurned: boolean;
+  birdhouseAngle?: number;
+}
+
 /**
  * Three.js-Szene der Waldkreuzung mit 7 Wegen,
  * - Weg 1: Bergmassiv mit Höhleneingang & Graumännchen
@@ -176,7 +186,6 @@ export class CrossroadsScene {
   private readonly gemstonePulseTimers = new Map<number, number>();
   private lastPlayerPos: Vector2D = { ...START_PLAYER_POS };
   private elapsedSeconds = 0;
-  private treeCounter = 0;
   private hellGroundOuterMat: THREE.MeshStandardMaterial | null = null;
   private hellGroundInnerMat: THREE.MeshStandardMaterial | null = null;
   private hellMeadowGlowMat: THREE.MeshStandardMaterial | null = null;
@@ -191,6 +200,7 @@ export class CrossroadsScene {
   private readonly tempTargetFogColor = new THREE.Color();
   private readonly tempTargetCamPos = new THREE.Vector3();
   private cachedCanvasRect: DOMRect | null = null;
+  private readonly treeInstances: ForestTreeInstance[] = [];
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -448,6 +458,7 @@ export class CrossroadsScene {
     this.buildCurvedPath5Trees();
     this.buildCurvedPath6Trees();
     this.buildCurvedPath7Trees();
+    this.buildInstancedForest();
     this.buildPath7Wildflowers();
     this.buildForestMushrooms();
     this.buildHellChasmBackdropRocks();
@@ -481,10 +492,11 @@ export class CrossroadsScene {
     const sunLight = new THREE.DirectionalLight(0xfff1d6, 1.15);
     sunLight.position.set(16, 36, 14);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
     sunLight.shadow.camera.near = 2;
     sunLight.shadow.camera.far = 110;
+    sunLight.shadow.bias = -0.0004;
     const d = 55;
     sunLight.shadow.camera.left = -d;
     sunLight.shadow.camera.right = d;
@@ -1069,64 +1081,159 @@ export class CrossroadsScene {
     return { dark: this.defaultCrownDarkMat, light: this.defaultCrownLightMat };
   }
 
-  private createTreeMesh(
+  private addTreeToForest(
+    x: number,
+    z: number,
     scale: number,
     useDarkCrown: boolean,
-    trunkMat: THREE.Material,
-    crownMatDark: THREE.Material,
-    crownMatLight: THREE.Material,
-    birdhouseFacingAngle?: number
-  ): THREE.Group {
-    const tree = new THREE.Group();
-    const trunk = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.22 * scale, 0.32 * scale, 1.8 * scale, 8),
-      trunkMat
-    );
-    trunk.position.y = 0.9 * scale;
-    trunk.castShadow = true;
-    tree.add(trunk);
+    isBurned = false,
+    birdhouseAngle?: number
+  ): void {
+    this.treeInstances.push({ x, z, scale, useDarkCrown, isBurned, birdhouseAngle });
+  }
 
-    const crownMat = useDarkCrown ? crownMatDark : crownMatLight;
+  /**
+   * Erzeugt den gesamten Wald als hocheffiziente THREE.InstancedMesh-Verbünde.
+   * Reduziert die Draw Calls von über 1.500 auf genau 6 für die gesamte Spielwelt.
+   */
+  private buildInstancedForest(): void {
+    const normalTrunkMat = this.getTrunkMaterial(false);
+    const burnedTrunkMat = this.getTrunkMaterial(true);
+    const { dark: normalCrownDarkMat, light: normalCrownLightMat } = this.getCrownMaterials(false);
+    const { dark: burnedCrownDarkMat, light: burnedCrownLightMat } = this.getCrownMaterials(true);
 
-    const crown1 = new THREE.Mesh(
-      new THREE.ConeGeometry(1.35 * scale, 2.6 * scale, 9),
-      crownMat
-    );
-    crown1.position.y = 2.6 * scale;
-    crown1.castShadow = true;
-    tree.add(crown1);
+    // 1. Geteilte Einheitsgeometrien mit Pivot am Boden (y = 0)
+    const trunkGeo = new THREE.CylinderGeometry(0.22, 0.32, 1.8, 8);
+    trunkGeo.translate(0, 0.9, 0);
 
-    const crown2 = new THREE.Mesh(
-      new THREE.ConeGeometry(1.0 * scale, 2.2 * scale, 9),
-      crownMat
-    );
-    crown2.position.y = 4.0 * scale;
-    crown2.castShadow = true;
-    tree.add(crown2);
+    const cone1 = new THREE.ConeGeometry(1.35, 2.6, 9);
+    cone1.translate(0, 2.6, 0);
 
-    // An jedem 10. lebenden Baum einen Nistkasten montieren
-    const isBurnedTree = this.burnedTrunkMat !== null && trunkMat === this.burnedTrunkMat;
-    if (!isBurnedTree) {
-      this.treeCounter++;
-      if (this.treeCounter % 10 === 0) {
-        const birdhouse = createBirdhouse(scale);
-        // Nistkasten auf gut sichtbarer Stammhöhe unterhalb der Baumkrone anbringen (ca. 0.82 * scale)
-        const trunkRadiusAtHeight = 0.274 * scale;
-        const angle =
-          birdhouseFacingAngle !== undefined
-            ? birdhouseFacingAngle
-            : (this.treeCounter * 1.618) % (Math.PI * 2);
+    const cone2 = new THREE.ConeGeometry(1.0, 2.2, 9);
+    cone2.translate(0, 4.0, 0);
 
-        const bx = Math.sin(angle) * trunkRadiusAtHeight;
-        const bz = Math.cos(angle) * trunkRadiusAtHeight;
+    const mergedCrownGeo = BufferGeometryUtils.mergeGeometries([cone1, cone2]);
+    cone1.dispose();
+    cone2.dispose();
 
-        birdhouse.position.set(bx, 0.82 * scale, bz);
-        birdhouse.rotation.y = angle;
-        tree.add(birdhouse);
-      }
+    if (!mergedCrownGeo) {
+      console.error('Kronengeometrie konnte nicht zusammengeführt werden.');
+      return;
     }
 
-    return tree;
+    // 2. Bäume nach Typ gruppieren
+    const normalTrees = this.treeInstances.filter((t) => !t.isBurned);
+    const normalDark = normalTrees.filter((t) => t.useDarkCrown);
+    const normalLight = normalTrees.filter((t) => !t.useDarkCrown);
+
+    const burnedTrees = this.treeInstances.filter((t) => t.isBurned);
+    const burnedDark = burnedTrees.filter((t) => t.useDarkCrown);
+    const burnedLight = burnedTrees.filter((t) => !t.useDarkCrown);
+
+    const dummy = new THREE.Object3D();
+    const setMatrix = (instancedMesh: THREE.InstancedMesh, index: number, t: ForestTreeInstance) => {
+      dummy.position.set(t.x, 0, t.z);
+      dummy.scale.set(t.scale, t.scale, t.scale);
+      dummy.rotation.y = (t.x * 37.1 + t.z * 59.3) % 6.28;
+      dummy.updateMatrix();
+      instancedMesh.setMatrixAt(index, dummy.matrix);
+    };
+
+    // 3. Normale Stämme (1 InstancedMesh für alle lebenden Baumstämme)
+    if (normalTrees.length > 0) {
+      const normalTrunkMesh = new THREE.InstancedMesh(trunkGeo, normalTrunkMat, normalTrees.length);
+      normalTrunkMesh.name = 'InstancedNormalTrunks';
+      normalTrunkMesh.castShadow = true;
+      normalTrunkMesh.receiveShadow = true;
+      for (let i = 0; i < normalTrees.length; i++) {
+        setMatrix(normalTrunkMesh, i, normalTrees[i]);
+      }
+      normalTrunkMesh.instanceMatrix.needsUpdate = true;
+      this.scene.add(normalTrunkMesh);
+    }
+
+    // 4. Normale Kronen (dunkel und hell getrennt nach Material)
+    if (normalDark.length > 0) {
+      const normalCrownDarkMesh = new THREE.InstancedMesh(mergedCrownGeo, normalCrownDarkMat, normalDark.length);
+      normalCrownDarkMesh.name = 'InstancedNormalCrownsDark';
+      normalCrownDarkMesh.castShadow = true;
+      normalCrownDarkMesh.receiveShadow = true;
+      for (let i = 0; i < normalDark.length; i++) {
+        setMatrix(normalCrownDarkMesh, i, normalDark[i]);
+      }
+      normalCrownDarkMesh.instanceMatrix.needsUpdate = true;
+      this.scene.add(normalCrownDarkMesh);
+    }
+
+    if (normalLight.length > 0) {
+      const normalCrownLightMesh = new THREE.InstancedMesh(mergedCrownGeo, normalCrownLightMat, normalLight.length);
+      normalCrownLightMesh.name = 'InstancedNormalCrownsLight';
+      normalCrownLightMesh.castShadow = true;
+      normalCrownLightMesh.receiveShadow = true;
+      for (let i = 0; i < normalLight.length; i++) {
+        setMatrix(normalCrownLightMesh, i, normalLight[i]);
+      }
+      normalCrownLightMesh.instanceMatrix.needsUpdate = true;
+      this.scene.add(normalCrownLightMesh);
+    }
+
+    // 5. Verbrannte Bäume (Weg 5)
+    if (burnedTrees.length > 0) {
+      const burnedTrunkMesh = new THREE.InstancedMesh(trunkGeo, burnedTrunkMat, burnedTrees.length);
+      burnedTrunkMesh.name = 'InstancedBurnedTrunks';
+      burnedTrunkMesh.castShadow = true;
+      burnedTrunkMesh.receiveShadow = true;
+      for (let i = 0; i < burnedTrees.length; i++) {
+        setMatrix(burnedTrunkMesh, i, burnedTrees[i]);
+      }
+      burnedTrunkMesh.instanceMatrix.needsUpdate = true;
+      this.scene.add(burnedTrunkMesh);
+    }
+
+    if (burnedDark.length > 0) {
+      const burnedCrownDarkMesh = new THREE.InstancedMesh(mergedCrownGeo, burnedCrownDarkMat, burnedDark.length);
+      burnedCrownDarkMesh.name = 'InstancedBurnedCrownsDark';
+      burnedCrownDarkMesh.castShadow = true;
+      burnedCrownDarkMesh.receiveShadow = true;
+      for (let i = 0; i < burnedDark.length; i++) {
+        setMatrix(burnedCrownDarkMesh, i, burnedDark[i]);
+      }
+      burnedCrownDarkMesh.instanceMatrix.needsUpdate = true;
+      this.scene.add(burnedCrownDarkMesh);
+    }
+
+    if (burnedLight.length > 0) {
+      const burnedCrownLightMesh = new THREE.InstancedMesh(mergedCrownGeo, burnedCrownLightMat, burnedLight.length);
+      burnedCrownLightMesh.name = 'InstancedBurnedCrownsLight';
+      burnedCrownLightMesh.castShadow = true;
+      burnedCrownLightMesh.receiveShadow = true;
+      for (let i = 0; i < burnedLight.length; i++) {
+        setMatrix(burnedCrownLightMesh, i, burnedLight[i]);
+      }
+      burnedCrownLightMesh.instanceMatrix.needsUpdate = true;
+      this.scene.add(burnedCrownLightMesh);
+    }
+
+    // 6. Nistkästen an jedem 10. lebenden Baum anbringen
+    let livingTreeCounter = 0;
+    for (const t of normalTrees) {
+      livingTreeCounter++;
+      if (livingTreeCounter % 10 === 0) {
+        const birdhouse = createBirdhouse(t.scale);
+        const trunkRadiusAtHeight = 0.274 * t.scale;
+        const angle =
+          t.birdhouseAngle !== undefined
+            ? t.birdhouseAngle
+            : (livingTreeCounter * 1.618) % (Math.PI * 2);
+
+        const bx = t.x + Math.sin(angle) * trunkRadiusAtHeight;
+        const bz = t.z + Math.cos(angle) * trunkRadiusAtHeight;
+
+        birdhouse.position.set(bx, 0.82 * t.scale, bz);
+        birdhouse.rotation.y = angle;
+        this.scene.add(birdhouse);
+      }
+    }
   }
 
   private isNearCurvedCorridor(
@@ -1271,9 +1378,6 @@ export class CrossroadsScene {
   }
 
   private buildForestRing(): void {
-    const trunkMat = this.getTrunkMaterial();
-    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
-
     for (let i = 0; i < SEVEN_PATHS.length; i++) {
       const baseAngle = SEVEN_PATHS[i].angleRad + Math.PI / 7;
 
@@ -1297,15 +1401,7 @@ export class CrossroadsScene {
           }
 
           const scale = 0.85 + ((i * 7 + Math.round(r)) % 5) * 0.14;
-          const tree = this.createTreeMesh(
-            scale,
-            (i + Math.round(r)) % 2 === 0,
-            trunkMat,
-            crownMatDark,
-            crownMatLight
-          );
-          tree.position.set(x, 0, z);
-          this.scene.add(tree);
+          this.addTreeToForest(x, z, scale, (i + Math.round(r)) % 2 === 0, false);
         }
       }
     }
@@ -1315,9 +1411,6 @@ export class CrossroadsScene {
    * Platziert Bäume beidseitig entlang der Kurve von Weg 1 bis zum Bergmassiv.
    */
   private buildCurvedPath1Trees(): void {
-    const trunkMat = this.getTrunkMaterial();
-    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
-
     for (let i = 1; i < PATH_1_WAYPOINTS.length - 1; i++) {
       const prev = PATH_1_WAYPOINTS[i - 1];
       const curr = PATH_1_WAYPOINTS[i];
@@ -1344,16 +1437,7 @@ export class CrossroadsScene {
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
           // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
           const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
-          const tree = this.createTreeMesh(
-            scale,
-            (i + side) % 2 === 0,
-            trunkMat,
-            crownMatDark,
-            crownMatLight,
-            angleToPath
-          );
-          tree.position.set(tx, 0, tz);
-          this.scene.add(tree);
+          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false, angleToPath);
         }
       }
     }
@@ -1385,9 +1469,7 @@ export class CrossroadsScene {
     for (const [lx, lz, scale, useDark] of caveSideTrees) {
       const wx = CAVE_ENTRANCE_POS.x + lx * cos + lz * sin;
       const wz = CAVE_ENTRANCE_POS.z - lx * sin + lz * cos;
-      const tree = this.createTreeMesh(scale, useDark, trunkMat, crownMatDark, crownMatLight);
-      tree.position.set(wx, 0, wz);
-      this.scene.add(tree);
+      this.addTreeToForest(wx, wz, scale, useDark, false);
     }
   }
 
@@ -1395,9 +1477,6 @@ export class CrossroadsScene {
    * Platziert Bäume beidseitig entlang von Weg 2 und als malerische Waldkulisse rund um den Nixenteich.
    */
   private buildCurvedPath2Trees(): void {
-    const trunkMat = this.getTrunkMaterial();
-    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
-
     for (let i = 1; i < PATH_2_WAYPOINTS.length - 1; i++) {
       const prev = PATH_2_WAYPOINTS[i - 1];
       const curr = PATH_2_WAYPOINTS[i];
@@ -1424,16 +1503,7 @@ export class CrossroadsScene {
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
           // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
           const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
-          const tree = this.createTreeMesh(
-            scale,
-            (i + side) % 2 === 0,
-            trunkMat,
-            crownMatDark,
-            crownMatLight,
-            angleToPath
-          );
-          tree.position.set(tx, 0, tz);
-          this.scene.add(tree);
+          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false, angleToPath);
         }
       }
     }
@@ -1454,15 +1524,7 @@ export class CrossroadsScene {
           continue;
         }
         const scale = 1.05 + (idx % 3) * 0.16;
-        const tree = this.createTreeMesh(
-          scale,
-          idx % 2 === 0,
-          trunkMat,
-          crownMatDark,
-          crownMatLight
-        );
-        tree.position.set(tx, 0, tz);
-        this.scene.add(tree);
+        this.addTreeToForest(tx, tz, scale, idx % 2 === 0, false);
       }
     });
   }
@@ -1471,9 +1533,6 @@ export class CrossroadsScene {
    * Platziert Bäume beidseitig entlang von Weg 3 und rund um den Stausee und den Platz des Riesen.
    */
   private buildCurvedPath3Trees(): void {
-    const trunkMat = this.getTrunkMaterial();
-    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
-
     for (let i = 1; i < PATH_3_WAYPOINTS.length - 2; i++) {
       const prev = PATH_3_WAYPOINTS[i - 1];
       const curr = PATH_3_WAYPOINTS[i];
@@ -1500,16 +1559,7 @@ export class CrossroadsScene {
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
           // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
           const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
-          const tree = this.createTreeMesh(
-            scale,
-            (i + side) % 2 === 0,
-            trunkMat,
-            crownMatDark,
-            crownMatLight,
-            angleToPath
-          );
-          tree.position.set(tx, 0, tz);
-          this.scene.add(tree);
+          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false, angleToPath);
         }
       }
     }
@@ -1531,9 +1581,7 @@ export class CrossroadsScene {
     for (const [lx, lz, scale, useDark] of weirSurroundingTrees) {
       const wx = WEIR_BRIDGE_POS.x + lx * cos + lz * sin;
       const wz = WEIR_BRIDGE_POS.z - lx * sin + lz * cos;
-      const tree = this.createTreeMesh(scale, useDark, trunkMat, crownMatDark, crownMatLight);
-      tree.position.set(wx, 0, wz);
-      this.scene.add(tree);
+      this.addTreeToForest(wx, wz, scale, useDark, false);
     }
   }
 
@@ -1541,9 +1589,6 @@ export class CrossroadsScene {
    * Platziert Bäume entlang von Weg 4 und bildet den verbliebenen Hochwald-Rand rund um die Holzfäller-Lichtung.
    */
   private buildCurvedPath4Trees(): void {
-    const trunkMat = this.getTrunkMaterial();
-    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
-
     for (let i = 1; i < PATH_4_WAYPOINTS.length - 1; i++) {
       const prev = PATH_4_WAYPOINTS[i - 1];
       const curr = PATH_4_WAYPOINTS[i];
@@ -1570,16 +1615,7 @@ export class CrossroadsScene {
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
           // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
           const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
-          const tree = this.createTreeMesh(
-            scale,
-            (i + side) % 2 === 0,
-            trunkMat,
-            crownMatDark,
-            crownMatLight,
-            angleToPath
-          );
-          tree.position.set(tx, 0, tz);
-          this.scene.add(tree);
+          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false, angleToPath);
         }
       }
     }
@@ -1594,15 +1630,7 @@ export class CrossroadsScene {
           continue;
         }
         const scale = 1.1 + (idx % 3) * 0.15;
-        const tree = this.createTreeMesh(
-          scale,
-          idx % 2 === 0,
-          trunkMat,
-          crownMatDark,
-          crownMatLight
-        );
-        tree.position.set(tx, 0, tz);
-        this.scene.add(tree);
+        this.addTreeToForest(tx, tz, scale, idx % 2 === 0, false);
       }
     });
   }
@@ -1611,9 +1639,6 @@ export class CrossroadsScene {
    * Platziert aschige, verbrannte Nadelbäume und schroffe Basaltfelsen entlang von Weg 5 zum Höllenschlund.
    */
   private buildCurvedPath5Trees(): void {
-    const trunkMat = this.getTrunkMaterial(true);
-    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials(true);
-
     // Glühende, spitze Lavasteine mit Adern entlang des Pfades
     const lavaRockTex = createVeinedLavaRockTexture();
     if (lavaRockTex.map) lavaRockTex.map.repeat.set(1.2, 2.0);
@@ -1663,17 +1688,9 @@ export class CrossroadsScene {
             rock.castShadow = true;
             this.scene.add(rock);
           } else {
-            // Verbrannter Nadelbaum
+            // Verbrannter Nadelbaum (isBurned = true)
             const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.16;
-            const tree = this.createTreeMesh(
-              scale,
-              (i + side) % 2 === 0,
-              trunkMat,
-              crownMatDark,
-              crownMatLight
-            );
-            tree.position.set(tx, 0, tz);
-            this.scene.add(tree);
+            this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, true);
           }
         }
       }
@@ -1684,9 +1701,6 @@ export class CrossroadsScene {
    * Platziert Bäume beidseitig entlang des 6. Weges (Jägerpfad) bis zur Lichtung mit der Jagdhütte.
    */
   private buildCurvedPath6Trees(): void {
-    const trunkMat = this.getTrunkMaterial();
-    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
-
     for (let i = 1; i < PATH_6_WAYPOINTS.length - 1; i++) {
       const prev = PATH_6_WAYPOINTS[i - 1];
       const curr = PATH_6_WAYPOINTS[i];
@@ -1712,16 +1726,7 @@ export class CrossroadsScene {
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
           // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
           const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
-          const tree = this.createTreeMesh(
-            scale,
-            (i + side) % 2 === 0,
-            trunkMat,
-            crownMatDark,
-            crownMatLight,
-            angleToPath
-          );
-          tree.position.set(tx, 0, tz);
-          this.scene.add(tree);
+          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false, angleToPath);
         }
       }
     }
@@ -1741,9 +1746,7 @@ export class CrossroadsScene {
 
     for (const [x, z, scale, dark] of lodgeClearingTrees) {
       if (!this.isNearPath6Corridor(x, z, 3.2)) {
-        const tree = this.createTreeMesh(scale, dark, trunkMat, crownMatDark, crownMatLight);
-        tree.position.set(x, 0, z);
-        this.scene.add(tree);
+        this.addTreeToForest(x, z, scale, dark, false);
       }
     }
   }
@@ -1753,9 +1756,6 @@ export class CrossroadsScene {
    * rund um den Vorplatz sowie hinter den Steinmauern des geschlossenen Tores.
    */
   private buildCurvedPath7Trees(): void {
-    const trunkMat = this.getTrunkMaterial();
-    const { dark: crownMatDark, light: crownMatLight } = this.getCrownMaterials();
-
     for (let i = 1; i < PATH_7_WAYPOINTS.length - 1; i++) {
       const prev = PATH_7_WAYPOINTS[i - 1];
       const curr = PATH_7_WAYPOINTS[i];
@@ -1781,16 +1781,7 @@ export class CrossroadsScene {
           const scale = 0.95 + ((i + Math.round(dist)) % 3) * 0.15;
           // Nistkasten zur Wegmitte ausrichten, damit er vom Pfad aus sichtbar ist
           const angleToPath = Math.atan2(curr.x - tx, curr.z - tz);
-          const tree = this.createTreeMesh(
-            scale,
-            (i + side) % 2 === 0,
-            trunkMat,
-            crownMatDark,
-            crownMatLight,
-            angleToPath
-          );
-          tree.position.set(tx, 0, tz);
-          this.scene.add(tree);
+          this.addTreeToForest(tx, tz, scale, (i + side) % 2 === 0, false, angleToPath);
         }
       }
     }
@@ -1826,9 +1817,7 @@ export class CrossroadsScene {
       const wx = CLOSED_GATE_POS.x + lx * gateCos + lz * gateSin;
       const wz = CLOSED_GATE_POS.z - lx * gateSin + lz * gateCos;
       if (!this.isNearPath7Corridor(wx, wz, 3.0)) {
-        const tree = this.createTreeMesh(scale, dark, trunkMat, crownMatDark, crownMatLight);
-        tree.position.set(wx, 0, wz);
-        this.scene.add(tree);
+        this.addTreeToForest(wx, wz, scale, dark, false);
       }
     }
   }
