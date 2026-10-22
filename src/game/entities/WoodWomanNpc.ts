@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface WoodWomanNpcEntity {
   group: THREE.Group;
@@ -12,224 +14,154 @@ export interface WoodWomanNpcEntity {
 export interface WoodWomanNpcOptions {
   interactableType?: string;
   defaultFacingTarget?: { x: number; z: number };
+  loadDelayMs?: number;
 }
 
 /**
- * Erstellt die 3D-Figur "Das Holzweibchen":
- * Ein altes, naturverbundenes Waldwesen mit Rindenrock, Moos-Schultertuch, Kopftuch,
- * Reisigbündel und knorrigem Wurzelstab mit knospenden Blättchen.
+ * Erstellt die 3D-Figur "Das Holzweibchen" (Walddruidin):
+ * Lädt das detailreiche 3D-Modell `/assets/models/forest druid 3d model.glb`
+ * mit naturverbundener Robe, Umhang und Geweih-Krone.
+ * Wird sowohl im Holzfällercamp (Weg 4) als auch an der Jagdhütte (Weg 6) verwendet.
  */
-export function createWoodWomanNpc(options: WoodWomanNpcOptions = {}): WoodWomanNpcEntity {
-  const { interactableType = 'wood_woman', defaultFacingTarget } = options;
-  const group = new THREE.Group();
-  group.name = 'WoodWomanNpc';
+export function createWoodWomanNpc(
+  onMeshLoadedOrOptions?: ((mesh: THREE.Mesh) => void) | WoodWomanNpcOptions,
+  maybeOptions?: WoodWomanNpcOptions
+): WoodWomanNpcEntity {
+  let onMeshLoaded: ((mesh: THREE.Mesh) => void) | undefined;
+  let options: WoodWomanNpcOptions = {};
 
-  const barkDressMat = new THREE.MeshStandardMaterial({
-    color: 0x593d25,
-    roughness: 0.9,
-    flatShading: true,
-  });
-  const mossCloakMat = new THREE.MeshStandardMaterial({
-    color: 0x3f6b38,
-    roughness: 0.85,
-    flatShading: true,
-  });
-  const autumnLeafMat = new THREE.MeshStandardMaterial({
-    color: 0xb8732a,
-    roughness: 0.78,
-    flatShading: true,
-  });
-  const skinMat = new THREE.MeshStandardMaterial({
-    color: 0xc9a882,
-    roughness: 0.75,
-  });
-  const hairMat = new THREE.MeshStandardMaterial({
-    color: 0xd4cfc4,
-    roughness: 0.85,
-  });
-  const woodStaffMat = new THREE.MeshStandardMaterial({
-    color: 0x47301c,
-    roughness: 0.9,
-  });
-  const sproutLeafMat = new THREE.MeshStandardMaterial({
-    color: 0x62a844,
-    emissive: 0x1d4012,
-    emissiveIntensity: 0.35,
-    roughness: 0.5,
-  });
+  if (typeof onMeshLoadedOrOptions === 'function') {
+    onMeshLoaded = onMeshLoadedOrOptions;
+    if (maybeOptions) {
+      options = maybeOptions;
+    }
+  } else if (onMeshLoadedOrOptions && typeof onMeshLoadedOrOptions === 'object') {
+    options = onMeshLoadedOrOptions;
+  }
+
+  const {
+    interactableType = 'wood_woman',
+    defaultFacingTarget,
+    loadDelayMs = 0,
+  } = options;
+
+  const group = new THREE.Group();
+  group.name = `WoodWomanNpc_${interactableType}`;
+
+  // 1. Schwebender bernsteinfarbener Gesprächs-Kristall über dem Kopf des Holzweibchens
   const indicatorMat = new THREE.MeshStandardMaterial({
     color: 0xd99b4e,
     emissive: 0x8f5b1d,
-    emissiveIntensity: 0.55,
+    emissiveIntensity: 0.6,
     roughness: 0.25,
     metalness: 0.2,
   });
-
-  // 1. Geschichteter Rindenrock
-  const skirtLower = new THREE.Mesh(
-    new THREE.ConeGeometry(0.42, 0.72, 9),
-    barkDressMat
-  );
-  skirtLower.position.y = 0.36;
-  skirtLower.castShadow = true;
-  skirtLower.receiveShadow = true;
-  group.add(skirtLower);
-
-  const apron = new THREE.Mesh(
-    new THREE.BoxGeometry(0.36, 0.52, 0.14),
-    autumnLeafMat
-  );
-  apron.position.set(0, 0.38, 0.24);
-  apron.rotation.x = -0.14;
-  apron.castShadow = true;
-  group.add(apron);
-
-  // 2. Oberkörper & Moos-Schultertuch
-  const torso = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.22, 0.3, 0.46, 9),
-    barkDressMat
-  );
-  torso.position.y = 0.84;
-  torso.castShadow = true;
-  group.add(torso);
-
-  const shawl = new THREE.Mesh(
-    new THREE.ConeGeometry(0.36, 0.42, 9),
-    mossCloakMat
-  );
-  shawl.position.y = 0.96;
-  shawl.castShadow = true;
-  group.add(shawl);
-
-  // Kleines Reisigbündel auf dem Rücken des Holzweibchens
-  const bundleGroup = new THREE.Group();
-  bundleGroup.position.set(0, 0.92, -0.24);
-  bundleGroup.rotation.z = 0.22;
-  for (let i = -2; i <= 2; i++) {
-    const twig = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.025, 0.03, 0.58, 6),
-      woodStaffMat
-    );
-    twig.position.set(i * 0.04, 0, (Math.abs(i) % 2) * 0.03);
-    twig.castShadow = true;
-    bundleGroup.add(twig);
-  }
-  group.add(bundleGroup);
-
-  // 3. Kopf mit Moos-Kopftuch und freundlichem, altem Gesicht
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), skinMat);
-  head.position.set(0, 1.22, 0.03);
-  head.castShadow = true;
-  group.add(head);
-
-  // Moos-Kopftuch (Haube)
-  const headscarf = new THREE.Mesh(
-    new THREE.SphereGeometry(0.195, 10, 10, 0, Math.PI * 2, 0, Math.PI * 0.68),
-    mossCloakMat
-  );
-  headscarf.position.set(0, 1.24, 0.01);
-  headscarf.rotation.x = -0.25;
-  headscarf.castShadow = true;
-  group.add(headscarf);
-
-  // Zwei silbergraue Haarsträhnen unter dem Kopftuch
-  for (const side of [-1, 1]) {
-    const hairStrand = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.03, 0.16, 4, 6),
-      hairMat
-    );
-    hairStrand.position.set(side * 0.14, 1.14, 0.08);
-    group.add(hairStrand);
-  }
-
-  // Warme bernsteinfarbene Augen
-  const eyeMat = new THREE.MeshStandardMaterial({
-    color: 0xffd27d,
-    emissive: 0xa66814,
-    emissiveIntensity: 0.45,
-  });
-  for (const side of [-1, 1]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), eyeMat);
-    eye.position.set(side * 0.06, 1.23, 0.19);
-    group.add(eye);
-  }
-
-  // 4. Arme und knorriger Wurzelstab mit jungen grünen Trieben
-  const leftArm = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.055, 0.28, 6, 8),
-    mossCloakMat
-  );
-  leftArm.position.set(-0.26, 0.86, 0.08);
-  leftArm.rotation.z = 0.28;
-  leftArm.rotation.x = -0.35;
-  leftArm.castShadow = true;
-  group.add(leftArm);
-
-  const rightArm = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.055, 0.28, 6, 8),
-    mossCloakMat
-  );
-  rightArm.position.set(0.26, 0.86, 0.12);
-  rightArm.rotation.z = -0.25;
-  rightArm.rotation.x = -0.55;
-  rightArm.castShadow = true;
-  group.add(rightArm);
-
-  // Wurzelstab in der rechten Hand
-  const staffGroup = new THREE.Group();
-  staffGroup.position.set(0.32, 0, 0.24);
-
-  const staffPole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.032, 0.042, 1.38, 8),
-    woodStaffMat
-  );
-  staffPole.position.y = 0.69;
-  staffPole.castShadow = true;
-  staffGroup.add(staffPole);
-
-  // Zwei junge grüne Blättchen oben am Wurzelstab (Hoffnung des Waldes)
-  for (const side of [-1, 1]) {
-    const leaf = new THREE.Mesh(
-      new THREE.ConeGeometry(0.055, 0.16, 5),
-      sproutLeafMat
-    );
-    leaf.position.set(side * 0.05, 1.4, 0);
-    leaf.rotation.z = -side * 0.65;
-    staffGroup.add(leaf);
-  }
-  group.add(staffGroup);
-
-  // 5. Schwebender bernsteinfarbener Gesprächs-Kristall über dem Holzweibchen
   const indicator = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.14, 0),
+    new THREE.OctahedronGeometry(0.15, 0),
     indicatorMat
   );
-  indicator.position.y = 1.72;
+  indicator.position.y = 1.95;
   group.add(indicator);
 
-  // Alle Meshes für Raycasting mit dem angegebenen Typ markieren
-  group.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh) {
-      child.userData = { interactableType };
-    }
+  // 2. Temporäre dezente Platzhalter-Geometrie während des Ladens des GLB-Modells
+  const fallbackGroup = new THREE.Group();
+  const fallbackMat = new THREE.MeshStandardMaterial({
+    color: 0x485c3b,
+    roughness: 0.88,
   });
+  const fallbackBody = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.24, 0.38, 1.35, 8),
+    fallbackMat
+  );
+  fallbackBody.position.y = 0.675;
+  fallbackBody.castShadow = true;
+  fallbackBody.userData = { interactableType };
+  fallbackGroup.add(fallbackBody);
+  group.add(fallbackGroup);
+
+  // Gespeicherte Materialien des geladenen GLB-Modells für den Hover-Effekt
+  const modelMaterials: THREE.MeshStandardMaterial[] = [];
+
+  // 3. Lade das GLB-Modell des Wald-Druiden
+  const startLoad = (): void => {
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/forest druid 3d model.glb',
+      (gltf) => {
+        const model = gltf.scene;
+
+        // Skalierung: Originalmodell ist 1.00m hoch -> 1.68x für natürliche Körpergröße einer Walddruidin
+        model.scale.setScalar(1.68);
+
+        // Bounding-Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
+
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType };
+
+            const mats = Array.isArray(mesh.material)
+              ? mesh.material
+              : [mesh.material];
+            for (const mat of mats) {
+              if (mat && 'emissive' in mat) {
+                const stdMat = mat as THREE.MeshStandardMaterial;
+                stdMat.roughness = 0.85;
+                modelMaterials.push(stdMat);
+              }
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
+            }
+          }
+        });
+
+        // Platzhalter entfernen und fertiges Druiden-Modell einfügen
+        group.remove(fallbackGroup);
+        disposeObject3D(fallbackGroup);
+        group.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Holzweibchen-GLB konnte nicht geladen werden, nutze Platzhalter:', err);
+      }
+    );
+  };
+
+  if (loadDelayMs > 0) {
+    setTimeout(startLoad, loadDelayMs);
+  } else {
+    startLoad();
+  }
 
   const update = (
     elapsedSeconds: number,
     playerPos: { x: number; z: number },
     isHighlighted: boolean
   ): void => {
-    // Sanftes Wiegen des Wurzelstabs und Rotieren des Indikator-Kristalls
-    indicator.position.y = 1.72 + Math.sin(elapsedSeconds * 2.5) * 0.05;
+    // Sanftes Schweben und Rotieren des Kristalls
+    indicator.position.y = 1.95 + Math.sin(elapsedSeconds * 2.5) * 0.05;
     indicator.rotation.y = elapsedSeconds * 1.3;
-    staffGroup.rotation.z = Math.sin(elapsedSeconds * 1.8) * 0.035;
 
-    indicatorMat.emissiveIntensity = isHighlighted ? 1.15 : 0.55;
+    indicatorMat.emissiveIntensity = isHighlighted ? 1.25 : 0.6;
     const scale = isHighlighted ? 1.22 : 1.0;
     indicator.scale.set(scale, scale, scale);
 
-    // Holzweibchen dreht sich der spielenden Person zu, sobald diese nahe ist;
-    // sonst blickt sie zur Standard-Blickrichtung (z.B. zum Jäger)
+    // Dezent warmer Leuchteffekt bei Hover auf dem 3D-Modell
+    const emissiveHex = isHighlighted ? 0x2e3818 : 0x000000;
+    for (const mat of modelMaterials) {
+      mat.emissive.setHex(emissiveHex);
+      mat.emissiveIntensity = isHighlighted ? 0.35 : 0.0;
+    }
+
+    // Holzweibchen wendet sich der spielenden Person zu, sobald diese nahe ist;
+    // sonst blickt sie zur Standard-Blickrichtung (z.B. zum Wilden Jäger an der Jagdhütte)
     const dx = playerPos.x - group.position.x;
     const dz = playerPos.z - group.position.z;
     const dist = Math.hypot(dx, dz);

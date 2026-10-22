@@ -385,8 +385,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.lumberCamp.group);
 
-    // Das Holzweibchen (NPC) im Holzfällerlager am Ende des 4. Weges
-    this.woodWomanNpc = createWoodWomanNpc();
+    // Das Holzweibchen (NPC) im Holzfällerlager am Ende des 4. Weges (3D-Walddruidin)
+    this.woodWomanNpc = createWoodWomanNpc((mesh) => {
+      this.pickableObjects.push(mesh);
+    });
     this.woodWomanNpc.group.position.set(
       WOOD_WOMAN_NPC_POS.x,
       getTerrainHeight(WOOD_WOMAN_NPC_POS.x, WOOD_WOMAN_NPC_POS.z),
@@ -467,11 +469,16 @@ export class CrossroadsScene {
     });
     this.scene.add(this.wildHunterNpc.group);
 
-    // Das Holzweibchen (NPC) vor dem Kräutergartenzaun an der Jagdhütte
-    this.woodWomanLodgeNpc = createWoodWomanNpc({
-      interactableType: 'wood_woman_lodge',
-      defaultFacingTarget: WILD_HUNTER_NPC_POS,
-    });
+    // Das Holzweibchen (NPC) vor dem Kräutergartenzaun an der Jagdhütte (3D-Walddruidin)
+    this.woodWomanLodgeNpc = createWoodWomanNpc(
+      (mesh) => {
+        this.pickableObjects.push(mesh);
+      },
+      {
+        interactableType: 'wood_woman_lodge',
+        defaultFacingTarget: WILD_HUNTER_NPC_POS,
+      }
+    );
     this.woodWomanLodgeNpc.group.position.set(
       WOOD_WOMAN_LODGE_NPC_POS.x,
       getTerrainHeight(WOOD_WOMAN_LODGE_NPC_POS.x, WOOD_WOMAN_LODGE_NPC_POS.z),
