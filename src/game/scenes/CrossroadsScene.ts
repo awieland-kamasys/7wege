@@ -58,6 +58,7 @@ import { createPathFire, PathFireEntity } from '../entities/PathFire';
 import { createPathHerbs, PathHerbsEntity } from '../entities/PathHerbs';
 import {
   createBarkTexture,
+  createFrostyBarkTexture,
   createPineFoliageTexture,
   createSnowyPineFoliageTexture,
   createStoneTexture,
@@ -855,7 +856,7 @@ export class CrossroadsScene {
 
     if (snowy) {
       if (!this.snowyTrunkMat) {
-        const barkTex = createBarkTexture();
+        const barkTex = createFrostyBarkTexture();
         if (barkTex.map) {
           barkTex.map.repeat.set(2.5, 3.5);
           barkTex.map.colorSpace = THREE.SRGBColorSpace;
@@ -864,11 +865,12 @@ export class CrossroadsScene {
           barkTex.bumpMap.repeat.set(2.5, 3.5);
         }
         this.snowyTrunkMat = new THREE.MeshStandardMaterial({
-          color: 0x828a90, // Kaltes, frostbereiftes Silbergrau
+          color: 0xd8e8f4, // Intensiv mit Raureif und Eiskristallen bedecktes Silberweiß
           map: barkTex.map ?? undefined,
           bumpMap: barkTex.bumpMap ?? undefined,
-          bumpScale: 0.045,
-          roughness: 0.88,
+          bumpScale: 0.08,
+          roughness: 0.62,
+          metalness: 0.16,
         });
       }
       return this.snowyTrunkMat;
@@ -1021,10 +1023,10 @@ export class CrossroadsScene {
   private isSnowZone(x: number, z: number): boolean {
     // Umkreis des Bergmassivs und Höhleneingangs
     const distCave = Math.hypot(x - CAVE_ENTRANCE_POS.x, z - CAVE_ENTRANCE_POS.z);
-    if (distCave < 26.0) return true;
+    if (distCave < 18.0) return true;
 
-    // Oberer Pfadabschnitt von Weg 1 hinauf zum Berg (ab z < -20)
-    if (z < -20.0 && x > -6.0 && x < 32.0) {
+    // Nur im oberen Steilabschnitt von Weg 1 ab z < -30.0 und in Bergnähe
+    if (z < -30.0 && x > 4.5 && x < 32.0) {
       return true;
     }
     return false;
@@ -2351,18 +2353,18 @@ export class CrossroadsScene {
       let topY = 16.0;
 
       if (i < 250) {
-        // Flocken über dem großen Minenplateau und Felsmassiv
+        // Flocken über dem Minenplateau und Felsmassiv
         const angle = Math.random() * Math.PI * 2;
-        const rad = Math.random() * 20.0;
+        const rad = Math.random() * 16.0;
         x = CAVE_ENTRANCE_POS.x + Math.sin(angle) * rad;
         z = CAVE_ENTRANCE_POS.z + Math.cos(angle) * rad;
         const ground = getTerrainHeight(x, z);
         topY = ground + 9.0 + Math.random() * 8.0;
       } else {
-        // Flocken entlang des oberen Pfades von Weg 1 (ab z = -18 m aufwärts)
+        // Flocken entlang des oberen Pfades von Weg 1 (erst ab z <= -29 m in der Steilkurve)
         const t = Math.random();
-        const cx = 0.5 + t * 22.0 + (Math.random() - 0.5) * 12.0;
-        const cz = -18.0 - t * 28.0 + (Math.random() - 0.5) * 12.0;
+        const cx = 4.0 + t * 18.0 + (Math.random() - 0.5) * 8.0;
+        const cz = -29.0 - t * 16.0 + (Math.random() - 0.5) * 8.0;
         x = cx;
         z = cz;
         const ground = getTerrainHeight(x, z);
@@ -2805,7 +2807,7 @@ export class CrossroadsScene {
     this.treasureChest.update(dtSeconds, isChestOpen, this.isChestHovered);
 
     // Weg 1: Bergmassiv mit Höhleneingang, Graumännchen & alpiner Schneefall
-    if (distCave < 62) {
+    if (distCave < 48) {
       this.updateSnowfall(dtSeconds);
       if (distCave < 33) {
         this.greyManNpc.update(

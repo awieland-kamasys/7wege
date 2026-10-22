@@ -46,6 +46,7 @@ let cachedTreeRingsTexture: TexturePair | null = null;
 let cachedWoodGrainTexture: TexturePair | null = null;
 let cachedSnowTexture: TexturePair | null = null;
 let cachedSnowyPineFoliageTexture: TexturePair | null = null;
+let cachedFrostyBarkTexture: TexturePair | null = null;
 
 /**
  * Erzeugt eine detailreiche, nahtlos kachelbare Wiesentextur für den Waldboden:
@@ -2389,4 +2390,155 @@ export function createSnowyPineFoliageTexture(): { map: THREE.CanvasTexture | nu
 
   cachedSnowyPineFoliageTexture = { map: texture, bumpMap: bumpTexture };
   return clonePair(cachedSnowyPineFoliageTexture);
+}
+
+/**
+ * Erzeugt eine intensiv frostbereifte Baumrindentextur mit plastischer Bump-Map:
+ * - Kaltes, bläuliches Frost- und Schieferholz mit eisgrauen Nuancen
+ * - Tiefe Furchen und Ränder mit dickem weißem Raureif und gefrorenen Schneekrusten
+ * - Funkelnde Eiskristalle für spürbare Kälte auf den Stämmen der Gebirgstannen
+ */
+export function createFrostyBarkTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedFrostyBarkTexture) {
+    return clonePair(cachedFrostyBarkTexture);
+  }
+  if (typeof document === 'undefined') {
+    return { map: null, bumpMap: null };
+  }
+
+  const width = 512;
+  const height = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return { map: null, bumpMap: null };
+
+  const bumpCanvas = document.createElement('canvas');
+  bumpCanvas.width = width;
+  bumpCanvas.height = height;
+  const bumpCtx = bumpCanvas.getContext('2d');
+
+  // 1. Grundfarbe: Kaltes, frostbereiftes Holz mit blauem Hauch
+  ctx.fillStyle = '#5c6d7c';
+  ctx.fillRect(0, 0, width, height);
+
+  if (bumpCtx) {
+    bumpCtx.fillStyle = '#808080';
+    bumpCtx.fillRect(0, 0, width, height);
+  }
+
+  const rng = (seed: number) => {
+    let s = seed % 2147483647;
+    if (s <= 0) s += 2147483646;
+    return () => {
+      s = (s * 16807) % 2147483647;
+      return (s - 1) / 2147483646;
+    };
+  };
+  const random = rng(456);
+
+  // 2. Sanfte kühle Helligkeitswolken für lebendige Frostmaserung
+  for (let i = 0; i < 55; i++) {
+    const cx = random() * width;
+    const cy = random() * height;
+    const radius = 35 + random() * 80;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    grad.addColorStop(0, 'rgba(185, 210, 230, 0.35)');
+    grad.addColorStop(1, 'rgba(75, 95, 115, 0.0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 3. Vertikale Faserung
+  ctx.lineWidth = 1.0;
+  for (let x = 0; x < width; x += 3) {
+    const isFrost = random() > 0.45;
+    ctx.strokeStyle = isFrost ? 'rgba(235, 245, 255, 0.35)' : 'rgba(38, 48, 58, 0.45)';
+    ctx.beginPath();
+    ctx.moveTo(x + (random() - 0.5) * 3, 0);
+    for (let y = 15; y < height; y += 25) {
+      ctx.lineTo(x + (random() - 0.5) * 4, y);
+    }
+    ctx.stroke();
+  }
+
+  // 4. Tiefe vertikale Rindenfurchen mit dickem Raureif & Eisadern
+  const fissureCount = 42;
+  for (let i = 0; i < fissureCount; i++) {
+    const fx = (i / fissureCount) * width + (random() - 0.5) * 12;
+    const fissureWidth = 3 + random() * 5;
+
+    // Tiefe Schattenfurche
+    ctx.strokeStyle = 'rgba(22, 28, 35, 0.85)';
+    ctx.lineWidth = fissureWidth;
+    ctx.beginPath();
+    ctx.moveTo(fx, 0);
+    for (let y = 20; y <= height; y += 30) {
+      ctx.lineTo(fx + Math.sin(y * 0.05 + i) * 6, y);
+    }
+    ctx.stroke();
+
+    // Dicker, leuchtend weißer Raureifbelag direkt am Furchenrand
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.lineWidth = fissureWidth * 0.55;
+    ctx.beginPath();
+    ctx.moveTo(fx + fissureWidth * 0.45, 0);
+    for (let y = 20; y <= height; y += 30) {
+      ctx.lineTo(fx + Math.sin(y * 0.05 + i) * 6 + fissureWidth * 0.45, y);
+    }
+    ctx.stroke();
+
+    if (bumpCtx) {
+      // Tiefe Rille in der Bump-Map
+      bumpCtx.strokeStyle = 'rgba(25, 25, 25, 0.9)';
+      bumpCtx.lineWidth = fissureWidth;
+      bumpCtx.beginPath();
+      bumpCtx.moveTo(fx, 0);
+      for (let y = 20; y <= height; y += 30) {
+        bumpCtx.lineTo(fx + Math.sin(y * 0.05 + i) * 6, y);
+      }
+      bumpCtx.stroke();
+
+      // Erhabene Frostkante
+      bumpCtx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      bumpCtx.lineWidth = fissureWidth * 0.5;
+      bumpCtx.beginPath();
+      bumpCtx.moveTo(fx + fissureWidth * 0.5, 0);
+      for (let y = 20; y <= height; y += 30) {
+        bumpCtx.lineTo(fx + Math.sin(y * 0.05 + i) * 6 + fissureWidth * 0.5, y);
+      }
+      bumpCtx.stroke();
+    }
+  }
+
+  // 5. Glitzernde Schneekristalle auf der Rinde
+  for (let c = 0; c < 750; c++) {
+    const rx = random() * width;
+    const ry = random() * height;
+    const rr = 0.5 + random() * 1.3;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.beginPath();
+    ctx.arc(rx, ry, rr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+
+  let bumpTexture: THREE.CanvasTexture | null = null;
+  if (bumpCanvas) {
+    bumpTexture = new THREE.CanvasTexture(bumpCanvas);
+    bumpTexture.wrapS = THREE.RepeatWrapping;
+    bumpTexture.wrapT = THREE.RepeatWrapping;
+    bumpTexture.needsUpdate = true;
+  }
+
+  cachedFrostyBarkTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedFrostyBarkTexture);
 }

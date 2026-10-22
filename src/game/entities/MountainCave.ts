@@ -20,23 +20,27 @@ function buildMountainBackdrop(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE
   backdropGroup.name = 'MountainBackdrop';
 
   const rockMat = new THREE.MeshStandardMaterial({
-    color: 0x3d444c,
-    roughness: 0.94,
-    metalness: 0.06,
+    color: 0x647c92, // Kühles, frostig-bläuliches Felsgrau mit Raureif-Tönung
+    roughness: 0.65, // Leicht vereiste Felsflächen mit diffusen Kantenreflexen
+    metalness: 0.16,
+    emissive: new THREE.Color(0x152838),
+    emissiveIntensity: 0.40, // Subtiler eisiger Frostschimmer im Schatten
     flatShading: true,
   });
 
   const snowMat = new THREE.MeshStandardMaterial({
-    color: 0xf5f8fc,
-    roughness: 0.82,
-    metalness: 0.02,
+    color: 0xfcfdff,
+    roughness: 0.68,
+    metalness: 0.05,
     flatShading: true,
   });
 
   const iceMat = new THREE.MeshStandardMaterial({
-    color: 0xcfe6fa,
-    roughness: 0.35,
-    metalness: 0.22,
+    color: 0xb5deff,
+    roughness: 0.25,
+    metalness: 0.35,
+    emissive: new THREE.Color(0x24587c),
+    emissiveIntensity: 0.45,
     flatShading: true,
   });
 
@@ -172,12 +176,17 @@ function buildMountainBackdrop(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE
     snowGeos.push(toNonIndexed(geo));
   }
 
-  // 3. Glänzende Blaueis-Akzente in geschützten Felsnischen
+  // 3. Glänzende Blaueis-Akzente in geschützten Felsnischen und an den Portalflanken
   const iceSpecs: Array<{ p: [number, number, number]; r: number; s: [number, number, number] }> = [
     { p: [-7.2, 5.2, -5.8], r: 1.4, s: [0.9, 1.4, 0.6] },
     { p: [7.4, 5.4, -5.8], r: 1.5, s: [0.9, 1.5, 0.6] },
     { p: [-1.2, 9.8, -7.8], r: 1.8, s: [1.2, 0.8, 0.7] },
     { p: [1.6, 10.0, -8.0], r: 1.7, s: [1.1, 0.9, 0.6] },
+    // Eis- und Firnschollen an den Portal-Flankenblöcken
+    { p: [-5.0, 1.6, -2.4], r: 1.35, s: [0.9, 1.3, 0.8] },
+    { p: [5.0, 1.6, -2.4], r: 1.35, s: [0.9, 1.3, 0.8] },
+    { p: [-5.8, 3.6, -3.2], r: 1.5, s: [1.0, 1.2, 0.7] },
+    { p: [5.8, 3.6, -3.2], r: 1.5, s: [1.0, 1.2, 0.7] },
   ];
 
   const iceGeos: THREE.BufferGeometry[] = [];
@@ -296,11 +305,14 @@ export function createMountainCave(onMeshLoaded?: (mesh: THREE.Mesh) => void): T
           mesh.receiveShadow = true;
           mesh.userData = { interactableType: 'cave' };
 
-          // Optimale Materialabstimmung für rauen Fels, Holzstützen und Schnee
+          // Optimale Materialabstimmung für eisigen Fels, Holzstützen und Schnee
           if (mesh.material && 'roughness' in mesh.material) {
             const mat = mesh.material as THREE.MeshStandardMaterial;
-            mat.roughness = 0.88;
-            mat.metalness = 0.05;
+            mat.roughness = 0.76;
+            mat.metalness = 0.12;
+            if (mat.color) {
+              mat.color.lerp(new THREE.Color(0xd2e5f5), 0.20);
+            }
           }
 
           if (onMeshLoaded) {

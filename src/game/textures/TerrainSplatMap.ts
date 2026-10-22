@@ -215,14 +215,14 @@ export function createTerrainSplatMap(): THREE.CanvasTexture | null {
     ctx.stroke();
   }
 
-  // 3. ALPINE SCHNEEZONE AN DER BERGMINE & HOHER PFADABSCHNITT VON WEG 1 (BLAU-KANAL)
+  // 3. ALPINE SCHNEEZONE AN DER BERGMINE & OBERER PFADABSCHNITT VON WEG 1 (BLAU-KANAL)
   // Mittels 'lighter' (additives Blending) wird der Blaukanal beigemischt, ohne Rot (Weg) oder Grün (Lava) zu beschädigen.
   ctx.globalCompositeOperation = 'lighter';
 
-  // 3a. Bergmassiv & Minenvorplatz: Großflächige, geschlossene Schneedecke
+  // 3a. Bergmassiv & Minenvorplatz: Kompakte Schneedecke direkt am Felsplateau
   const cavePx = worldToPx(CAVE_ENTRANCE_POS.x, CAVE_ENTRANCE_POS.z, size);
-  const snowInnerPx = (14.0 / 240) * size;
-  const snowOuterPx = (32.0 / 240) * size;
+  const snowInnerPx = (7.5 / 240) * size;
+  const snowOuterPx = (17.5 / 240) * size;
 
   const mountainSnowGrad = ctx.createRadialGradient(
     cavePx.x,
@@ -233,8 +233,8 @@ export function createTerrainSplatMap(): THREE.CanvasTexture | null {
     snowOuterPx
   );
   mountainSnowGrad.addColorStop(0.0, 'rgba(0, 0, 255, 1.0)');
-  mountainSnowGrad.addColorStop(0.65, 'rgba(0, 0, 255, 0.95)');
-  mountainSnowGrad.addColorStop(0.85, 'rgba(0, 0, 255, 0.65)');
+  mountainSnowGrad.addColorStop(0.60, 'rgba(0, 0, 255, 0.95)');
+  mountainSnowGrad.addColorStop(0.85, 'rgba(0, 0, 255, 0.50)');
   mountainSnowGrad.addColorStop(1.0, 'rgba(0, 0, 255, 0.0)');
 
   ctx.fillStyle = mountainSnowGrad;
@@ -243,22 +243,21 @@ export function createTerrainSplatMap(): THREE.CanvasTexture | null {
   ctx.fill();
 
   // 3b. Fließender Übergang der Schneegrenze entlang von Weg 1 hinauf zur Mine
-  // Beginnt hinter der Wegsperre bei z = -18 m, verstärkt sich kontinuierlich bis zum Plateau
-  const path1UpperWps = PATH_1_WAYPOINTS.filter((wp) => wp.z <= -16.0);
+  // Beginnt erst im oberen Pfaddrittel ab z <= -28.0 m (Steilkurve), sodass der untere Waldweg sommerlich grün bleibt
+  const path1UpperWps = PATH_1_WAYPOINTS.filter((wp) => wp.z <= -27.5);
   if (path1UpperWps.length >= 2) {
     const pxSnowPts = path1UpperWps.map((pt) => worldToPx(pt.x, pt.z, size));
 
-    // Breiter Schneesaum entlang des Berghangs
     for (let i = 0; i < pxSnowPts.length - 1; i++) {
       const p0 = pxSnowPts[i];
       const p1 = pxSnowPts[i + 1];
       const wpZ = path1UpperWps[i].z;
-      // Je weiter oben / je kleiner Z, desto intensiver der Schnee
-      const progress = Math.min(1.0, Math.max(0.20, (-wpZ - 16.0) / 26.0));
-      const alpha = progress * 0.95;
+      // Zarte Schneespuren ab z = -28m, geschlossener Schnee erst am Steilhang ab z < -38m
+      const progress = Math.min(1.0, Math.max(0.15, (-wpZ - 27.5) / 16.0));
+      const alpha = progress * 0.92;
 
       ctx.strokeStyle = `rgba(0, 0, 255, ${alpha.toFixed(3)})`;
-      ctx.lineWidth = ((18.0 / 240) * size);
+      ctx.lineWidth = ((11.5 / 240) * size);
       ctx.beginPath();
       ctx.moveTo(p0.x, p0.y);
       ctx.lineTo(p1.x, p1.y);
@@ -266,7 +265,7 @@ export function createTerrainSplatMap(): THREE.CanvasTexture | null {
 
       // Kernbereich
       ctx.strokeStyle = `rgba(0, 0, 255, ${Math.min(1.0, alpha * 1.15).toFixed(3)})`;
-      ctx.lineWidth = ((10.0 / 240) * size);
+      ctx.lineWidth = ((6.5 / 240) * size);
       ctx.beginPath();
       ctx.moveTo(p0.x, p0.y);
       ctx.lineTo(p1.x, p1.y);
