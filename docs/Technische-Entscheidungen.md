@@ -45,7 +45,12 @@
     - **Gestochen scharfe Waldwiese:** Sattes, kontrastreiches Waldwiesengrün mit Moos- und Grashalmstrukturen (65× gekachelt).
     - **Gestochen scharfe Kieselwege:** Natürlicher Waldbodenschotter (45× gekachelt).
     - **Obsidian-Magmaboden:** Tiefschwarzer Basaltboden mit glühenden roten Adern am Lavasee (18× gekachelt).
-    - **Organische Splatmap (2048×2048):** Steuert die weichen, natürlichen Übergänge zwischen Wiese, Pfaden und Lavaboden. Die zentrale Waldkreuzung und der Hüttenplatz sind als harmonische, zusammenhängende Fläche angelegt (keine pillenförmigen Kringel oder Ovale vor der Hütte).
+    - **Alpine Schneezone & Harschboden:** Gekachelte, glitzernde Schneedecke mit Harschwellen und Mikro-Kristallen am Bergmassiv von Weg 1 (46× gekachelt, gesteuert über den Blau-Kanal der Splatmap).
+    - **Organische Splatmap (2048×2048):** Steuert die weichen, natürlichen Übergänge zwischen Wiese (Schwarz), Pfaden (Rot), Lavaboden (Grün) und alpiner Schneezone (Blau). Die zentrale Waldkreuzung und der Hüttenplatz sind als harmonische, zusammenhängende Fläche angelegt (keine pillenförmigen Kringel oder Ovale vor der Hütte).
+  - **Alpine Schneezone an der Mine (Weg 1):**
+    - Fließender Übergang der Schneegrenze ab halber Wegstrecke von Weg 1 hinauf zum Bergplateau (+6,8 m).
+    - Schneebedeckte Nadelbaumkronen (`createSnowyPineFoliageTexture`) und frostbereifte Stämme als performante InstancedMeshes.
+    - Atmosphärischer, taumelnder Schneefall (Partikelsystem mit 550 Schneeflocken), der bereits beim Aufstieg auf Weg 1 einsetzt.
   - **Basaltkessel & monumentaler 240°-Felsenkranz:** Der Lavasee liegt in einem tiefen Kessel auf `-5.0 m`. Die spitzen, bis zu 24 m hohen Felsennadeln mit rot leuchtenden Magma-Adern umschließen den Lavasee zu zwei Dritteln (240-Grad-Bogen), sodass nur der Wegzugang im Norden frei bleibt.
   - **UI-Ergonomie:** Das Live-Performance-Badge wurde nach links oben unter den Titel verlegt, sodass Kommunikations-, Dialog- und Quest-Fenster auf der rechten Bildschirmseite frei und unbedeckt bleiben.
   - **Strikte Trennung von Spiellogik und 3D-Welt:** Die Spiellogik (`CrossroadsState`, Kollisionen, Quests, Dialoge) verbleibt rein zweidimensional (`x, z`) und ohne Three.js-Abhängigkeiten unit-getestet. Die Geländehöhe wird deterministisch und performant über das mathematische Höhenfeld `getTerrainHeight(x, z)` (`src/game/utils/terrainHeight.ts`) ermittelt; Raycasting auf das Terrain erkennt Pfade analytisch über `getPathAtPosition(x, z)`.

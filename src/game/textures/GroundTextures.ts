@@ -44,6 +44,8 @@ let cachedAshlarWallTexture: TexturePair | null = null;
 let cachedSandstoneWallTexture: TexturePair | null = null;
 let cachedTreeRingsTexture: TexturePair | null = null;
 let cachedWoodGrainTexture: TexturePair | null = null;
+let cachedSnowTexture: TexturePair | null = null;
+let cachedSnowyPineFoliageTexture: TexturePair | null = null;
 
 /**
  * Erzeugt eine detailreiche, nahtlos kachelbare Wiesentextur für den Waldboden:
@@ -2099,4 +2101,292 @@ export function createTreeRingsTexture(): { map: THREE.CanvasTexture | null; bum
 
   cachedTreeRingsTexture = { map: texture, bumpMap: bumpTexture };
   return clonePair(cachedTreeRingsTexture);
+}
+
+/**
+ * Erzeugt eine hochaufgelöste, nahtlos kachelbare Textur für alpinen Schnee:
+ * - Kühle, frische Schneedecke in reinem Weiß mit dezenten eisblauen Schatten (#f3f7fa, #edf2f7, #ffffff)
+ * - Feine Harschwellen und Windrippel für organische Landschaftsstruktur
+ * - Funkelnde Schneekristalle und Mikro-Lichtreflexionen
+ * - Plastische Bump-Map mit Harsch-Krusten und Körnigkeit
+ */
+export function createSnowTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedSnowTexture) {
+    return clonePair(cachedSnowTexture);
+  }
+  if (typeof document === 'undefined') {
+    return { map: null, bumpMap: null };
+  }
+
+  const size = 1024;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return { map: null, bumpMap: null };
+
+  const bumpCanvas = document.createElement('canvas');
+  bumpCanvas.width = size;
+  bumpCanvas.height = size;
+  const bumpCtx = bumpCanvas.getContext('2d');
+
+  // 1. Grundfläche: Frisches, kühles Alabaster-Schneeweiß
+  ctx.fillStyle = '#f2f7fa';
+  ctx.fillRect(0, 0, size, size);
+
+  if (bumpCtx) {
+    bumpCtx.fillStyle = '#808080';
+    bumpCtx.fillRect(0, 0, size, size);
+  }
+
+  const rng = (seed: number) => {
+    let s = seed % 2147483647;
+    if (s <= 0) s += 2147483646;
+    return () => {
+      s = (s * 16807) % 2147483647;
+      return (s - 1) / 2147483646;
+    };
+  };
+  const random = rng(777);
+
+  // 2. Weiche Harschwellen & Windwehen (organische, wellenförmige Schattierungen)
+  const waveCount = 18;
+  for (let w = 0; w < waveCount; w++) {
+    const baseY = (w / waveCount) * size;
+    const waveAmp = 12 + random() * 16;
+    const waveFreq = (Math.PI * 2 * (2 + Math.floor(random() * 3))) / size;
+    const phase = random() * Math.PI * 2;
+    const waveH = size / waveCount + 20;
+
+    const grad = ctx.createLinearGradient(0, baseY, 0, baseY + waveH);
+    grad.addColorStop(0.0, 'rgba(255, 255, 255, 0.45)');
+    grad.addColorStop(0.4, 'rgba(235, 244, 250, 0.35)');
+    grad.addColorStop(1.0, 'rgba(218, 230, 240, 0.0)');
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(0, baseY);
+    for (let x = 0; x <= size; x += 16) {
+      const y = baseY + Math.sin(x * waveFreq + phase) * waveAmp;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(size, baseY + waveH);
+    ctx.lineTo(0, baseY + waveH);
+    ctx.closePath();
+    ctx.fill();
+
+    if (bumpCtx) {
+      const bGrad = bumpCtx.createLinearGradient(0, baseY, 0, baseY + waveH);
+      bGrad.addColorStop(0.0, 'rgba(220, 220, 220, 0.4)');
+      bGrad.addColorStop(0.5, 'rgba(128, 128, 128, 0.2)');
+      bGrad.addColorStop(1.0, 'rgba(70, 70, 70, 0.0)');
+      bumpCtx.fillStyle = bGrad;
+      bumpCtx.fillRect(0, baseY, size, waveH);
+    }
+  }
+
+  // 3. Schneekorn-Granulat & funkelnde Eiskristalle (Mikrotextur)
+  const crystalCount = 3500;
+  for (let i = 0; i < crystalCount; i++) {
+    const cx = random() * size;
+    const cy = random() * size;
+    const cr = 0.6 + random() * 1.4;
+    const isGlitter = random() > 0.75;
+
+    ctx.fillStyle = isGlitter ? 'rgba(255, 255, 255, 0.95)' : 'rgba(222, 235, 245, 0.65)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (bumpCtx) {
+      bumpCtx.fillStyle = isGlitter ? 'rgba(255, 255, 255, 0.8)' : 'rgba(90, 90, 90, 0.5)';
+      bumpCtx.beginPath();
+      bumpCtx.arc(cx, cy, cr * 0.8, 0, Math.PI * 2);
+      bumpCtx.fill();
+    }
+  }
+
+  // 4. Feine Schnee-Flöckchen & Harsch-Grübchen
+  const dimpleCount = 600;
+  for (let i = 0; i < dimpleCount; i++) {
+    const dx = random() * size;
+    const dy = random() * size;
+    const dr = 1.8 + random() * 3.2;
+
+    const dimpleGrad = ctx.createRadialGradient(dx, dy, 0, dx, dy, dr);
+    dimpleGrad.addColorStop(0.0, 'rgba(205, 220, 232, 0.40)');
+    dimpleGrad.addColorStop(0.8, 'rgba(230, 240, 248, 0.15)');
+    dimpleGrad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+
+    ctx.fillStyle = dimpleGrad;
+    ctx.beginPath();
+    ctx.arc(dx, dy, dr, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (bumpCtx) {
+      const bDimple = bumpCtx.createRadialGradient(dx, dy, 0, dx, dy, dr);
+      bDimple.addColorStop(0.0, 'rgba(50, 50, 50, 0.5)');
+      bDimple.addColorStop(1.0, 'rgba(128, 128, 128, 0.0)');
+      bumpCtx.fillStyle = bDimple;
+      bumpCtx.beginPath();
+      bumpCtx.arc(dx, dy, dr, 0, Math.PI * 2);
+      bumpCtx.fill();
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+
+  let bumpTexture: THREE.CanvasTexture | null = null;
+  if (bumpCanvas) {
+    bumpTexture = new THREE.CanvasTexture(bumpCanvas);
+    bumpTexture.wrapS = THREE.RepeatWrapping;
+    bumpTexture.wrapT = THREE.RepeatWrapping;
+    bumpTexture.needsUpdate = true;
+  }
+
+  cachedSnowTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedSnowTexture);
+}
+
+/**
+ * Erzeugt eine Textur für schneebedeckte Tannen- und Fichtenkronen:
+ * - Dunkles Winter-Nadelgrün an den Astunterseiten
+ * - Breite, wattige weiße Schneehauben auf jeder Astetage mit sanftem Harsch-Relief
+ * - Glitzernde Schneekristalle an den Nadelspitzen
+ */
+export function createSnowyPineFoliageTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  if (cachedSnowyPineFoliageTexture) {
+    return clonePair(cachedSnowyPineFoliageTexture);
+  }
+  if (typeof document === 'undefined') {
+    return { map: null, bumpMap: null };
+  }
+
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return { map: null, bumpMap: null };
+
+  const bumpCanvas = document.createElement('canvas');
+  bumpCanvas.width = size;
+  bumpCanvas.height = size;
+  const bumpCtx = bumpCanvas.getContext('2d');
+
+  // 1. Grundfläche: Dunkles, kühles Winter-Tannengrün
+  ctx.fillStyle = '#183824';
+  ctx.fillRect(0, 0, size, size);
+
+  if (bumpCtx) {
+    bumpCtx.fillStyle = '#808080';
+    bumpCtx.fillRect(0, 0, size, size);
+  }
+
+  const rng = (seed: number) => {
+    let s = seed % 2147483647;
+    if (s <= 0) s += 2147483646;
+    return () => {
+      s = (s * 16807) % 2147483647;
+      return (s - 1) / 2147483646;
+    };
+  };
+  const random = rng(999);
+
+  // 2. Nadelkämme an den Unterseiten der Etagen
+  const tierCount = 6;
+  const tierHeight = size / tierCount;
+
+  for (let t = 0; t < tierCount; t++) {
+    const tierY = t * tierHeight;
+
+    // Tiefes Nadelschattenband
+    const shadowGrad = ctx.createLinearGradient(0, tierY + tierHeight * 0.6, 0, tierY + tierHeight);
+    shadowGrad.addColorStop(0, 'rgba(10, 24, 15, 0.0)');
+    shadowGrad.addColorStop(1, 'rgba(8, 20, 12, 0.85)');
+    ctx.fillStyle = shadowGrad;
+    ctx.fillRect(0, tierY + tierHeight * 0.6, size, tierHeight * 0.4);
+
+    // Tannennadeln, die unter dem Schnee hervorlugen
+    for (let n = 0; n < 80; n++) {
+      const nx = random() * size;
+      const ny = tierY + tierHeight * 0.55 + random() * (tierHeight * 0.4);
+      const nLen = 6 + random() * 10;
+      const nAngle = Math.PI * 0.5 + (random() - 0.5) * 0.8;
+
+      ctx.strokeStyle = random() > 0.5 ? '#244d32' : '#1a3c26';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(nx, ny);
+      ctx.lineTo(nx + Math.cos(nAngle) * nLen, ny + Math.sin(nAngle) * nLen);
+      ctx.stroke();
+    }
+  }
+
+  // 3. Breite, weiche Schneehauben auf den oberen 68% jeder Astetage
+  for (let t = 0; t < tierCount; t++) {
+    const tierY = t * tierHeight;
+    const snowH = tierHeight * 0.68;
+
+    // Sanft gerundete Schneehauben-Kontur
+    const snowGrad = ctx.createLinearGradient(0, tierY, 0, tierY + snowH);
+    snowGrad.addColorStop(0.0, '#ffffff');
+    snowGrad.addColorStop(0.45, '#f4f8fb');
+    snowGrad.addColorStop(0.85, '#dbe7f2');
+    snowGrad.addColorStop(1.0, 'rgba(200, 218, 232, 0.0)');
+
+    ctx.fillStyle = snowGrad;
+    ctx.beginPath();
+    ctx.moveTo(0, tierY);
+
+    // Organischer, welliger Schneesaum
+    for (let x = 0; x <= size; x += 8) {
+      const dip = Math.sin(x * 0.12 + t) * 4 + Math.cos(x * 0.04) * 5;
+      ctx.lineTo(x, tierY + snowH + dip);
+    }
+    ctx.lineTo(size, tierY);
+    ctx.closePath();
+    ctx.fill();
+
+    if (bumpCtx) {
+      const bGrad = bumpCtx.createLinearGradient(0, tierY, 0, tierY + snowH);
+      bGrad.addColorStop(0.0, 'rgb(245, 245, 245)');
+      bGrad.addColorStop(0.5, 'rgb(215, 215, 215)');
+      bGrad.addColorStop(1.0, 'rgb(75, 75, 75)');
+      bumpCtx.fillStyle = bGrad;
+      bumpCtx.fillRect(0, tierY, size, snowH);
+    }
+  }
+
+  // 4. Glitzernde Schneekristalle & Reif auf den Nadeln
+  for (let c = 0; c < 900; c++) {
+    const cx = random() * size;
+    const cy = random() * size;
+    const cr = 0.5 + random() * 1.2;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+
+  let bumpTexture: THREE.CanvasTexture | null = null;
+  if (bumpCanvas) {
+    bumpTexture = new THREE.CanvasTexture(bumpCanvas);
+    bumpTexture.wrapS = THREE.RepeatWrapping;
+    bumpTexture.wrapT = THREE.RepeatWrapping;
+    bumpTexture.needsUpdate = true;
+  }
+
+  cachedSnowyPineFoliageTexture = { map: texture, bumpMap: bumpTexture };
+  return clonePair(cachedSnowyPineFoliageTexture);
 }

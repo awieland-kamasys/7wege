@@ -59,6 +59,7 @@ import { createPathHerbs, PathHerbsEntity } from '../entities/PathHerbs';
 import {
   createBarkTexture,
   createPineFoliageTexture,
+  createSnowyPineFoliageTexture,
   createStoneTexture,
   createVeinedLavaRockTexture,
 } from '../textures/GroundTextures';
@@ -111,6 +112,7 @@ interface ForestTreeInstance {
   scale: number;
   useDarkCrown: boolean;
   isBurned: boolean;
+  isSnowy?: boolean;
   birdhouseAngle?: number;
 }
 
@@ -155,6 +157,13 @@ export class CrossroadsScene {
   private readonly path5Fire: PathFireEntity;
   private readonly path6Herbs: PathHerbsEntity;
   private readonly treasureChest: TreasureChestEntity;
+  private snowfallPoints: THREE.Points | null = null;
+  private snowfallFlakes: Array<{
+    topY: number;
+    speedY: number;
+    swaySpeed: number;
+    phase: number;
+  }> = [];
   private readonly pathGemstones = new Map<
     number,
     {
@@ -633,6 +642,7 @@ export class CrossroadsScene {
     this.buildPath7Wildflowers();
     this.buildForestMushrooms();
     this.buildHellChasmBackdropRocks();
+    this.buildSnowfallSystem();
 
     // Zielmarkierung für Maus-Bewegung (Click-to-Move)
     this.targetMarker = this.createTargetMarker();
@@ -817,11 +827,12 @@ export class CrossroadsScene {
 
   private defaultTrunkMat: THREE.MeshStandardMaterial | null = null;
   private burnedTrunkMat: THREE.MeshStandardMaterial | null = null;
+  private snowyTrunkMat: THREE.MeshStandardMaterial | null = null;
 
   /**
    * Liefert das detailreich texturierte Rindenmaterial für Baumstämme (mit vertikaler Rindenstruktur und Relief-Bump-Map).
    */
-  private getTrunkMaterial(burned = false): THREE.MeshStandardMaterial {
+  private getTrunkMaterial(burned = false, snowy = false): THREE.MeshStandardMaterial {
     if (burned) {
       if (!this.burnedTrunkMat) {
         const barkTex = createBarkTexture();
@@ -840,6 +851,27 @@ export class CrossroadsScene {
         });
       }
       return this.burnedTrunkMat;
+    }
+
+    if (snowy) {
+      if (!this.snowyTrunkMat) {
+        const barkTex = createBarkTexture();
+        if (barkTex.map) {
+          barkTex.map.repeat.set(2.5, 3.5);
+          barkTex.map.colorSpace = THREE.SRGBColorSpace;
+        }
+        if (barkTex.bumpMap) {
+          barkTex.bumpMap.repeat.set(2.5, 3.5);
+        }
+        this.snowyTrunkMat = new THREE.MeshStandardMaterial({
+          color: 0x828a90, // Kaltes, frostbereiftes Silbergrau
+          map: barkTex.map ?? undefined,
+          bumpMap: barkTex.bumpMap ?? undefined,
+          bumpScale: 0.045,
+          roughness: 0.88,
+        });
+      }
+      return this.snowyTrunkMat;
     }
 
     if (!this.defaultTrunkMat) {
@@ -893,11 +925,13 @@ export class CrossroadsScene {
   private defaultCrownLightMat: THREE.MeshStandardMaterial | null = null;
   private burnedCrownDarkMat: THREE.MeshStandardMaterial | null = null;
   private burnedCrownLightMat: THREE.MeshStandardMaterial | null = null;
+  private snowyCrownDarkMat: THREE.MeshStandardMaterial | null = null;
+  private snowyCrownLightMat: THREE.MeshStandardMaterial | null = null;
 
   /**
    * Liefert die detailreichen Nadelbaum-Materialien für die Baumkronen (mit Nadelbaum-Foliage-Textur und Bump-Map).
    */
-  private getCrownMaterials(burned = false): { dark: THREE.MeshStandardMaterial; light: THREE.MeshStandardMaterial } {
+  private getCrownMaterials(burned = false, snowy = false): { dark: THREE.MeshStandardMaterial; light: THREE.MeshStandardMaterial } {
     if (burned) {
       if (!this.burnedCrownDarkMat || !this.burnedCrownLightMat) {
         const foliageTex = createPineFoliageTexture();
@@ -924,6 +958,34 @@ export class CrossroadsScene {
         });
       }
       return { dark: this.burnedCrownDarkMat, light: this.burnedCrownLightMat };
+    }
+
+    if (snowy) {
+      if (!this.snowyCrownDarkMat || !this.snowyCrownLightMat) {
+        const foliageTex = createSnowyPineFoliageTexture();
+        if (foliageTex.map) {
+          foliageTex.map.repeat.set(3.2, 4.0);
+          foliageTex.map.colorSpace = THREE.SRGBColorSpace;
+        }
+        if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(3.2, 4.0);
+        this.snowyCrownDarkMat = new THREE.MeshStandardMaterial({
+          color: 0xe4eff7, // Glänzendes Schneeweiß mit blauem Eisschimmer
+          map: foliageTex.map ?? undefined,
+          bumpMap: foliageTex.bumpMap ?? undefined,
+          bumpScale: 0.12,
+          roughness: 0.82,
+          vertexColors: true,
+        });
+        this.snowyCrownLightMat = new THREE.MeshStandardMaterial({
+          color: 0xf8fbfd, // Strahlendes Neuschneeweiß
+          map: foliageTex.map ?? undefined,
+          bumpMap: foliageTex.bumpMap ?? undefined,
+          bumpScale: 0.12,
+          roughness: 0.78,
+          vertexColors: true,
+        });
+      }
+      return { dark: this.snowyCrownDarkMat, light: this.snowyCrownLightMat };
     }
 
     if (!this.defaultCrownDarkMat || !this.defaultCrownLightMat) {
@@ -953,15 +1015,32 @@ export class CrossroadsScene {
     return { dark: this.defaultCrownDarkMat, light: this.defaultCrownLightMat };
   }
 
+  /**
+   * Prüft, ob ein Baum in der alpinen Schneezone von Weg 1 oder am Bergmassiv steht.
+   */
+  private isSnowZone(x: number, z: number): boolean {
+    // Umkreis des Bergmassivs und Höhleneingangs
+    const distCave = Math.hypot(x - CAVE_ENTRANCE_POS.x, z - CAVE_ENTRANCE_POS.z);
+    if (distCave < 26.0) return true;
+
+    // Oberer Pfadabschnitt von Weg 1 hinauf zum Berg (ab z < -20)
+    if (z < -20.0 && x > -6.0 && x < 32.0) {
+      return true;
+    }
+    return false;
+  }
+
   private addTreeToForest(
     x: number,
     z: number,
     scale: number,
     useDarkCrown: boolean,
     isBurned = false,
-    birdhouseAngle?: number
+    birdhouseAngle?: number,
+    isSnowy?: boolean
   ): void {
-    this.treeInstances.push({ x, z, scale, useDarkCrown, isBurned, birdhouseAngle });
+    const snowy = isSnowy ?? (!isBurned && this.isSnowZone(x, z));
+    this.treeInstances.push({ x, z, scale, useDarkCrown, isBurned, isSnowy: snowy, birdhouseAngle });
   }
 
   /**
@@ -969,10 +1048,12 @@ export class CrossroadsScene {
    * Reduziert die Draw Calls von über 1.500 auf genau 6 für die gesamte Spielwelt.
    */
   private buildInstancedForest(): void {
-    const normalTrunkMat = this.getTrunkMaterial(false);
-    const burnedTrunkMat = this.getTrunkMaterial(true);
-    const { dark: normalCrownDarkMat, light: normalCrownLightMat } = this.getCrownMaterials(false);
-    const { dark: burnedCrownDarkMat, light: burnedCrownLightMat } = this.getCrownMaterials(true);
+    const normalTrunkMat = this.getTrunkMaterial(false, false);
+    const burnedTrunkMat = this.getTrunkMaterial(true, false);
+    const snowyTrunkMat = this.getTrunkMaterial(false, true);
+    const { dark: normalCrownDarkMat, light: normalCrownLightMat } = this.getCrownMaterials(false, false);
+    const { dark: burnedCrownDarkMat, light: burnedCrownLightMat } = this.getCrownMaterials(true, false);
+    const { dark: snowyCrownDarkMat, light: snowyCrownLightMat } = this.getCrownMaterials(false, true);
 
     // 1. Organischer Nadelbaum-Stamm mit 4 kräftigen Wurzelanläufen (12 Segmente, reicht 0.45m tief in den Boden)
     const trunkHeight = 2.6;
@@ -1080,8 +1161,12 @@ export class CrossroadsScene {
       return;
     }
 
-    // 2. Bäume nach Typ gruppieren
-    const normalTrees = this.treeInstances.filter((t) => !t.isBurned);
+    // 2. Bäume nach Typ gruppieren (Verschneite Bergzone, Wald, Verbrannte Zone)
+    const snowyTrees = this.treeInstances.filter((t) => !t.isBurned && t.isSnowy);
+    const snowyDark = snowyTrees.filter((t) => t.useDarkCrown);
+    const snowyLight = snowyTrees.filter((t) => !t.useDarkCrown);
+
+    const normalTrees = this.treeInstances.filter((t) => !t.isBurned && !t.isSnowy);
     const normalDark = normalTrees.filter((t) => t.useDarkCrown);
     const normalLight = normalTrees.filter((t) => !t.useDarkCrown);
 
@@ -1099,7 +1184,44 @@ export class CrossroadsScene {
       instancedMesh.setMatrixAt(index, dummy.matrix);
     };
 
-    // 3. Normale Stämme (1 InstancedMesh für alle lebenden Baumstämme)
+    // 3. Verschneite Bäume (Weg 1 Bergzone & Höhlenmassiv)
+    if (snowyTrees.length > 0) {
+      const snowyTrunkMesh = new THREE.InstancedMesh(trunkGeo, snowyTrunkMat, snowyTrees.length);
+      snowyTrunkMesh.name = 'InstancedSnowyTrunks';
+      snowyTrunkMesh.castShadow = true;
+      snowyTrunkMesh.receiveShadow = true;
+      for (let i = 0; i < snowyTrees.length; i++) {
+        setMatrix(snowyTrunkMesh, i, snowyTrees[i]);
+      }
+      snowyTrunkMesh.instanceMatrix.needsUpdate = true;
+      this.scene.add(snowyTrunkMesh);
+    }
+
+    if (snowyDark.length > 0) {
+      const snowyCrownDarkMesh = new THREE.InstancedMesh(mergedCrownGeo, snowyCrownDarkMat, snowyDark.length);
+      snowyCrownDarkMesh.name = 'InstancedSnowyCrownsDark';
+      snowyCrownDarkMesh.castShadow = true;
+      snowyCrownDarkMesh.receiveShadow = true;
+      for (let i = 0; i < snowyDark.length; i++) {
+        setMatrix(snowyCrownDarkMesh, i, snowyDark[i]);
+      }
+      snowyCrownDarkMesh.instanceMatrix.needsUpdate = true;
+      this.scene.add(snowyCrownDarkMesh);
+    }
+
+    if (snowyLight.length > 0) {
+      const snowyCrownLightMesh = new THREE.InstancedMesh(mergedCrownGeo, snowyCrownLightMat, snowyLight.length);
+      snowyCrownLightMesh.name = 'InstancedSnowyCrownsLight';
+      snowyCrownLightMesh.castShadow = true;
+      snowyCrownLightMesh.receiveShadow = true;
+      for (let i = 0; i < snowyLight.length; i++) {
+        setMatrix(snowyCrownLightMesh, i, snowyLight[i]);
+      }
+      snowyCrownLightMesh.instanceMatrix.needsUpdate = true;
+      this.scene.add(snowyCrownLightMesh);
+    }
+
+    // 4. Normale Stämme (1 InstancedMesh für alle lebenden Sommer-Baumstämme)
     if (normalTrees.length > 0) {
       const normalTrunkMesh = new THREE.InstancedMesh(trunkGeo, normalTrunkMat, normalTrees.length);
       normalTrunkMesh.name = 'InstancedNormalTrunks';
@@ -2192,6 +2314,117 @@ export class CrossroadsScene {
     this.scene.add(rockGroup);
   }
 
+  /**
+   * Erzeugt ein hochperformantes Partikelsystem für taumelnden Schneefall in der alpinen Zone
+   * entlang des oberen Wegabschnitts von Weg 1 und über dem gesamten Bergmassiv vor der Mine.
+   */
+  private buildSnowfallSystem(): void {
+    if (typeof document === 'undefined') return;
+
+    // Weiche Schneeflocken-Sprite-Textur mit zartem Glow
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 28);
+    grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+    grad.addColorStop(0.35, 'rgba(240, 248, 255, 0.85)');
+    grad.addColorStop(0.70, 'rgba(220, 238, 255, 0.35)');
+    grad.addColorStop(1.0, 'rgba(200, 230, 255, 0.0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(32, 32, 28, 0, Math.PI * 2);
+    ctx.fill();
+
+    const flakeTexture = new THREE.CanvasTexture(canvas);
+    flakeTexture.needsUpdate = true;
+
+    const flakeCount = 550;
+    const flakePositions = new Float32Array(flakeCount * 3);
+    this.snowfallFlakes = [];
+
+    for (let i = 0; i < flakeCount; i++) {
+      let x = 0;
+      let z = 0;
+      let topY = 16.0;
+
+      if (i < 250) {
+        // Flocken über dem großen Minenplateau und Felsmassiv
+        const angle = Math.random() * Math.PI * 2;
+        const rad = Math.random() * 20.0;
+        x = CAVE_ENTRANCE_POS.x + Math.sin(angle) * rad;
+        z = CAVE_ENTRANCE_POS.z + Math.cos(angle) * rad;
+        const ground = getTerrainHeight(x, z);
+        topY = ground + 9.0 + Math.random() * 8.0;
+      } else {
+        // Flocken entlang des oberen Pfades von Weg 1 (ab z = -18 m aufwärts)
+        const t = Math.random();
+        const cx = 0.5 + t * 22.0 + (Math.random() - 0.5) * 12.0;
+        const cz = -18.0 - t * 28.0 + (Math.random() - 0.5) * 12.0;
+        x = cx;
+        z = cz;
+        const ground = getTerrainHeight(x, z);
+        topY = ground + 7.5 + Math.random() * 6.0;
+      }
+
+      const groundY = getTerrainHeight(x, z);
+      const startY = groundY + Math.random() * (topY - groundY);
+
+      flakePositions[i * 3 + 0] = x;
+      flakePositions[i * 3 + 1] = startY;
+      flakePositions[i * 3 + 2] = z;
+
+      this.snowfallFlakes.push({
+        topY,
+        speedY: 0.75 + Math.random() * 0.95,
+        swaySpeed: 1.2 + Math.random() * 2.2,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+
+    const flakeGeo = new THREE.BufferGeometry();
+    flakeGeo.setAttribute('position', new THREE.BufferAttribute(flakePositions, 3));
+
+    const flakeMat = new THREE.PointsMaterial({
+      size: 0.28,
+      map: flakeTexture,
+      transparent: true,
+      opacity: 0.88,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+
+    this.snowfallPoints = new THREE.Points(flakeGeo, flakeMat);
+    this.snowfallPoints.name = 'AlpineSnowfall';
+    this.scene.add(this.snowfallPoints);
+  }
+
+  /**
+   * Aktualisiert die Schneeflocken-Positionen: sanftes Herabsinken und horizontales Taumeln.
+   */
+  private updateSnowfall(dtSeconds: number): void {
+    if (!this.snowfallPoints) return;
+    const posAttr = this.snowfallPoints.geometry.attributes.position;
+    const count = posAttr.count;
+
+    for (let i = 0; i < count; i++) {
+      const flake = this.snowfallFlakes[i];
+      let y = posAttr.getY(i) - flake.speedY * dtSeconds;
+      const sway = Math.sin(this.elapsedSeconds * flake.swaySpeed + flake.phase) * 0.25 * dtSeconds;
+      const x = posAttr.getX(i) + sway;
+      const z = posAttr.getZ(i) + sway * 0.4;
+
+      const groundY = getTerrainHeight(x, z);
+      if (y < groundY + 0.12) {
+        y = flake.topY;
+      }
+      posAttr.setXYZ(i, x, y, z);
+    }
+    posAttr.needsUpdate = true;
+  }
+
   private createTargetMarker(): THREE.Mesh {
     const geometry = new THREE.RingGeometry(0.28, 0.42, 24);
     geometry.rotateX(-Math.PI / 2);
@@ -2571,13 +2804,16 @@ export class CrossroadsScene {
     );
     this.treasureChest.update(dtSeconds, isChestOpen, this.isChestHovered);
 
-    // Weg 1: Bergmassiv mit Höhleneingang & Graumännchen
-    if (distCave < 33) {
-      this.greyManNpc.update(
-        this.elapsedSeconds,
-        playerPos,
-        this.isGreyManHovered || isDialogueActive
-      );
+    // Weg 1: Bergmassiv mit Höhleneingang, Graumännchen & alpiner Schneefall
+    if (distCave < 62) {
+      this.updateSnowfall(dtSeconds);
+      if (distCave < 33) {
+        this.greyManNpc.update(
+          this.elapsedSeconds,
+          playerPos,
+          this.isGreyManHovered || isDialogueActive
+        );
+      }
     }
     // Weg 2: Waldteich & Nixe
     if (distPond < 33) {
