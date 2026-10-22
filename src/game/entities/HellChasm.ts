@@ -167,7 +167,8 @@ export function createHellChasm(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
       model.traverse((child) => {
         const mesh = child as THREE.Mesh;
         if (mesh.isMesh) {
-          mesh.castShadow = true;
+          // Der Krater ist eine Bodensenke und empfängt Schatten (wirft keinen Schatten nach oben)
+          mesh.castShadow = false;
           mesh.receiveShadow = true;
           mesh.userData = { interactableType: 'hell_chasm' };
 
@@ -348,7 +349,6 @@ export function createHellChasm(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
   // Flackernde Höllenfeuer-Punktlichter (angepasst an abgesenkte Kraterposition)
   const fireLight1 = new THREE.PointLight(0xff5500, 3.8, 28);
   fireLight1.position.set(0, 4.35, 0);
-  fireLight1.castShadow = true;
   group.add(fireLight1);
 
   const fireLight2 = new THREE.PointLight(0xff2200, 2.8, 22);

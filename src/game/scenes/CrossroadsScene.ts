@@ -2480,55 +2480,90 @@ export class CrossroadsScene {
     this.lastPlayerPos = { x: playerPos.x, z: playerPos.z };
     this.playerGroup.position.set(playerPos.x, 0, playerPos.z);
 
-    // Alle sechs NPCs (Waldhüter Arvid, Graumännchen, Nixe, Riese, Holzweibchen, Teufel), Schauplätze und Schatztruhe animieren
+    // Entfernungs-Culling: Entities, die weiter als 33m entfernt sind (durch Nebel ab 22m verborgen),
+    // pausieren ihre rechenintensiven Animationen, Partikel- und Skelettberechnungen.
+    const distCave = Math.hypot(playerPos.x - CAVE_ENTRANCE_POS.x, playerPos.z - CAVE_ENTRANCE_POS.z);
+    const distPond = Math.hypot(playerPos.x - POND_CENTER_POS.x, playerPos.z - POND_CENTER_POS.z);
+    const distWeir = Math.hypot(playerPos.x - WEIR_BRIDGE_POS.x, playerPos.z - WEIR_BRIDGE_POS.z);
+    const distLumber = Math.hypot(playerPos.x - LUMBER_CAMP_POS.x, playerPos.z - LUMBER_CAMP_POS.z);
+    const distHell = Math.hypot(playerPos.x - HELL_CHASM_POS.x, playerPos.z - HELL_CHASM_POS.z);
+    const distLodge = Math.hypot(playerPos.x - HUNTING_LODGE_POS.x, playerPos.z - HUNTING_LODGE_POS.z);
+    const distGate = Math.hypot(playerPos.x - CLOSED_GATE_POS.x, playerPos.z - CLOSED_GATE_POS.z);
+
+    // Lichtungs-Objekte (immer nah an der Kreuzung)
     this.guideNpc.update(
       this.elapsedSeconds,
       playerPos,
       this.isNpcHovered || isDialogueActive,
       dtSeconds
     );
-    this.greyManNpc.update(
-      this.elapsedSeconds,
-      playerPos,
-      this.isGreyManHovered || isDialogueActive
-    );
-    this.nixiePond.update(this.elapsedSeconds);
-    this.nixieNpc.update(
-      this.elapsedSeconds,
-      playerPos,
-      this.isNixieHovered || isDialogueActive
-    );
-    this.weirBridge.update(this.elapsedSeconds);
-    this.giantNpc.update(
-      this.elapsedSeconds,
-      playerPos,
-      this.isGiantHovered || isDialogueActive
-    );
-    this.lumberCamp.update(this.elapsedSeconds);
-    this.woodWomanNpc.update(
-      this.elapsedSeconds,
-      playerPos,
-      this.isWoodWomanHovered || isDialogueActive
-    );
-    this.hellChasm.update(this.elapsedSeconds);
-    this.devilNpc.update(
-      this.elapsedSeconds,
-      playerPos,
-      this.isDevilHovered || isDialogueActive,
-      dtSeconds
-    );
-    this.huntingLodge.update(this.elapsedSeconds);
-    this.wildHunterNpc.update(
-      this.elapsedSeconds,
-      playerPos,
-      this.isWildHunterHovered || isDialogueActive
-    );
-    this.woodWomanLodgeNpc.update(
-      this.elapsedSeconds,
-      playerPos,
-      this.isWoodWomanLodgeHovered || isDialogueActive
-    );
-    this.closedGate.update(this.elapsedSeconds, playerPos, this.isGateHovered);
+    this.treasureChest.update(dtSeconds, isChestOpen, this.isChestHovered);
+
+    // Weg 1: Bergmassiv mit Höhleneingang & Graumännchen
+    if (distCave < 33) {
+      this.greyManNpc.update(
+        this.elapsedSeconds,
+        playerPos,
+        this.isGreyManHovered || isDialogueActive
+      );
+    }
+    // Weg 2: Waldteich & Nixe
+    if (distPond < 33) {
+      this.nixiePond.update(this.elapsedSeconds);
+      this.nixieNpc.update(
+        this.elapsedSeconds,
+        playerPos,
+        this.isNixieHovered || isDialogueActive
+      );
+    }
+    // Weg 3: Wehrbrücke & Riese
+    if (distWeir < 33) {
+      this.weirBridge.update(this.elapsedSeconds);
+      this.giantNpc.update(
+        this.elapsedSeconds,
+        playerPos,
+        this.isGiantHovered || isDialogueActive
+      );
+    }
+    // Weg 4: Holzfällerlager & Holzweibchen
+    if (distLumber < 33) {
+      this.lumberCamp.update(this.elapsedSeconds);
+      this.woodWomanNpc.update(
+        this.elapsedSeconds,
+        playerPos,
+        this.isWoodWomanHovered || isDialogueActive
+      );
+    }
+    // Weg 5: Höllenschlund & Teufel
+    if (distHell < 33) {
+      this.hellChasm.update(this.elapsedSeconds);
+      this.devilNpc.update(
+        this.elapsedSeconds,
+        playerPos,
+        this.isDevilHovered || isDialogueActive,
+        dtSeconds
+      );
+    }
+    // Weg 6: Jagdhütte, Wilder Jäger & Kräuterweibchen
+    if (distLodge < 33) {
+      this.huntingLodge.update(this.elapsedSeconds);
+      this.wildHunterNpc.update(
+        this.elapsedSeconds,
+        playerPos,
+        this.isWildHunterHovered || isDialogueActive
+      );
+      this.woodWomanLodgeNpc.update(
+        this.elapsedSeconds,
+        playerPos,
+        this.isWoodWomanLodgeHovered || isDialogueActive
+      );
+    }
+    // Weg 7: Verschlossenes Tor
+    if (distGate < 33) {
+      this.closedGate.update(this.elapsedSeconds, playerPos, this.isGateHovered);
+    }
+
+    // Hindernisse entlang der Wege
     this.path1Boulder.update(dtSeconds, this.isBoulderHovered);
     this.path2Puddle.update(dtSeconds, this.isPuddleHovered);
     this.path3Stream.update(dtSeconds, this.isStreamHovered);
@@ -2589,17 +2624,22 @@ export class CrossroadsScene {
         gem.material.emissive.setHex(gem.baseColor);
         gem.material.emissiveIntensity = 1.05 + pulse * 0.65 + flash;
         gem.light.intensity = 1.35 + pulse * 0.75 + flash * 1.8;
+        // PointLight-Culling: Nur leuchten, wenn der Pfad aktiv ausgewählt, gehovert oder gepulst ist
+        const shouldLight = selectedPathId === id || this.hoveredPathId === id || flash > 0;
+        gem.light.visible = shouldLight;
         gem.mesh.position.y = 0.65 + Math.sin(this.elapsedSeconds * 2.4 + id) * 0.05;
         gem.mesh.rotation.y = this.elapsedSeconds * (flash > 0 ? 3.6 : 1.1);
       } else if (id === this.hoveredPathId || id === selectedPathId) {
         gem.material.emissive.setHex(gem.baseColor);
         gem.material.emissiveIntensity = 0.35;
         gem.light.intensity = 0.3;
+        gem.light.visible = true;
         gem.mesh.position.y = 0.62;
       } else {
         gem.material.emissive.setHex(0x000000);
         gem.material.emissiveIntensity = 0;
         gem.light.intensity = 0;
+        gem.light.visible = false;
         gem.mesh.position.y = 0.62;
       }
     });

@@ -68,7 +68,8 @@ export function createNixiePond(onMeshLoaded?: (mesh: THREE.Object3D) => void): 
       model.traverse((child) => {
         const mesh = child as THREE.Mesh;
         if (mesh.isMesh) {
-          mesh.castShadow = true;
+          // Teichbett und Wasserfläche empfangen Schatten, werfen aber keinen Schatten
+          mesh.castShadow = false;
           mesh.receiveShadow = true;
           mesh.userData = { interactableType: 'pond' };
 
