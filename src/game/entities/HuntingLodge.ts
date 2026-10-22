@@ -116,27 +116,27 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
 
   // Temporärer Platzhalter während des Ladens
   const gardenFallback = new THREE.Mesh(
-    new THREE.BoxGeometry(3.4, 0.30, 3.2),
+    new THREE.BoxGeometry(6.8, 0.60, 6.4),
     soilMat
   );
   gardenFallback.rotation.y = Math.PI * 0.5;
-  gardenFallback.position.set(0, 0.15, 0);
+  gardenFallback.position.set(0, 0.30, 0);
   gardenFallback.castShadow = true;
   gardenFallback.receiveShadow = true;
   gardenFallback.userData = { interactableType: 'herb_garden' };
   gardenGroup.add(gardenFallback);
 
   // Sanftes, geheimnisvolles Mondwurz-Licht über dem Garten
-  const moonwortLight = new THREE.PointLight(0x76ebe0, 0.85, 3.2);
-  moonwortLight.position.set(0, 0.55, 0);
+  const moonwortLight = new THREE.PointLight(0x76ebe0, 0.95, 5.5);
+  moonwortLight.position.set(0, 1.1, 0);
   gardenGroup.add(moonwortLight);
 
   loader.load(
     '/assets/models/isometric garden 3d model.glb',
     (gltf) => {
       const model = gltf.scene;
-      // Stattliche Skalierung passend zur Szene vor der Burg (Breite ca. 3.5m, Tiefe ca. 3.35m, Höhe ca. 1.1m)
-      model.scale.setScalar(3.5);
+      // Verdoppelte Skalierung (Breite ca. 7.0m, Tiefe ca. 6.7m, Höhe ca. 2.2m)
+      model.scale.setScalar(7.0);
       // Drehung: um 90 Grad gedreht (um 90 Grad zurück von 180 Grad)
       model.rotation.y = Math.PI * 0.5;
 
