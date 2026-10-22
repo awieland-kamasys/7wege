@@ -177,16 +177,19 @@ export class CrossroadsState {
   private readonly devilCollisionRadius = 1.35;
   private readonly devilTalkDistance = 7.8;
 
-  // Am Ende des 6. Weges: Jagdhütte mit Kräutergarten, Wilder Jäger, Pferd und Holzweibchen
+  // Am Ende des 6. Weges: Steinruinen mit Kräutergarten, Wilder Jäger und Holzweibchen
   private readonly huntingLodgePos: Vector2D = { x: HUNTING_LODGE_POS.x, z: HUNTING_LODGE_POS.z };
   private readonly wildHunterPos: Vector2D = { ...WILD_HUNTER_NPC_POS };
   private readonly wildHunterCollisionRadius = 0.55;
   private readonly woodWomanLodgePos: Vector2D = { ...WOOD_WOMAN_LODGE_NPC_POS };
   private readonly woodWomanLodgeCollisionRadius = 0.55;
-  // Blockhütte steht versetzt bei (-46.6, 26.0) mit Ausdehnung 4.4 x 3.8
-  private readonly huntingCabinCenter: Vector2D = { x: -46.6, z: 26.0 };
-  private readonly huntingCabinHalfWidth = 2.3;
-  private readonly huntingCabinHalfDepth = 2.0;
+  // Ruinen auf Weg 6: Verfallener Steinturm (-47.0, 26.0) und Mauerruine (-47.0, 20.0)
+  private readonly stoneTowerCenter: Vector2D = { x: -47.0, z: 26.0 };
+  private readonly stoneTowerHalfWidth = 2.5;
+  private readonly stoneTowerHalfDepth = 2.5;
+  private readonly stoneRuinCenter: Vector2D = { x: -47.0, z: 20.0 };
+  private readonly stoneRuinHalfWidth = 2.5;
+  private readonly stoneRuinHalfDepth = 2.3;
 
   // Am Ende des 7. Weges: Das geschlossene Tor mit flankierenden Steinmauern
   private readonly gatePos: Vector2D = { x: CLOSED_GATE_POS.x, z: CLOSED_GATE_POS.z };
@@ -998,13 +1001,9 @@ export class CrossroadsState {
       return true;
     }
 
-    // Aufbauten und Garten an der Jagdhütte auf Weg 6:
-    // Eingezäunter Kräutergarten (AABB um -46.7, 21.0)
-    if (Math.abs(x - (-46.7)) < 1.85 - eps && Math.abs(z - 21.0) < 1.75 - eps) {
-      return true;
-    }
-    // Kamin an der Jagdhütte bei (-48.8, 25.4)
-    if (Math.abs(x - (-48.8)) < 0.65 - eps && Math.abs(z - 25.4) < 0.65 - eps) {
+    // Aufbauten und Garten an der Ruinenlichtung auf Weg 6:
+    // Eingezäunter Kräutergarten (AABB um -44.4, 20.6)
+    if (Math.abs(x - (-44.4)) < 1.7 - eps && Math.abs(z - 20.6) < 1.6 - eps) {
       return true;
     }
     // Der Wilde Jäger an der Jagdhütte auf Weg 6
@@ -1023,11 +1022,19 @@ export class CrossroadsState {
       return true;
     }
 
-    // Die Jagdhütte selbst (Blockbau)
-    const inHuntingCabin =
-      Math.abs(x - this.huntingCabinCenter.x) < this.huntingCabinHalfWidth - eps &&
-      Math.abs(z - this.huntingCabinCenter.z) < this.huntingCabinHalfDepth - eps;
-    if (inHuntingCabin) {
+    // Ruine 1: Verfallener Steinturm
+    if (
+      Math.abs(x - this.stoneTowerCenter.x) < this.stoneTowerHalfWidth - eps &&
+      Math.abs(z - this.stoneTowerCenter.z) < this.stoneTowerHalfDepth - eps
+    ) {
+      return true;
+    }
+
+    // Ruine 2: Steinerne Mauerruine
+    if (
+      Math.abs(x - this.stoneRuinCenter.x) < this.stoneRuinHalfWidth - eps &&
+      Math.abs(z - this.stoneRuinCenter.z) < this.stoneRuinHalfDepth - eps
+    ) {
       return true;
     }
 
@@ -1609,23 +1616,21 @@ export class CrossroadsState {
         }
       }
 
-      // Jagdhütte selbst (AABB um huntingCabinCenter)
-      const relCabinX = resolvedX - this.huntingCabinCenter.x;
-      const relCabinZ = resolvedZ - this.huntingCabinCenter.z;
-      if (
-        Math.abs(relCabinX) < this.huntingCabinHalfWidth &&
-        Math.abs(relCabinZ) < this.huntingCabinHalfDepth
-      ) {
-        const penX = this.huntingCabinHalfWidth - Math.abs(relCabinX);
-        const penZ = this.huntingCabinHalfDepth - Math.abs(relCabinZ);
-        if (penX < penZ) {
-          resolvedX =
-            this.huntingCabinCenter.x +
-            (relCabinX >= 0 ? this.huntingCabinHalfWidth : -this.huntingCabinHalfWidth);
-        } else {
-          resolvedZ =
-            this.huntingCabinCenter.z +
-            (relCabinZ >= 0 ? this.huntingCabinHalfDepth : -this.huntingCabinHalfDepth);
+      // Ruinen-Kollision (AABB um Steinturm und Mauerruine)
+      for (const ruin of [
+        { center: this.stoneTowerCenter, hw: this.stoneTowerHalfWidth, hd: this.stoneTowerHalfDepth },
+        { center: this.stoneRuinCenter, hw: this.stoneRuinHalfWidth, hd: this.stoneRuinHalfDepth },
+      ]) {
+        const relRuinX = resolvedX - ruin.center.x;
+        const relRuinZ = resolvedZ - ruin.center.z;
+        if (Math.abs(relRuinX) < ruin.hw && Math.abs(relRuinZ) < ruin.hd) {
+          const penX = ruin.hw - Math.abs(relRuinX);
+          const penZ = ruin.hd - Math.abs(relRuinZ);
+          if (penX < penZ) {
+            resolvedX = ruin.center.x + (relRuinX >= 0 ? ruin.hw : -ruin.hw);
+          } else {
+            resolvedZ = ruin.center.z + (relRuinZ >= 0 ? ruin.hd : -ruin.hd);
+          }
         }
       }
 
@@ -2356,7 +2361,7 @@ export class CrossroadsState {
       return {
         type: 'hunting_lodge',
         label:
-          'Jagdhütte des Wilden Jägers – mit Schindeldach, Steinkamin und Hirschgeweih über dem Eingang.',
+          'Uralte Steinruinen an der Waldlichtung des Wilden Jägers – verfallener Steinturm und verwitterte Mauern.',
       };
     }
 

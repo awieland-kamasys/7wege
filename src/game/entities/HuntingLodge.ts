@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface HuntingLodgeEntity {
   group: THREE.Group;
@@ -7,41 +9,21 @@ export interface HuntingLodgeEntity {
 
 /**
  * Erstellt die 3D-Szenerie am Ende des 6. Weges:
- * - Eine urige Jagdhütte aus Blockbalken mit Schindeldach, Steinkamin, Hirschgeweih über der Tür und Fenster
+ * - Zwei alte, verfallene Steinruinen nebeneinander auf der Waldlichtung:
+ *   1. Verfallener Steinturm (`/assets/models/ruined stone tower 3d model.glb`)
+ *   2. Steinerne Mauerruine (`/assets/models/stone ruin 3d model.glb`)
  * - Ein wunderbarer, eingezäunter Kräutergarten mit Beeten (Lavendel, Königs-Salbei, seltene Mondwurz, Thymian, Ringelblumen)
- * - Das Jagdpferd des Wilden Jägers mit Zaumzeug und sanft wehendem Schweif
- * - Der aufmerksame Jagdhund mit wedelnder Rute
+ * - Schauplatz für den Wilden Jäger und die Holzweibchen
  */
-export function createHuntingLodge(): HuntingLodgeEntity {
+export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): HuntingLodgeEntity {
   const group = new THREE.Group();
-  group.name = 'HuntingLodge';
+  group.name = 'HuntingLodgeRuins';
 
-  // --- MATERIALIEN ---
-  const logMat = new THREE.MeshStandardMaterial({
-    color: 0x4a331e,
-    roughness: 0.88,
-    flatShading: true,
-  });
-  const roofMat = new THREE.MeshStandardMaterial({
-    color: 0x2e1f13,
-    roughness: 0.92,
-    flatShading: true,
-  });
-  const chimneyStoneMat = new THREE.MeshStandardMaterial({
+  // --- MATERIALIEN FÜR PLATZHALTER & KRÄUTERGARTEN ---
+  const stoneMat = new THREE.MeshStandardMaterial({
     color: 0x5a554e,
     roughness: 0.95,
     flatShading: true,
-  });
-  const hornMat = new THREE.MeshStandardMaterial({
-    color: 0xd8ceb8,
-    roughness: 0.65,
-    flatShading: true,
-  });
-  const windowGlowMat = new THREE.MeshStandardMaterial({
-    color: 0xffb84d,
-    emissive: 0xcc7a14,
-    emissiveIntensity: 0.7,
-    roughness: 0.3,
   });
   const fenceMat = new THREE.MeshStandardMaterial({
     color: 0x5c4228,
@@ -76,216 +58,135 @@ export function createHuntingLodge(): HuntingLodgeEntity {
     roughness: 0.6,
   });
 
-  const smokeMat = new THREE.MeshStandardMaterial({
-    color: 0xd4d8d6,
-    roughness: 0.9,
-    transparent: true,
-    opacity: 0.45,
-  });
+  const loader = new GLTFLoader();
 
   // ==========================================
-  // 1. DIE JAGDHÜTTE (Blockbau mit Kamin & Geweih)
+  // 1. VERFALLENER STEINTURM (ruined stone tower 3d model.glb)
   // ==========================================
-  const cabinGroup = new THREE.Group();
-  cabinGroup.position.set(-2.4, 0, 3.2);
+  const towerGroup = new THREE.Group();
+  towerGroup.name = 'RuinedStoneTower';
+  towerGroup.position.set(-2.8, 0, 3.2);
 
-  // Fundament / Boden (Natursteinfundament reicht 0.65m tief ins Erdreich, damit bei Hanglage kein Spalt entsteht)
-  const stoneFoundation = new THREE.Mesh(
-    new THREE.BoxGeometry(4.55, 0.8, 3.95),
-    chimneyStoneMat
+  // Temporärer Platzhalter während des Ladens
+  const towerFallback = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.6, 2.0, 3.8, 8),
+    stoneMat
   );
-  stoneFoundation.position.y = -0.25;
-  stoneFoundation.receiveShadow = true;
-  stoneFoundation.castShadow = true;
-  cabinGroup.add(stoneFoundation);
+  towerFallback.position.y = 1.9;
+  towerFallback.castShadow = true;
+  towerFallback.receiveShadow = true;
+  towerFallback.userData = { interactableType: 'hunting_lodge' };
+  towerGroup.add(towerFallback);
+  group.add(towerGroup);
 
-  const floor = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.3, 3.8), logMat);
-  floor.position.y = 0.15;
-  floor.receiveShadow = true;
-  cabinGroup.add(floor);
+  loader.load(
+    '/assets/models/ruined stone tower 3d model.glb',
+    (gltf) => {
+      const model = gltf.scene;
+      model.scale.setScalar(6.0);
+      model.rotation.y = 0.35;
 
-  // Wände aus horizontalen Blockbohlen
-  const wallLevels = 8;
-  const wallLogRadius = 0.14;
-  for (let i = 0; i < wallLevels; i++) {
-    const y = 0.3 + wallLogRadius + i * (wallLogRadius * 1.85);
+      model.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(model);
+      model.position.set(0, -bounds.min.y, 0);
 
-    // Rückwand
-    const backLog = new THREE.Mesh(
-      new THREE.CylinderGeometry(wallLogRadius, wallLogRadius, 4.3, 8),
-      logMat
-    );
-    backLog.rotation.z = Math.PI / 2;
-    backLog.position.set(0, y, -1.75);
-    backLog.castShadow = true;
-    backLog.receiveShadow = true;
-    cabinGroup.add(backLog);
+      model.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.userData = { interactableType: 'hunting_lodge' };
 
-    // Linke Seitenwand
-    const leftLog = new THREE.Mesh(
-      new THREE.CylinderGeometry(wallLogRadius, wallLogRadius, 3.6, 8),
-      logMat
-    );
-    leftLog.rotation.x = Math.PI / 2;
-    leftLog.position.set(-2.05, y, 0);
-    leftLog.castShadow = true;
-    leftLog.receiveShadow = true;
-    cabinGroup.add(leftLog);
+          if (mesh.material && 'roughness' in mesh.material) {
+            const mat = mesh.material as THREE.MeshStandardMaterial;
+            mat.roughness = 0.92;
+            mat.metalness = 0.05;
+          }
 
-    // Rechte Seitenwand
-    const rightLog = new THREE.Mesh(
-      new THREE.CylinderGeometry(wallLogRadius, wallLogRadius, 3.6, 8),
-      logMat
-    );
-    rightLog.rotation.x = Math.PI / 2;
-    rightLog.position.set(2.05, y, 0);
-    rightLog.castShadow = true;
-    rightLog.receiveShadow = true;
-    cabinGroup.add(rightLog);
+          if (onMeshLoaded) {
+            onMeshLoaded(mesh);
+          }
+        }
+      });
 
-    // Vorderwand (mit Aussparung für Tür)
-    for (const side of [-1.45, 1.45]) {
-      const frontLog = new THREE.Mesh(
-        new THREE.CylinderGeometry(wallLogRadius, wallLogRadius, 1.25, 8),
-        logMat
-      );
-      frontLog.rotation.z = Math.PI / 2;
-      frontLog.position.set(side, y, 1.75);
-      frontLog.castShadow = true;
-      frontLog.receiveShadow = true;
-      cabinGroup.add(frontLog);
+      towerGroup.remove(towerFallback);
+      disposeObject3D(towerFallback);
+      towerGroup.add(model);
+    },
+    undefined,
+    (err) => {
+      console.warn('Modell ruined stone tower 3d model.glb konnte nicht geladen werden:', err);
     }
-  }
-
-  // Balken über der Tür
-  const lintelLog = new THREE.Mesh(
-    new THREE.CylinderGeometry(wallLogRadius, wallLogRadius, 4.3, 8),
-    logMat
   );
-  lintelLog.rotation.z = Math.PI / 2;
-  lintelLog.position.set(0, 2.35, 1.75);
-  lintelLog.castShadow = true;
-  cabinGroup.add(lintelLog);
-
-  // Schindeldach (Satteldach)
-  const roofLeft = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.14, 4.4), roofMat);
-  roofLeft.position.set(-1.15, 2.9, 0);
-  roofLeft.rotation.z = 0.58;
-  roofLeft.castShadow = true;
-  roofLeft.receiveShadow = true;
-  cabinGroup.add(roofLeft);
-
-  const roofRight = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.14, 4.4), roofMat);
-  roofRight.position.set(1.15, 2.9, 0);
-  roofRight.rotation.z = -0.58;
-  roofRight.castShadow = true;
-  roofRight.receiveShadow = true;
-  cabinGroup.add(roofRight);
-
-  // Giebel-Dreiecke vorn und hinten
-  for (const gz of [1.74, -1.74]) {
-    const gable = new THREE.Mesh(new THREE.ConeGeometry(2.2, 1.4, 4), logMat);
-    gable.position.set(0, 3.0, gz);
-    gable.rotation.y = Math.PI / 4;
-    gable.scale.set(1.0, 1.0, 0.08);
-    gable.castShadow = true;
-    cabinGroup.add(gable);
-  }
-
-  // Steinkamin an der linken Hüttenwand
-  const chimneyBase = new THREE.Mesh(
-    new THREE.BoxGeometry(0.85, 2.8, 0.95),
-    chimneyStoneMat
-  );
-  chimneyBase.position.set(-2.2, 1.4, -0.6);
-  chimneyBase.castShadow = true;
-  cabinGroup.add(chimneyBase);
-
-  const chimneyTop = new THREE.Mesh(
-    new THREE.BoxGeometry(0.65, 1.8, 0.75),
-    chimneyStoneMat
-  );
-  chimneyTop.position.set(-2.2, 3.5, -0.6);
-  chimneyTop.castShadow = true;
-  cabinGroup.add(chimneyTop);
-
-  // Animierte Kaminrauch-Puffs
-  const smokePuffs: THREE.Mesh[] = [];
-  for (let s = 0; s < 5; s++) {
-    const puff = new THREE.Mesh(new THREE.SphereGeometry(0.18 + s * 0.05, 7, 7), smokeMat);
-    puff.position.set(-2.2, 4.4 + s * 0.45, -0.6);
-    cabinGroup.add(puff);
-    smokePuffs.push(puff);
-  }
-
-  // Hirschgeweih über dem Eingang
-  const antlerGroup = new THREE.Group();
-  antlerGroup.position.set(0, 2.52, 1.88);
-
-  const skullCenter = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), hornMat);
-  skullCenter.scale.set(1.0, 1.4, 0.6);
-  antlerGroup.add(skullCenter);
-
-  for (const side of [-1, 1]) {
-    // Hauptstange des Geweihs
-    const beam = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.022, 0.038, 0.58, 6),
-      hornMat
-    );
-    beam.position.set(side * 0.22, 0.24, 0.04);
-    beam.rotation.z = -side * 0.72;
-    beam.rotation.x = -0.15;
-    antlerGroup.add(beam);
-
-    // Endsprossen (Augsprosse & Mittelsprosse)
-    for (let sp = 1; sp <= 3; sp++) {
-      const tine = new THREE.Mesh(
-        new THREE.ConeGeometry(0.02, 0.22, 5),
-        hornMat
-      );
-      tine.position.set(side * (0.12 + sp * 0.09), 0.18 + sp * 0.1, 0.06);
-      tine.rotation.z = -side * (0.35 + sp * 0.2);
-      tine.rotation.x = 0.25;
-      antlerGroup.add(tine);
-    }
-  }
-  cabinGroup.add(antlerGroup);
-
-  // Erleuchtetes Fenster an der Vorderfront
-  const windowMesh = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.65, 0.08), windowGlowMat);
-  windowMesh.position.set(1.45, 1.35, 1.82);
-  cabinGroup.add(windowMesh);
-
-  // Kleiner Holzstapel an der Hüttenwand
-  for (let l = 0; l < 4; l++) {
-    for (let k = 0; k < 3; k++) {
-      const firewood = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.07, 0.07, 0.75, 6),
-        logMat
-      );
-      firewood.rotation.x = Math.PI / 2;
-      firewood.position.set(-1.85, 0.38 + l * 0.14, 1.4 - k * 0.16);
-      firewood.castShadow = true;
-      cabinGroup.add(firewood);
-    }
-  }
-
-  cabinGroup.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh) {
-      child.userData = { interactableType: 'hunting_lodge' };
-    }
-  });
-  group.add(cabinGroup);
 
   // ==========================================
-  // 2. DER KRÄUTERGARTEN (Beete, Zaun & Kräuter)
+  // 2. STEINERNE MAUERRUINE (stone ruin 3d model.glb)
+  // ==========================================
+  const stoneRuinGroup = new THREE.Group();
+  stoneRuinGroup.name = 'StoneRuin';
+  stoneRuinGroup.position.set(-2.8, 0, -2.8);
+
+  // Temporärer Platzhalter während des Ladens
+  const ruinFallback = new THREE.Mesh(
+    new THREE.BoxGeometry(3.6, 3.0, 2.8),
+    stoneMat
+  );
+  ruinFallback.position.y = 1.5;
+  ruinFallback.castShadow = true;
+  ruinFallback.receiveShadow = true;
+  ruinFallback.userData = { interactableType: 'hunting_lodge' };
+  stoneRuinGroup.add(ruinFallback);
+  group.add(stoneRuinGroup);
+
+  loader.load(
+    '/assets/models/stone ruin 3d model.glb',
+    (gltf) => {
+      const model = gltf.scene;
+      model.scale.setScalar(6.0);
+      model.rotation.y = -0.35;
+
+      model.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(model);
+      model.position.set(0, -bounds.min.y, 0);
+
+      model.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.userData = { interactableType: 'hunting_lodge' };
+
+          if (mesh.material && 'roughness' in mesh.material) {
+            const mat = mesh.material as THREE.MeshStandardMaterial;
+            mat.roughness = 0.92;
+            mat.metalness = 0.05;
+          }
+
+          if (onMeshLoaded) {
+            onMeshLoaded(mesh);
+          }
+        }
+      });
+
+      stoneRuinGroup.remove(ruinFallback);
+      disposeObject3D(ruinFallback);
+      stoneRuinGroup.add(model);
+    },
+    undefined,
+    (err) => {
+      console.warn('Modell stone ruin 3d model.glb konnte nicht geladen werden:', err);
+    }
+  );
+
+  // ==========================================
+  // 3. DER KRÄUTERGARTEN (Beete, Zaun & Kräuter)
   // ==========================================
   const gardenGroup = new THREE.Group();
-  gardenGroup.position.set(-2.5, 0, -1.8);
+  gardenGroup.position.set(-0.2, 0, -2.2);
 
   // Beeterde (zwei gepflegte Kräuterbeete, tief verankert)
-  for (const bz of [-0.9, 0.9]) {
-    const bed = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.28, 1.25), soilMat);
+  for (const bz of [-0.85, 0.85]) {
+    const bed = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.28, 1.15), soilMat);
     bed.position.set(0, 0.05, bz);
     bed.receiveShadow = true;
     gardenGroup.add(bed);
@@ -294,21 +195,21 @@ export function createHuntingLodge(): HuntingLodgeEntity {
   // Rustikaler Lattenzaun rund um den Kräutergarten (mit Pforte an der rechten Seite)
   const fencePosts: THREE.Vector3[] = [
     // Nordzaun
-    new THREE.Vector3(-1.9, 0, -1.8),
-    new THREE.Vector3(-0.6, 0, -1.8),
-    new THREE.Vector3(0.6, 0, -1.8),
-    new THREE.Vector3(1.9, 0, -1.8),
+    new THREE.Vector3(-1.7, 0, -1.6),
+    new THREE.Vector3(-0.5, 0, -1.6),
+    new THREE.Vector3(0.5, 0, -1.6),
+    new THREE.Vector3(1.7, 0, -1.6),
     // Westzaun
-    new THREE.Vector3(-1.9, 0, -0.6),
-    new THREE.Vector3(-1.9, 0, 0.6),
-    new THREE.Vector3(-1.9, 0, 1.8),
-    // Südzaun (Richtung Hütte)
-    new THREE.Vector3(-0.6, 0, 1.8),
-    new THREE.Vector3(0.6, 0, 1.8),
-    new THREE.Vector3(1.9, 0, 1.8),
+    new THREE.Vector3(-1.7, 0, -0.5),
+    new THREE.Vector3(-1.7, 0, 0.5),
+    new THREE.Vector3(-1.7, 0, 1.6),
+    // Südzaun
+    new THREE.Vector3(-0.5, 0, 1.6),
+    new THREE.Vector3(0.5, 0, 1.6),
+    new THREE.Vector3(1.7, 0, 1.6),
     // Ostzaun (Pforte frei bei z = 0)
-    new THREE.Vector3(1.9, 0, -1.0),
-    new THREE.Vector3(1.9, 0, 1.0),
+    new THREE.Vector3(1.7, 0, -0.9),
+    new THREE.Vector3(1.7, 0, 0.9),
   ];
 
   for (const p of fencePosts) {
@@ -323,11 +224,11 @@ export function createHuntingLodge(): HuntingLodgeEntity {
 
   // Querlatten des Zauns
   const fenceRails: { x: number; z: number; len: number; rotY: number }[] = [
-    { x: 0, z: -1.8, len: 3.8, rotY: 0 },
-    { x: -1.9, z: 0, len: 3.6, rotY: Math.PI / 2 },
-    { x: 0, z: 1.8, len: 3.8, rotY: 0 },
-    { x: 1.9, z: -1.4, len: 0.8, rotY: Math.PI / 2 },
-    { x: 1.9, z: 1.4, len: 0.8, rotY: Math.PI / 2 },
+    { x: 0, z: -1.6, len: 3.4, rotY: 0 },
+    { x: -1.7, z: 0, len: 3.2, rotY: Math.PI / 2 },
+    { x: 0, z: 1.6, len: 3.4, rotY: 0 },
+    { x: 1.7, z: -1.25, len: 0.7, rotY: Math.PI / 2 },
+    { x: 1.7, z: 1.25, len: 0.7, rotY: Math.PI / 2 },
   ];
 
   for (const r of fenceRails) {
@@ -345,15 +246,15 @@ export function createHuntingLodge(): HuntingLodgeEntity {
 
   // Wassertrog / Holzbottich zum Gießen am Gartenrand
   const tub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.36, 0.32, 0.45, 10),
-    logMat
+    new THREE.CylinderGeometry(0.34, 0.30, 0.42, 10),
+    stoneMat
   );
-  tub.position.set(1.4, 0.22, 1.35);
+  tub.position.set(1.25, 0.21, 1.2);
   tub.castShadow = true;
   gardenGroup.add(tub);
 
   const tubWater = new THREE.Mesh(
-    new THREE.CircleGeometry(0.32, 10),
+    new THREE.CircleGeometry(0.28, 10),
     new THREE.MeshStandardMaterial({
       color: 0x3d7b88,
       roughness: 0.1,
@@ -361,17 +262,17 @@ export function createHuntingLodge(): HuntingLodgeEntity {
     })
   );
   tubWater.rotation.x = -Math.PI / 2;
-  tubWater.position.set(1.4, 0.41, 1.35);
+  tubWater.position.set(1.25, 0.38, 1.2);
   gardenGroup.add(tubWater);
 
   // Kräuter-Pflanzen in den Beeten
   const herbStems: THREE.Group[] = [];
 
   // Beet 1 (Nord): Königs-Salbei und Duftender Lavendel
-  for (let col = -1.2; col <= 1.2; col += 0.42) {
+  for (let col = -1.1; col <= 1.1; col += 0.42) {
     // Salbei-Reihe
     const sageCluster = new THREE.Group();
-    sageCluster.position.set(col, 0.12, -1.15);
+    sageCluster.position.set(col, 0.12, -1.05);
     for (let s = 0; s < 3; s++) {
       const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.32, 5), herbStemMat);
       stem.position.set((s - 1) * 0.06, 0.16, 0);
@@ -387,7 +288,7 @@ export function createHuntingLodge(): HuntingLodgeEntity {
 
     // Lavendel-Reihe
     const lavCluster = new THREE.Group();
-    lavCluster.position.set(col + 0.15, 0.12, -0.65);
+    lavCluster.position.set(col + 0.15, 0.12, -0.6);
     for (let l = 0; l < 4; l++) {
       const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.38, 5), herbStemMat);
       stem.position.set((l - 1.5) * 0.05, 0.19, (l % 2) * 0.03);
@@ -402,10 +303,9 @@ export function createHuntingLodge(): HuntingLodgeEntity {
   }
 
   // Beet 2 (Süd): Seltene Mondwurz (zentral!), Thymian und Ringelblumen
-  // Ringelblumen an den Enden
-  for (const mx of [-1.2, -0.8, 0.8, 1.2]) {
+  for (const mx of [-1.1, -0.7, 0.7, 1.1]) {
     const marigold = new THREE.Group();
-    marigold.position.set(mx, 0.12, 0.9);
+    marigold.position.set(mx, 0.12, 0.85);
     const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.24, 5), herbStemMat);
     stem.position.y = 0.12;
     marigold.add(stem);
@@ -419,7 +319,7 @@ export function createHuntingLodge(): HuntingLodgeEntity {
 
   // Die kostbare Mondwurz in der Mitte des Beetes (silbrig-cyan schimmernd)
   const moonwortGroup = new THREE.Group();
-  moonwortGroup.position.set(0, 0.12, 0.9);
+  moonwortGroup.position.set(0, 0.12, 0.85);
   for (let m = 0; m < 5; m++) {
     const mAngle = (m * Math.PI * 2) / 5;
     const mStem = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.34, 5), herbStemMat);
@@ -433,6 +333,7 @@ export function createHuntingLodge(): HuntingLodgeEntity {
     mLeaf.scale.set(0.8, 1.5, 0.8);
     moonwortGroup.add(mLeaf);
   }
+
   // Sanftes Mondwurz-Licht
   const moonwortLight = new THREE.PointLight(0x76ebe0, 0.85, 3.2);
   moonwortLight.position.set(0, 0.45, 0);
@@ -449,30 +350,16 @@ export function createHuntingLodge(): HuntingLodgeEntity {
   group.add(gardenGroup);
 
   // ==========================================
-  // UPDATE LOOP (Kaminrauch & Kräuter)
+  // UPDATE LOOP (Kräuter-Wogen & Mondwurz-Pulsieren)
   // ==========================================
   const update = (elapsedSeconds: number): void => {
-    // 1. Kaminrauch aufsteigen und wabern lassen
-    for (let s = 0; s < smokePuffs.length; s++) {
-      const puff = smokePuffs[s];
-      const cycle = (elapsedSeconds * 0.75 + s * 0.35) % 2.0;
-      puff.position.y = 4.2 + cycle * 1.35;
-      puff.position.x = -2.2 + Math.sin(elapsedSeconds * 1.5 + s) * 0.12;
-      const scale = 0.8 + cycle * 0.55;
-      puff.scale.set(scale, scale, scale);
-      (puff.material as THREE.MeshStandardMaterial).opacity = Math.max(
-        0,
-        0.55 - (cycle / 2.0) * 0.5
-      );
-    }
-
-    // 2. Sanftes Wogen der Kräuter im Wind
+    // 1. Sanftes Wogen der Kräuter im Wind
     const wind = Math.sin(elapsedSeconds * 2.2);
     for (let h = 0; h < herbStems.length; h++) {
       herbStems[h].rotation.z = wind * (0.04 + (h % 3) * 0.015);
     }
 
-    // 3. Mondwurz-Pulsieren
+    // 2. Mondwurz-Pulsieren
     moonwortLight.intensity = 0.85 + Math.sin(elapsedSeconds * 2.5) * 0.35;
   };
 

@@ -487,8 +487,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.devilNpc.group);
 
-    // Jagdhütte mit Kräutergarten, Jagdpferd und Jagdhund am Ende des 6. Weges
-    this.huntingLodge = createHuntingLodge();
+    // Steinruinen (verfallener Steinturm & Mauerruine) mit Kräutergarten am Ende des 6. Weges
+    this.huntingLodge = createHuntingLodge((mesh) => {
+      this.pickableObjects.push(mesh);
+    });
     this.huntingLodge.group.position.set(
       HUNTING_LODGE_POS.x,
       getTerrainHeight(HUNTING_LODGE_POS.x, HUNTING_LODGE_POS.z),
