@@ -48,6 +48,7 @@ import {
   WILD_HUNTER_NPC_POS,
   WOOD_WOMAN_LODGE_NPC_POS,
   WOOD_WOMAN_NPC_POS,
+  WORLD_TREE_POS,
 } from '../data/paths';
 
 export interface Vector2D {
@@ -166,6 +167,8 @@ export class CrossroadsState {
   private readonly weirBridgePos: Vector2D = { x: WEIR_BRIDGE_POS.x, z: WEIR_BRIDGE_POS.z };
   private readonly giantPos: Vector2D = { ...GIANT_NPC_POS };
   private readonly giantCollisionRadius = 1.65;
+  private readonly worldTreePos: Vector2D = { ...WORLD_TREE_POS };
+  private readonly worldTreeCollisionRadius = 2.4;
 
   // Am Ende des 4. Weges: Holzfällerlager auf der Waldlichtung und das Holzweibchen
   private readonly lumberCampPos: Vector2D = { x: LUMBER_CAMP_POS.x, z: LUMBER_CAMP_POS.z };
@@ -255,6 +258,10 @@ export class CrossroadsState {
 
   public getGiantPosition(): Readonly<Vector2D> {
     return { ...this.giantPos };
+  }
+
+  public getWorldTreePosition(): Readonly<Vector2D> {
+    return { ...this.worldTreePos };
   }
 
   public getWoodWomanPosition(): Readonly<Vector2D> {
@@ -1057,6 +1064,11 @@ export class CrossroadsState {
       return true;
     }
 
+    // Stamm des riesigen Weltenbaums zwischen Nixe und Riese
+    if (Math.hypot(x - this.worldTreePos.x, z - this.worldTreePos.z) < this.worldTreeCollisionRadius - eps) {
+      return true;
+    }
+
     // Die Campfire-Insel mit allen Aufbauten (Lagerfeuer, Kessel, Zelt, Scheite, Stämme) auf Weg 4
     if (
       Math.hypot(x - this.lumberCampPos.x, z - this.lumberCampPos.z) <
@@ -1637,6 +1649,16 @@ export class CrossroadsState {
       );
       resolvedX = afterGiant.x;
       resolvedZ = afterGiant.z;
+
+      // Weltenbaum-Stamm zwischen Nixe und Riese
+      const afterWorldTree = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.worldTreePos,
+        this.worldTreeCollisionRadius
+      );
+      resolvedX = afterWorldTree.x;
+      resolvedZ = afterWorldTree.z;
 
       // Holzweibchen-Kollision am Ende von Weg 4
       const afterWoodWoman = this.pushOutOfCircle(

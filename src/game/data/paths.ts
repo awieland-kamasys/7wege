@@ -181,6 +181,15 @@ export const GIANT_NPC_POS: PathPoint2D = {
 };
 
 /**
+ * Position des riesigen Weltenbaums (fantasy tree 3d model.glb),
+ * majestätisch in der goldenen Mitte zwischen dem Reich der Nixe (Weg 2) und des Riesen (Weg 3).
+ */
+export const WORLD_TREE_POS: PathPoint2D = {
+  x: 44.0,
+  z: 2.5,
+};
+
+/**
  * Position, Ausrichtung und Kollisionsradius des reißenden Bachlaufs, der Weg 3 (Quellenweg) versperrt.
  * Exakt auf die Referenz-Entfernung wie das Feuer (~16.3 m von der Kreuzung) gesetzt.
  * Lässt sich durch Anklicken des rotierenden Saphir-Edelsteins am Pfadanfang beseitigen.

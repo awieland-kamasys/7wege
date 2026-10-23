@@ -1115,4 +1115,20 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(finalStep.node).toBeNull();
     expect(dialogue.isOpen()).toBe(false);
   });
+
+  it('verwaltet den riesigen Weltenbaum zwischen Nixe und Riese mit solider Stammkollision', () => {
+    const state = new CrossroadsState();
+    const treePos = state.getWorldTreePosition();
+    expect(treePos.x).toBeCloseTo(44.0, 1);
+    expect(treePos.z).toBeCloseTo(2.5, 1);
+
+    // Stammkollision: Exakt am Weltenbaum-Stamm herrscht Kollision
+    expect(state.isCollidingWithObstacles(treePos.x, treePos.z)).toBe(true);
+
+    // Im Umkreis von 2 Metern um den Stammkern ist das Hindernis aktiv
+    expect(state.isCollidingWithObstacles(treePos.x + 1.2, treePos.z)).toBe(true);
+
+    // Außerhalb des Stammradius (z.B. in 5 Metern Entfernung) kollidiert nichts
+    expect(state.isCollidingWithObstacles(treePos.x + 5.0, treePos.z)).toBe(false);
+  });
 });

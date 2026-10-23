@@ -34,15 +34,6 @@ export function createWeirBridgeScene(
     color: 0x6e4e32,
     roughness: 0.85,
   });
-  const darkTimberMat = new THREE.MeshStandardMaterial({
-    color: 0x4a321e,
-    roughness: 0.9,
-  });
-  const ironMat = new THREE.MeshStandardMaterial({
-    color: 0x2f353b,
-    roughness: 0.45,
-    metalness: 0.75,
-  });
   const mossMat = new THREE.MeshStandardMaterial({
     color: 0x38663c,
     roughness: 0.92,
@@ -128,70 +119,7 @@ export function createWeirBridgeScene(
   group.add(bridgeContainer);
 
   // ============================================================================
-  // 2. DAS GESCHLOSSENE WEHR (an der Oberstromseite lx = -1.38 der Brücke)
-  // ============================================================================
-  const weirGroup = new THREE.Group();
-  weirGroup.position.set(-1.38, 0, 0);
-
-  // Zwei hohe steinerne Wehrpfeiler mit eisernen Führungsschienen
-  for (const lz of [-1.75, 1.75]) {
-    const weirTower = new THREE.Mesh(new THREE.BoxGeometry(0.55, 2.35, 0.55), darkStoneMat);
-    weirTower.position.set(0, 1.15, lz);
-    weirTower.castShadow = true;
-    weirTower.receiveShadow = true;
-    weirTower.userData = { interactableType: 'weir' };
-    weirGroup.add(weirTower);
-  }
-
-  // Querbalken (Wehrbrücke oben) mit Hebemechanik
-  const weirHeaderBeam = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.28, 4.1), darkTimberMat);
-  weirHeaderBeam.position.set(0, 2.25, 0);
-  weirHeaderBeam.castShadow = true;
-  weirHeaderBeam.userData = { interactableType: 'weir' };
-  weirGroup.add(weirHeaderBeam);
-
-  // Die geschlossene Wehrtafel (Schütz aus schweren, eisenbeschlagenen Bohlen), die das Wasser staut
-  const closedGate = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.45, 3.1), darkTimberMat);
-  closedGate.position.set(0, 0.68, 0);
-  closedGate.castShadow = true;
-  closedGate.receiveShadow = true;
-  closedGate.userData = { interactableType: 'weir' };
-  weirGroup.add(closedGate);
-
-  // Eiserne Querbeschläge und Zahnstangen am geschlossenen Schütz
-  for (const yPos of [0.35, 0.75, 1.15]) {
-    const ironStrap = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 3.12), ironMat);
-    ironStrap.position.set(0, yPos, 0);
-    ironStrap.userData = { interactableType: 'weir' };
-    weirGroup.add(ironStrap);
-  }
-
-  for (const lz of [-0.85, 0.85]) {
-    const rackRod = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 2.3, 8), ironMat);
-    rackRod.position.set(0, 1.45, lz);
-    rackRod.userData = { interactableType: 'weir' };
-    weirGroup.add(rackRod);
-  }
-
-  // Großes eisernes Wehr-Stellrad (Handrad), das der Riese bewacht
-  const wheelRim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.055, 8, 20), ironMat);
-  wheelRim.rotation.y = Math.PI / 2;
-  wheelRim.position.set(0.22, 1.65, 1.75);
-  wheelRim.userData = { interactableType: 'weir' };
-  weirGroup.add(wheelRim);
-
-  for (let s = 0; s < 4; s++) {
-    const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.82, 6), ironMat);
-    spoke.rotation.x = (s * Math.PI) / 4;
-    spoke.position.set(0.22, 1.65, 1.75);
-    spoke.userData = { interactableType: 'weir' };
-    weirGroup.add(spoke);
-  }
-
-  group.add(weirGroup);
-
-  // ============================================================================
-  // 3. KLEINER STAUSEE MIT BERGQUELLE & HEIMAT DES RIESEN (Oberstrom: lx = -1.5 bis -9.5)
+  // 2. BERGQUELLE, GEBIRGSSEE & HEIMAT DES RIESEN (Oberstrom: lx = -1.5 bis -9.5)
   // ============================================================================
   const reservoirWaterMat = new THREE.MeshStandardMaterial({
     color: 0x1b6e84,
@@ -203,7 +131,7 @@ export function createWeirBridgeScene(
     opacity: 0.88,
   });
 
-  // Hoch angestauter Wasserspiegel des kleinen Stausees direkt vor dem geschlossenen Wehr (y = 0.42)
+  // Klares Wasserbecken des Gebirgssees bei der Heimat des Riesen
   const reservoirWater = new THREE.Mesh(
     new THREE.CylinderGeometry(3.9, 3.7, 0.72, 32),
     reservoirWaterMat
@@ -214,14 +142,14 @@ export function createWeirBridgeScene(
   reservoirWater.userData = { interactableType: 'weir' };
   group.add(reservoirWater);
 
-  // Wasseranschluss zwischen Stausee-Becken und dem geschlossenen Wehr an der Brücke
-  const weirPoolNeck = new THREE.Mesh(
-    new THREE.BoxGeometry(2.1, 0.72, 3.15),
+  // Freier Wasserlauf zwischen dem Quellsee und der Brücke
+  const streamInflow = new THREE.Mesh(
+    new THREE.BoxGeometry(2.8, 0.72, 2.6),
     reservoirWaterMat
   );
-  weirPoolNeck.position.set(-2.35, 0.08, 0);
-  weirPoolNeck.userData = { interactableType: 'weir' };
-  group.add(weirPoolNeck);
+  streamInflow.position.set(-2.0, 0.08, 0);
+  streamInflow.userData = { interactableType: 'weir' };
+  group.add(streamInflow);
 
   // Sprudelnde Bergquelle an den hinteren Felsen des Stausees (lx = -9.4, lz = -0.4)
   const springRock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.65, 1), stoneMat);
@@ -305,13 +233,13 @@ export function createWeirBridgeScene(
   group.add(giantHomeGroup);
 
   // ============================================================================
-  // 4. DER BACH UNTER DER BRÜCKE & UNTERSTROM RICHTUNG DÜRRES TAL (lx = -1.2 bis +8.5)
+  // 3. DER GEBIRGSBACH UNTER DER BRÜCKE & FLUSSLAUF INS TAL (lx = -2.0 bis +8.5)
   // ============================================================================
   const dryBedMat = new THREE.MeshStandardMaterial({
     color: 0x595143,
     roughness: 0.95,
   });
-  const trickleWaterMat = new THREE.MeshStandardMaterial({
+  const streamWaterMat = new THREE.MeshStandardMaterial({
     color: 0x2b879e,
     emissive: 0x0d3842,
     emissiveIntensity: 0.35,
@@ -320,27 +248,17 @@ export function createWeirBridgeScene(
     opacity: 0.82,
   });
 
-  // Steiniges Bachbett unter der Brücke hindurch nach Südwesten (+X)
-  const streamBed = new THREE.Mesh(new THREE.BoxGeometry(9.8, 0.04, 2.85), dryBedMat);
-  streamBed.position.set(3.5, 0.015, 0);
+  // Steiniges Bachbett, das frei unter der Holzbrücke hindurch nach Südwesten (+X) fließt
+  const streamBed = new THREE.Mesh(new THREE.BoxGeometry(11.2, 0.04, 2.85), dryBedMat);
+  streamBed.position.set(2.8, 0.015, 0);
   streamBed.receiveShadow = true;
   group.add(streamBed);
 
-  // Schmales Wasserrinnsal, das unter dem geschlossenen Wehr durchsickert und unter der Brücke fließt
-  const streamTrickle = new THREE.Mesh(new THREE.BoxGeometry(9.6, 0.05, 0.85), trickleWaterMat);
-  streamTrickle.position.set(3.4, 0.03, 0);
-  streamTrickle.userData = { interactableType: 'weir' };
-  group.add(streamTrickle);
-
-  // Schaum-/Sickerwasserstreifen direkt unten am geschlossenen Wehr unter der Brücke
-  const weirFoamMat = new THREE.MeshBasicMaterial({
-    color: 0xdff8ff,
-    transparent: true,
-    opacity: 0.55,
-  });
-  const weirFoam = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.07, 2.6), weirFoamMat);
-  weirFoam.position.set(-1.18, 0.045, 0);
-  group.add(weirFoam);
+  // Klarer, frei fließender Gebirgsbach ohne Barriere
+  const streamWater = new THREE.Mesh(new THREE.BoxGeometry(11.0, 0.05, 1.45), streamWaterMat);
+  streamWater.position.set(2.7, 0.03, 0);
+  streamWater.userData = { interactableType: 'weir' };
+  group.add(streamWater);
 
   // Uferkiesel entlang des Bachbetts auf der Talseite (+X)
   for (let i = 0; i < 12; i++) {
@@ -358,10 +276,9 @@ export function createWeirBridgeScene(
   }
 
   const update = (timeSeconds: number) => {
-    // Sanftes Pulsieren der Bergquelle und des Sickerwassers am geschlossenen Wehr
+    // Sanftes Pulsieren der Bergquelle
     const wave = 0.5 + 0.5 * Math.sin(timeSeconds * 2.6);
     springRipple.scale.setScalar(0.92 + wave * 0.22);
-    weirFoamMat.opacity = 0.4 + wave * 0.25;
   };
 
   return { group, update };

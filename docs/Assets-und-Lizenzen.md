@@ -30,6 +30,7 @@ Alle externen Modelle, Texturen, Bilder, Schriften und Audio-Dateien hier dokume
 | Stilisierter Nadelbaum 3D-Modell (`low poly tree model.glb`, 2,48 MB, 9.846 Dreiecke, 2048x2048 PBR-Textur) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/low poly tree model.glb` | evaluiert (Referenzmodell für prozedurale Optimierung) |
 | Fabelwesen Lupo 3D-Charakter (`fantasy+creature+3d+model.glb`, 3,12 MB, animiertes Fabeltier mit 'Häschenhoppeln' und 'run' Animation) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/fantasy+creature+3d+model.glb` | aktiv (Weg 7 Torweg-NPC) |
 | Holzbrücke 3D-Modell beim Riesen (`wooden bridge 3d model.glb`, 3,52 MB, Tripo 3D PBR-Holzbrücke über den Gebirgsbach auf Weg 3) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/wooden bridge 3d model.glb` | aktiv |
+| Weltenbaum 3D-Modell (`fantasy tree 3d model.glb`, 4,55 MB, majestätischer ~23m hoher Fantasy-Weltenbaum mit magischer Waldlicht-Aura zwischen Nixe und Riese) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/fantasy tree 3d model.glb` | aktiv |
 
 
 ## Regeln

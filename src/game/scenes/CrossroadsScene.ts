@@ -34,9 +34,11 @@ import {
   WOOD_WOMAN_NPC_POS,
   CLOSED_GATE_POS,
   CREATURE_NPC_POS,
+  WORLD_TREE_POS,
 } from '../data/paths';
 import { createClosedGate, ClosedGateEntity } from '../entities/ClosedGate';
 import { createCreatureNpc, CreatureNpcEntity } from '../entities/CreatureNpc';
+import { createWorldTree, WorldTreeEntity } from '../entities/WorldTree';
 import { createDevilNpc, DevilNpcEntity } from '../entities/DevilNpc';
 import { createGiantNpc, GiantNpcEntity } from '../entities/GiantNpc';
 import { createGreyManNpc, GreyManNpcEntity } from '../entities/GreyManNpc';
@@ -110,6 +112,7 @@ export type ScenePickResult =
   | { kind: 'signpost_cap'; point: Vector2D }
   | { kind: 'signpost_base'; point: Vector2D }
   | { kind: 'creature'; point: Vector2D }
+  | { kind: 'world_tree'; point: Vector2D }
   | { kind: 'ground'; point: Vector2D };
 
 interface ForestTreeInstance {
@@ -162,6 +165,7 @@ export class CrossroadsScene {
   private readonly woodWomanClassicNpc: WoodWomanNpcEntity;
   private readonly closedGate: ClosedGateEntity;
   private readonly creatureNpc: CreatureNpcEntity;
+  private readonly worldTree: WorldTreeEntity;
   private readonly path1Boulder: PathBoulderEntity;
   private readonly path2Puddle: PathPuddleEntity;
   private readonly path3Stream: PathStreamEntity;
@@ -415,6 +419,24 @@ export class CrossroadsScene {
       }
     });
     this.scene.add(this.giantNpc.group);
+
+    // Der uralte, riesige Weltenbaum (fantasy tree 3d model.glb) zwischen Nixe und Riese
+    this.worldTree = createWorldTree({
+      onMeshLoaded: (mesh) => {
+        this.pickableObjects.push(mesh);
+      },
+    });
+    this.worldTree.group.position.set(
+      WORLD_TREE_POS.x,
+      getTerrainHeight(WORLD_TREE_POS.x, WORLD_TREE_POS.z),
+      WORLD_TREE_POS.z
+    );
+    this.worldTree.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.worldTree.group);
 
     // Lagerfeuerszene (Campfire Scene) auf der Waldlichtung am Ende des 4. Weges
     this.lumberCamp = createLumberjackCamp((mesh) => {
@@ -1084,6 +1106,10 @@ export class CrossroadsScene {
     birdhouseAngle?: number,
     isSnowy?: boolean
   ): void {
+    // Freiraum um den riesigen Weltenbaum zwischen Nixe und Riese (keine Fichten im Stamm- und Wurzelbereich)
+    if (Math.hypot(x - WORLD_TREE_POS.x, z - WORLD_TREE_POS.z) < 6.8) {
+      return;
+    }
     const snowy = isSnowy ?? (!isBurned && this.isSnowZone(x, z));
     this.treeInstances.push({ x, z, scale, useDarkCrown, isBurned, isSnowy: snowy, birdhouseAngle });
   }
@@ -2908,6 +2934,9 @@ export class CrossroadsScene {
       const data = hit.object.userData;
       const point: Vector2D = { x: hit.point.x, z: hit.point.z };
 
+      if (data.interactableType === 'world_tree') {
+        return { kind: 'world_tree', point };
+      }
       if (data.interactableType === 'creature') {
         return { kind: 'creature', point };
       }
@@ -3067,6 +3096,9 @@ export class CrossroadsScene {
         this.isGiantHovered || isDialogueActive
       );
     }
+
+    // Der uralte Weltenbaum zwischen Nixe und Riese (sanft schwebende Kronenlichter)
+    this.worldTree.update(this.elapsedSeconds, dtSeconds);
     // Weg 4: Holzfällerlager & Holzweibchen
     if (distLumber < 33) {
       this.lumberCamp.update(this.elapsedSeconds);

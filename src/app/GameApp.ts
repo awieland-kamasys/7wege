@@ -769,6 +769,11 @@ export class GameApp {
         return;
       }
 
+      if (hit.kind === 'world_tree') {
+        this.hud.showToast('Der uralte Weltenbaum: Seine mächtigen Wurzeln verbinden die Reiche des Wassers und der Berge.');
+        return;
+      }
+
       if (hit.kind === 'gemstone') {
         if (hit.pathId === 1 && this.state.isPath1Blocked()) {
           // Klick auf den rotierenden grünen Smaragd von Weg 1 entfernt den blockierenden Felsbrocken!
