@@ -303,9 +303,12 @@ export function createCreatureNpc(
       }
 
       // --- ZUSTAND B: Auf dem Weg sitzend / im Gespräch ---
-      // Schwebender Kristall rotiert und pulsiert sanft
+      // Schwebender Kristall rotiert und pulsiert sanft; dezent verstärkt bei Hover als Zielanzeige
       indicator.rotation.y += delta * 2.2;
       indicator.position.y = 1.45 + Math.sin(elapsedSeconds * 3.5) * 0.06;
+      const indicatorScale = isHighlighted ? 1.25 : 1.0;
+      indicator.scale.set(indicatorScale, indicatorScale, indicatorScale);
+      indicatorMat.emissiveIntensity = isHighlighted ? 1.35 : 0.85;
 
       // Blickkontakt zum Spieler halten, wenn Spieler in der Nähe
       const distToPlayer = Math.hypot(playerPos.x - group.position.x, playerPos.z - group.position.z);
@@ -318,14 +321,8 @@ export function createCreatureNpc(
         group.rotation.y += angleDiff * Math.min(1.0, delta * 3.5);
       }
 
-      // Hervorhebung bei Maus-Hover
-      const emissiveLevel = isHighlighted ? 0.35 : 0.0;
-      for (const mat of modelMaterials) {
-        if ('emissive' in mat) {
-          mat.emissive.setHex(isHighlighted ? 0x22c55e : 0x000000);
-          mat.emissiveIntensity = emissiveLevel;
-        }
-      }
+      // Das Wesen selbst wird bei Markierung/Hover bewusst NICHT eingefärbt,
+      // damit sein natürliches Fell und seine Originaltexturen unverfälscht erhalten bleiben.
     },
   };
 }
