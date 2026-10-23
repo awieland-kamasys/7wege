@@ -25,7 +25,22 @@ export function createWorldTree(
   group.name = 'WorldTree';
   group.userData = { interactableType: 'world_tree' };
 
-  // 1. Platzhalter während des GLTF-Ladevorgangs
+  // 1. Sanfter, moosig-erdiger Wurzelhügel an der Basis, der die Wurzeln organisch mit dem Waldboden verschmilzt
+  const moundMat = new THREE.MeshStandardMaterial({
+    color: 0x36442e,
+    roughness: 0.94,
+    flatShading: true,
+  });
+  const rootMound = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.6, 6.4, 0.85, 18),
+    moundMat
+  );
+  rootMound.position.y = -0.25;
+  rootMound.receiveShadow = true;
+  rootMound.userData = { interactableType: 'world_tree' };
+  group.add(rootMound);
+
+  // 2. Platzhalter während des GLTF-Ladevorgangs
   const fallback = new THREE.Group();
   const fallbackTrunkMat = new THREE.MeshStandardMaterial({
     color: 0x3d2716,
@@ -37,10 +52,10 @@ export function createWorldTree(
   });
 
   const fallbackTrunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.4, 2.5, 12, 10),
+    new THREE.CylinderGeometry(1.4, 2.8, 12, 10),
     fallbackTrunkMat
   );
-  fallbackTrunk.position.y = 6;
+  fallbackTrunk.position.y = 5.2;
   fallbackTrunk.castShadow = true;
   fallbackTrunk.userData = { interactableType: 'world_tree' };
   fallback.add(fallbackTrunk);
@@ -49,7 +64,7 @@ export function createWorldTree(
     new THREE.DodecahedronGeometry(8.5, 1),
     fallbackCrownMat
   );
-  fallbackCrown.position.y = 17;
+  fallbackCrown.position.y = 16.2;
   fallbackCrown.castShadow = true;
   fallbackCrown.userData = { interactableType: 'world_tree' };
   fallback.add(fallbackCrown);
@@ -120,10 +135,13 @@ export function createWorldTree(
       const treeScale = 26.0;
       model.scale.setScalar(treeScale);
 
-      // Aufsetzen passgenau auf Bodenniveau (y = 0)
+      // Aufsetzen und tiefe Verankerung im Waldboden (sinkDepth = 1.65m),
+      // sodass die gewaltigen Wurzelstränge natürlich aus der Erde hervortreten
+      // und kein Teil der flachen Modellunterseite in der Luft schwebt
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, 0);
+      const sinkDepth = 1.65;
+      model.position.set(0, -bounds.min.y - sinkDepth, 0);
 
       model.traverse((child) => {
         const mesh = child as THREE.Mesh;
