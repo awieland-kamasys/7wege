@@ -26,6 +26,8 @@ export interface HudCallbacks {
   onCloseDialogue: () => void;
   onToggleSpeech: () => boolean;
   onToggleMusic?: () => boolean;
+  onSetMusicVolume?: (volume: number) => void;
+  getMusicVolume?: () => number;
   onSelectTerrainPreset?: (presetKey: TerrainPresetKey) => void;
 }
 
@@ -52,7 +54,10 @@ export class HudOverlay {
   private readonly perfModalEl: HTMLElement;
   private readonly presetBadgeEl: HTMLElement;
   private readonly presetModalEl: HTMLElement;
-  private readonly musicBadgeEl: HTMLElement;
+  private readonly musicControlWrapEl: HTMLElement;
+  private readonly musicBadgeEl: HTMLButtonElement;
+  private readonly musicSliderEl: HTMLInputElement;
+  private readonly musicVolumeLabelEl: HTMLElement;
   private readonly toastEl: HTMLElement;
 
   private lastDialogueNodeId: string | null = null;
@@ -120,11 +125,15 @@ export class HudOverlay {
     this.presetModalEl.className = 'preset-modal is-hidden';
     this.renderPresetModalContent();
 
-    // Dezentes Musik-Badge (oben links neben Boden- und Performance-Badge)
-    this.musicBadgeEl = document.createElement('div');
+    // Kompakte Musik-Steuerung mit Mute-Toggle und stufenlosem Lautstärkeregler
+    this.musicControlWrapEl = document.createElement('div');
+    this.musicControlWrapEl.className = 'music-control-wrap';
+
+    this.musicBadgeEl = document.createElement('button');
     this.musicBadgeEl.className = 'music-badge';
+    this.musicBadgeEl.type = 'button';
     this.musicBadgeEl.title = 'Hintergrundmusik ein-/ausschalten (Taste M oder Klick)';
-    this.musicBadgeEl.textContent = '🎵 Musik';
+    this.musicBadgeEl.textContent = '🎵';
     this.musicBadgeEl.addEventListener('click', (e) => {
       e.stopPropagation();
       if (this.callbacks.onToggleMusic) {
@@ -133,6 +142,33 @@ export class HudOverlay {
         this.showToast(enabled ? '🎵 Hintergrundmusik: Aktiviert' : '🔇 Hintergrundmusik: Stumm');
       }
     });
+
+    this.musicSliderEl = document.createElement('input');
+    this.musicSliderEl.className = 'music-volume-slider';
+    this.musicSliderEl.type = 'range';
+    this.musicSliderEl.min = '0';
+    this.musicSliderEl.max = '100';
+    this.musicSliderEl.value = '100';
+    this.musicSliderEl.title = 'Lautstärke der Hintergrundmusik regeln';
+    this.musicSliderEl.addEventListener('input', (e) => {
+      e.stopPropagation();
+      const val = parseInt(this.musicSliderEl.value, 10);
+      this.musicVolumeLabelEl.textContent = `${val}%`;
+      const norm = val / 100;
+      this.callbacks.onSetMusicVolume?.(norm);
+      this.setMusicActive(norm > 0.001);
+    });
+    this.musicSliderEl.addEventListener('click', (e) => e.stopPropagation());
+
+    this.musicVolumeLabelEl = document.createElement('span');
+    this.musicVolumeLabelEl.className = 'music-volume-label';
+    this.musicVolumeLabelEl.textContent = '100%';
+
+    this.musicControlWrapEl.append(
+      this.musicBadgeEl,
+      this.musicSliderEl,
+      this.musicVolumeLabelEl
+    );
 
     // Dezentes Toast-Element für Benachrichtigungen (z. B. nach Tastendruck 1-4)
     this.toastEl = document.createElement('div');
@@ -202,9 +238,7 @@ export class HudOverlay {
       this.activePathBadgeEl,
       this.perfBadgeEl,
       this.perfModalEl,
-      this.presetBadgeEl,
-      this.presetModalEl,
-      this.musicBadgeEl,
+      this.musicControlWrapEl,
       this.toastEl
     );
   }
@@ -212,13 +246,20 @@ export class HudOverlay {
   public setMusicActive(enabled: boolean): void {
     if (enabled) {
       this.musicBadgeEl.classList.remove('is-muted');
-      this.musicBadgeEl.textContent = '🎵 Musik';
+      this.musicBadgeEl.textContent = '🎵';
       this.musicBadgeEl.title = 'Hintergrundmusik stummschalten (Taste M oder Klick)';
     } else {
       this.musicBadgeEl.classList.add('is-muted');
-      this.musicBadgeEl.textContent = '🔇 Musik';
+      this.musicBadgeEl.textContent = '🔇';
       this.musicBadgeEl.title = 'Hintergrundmusik einschalten (Taste M oder Klick)';
     }
+  }
+
+  public setMusicVolume(volume: number): void {
+    const pct = Math.round(Math.max(0, Math.min(1, volume)) * 100);
+    this.musicSliderEl.value = String(pct);
+    this.musicVolumeLabelEl.textContent = `${pct}%`;
+    this.setMusicActive(pct > 0);
   }
 
   public showToast(message: string, durationMs = 2800): void {

@@ -87,7 +87,15 @@ export class GameApp {
         return this.speech.toggleEnabled();
       },
       onToggleMusic: () => {
-        return this.sound.toggleMusic();
+        const enabled = this.sound.toggleMusic();
+        this.hud.setMusicActive(enabled);
+        return enabled;
+      },
+      onSetMusicVolume: (volume) => {
+        this.sound.setMusicVolume(volume);
+      },
+      getMusicVolume: () => {
+        return this.sound.getMusicVolume();
       },
       onSelectTerrainPreset: (presetKey) => {
         this.setTerrainPreset(presetKey);
@@ -107,6 +115,13 @@ export class GameApp {
         return enabled;
       },
       isMusicEnabled: () => this.sound.isMusicEnabled(),
+      onSetMusicVolume: (vol) => {
+        this.sound.setMusicVolume(vol);
+        this.hud.setMusicVolume(vol);
+      },
+      getMusicVolume: () => this.sound.getMusicVolume(),
+      getLocationBlendWeight: () => this.sound.getLocationBlendWeight(),
+      getActiveLocation: () => this.sound.getActiveLocation(),
       getNixieBlendWeight: () => this.sound.getNixieBlendWeight(),
       getGpuDiagnostics: () => this.scene.getGpuDiagnostics(),
       getRenderMetrics: () => this.scene.getRenderMetrics(),

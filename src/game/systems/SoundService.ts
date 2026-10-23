@@ -1,9 +1,20 @@
+export type GameLocationKey =
+  | 'crossroads'
+  | 'feenteich'
+  | 'silberstollen'
+  | 'wehrbruecke'
+  | 'holzfaeller'
+  | 'lavakrater'
+  | 'jagdhuette'
+  | 'schlosstor';
+
 /**
  * Prozeduraler Sound-Synthesizer über die Web Audio API (ohne externe Audio-Assets).
  * Erzeugt u. a.:
  * - den zauberhaften Entdeckungs-Jingle beim Öffnen der Schatztruhe,
  * - natürliche Schrittgeräusche auf Waldboden und Kieswegen während des Laufens,
- * - dezentes, unauffälliges Vogelzwitschern im Hintergrund zur Belebung der Waldatmosphäre.
+ * - dezentes, unauffälliges Vogelzwitschern im Hintergrund zur Belebung der Waldatmosphäre,
+ * - dynamische Hintergrundmusik mit nahtlosem Wechsel an den jeweiligen Schauplätzen (Wegmitte).
  */
 export class SoundService {
   private ctx: AudioContext | null = null;
@@ -14,22 +25,45 @@ export class SoundService {
   // --- Lautstärke-Konfiguration für Hintergrundmusik ---
   public static readonly BASE_MUSIC_VOLUME = 0.13;
   public static readonly DIALOGUE_MUSIC_VOLUME = 0.055;
+  private musicVolume = 1.0; // Stufenloser Lautstärkeregler (0.0 bis 1.0)
 
-  // --- Koordinaten & Übergangsradien für das Nixenteich-Thema ---
+  // --- Koordinaten der Schauplätze für automatischen Musikwechsel auf halbem Weg ---
+  public static readonly LOCATIONS: Record<
+    Exclude<GameLocationKey, 'crossroads'>,
+    { x: number; z: number; name: string }
+  > = {
+    silberstollen: { x: 22.0, z: -45.0, name: 'Silberstollen am Bergmassiv' },
+    feenteich:    { x: 46.8, z: -14.2, name: 'Feenteich der Nixe' },
+    wehrbruecke:  { x: 42.0, z: 21.0,  name: 'Wehrbrücke am Bachtal' },
+    holzfaeller:  { x: 16.5, z: 42.5,  name: 'Holzfällerlager im Hochwald' },
+    lavakrater:   { x: -21.2, z: 44.8, name: 'Feuriger Höllenschlund' },
+    jagdhuette:   { x: -40.0, z: 22.2, name: 'Jagdhütte im Dämmerwald' },
+    schlosstor:   { x: -40.5, z: -38.5, name: 'Verschlossenes Schlosstor' },
+  };
+
+  // Wegmitte-Übergangskorridor (Distanz von der Kreuzung 0,0)
+  public static readonly CROSSROADS_RADIUS = 16.0; // Bis 16m reine Kreuzungsmusik
+  public static readonly LOCATION_FULL_RADIUS = 30.0; // Ab 30m 100% Location-Musik (Mitte bei ~23m)
+
+  // Legacy-Konstanten für Kompatibilität
   public static readonly NIXIE_POND_X = 46.8;
   public static readonly NIXIE_POND_Z = -14.2;
-  public static readonly NIXIE_INNER_RADIUS = 12.0; // Ab hier 100 % Nixenteich-Musik
-  public static readonly NIXIE_OUTER_RADIUS = 26.0; // Bis hierhin fließender Übergang (Crossfade)
+  public static readonly NIXIE_INNER_RADIUS = 12.0;
+  public static readonly NIXIE_OUTER_RADIUS = 26.0;
 
   // --- Audio-Knoten für Hintergrundmusik (Master & Sub-Busse) ---
   private musicMasterGain: GainNode | null = null;
-  private forestBusGain: GainNode | null = null;
-  private forestFilterNode: BiquadFilterNode | null = null;
-  private nixieBusGain: GainNode | null = null;
-  private nixieFilterNode: BiquadFilterNode | null = null;
+  private crossroadsBusGain: GainNode | null = null;
+  private crossroadsFilterNode: BiquadFilterNode | null = null;
+  private locationBusGain: GainNode | null = null;
+  private locationFilterNode: BiquadFilterNode | null = null;
   private isMusicMuted = false;
 
-  // --- Wald-Hintergrundmusik Zustand ---
+  // --- Musik-Zonenzustand & Langsamer Übergang ---
+  private activeLocation: Exclude<GameLocationKey, 'crossroads'> = 'feenteich';
+  private locationBlendWeight = 0; // 0.0 = 100% Kreuzung, 1.0 = 100% Location (am Feenteich nur Feenteich)
+
+  // --- Waldkreuzungs-Hintergrundmusik Zustand ---
   private currentChordIdx = 0;
   private nextChordScheduleTime = 0;
   private nextArpTimerSec = 2.5;
@@ -65,16 +99,15 @@ export class SoundService {
     },
   ];
 
-  // --- Nixenteich-Musik Zustand (Zauberhaftes Thema der Nixe) ---
-  private nixieBlendWeight = 0; // 0 = 100 % Waldmusik, 1 = 100 % Nixenteich
-  private currentNixieChordIdx = 0;
-  private nextNixieChordScheduleTime = 0;
-  private currentNixieMotifIdx = 0;
-  private nextNixieMotifTimerSec = 1.0; // Startet zeitnah bei Annäherung
-  private nextNixieDropTimerSec = 2.0;
+  // --- Schauplatz-Musik Zustand ---
+  private currentLocationChordIdx = 0;
+  private nextLocationChordScheduleTime = 0;
+  private currentMotifIdx = 0;
+  private nextMotifTimerSec = 1.0;
+  private nextAccentsTimerSec = 2.0;
 
-  // Sphärische, aquatische Pads für den Nixenteich
-  private readonly nixieChords: readonly {
+  // Sphärische, aquatische Pads für den Feenteich
+  private readonly feenteichChords: readonly {
     durationSec: number;
     padFreqs: readonly number[];
   }[] = [
@@ -100,8 +133,8 @@ export class SoundService {
     },
   ];
 
-  // Zauberhafte Melodie-Phrasen des Nixen-Leitmotivs (Celesta-/Glockenspiel)
-  private readonly nixieMotifPhrases: readonly {
+  // Zauberhafte Melodie-Phrasen des Feenteich-Leitmotivs (Celesta-/Glockenspiel)
+  private readonly feenteichMotifPhrases: readonly {
     freq: number;
     timeOffset: number;
     duration: number;
@@ -137,6 +170,25 @@ export class SoundService {
     ],
   ];
 
+  // Berg- & Kristall-Pads für den Silberstollen (Weg 1)
+  private readonly silberstollenChords: readonly {
+    durationSec: number;
+    padFreqs: readonly number[];
+  }[] = [
+    { durationSec: 8.5, padFreqs: [146.83, 220.0, 261.63, 329.63, 349.23] }, // D-Moll9
+    { durationSec: 8.5, padFreqs: [110.0, 164.81, 220.0, 246.94, 261.63] },  // A-Moll add9
+    { durationSec: 8.5, padFreqs: [87.31, 130.81, 174.61, 220.0, 261.63] },  // F-Dur maj7
+  ];
+
+  // Düstere Basalt-Drones für den feurigen Höllenschlund (Weg 5)
+  private readonly lavakraterChords: readonly {
+    durationSec: number;
+    padFreqs: readonly number[];
+  }[] = [
+    { durationSec: 9.0, padFreqs: [55.0, 73.42, 110.0, 146.83, 174.61] }, // D1 / D2 / A2 Drone
+    { durationSec: 9.0, padFreqs: [77.78, 116.54, 155.56, 196.0] },      // Es-Dur Glut
+  ];
+
   private getContext(): AudioContext | null {
     if (typeof window === 'undefined') {
       return null;
@@ -169,12 +221,32 @@ export class SoundService {
   }
 
   /**
+   * Stellt die Lautstärke der Hintergrundmusik stufenlos ein (0.0 bis 1.0).
+   * Bei 0.0 wird die Musik automatisch stummgeschaltet.
+   */
+  public setMusicVolume(volume: number): void {
+    this.musicVolume = Math.max(0, Math.min(1, volume));
+    this.isMusicMuted = this.musicVolume <= 0.001;
+    if (this.ctx && this.musicMasterGain) {
+      const target = this.isMusicMuted ? 0.00001 : SoundService.BASE_MUSIC_VOLUME * this.musicVolume;
+      this.musicMasterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.15);
+    }
+  }
+
+  /**
+   * Gibt die aktuelle relative Lautstärkeeinstellung zurück (0.0 bis 1.0).
+   */
+  public getMusicVolume(): number {
+    return this.musicVolume;
+  }
+
+  /**
    * Schaltet die Hintergrundmusik um (Stumm / Aktiv).
    */
   public toggleMusic(): boolean {
     this.isMusicMuted = !this.isMusicMuted;
     if (this.ctx && this.musicMasterGain) {
-      const target = this.isMusicMuted ? 0.00001 : SoundService.BASE_MUSIC_VOLUME;
+      const target = this.isMusicMuted ? 0.00001 : SoundService.BASE_MUSIC_VOLUME * this.musicVolume;
       this.musicMasterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.3);
     }
     return !this.isMusicMuted;
@@ -188,17 +260,32 @@ export class SoundService {
   }
 
   /**
-   * Gibt den aktuellen Überblendungsfaktor zwischen Waldmusik (0.0) und
-   * dem zauberhaften Nixenteich-Thema (1.0) zurück.
+   * Gibt den aktuell aktiven Schauplatz zurück (oder 'crossroads' bei Überwiegen der Waldkreuzung).
+   */
+  public getActiveLocation(): GameLocationKey {
+    return this.locationBlendWeight >= 0.5 ? this.activeLocation : 'crossroads';
+  }
+
+  /**
+   * Gibt den aktuellen Überblendungsfaktor zwischen Waldkreuzung (0.0) und
+   * dem jeweiligen Schauplatz (1.0) zurück.
+   */
+  public getLocationBlendWeight(): number {
+    return this.locationBlendWeight;
+  }
+
+  /**
+   * Gibt den aktuellen Überblendungsfaktor für den Feenteich / Nixenteich zurück
+   * (für Abwärtskompatibilität zu bestehenden Tests).
    */
   public getNixieBlendWeight(): number {
-    return this.nixieBlendWeight;
+    return this.activeLocation === 'feenteich' ? this.locationBlendWeight : 0;
   }
 
   /**
    * Erstellt und initialisiert den Master-Gain und die beiden parallelen Sub-Busse:
-   * 1. Wald-Bus mit Tiefpassfilter (540 Hz) für die friedliche Waldatmosphäre
-   * 2. Nixenteich-Bus mit glasklarem Filter (880 Hz, Q = 1.1) für das zauberhafte Nixen-Thema
+   * 1. Waldkreuzungs-Bus mit Tiefpassfilter (540 Hz)
+   * 2. Schauplatz-Bus mit Filter für die jeweilige Location (z. B. Feenteich 920 Hz)
    */
   private ensureMusicNodes(ctx: AudioContext): GainNode {
     if (!this.musicMasterGain) {
@@ -208,41 +295,42 @@ export class SoundService {
       master.connect(ctx.destination);
       this.musicMasterGain = master;
 
-      // 1. Wald-Subbus
+      // 1. Waldkreuzungs-Subbus
       const forestBus = ctx.createGain();
       forestBus.gain.setValueAtTime(1.0, ctx.currentTime);
       forestBus.connect(master);
-      this.forestBusGain = forestBus;
+      this.crossroadsBusGain = forestBus;
 
       const forestFilter = ctx.createBiquadFilter();
       forestFilter.type = 'lowpass';
       forestFilter.frequency.setValueAtTime(540, ctx.currentTime);
       forestFilter.Q.setValueAtTime(0.7, ctx.currentTime);
       forestFilter.connect(forestBus);
-      this.forestFilterNode = forestFilter;
+      this.crossroadsFilterNode = forestFilter;
 
-      // 2. Nixenteich-Subbus
-      const nixieBus = ctx.createGain();
-      nixieBus.gain.setValueAtTime(0.0001, ctx.currentTime);
-      nixieBus.connect(master);
-      this.nixieBusGain = nixieBus;
+      // 2. Schauplatz-Subbus
+      const locBus = ctx.createGain();
+      locBus.gain.setValueAtTime(0.0001, ctx.currentTime);
+      locBus.connect(master);
+      this.locationBusGain = locBus;
 
-      const nixieFilter = ctx.createBiquadFilter();
-      nixieFilter.type = 'lowpass';
-      nixieFilter.frequency.setValueAtTime(880, ctx.currentTime);
-      nixieFilter.Q.setValueAtTime(1.1, ctx.currentTime);
-      nixieFilter.connect(nixieBus);
-      this.nixieFilterNode = nixieFilter;
+      const locFilter = ctx.createBiquadFilter();
+      locFilter.type = 'lowpass';
+      locFilter.frequency.setValueAtTime(920, ctx.currentTime);
+      locFilter.Q.setValueAtTime(1.1, ctx.currentTime);
+      locFilter.connect(locBus);
+      this.locationFilterNode = locFilter;
     }
     return this.musicMasterGain;
   }
 
   /**
    * Aktualisiert die Hintergrundmusik dynamisch basierend auf der Spielerposition:
-   * - Im Wald / an der Kreuzung: Schwebende Waldharfen und ruhige Akkorde.
-   * - Am Nixenteich (Weg 2): Fließender Übergang zu einem zauberhaften Celesta-/Glockenspiel-Motiv
-   *   mit sphärischen Wasser-Pads und perlenden Tropfen-Akzenten.
-   * - Sanftes Ducking bei geöffneten Dialogen.
+   * - An der Kreuzung (Distanz <= 16 m): 100 % friedliche Waldkreuzungs-Atmosphäre.
+   * - Auf halbem Weg (ca. 16 bis 30 m, Mitte bei ~23 m): Sehr langsamer, sanfter Übergang (Crossfade).
+   * - Am Ziel / Schauplatz (Distanz >= 30 m, z. B. am Feenteich):
+   *   100 % Schauplatz-Musik, Kreuzungsmusik pausiert vollständig!
+   *   -> Am Feenteich erklingt ausschließlich die zauberhafte Feenteich-Musik.
    */
   public updateAmbientMusic(
     dtSeconds: number,
@@ -259,53 +347,86 @@ export class SoundService {
 
     const musicMaster = this.ensureMusicNodes(ctx);
 
-    // 1. Gesamtlautstärke steuern (mit Ducking bei aktiven Dialogen)
+    // 1. Gesamtlautstärke steuern (Lautstärkeregler + Ducking bei NPC-Dialogen)
+    const effectiveBaseVol = SoundService.BASE_MUSIC_VOLUME * this.musicVolume;
+    const effectiveDialogueVol = SoundService.DIALOGUE_MUSIC_VOLUME * this.musicVolume;
     const targetVolume = this.isMusicMuted
       ? 0.00001
       : isDialogueOpen
-        ? SoundService.DIALOGUE_MUSIC_VOLUME
-        : SoundService.BASE_MUSIC_VOLUME;
-    musicMaster.gain.setTargetAtTime(targetVolume, ctx.currentTime, 0.45);
+        ? effectiveDialogueVol
+        : effectiveBaseVol;
+    musicMaster.gain.setTargetAtTime(targetVolume, ctx.currentTime, 0.35);
 
-    // 2. Dynamischen Übergangsfaktor zum Nixenteich berechnen
+    // 2. Schauplatz und Blendgewicht auf der Mitte des Weges bestimmen
     let targetBlend = 0;
     if (playerPos) {
-      const distToPond = Math.hypot(
-        playerPos.x - SoundService.NIXIE_POND_X,
-        playerPos.z - SoundService.NIXIE_POND_Z
+      const distFromCrossroads = Math.hypot(playerPos.x, playerPos.z);
+
+      // Den nächstgelegenen Schauplatz ermitteln
+      let closestLoc: Exclude<GameLocationKey, 'crossroads'> = 'feenteich';
+      let minLocDist = Infinity;
+      (Object.keys(SoundService.LOCATIONS) as (Exclude<GameLocationKey, 'crossroads'>)[]).forEach(
+        (locKey) => {
+          const loc = SoundService.LOCATIONS[locKey];
+          const d = Math.hypot(playerPos.x - loc.x, playerPos.z - loc.z);
+          if (d < minLocDist) {
+            minLocDist = d;
+            closestLoc = locKey;
+          }
+        }
       );
-      if (distToPond <= SoundService.NIXIE_INNER_RADIUS) {
+
+      // Schauplatz wechseln
+      if (this.activeLocation !== closestLoc && this.locationBlendWeight < 0.25) {
+        this.activeLocation = closestLoc;
+        this.updateLocationFilter(closestLoc, ctx);
+      }
+
+      // Übergangskorridor auf der Mitte des Weges:
+      // <= 16m: 0.0 (Kreuzung) | >= 30m: 1.0 (Location) | Mitte (~23m): 0.5
+      if (distFromCrossroads <= SoundService.CROSSROADS_RADIUS) {
+        targetBlend = 0.0;
+      } else if (distFromCrossroads >= SoundService.LOCATION_FULL_RADIUS) {
         targetBlend = 1.0;
-      } else if (distToPond < SoundService.NIXIE_OUTER_RADIUS) {
+      } else {
         targetBlend =
-          1.0 -
-          (distToPond - SoundService.NIXIE_INNER_RADIUS) /
-            (SoundService.NIXIE_OUTER_RADIUS - SoundService.NIXIE_INNER_RADIUS);
+          (distFromCrossroads - SoundService.CROSSROADS_RADIUS) /
+          (SoundService.LOCATION_FULL_RADIUS - SoundService.CROSSROADS_RADIUS);
       }
     }
 
-    // Weiche exponentielle Annäherung (kein abrupter Stilwechsel beim Laufen)
-    const blendRate = 0.85 * dtSeconds;
-    this.nixieBlendWeight += (targetBlend - this.nixieBlendWeight) * Math.min(1.0, blendRate);
+    // Sehr langsamer, seidiger Übergang (Zeitkonstante ~3.5 bis 5 Sekunden)
+    const blendRate = 0.35 * dtSeconds;
+    this.locationBlendWeight += (targetBlend - this.locationBlendWeight) * Math.min(1.0, blendRate);
 
-    if (this.forestBusGain && this.nixieBusGain) {
-      const forestTarget = Math.max(0.0001, 1.0 - this.nixieBlendWeight);
-      const nixieTarget = Math.max(0.0001, this.nixieBlendWeight);
-      this.forestBusGain.gain.setTargetAtTime(forestTarget, ctx.currentTime, 0.25);
-      this.nixieBusGain.gain.setTargetAtTime(nixieTarget, ctx.currentTime, 0.25);
+    // Audio-Bus-Lautstärken regeln:
+    // Wenn locationBlendWeight >= 0.98: Kreuzung ist VOLLSTÄNDIG stummgeschaltet (am Feenteich nur Feenteich-Musik!)
+    if (this.crossroadsBusGain && this.locationBusGain) {
+      const crossGain =
+        this.locationBlendWeight >= 0.98
+          ? 0.00001
+          : Math.max(0.0001, 1.0 - this.locationBlendWeight);
+      const locGain =
+        this.locationBlendWeight <= 0.02
+          ? 0.00001
+          : Math.max(0.0001, this.locationBlendWeight);
+
+      this.crossroadsBusGain.gain.setTargetAtTime(crossGain, ctx.currentTime, 0.4);
+      this.locationBusGain.gain.setTargetAtTime(locGain, ctx.currentTime, 0.4);
     }
 
     if (this.isMusicMuted) {
       return;
     }
 
-    // --- TEIL A: WALD-MUSIK (nur aktiv, solange nicht 100 % am Nixenteich) ---
-    if (this.nixieBlendWeight < 0.95) {
+    // --- TEIL A: KREUZUNGS-WALDMUSIK ---
+    // Vollständig pausieren, sobald der Schauplatz aktiv ist (am Feenteich nur Feenteich!)
+    if (this.locationBlendWeight < 0.96) {
       if (this.nextChordScheduleTime <= ctx.currentTime + 1.2) {
         const startTime = Math.max(ctx.currentTime + 0.05, this.nextChordScheduleTime);
         const chord = this.ambientChords[this.currentChordIdx];
 
-        this.scheduleAmbientPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
+        this.scheduleCrossroadsPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
 
         this.nextChordScheduleTime = startTime + chord.durationSec;
         this.currentChordIdx = (this.currentChordIdx + 1) % this.ambientChords.length;
@@ -313,56 +434,125 @@ export class SoundService {
 
       this.nextArpTimerSec -= dtSeconds;
       if (this.nextArpTimerSec <= 0) {
-        this.nextArpTimerSec = 3.6 + Math.random() * 4.0;
+        this.nextArpTimerSec = 3.8 + Math.random() * 4.0;
         const chord = this.ambientChords[this.currentChordIdx];
         const note = chord.arpNotes[Math.floor(Math.random() * chord.arpNotes.length)];
-        this.scheduleAmbientPluck(ctx, ctx.currentTime + 0.1, note);
+        this.scheduleCrossroadsPluck(ctx, ctx.currentTime + 0.1, note);
       }
     }
 
-    // --- TEIL B: ZAUBERHAFTE NIXENTEICH-MUSIK (aktiv, sobald man sich dem Teich nähert) ---
-    if (this.nixieBlendWeight > 0.05) {
-      // 1. Sphärische Wasser-Pads
-      if (this.nextNixieChordScheduleTime <= ctx.currentTime + 1.2) {
-        const startTime = Math.max(ctx.currentTime + 0.05, this.nextNixieChordScheduleTime);
-        const chord = this.nixieChords[this.currentNixieChordIdx];
+    // --- TEIL B: SCHAUPLATZ-MUSIK (Feenteich, Silberstollen, Lavakrater etc.) ---
+    if (this.locationBlendWeight > 0.04) {
+      this.updateActiveLocationMusic(ctx, dtSeconds);
+    }
+  }
 
-        this.scheduleNixiePadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
+  /**
+   * Passt den Filter des Schauplatz-Busses an die jeweilige Klangcharakteristik an.
+   */
+  private updateLocationFilter(loc: Exclude<GameLocationKey, 'crossroads'>, ctx: AudioContext): void {
+    if (!this.locationFilterNode) return;
+    const now = ctx.currentTime;
+    switch (loc) {
+      case 'feenteich':
+        this.locationFilterNode.frequency.setTargetAtTime(920, now, 0.8);
+        this.locationFilterNode.Q.setTargetAtTime(1.1, now, 0.8);
+        break;
+      case 'silberstollen':
+        this.locationFilterNode.frequency.setTargetAtTime(1100, now, 0.8);
+        this.locationFilterNode.Q.setTargetAtTime(0.9, now, 0.8);
+        break;
+      case 'lavakrater':
+        this.locationFilterNode.frequency.setTargetAtTime(420, now, 0.8);
+        this.locationFilterNode.Q.setTargetAtTime(1.4, now, 0.8);
+        break;
+      default:
+        this.locationFilterNode.frequency.setTargetAtTime(750, now, 0.8);
+        this.locationFilterNode.Q.setTargetAtTime(0.8, now, 0.8);
+        break;
+    }
+  }
 
-        this.nextNixieChordScheduleTime = startTime + chord.durationSec;
-        this.currentNixieChordIdx = (this.currentNixieChordIdx + 1) % this.nixieChords.length;
+  /**
+   * Aktualisiert die jeweilige Schauplatz-Musik (z. B. am Feenteich nur Feenteich-Musik).
+   */
+  private updateActiveLocationMusic(ctx: AudioContext, dtSeconds: number): void {
+    if (this.activeLocation === 'feenteich') {
+      // 1. Sphärische Feenteich-Wasserpads
+      if (this.nextLocationChordScheduleTime <= ctx.currentTime + 1.2) {
+        const startTime = Math.max(ctx.currentTime + 0.05, this.nextLocationChordScheduleTime);
+        const chord = this.feenteichChords[this.currentLocationChordIdx];
+
+        this.scheduleLocationPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
+
+        this.nextLocationChordScheduleTime = startTime + chord.durationSec;
+        this.currentLocationChordIdx = (this.currentLocationChordIdx + 1) % this.feenteichChords.length;
       }
 
-      // 2. Das zauberhafte Nixen-Leitmotiv (Glockenspiel-/Celesta-Thema)
-      this.nextNixieMotifTimerSec -= dtSeconds;
-      if (this.nextNixieMotifTimerSec <= 0) {
-        const phrase = this.nixieMotifPhrases[this.currentNixieMotifIdx];
-        this.scheduleNixieThemePhrase(ctx, ctx.currentTime + 0.1, phrase);
+      // 2. Das zauberhafte Nixen-Leitmotiv (Celesta-/Glockenspiel)
+      this.nextMotifTimerSec -= dtSeconds;
+      if (this.nextMotifTimerSec <= 0) {
+        const phrase = this.feenteichMotifPhrases[this.currentMotifIdx];
+        this.scheduleFeenteichThemePhrase(ctx, ctx.currentTime + 0.1, phrase);
 
-        this.currentNixieMotifIdx = (this.currentNixieMotifIdx + 1) % this.nixieMotifPhrases.length;
-        // Zauberhafte Pause zwischen den Motiven (5,5 bis 8,2 Sekunden)
-        this.nextNixieMotifTimerSec = 5.8 + Math.random() * 2.8;
+        this.currentMotifIdx = (this.currentMotifIdx + 1) % this.feenteichMotifPhrases.length;
+        this.nextMotifTimerSec = 6.2 + Math.random() * 2.8;
       }
 
-      // 3. Kristalline Tröpfchen- & Glitzer-Akzente auf der Wasseroberfläche
-      this.nextNixieDropTimerSec -= dtSeconds;
-      if (this.nextNixieDropTimerSec <= 0) {
-        this.nextNixieDropTimerSec = 2.4 + Math.random() * 3.6;
-        this.scheduleNixieWaterDrop(ctx, ctx.currentTime + 0.08);
+      // 3. Kristalline Tröpfchen- & Glitzer-Akzente auf dem See
+      this.nextAccentsTimerSec -= dtSeconds;
+      if (this.nextAccentsTimerSec <= 0) {
+        this.nextAccentsTimerSec = 2.4 + Math.random() * 3.6;
+        this.scheduleFeenteichWaterDrop(ctx, ctx.currentTime + 0.08);
+      }
+    } else if (this.activeLocation === 'silberstollen') {
+      // Berg- und Kristall-Atmosphäre
+      if (this.nextLocationChordScheduleTime <= ctx.currentTime + 1.2) {
+        const startTime = Math.max(ctx.currentTime + 0.05, this.nextLocationChordScheduleTime);
+        const chord = this.silberstollenChords[this.currentLocationChordIdx % this.silberstollenChords.length];
+        this.scheduleLocationPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
+        this.nextLocationChordScheduleTime = startTime + chord.durationSec;
+        this.currentLocationChordIdx++;
+      }
+
+      this.nextMotifTimerSec -= dtSeconds;
+      if (this.nextMotifTimerSec <= 0) {
+        this.nextMotifTimerSec = 3.5 + Math.random() * 3.5;
+        const crystalNotes = [659.25, 880.0, 1046.5, 1318.51, 1567.98];
+        const note = crystalNotes[Math.floor(Math.random() * crystalNotes.length)];
+        this.scheduleCrystalPluck(ctx, ctx.currentTime + 0.1, note);
+      }
+    } else if (this.activeLocation === 'lavakrater') {
+      // Tiefe Basalt-Drones
+      if (this.nextLocationChordScheduleTime <= ctx.currentTime + 1.2) {
+        const startTime = Math.max(ctx.currentTime + 0.05, this.nextLocationChordScheduleTime);
+        const chord = this.lavakraterChords[this.currentLocationChordIdx % this.lavakraterChords.length];
+        this.scheduleLocationPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
+        this.nextLocationChordScheduleTime = startTime + chord.durationSec;
+        this.currentLocationChordIdx++;
+      }
+    } else {
+      // Übrige Schauplätze: Sphärische Stimmung
+      if (this.nextLocationChordScheduleTime <= ctx.currentTime + 1.2) {
+        const startTime = Math.max(ctx.currentTime + 0.05, this.nextLocationChordScheduleTime);
+        const chord = this.feenteichChords[this.currentLocationChordIdx % this.feenteichChords.length];
+        this.scheduleLocationPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
+        this.nextLocationChordScheduleTime = startTime + chord.durationSec;
+        this.currentLocationChordIdx++;
       }
     }
   }
 
   /**
-   * Erzeugt einen weichen, schwebenden Pad-Akkord für die Waldlandschaft.
+   * Erzeugt einen weichen, schwebenden Pad-Akkord für die Waldkreuzung.
    */
-  private scheduleAmbientPadChord(
+  private scheduleCrossroadsPadChord(
     ctx: AudioContext,
     startTime: number,
     durationSec: number,
     frequencies: readonly number[]
   ): void {
-    if (!this.forestFilterNode) {
+    if (!this.crossroadsFilterNode) {
       return;
     }
 
@@ -387,7 +577,7 @@ export class SoundService {
         gain.gain.exponentialRampToValueAtTime(0.0001, startTime + totalDuration);
 
         osc.connect(gain);
-        gain.connect(this.forestFilterNode);
+        gain.connect(this.crossroadsFilterNode);
 
         osc.start(startTime);
         osc.stop(startTime + totalDuration + 0.05);
@@ -396,10 +586,10 @@ export class SoundService {
   }
 
   /**
-   * Spielt einen einzelnen, zarten Waldharfen-Ton mit weichem Ausklang und Stereo-Panorama.
+   * Spielt einen einzelnen, zarten Waldharfen-Ton an der Waldkreuzung.
    */
-  private scheduleAmbientPluck(ctx: AudioContext, startTime: number, freq: number): void {
-    if (!this.forestBusGain) {
+  private scheduleCrossroadsPluck(ctx: AudioContext, startTime: number, freq: number): void {
+    if (!this.crossroadsBusGain) {
       return;
     }
 
@@ -420,10 +610,10 @@ export class SoundService {
       panner.pan.setValueAtTime(pan, startTime);
       osc.connect(gain);
       gain.connect(panner);
-      panner.connect(this.forestBusGain);
+      panner.connect(this.crossroadsBusGain);
     } else {
       osc.connect(gain);
-      gain.connect(this.forestBusGain);
+      gain.connect(this.crossroadsBusGain);
     }
 
     osc.start(startTime);
@@ -431,15 +621,15 @@ export class SoundService {
   }
 
   /**
-   * Erzeugt einen weichen, sphärischen Wasser-Pad-Akkord für den Nixenteich.
+   * Erzeugt einen weichen, sphärischen Pad-Akkord für den aktiven Schauplatz.
    */
-  private scheduleNixiePadChord(
+  private scheduleLocationPadChord(
     ctx: AudioContext,
     startTime: number,
     durationSec: number,
     frequencies: readonly number[]
   ): void {
-    if (!this.nixieFilterNode) {
+    if (!this.locationFilterNode) {
       return;
     }
 
@@ -464,7 +654,7 @@ export class SoundService {
         gain.gain.exponentialRampToValueAtTime(0.0001, startTime + totalDuration);
 
         osc.connect(gain);
-        gain.connect(this.nixieFilterNode);
+        gain.connect(this.locationFilterNode);
 
         osc.start(startTime);
         osc.stop(startTime + totalDuration + 0.05);
@@ -473,15 +663,15 @@ export class SoundService {
   }
 
   /**
-   * Spielt eine vollständige Phrase des zauberhaften Nixen-Themas ab.
+   * Spielt eine vollständige Phrase des zauberhaften Feenteich-Themas ab.
    */
-  private scheduleNixieThemePhrase(
+  private scheduleFeenteichThemePhrase(
     ctx: AudioContext,
     phraseStartTime: number,
     phrase: readonly { freq: number; timeOffset: number; duration: number; gain: number }[]
   ): void {
     phrase.forEach((note) => {
-      this.scheduleNixieMotifNote(
+      this.scheduleFeenteichMotifNote(
         ctx,
         note.freq,
         phraseStartTime + note.timeOffset,
@@ -492,17 +682,17 @@ export class SoundService {
   }
 
   /**
-   * Synthetisiert eine einzelne Note des zauberhaften Leitmotivs als glasklare Celesta / Glockenspiel:
-   * Reiner Grundton + zarte Oktave + feine Obertöne mit natürlicher Stereo-Echo-Reflexion.
+   * Synthetisiert eine einzelne Note des zauberhaften Feenteich-Leitmotivs als glasklare Celesta:
+   * Reiner Grundton + transparente Oktave + dezente Obertöne mit natürlicher Stereo-Echo-Reflexion.
    */
-  private scheduleNixieMotifNote(
+  private scheduleFeenteichMotifNote(
     ctx: AudioContext,
     freq: number,
     startTime: number,
     duration: number,
     peakGain: number
   ): void {
-    if (!this.nixieBusGain) {
+    if (!this.locationBusGain) {
       return;
     }
 
@@ -516,7 +706,7 @@ export class SoundService {
     gain1.gain.linearRampToValueAtTime(peakGain, startTime + 0.015);
     gain1.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
-    // 2. Transparente Oktave für kristallinen Celesta-/Glockenklang
+    // 2. Transparente Oktave für Celesta-/Glockenklang
     const osc2 = ctx.createOscillator();
     osc2.type = 'sine';
     osc2.frequency.setValueAtTime(freq * 2, startTime);
@@ -526,7 +716,7 @@ export class SoundService {
     gain2.gain.linearRampToValueAtTime(peakGain * 0.28, startTime + 0.012);
     gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.72);
 
-    // 3. Ganz dezent beigemischte Duodezime (3. Harmonische)
+    // 3. Feine Obertöne
     const osc3 = ctx.createOscillator();
     osc3.type = 'triangle';
     osc3.frequency.setValueAtTime(freq * 3.01, startTime);
@@ -536,7 +726,7 @@ export class SoundService {
     gain3.gain.linearRampToValueAtTime(peakGain * 0.1, startTime + 0.01);
     gain3.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.45);
 
-    // Notenmischung
+    // Mischen
     const noteMix = ctx.createGain();
     osc1.connect(gain1);
     gain1.connect(noteMix);
@@ -545,15 +735,15 @@ export class SoundService {
     osc3.connect(gain3);
     gain3.connect(noteMix);
 
-    // Stereo-Pan mit feiner Wasser-Reflexion (Echo nach 170 ms)
+    // Stereo-Pan mit Wasser-Echo
     const pan = Math.sin(startTime * 1.6) * 0.35;
     if (typeof ctx.createStereoPanner === 'function') {
       const panner = ctx.createStereoPanner();
       panner.pan.setValueAtTime(pan, startTime);
       noteMix.connect(panner);
-      panner.connect(this.nixieBusGain);
+      panner.connect(this.locationBusGain);
 
-      // Zartes Reflexions-Echo auf der gegenüberliegenden Stereoseite
+      // Zartes Reflexions-Echo auf der Gegenseite
       const echoGain = ctx.createGain();
       echoGain.gain.setValueAtTime(0.0001, startTime);
       echoGain.gain.setValueAtTime(0.0001, startTime + 0.17);
@@ -564,9 +754,9 @@ export class SoundService {
       echoPanner.pan.setValueAtTime(-pan, startTime);
       noteMix.connect(echoGain);
       echoGain.connect(echoPanner);
-      echoPanner.connect(this.nixieBusGain);
+      echoPanner.connect(this.locationBusGain);
     } else {
-      noteMix.connect(this.nixieBusGain);
+      noteMix.connect(this.locationBusGain);
     }
 
     osc1.start(startTime);
@@ -578,10 +768,10 @@ export class SoundService {
   }
 
   /**
-   * Spielt einen zarten Wassertropfen-/Glitzerton mit natürlichem Frequenzabfall ab.
+   * Spielt einen perlenden Wassertropfenton am Feenteich ab.
    */
-  private scheduleNixieWaterDrop(ctx: AudioContext, startTime: number): void {
-    if (!this.nixieBusGain) {
+  private scheduleFeenteichWaterDrop(ctx: AudioContext, startTime: number): void {
+    if (!this.locationBusGain) {
       return;
     }
 
@@ -591,7 +781,6 @@ export class SoundService {
     const osc = ctx.createOscillator();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, startTime);
-    // Tröpfchen-Effekt: Frequenz senkt sich minimal beim Eintauchen
     osc.frequency.exponentialRampToValueAtTime(freq * 0.88, startTime + 0.14);
 
     const gain = ctx.createGain();
@@ -605,14 +794,45 @@ export class SoundService {
       panner.pan.setValueAtTime(pan, startTime);
       osc.connect(gain);
       gain.connect(panner);
-      panner.connect(this.nixieBusGain);
+      panner.connect(this.locationBusGain);
     } else {
       osc.connect(gain);
-      gain.connect(this.nixieBusGain);
+      gain.connect(this.locationBusGain);
     }
 
     osc.start(startTime);
     osc.stop(startTime + 0.4);
+  }
+
+  /**
+   * Kristalliner Zupfton am Silberstollen (Weg 1).
+   */
+  private scheduleCrystalPluck(ctx: AudioContext, startTime: number, freq: number): void {
+    if (!this.locationBusGain) return;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(0.024, startTime + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.8);
+
+    const pan = Math.random() * 1.2 - 0.6;
+    if (typeof ctx.createStereoPanner === 'function') {
+      const panner = ctx.createStereoPanner();
+      panner.pan.setValueAtTime(pan, startTime);
+      osc.connect(gain);
+      gain.connect(panner);
+      panner.connect(this.locationBusGain);
+    } else {
+      osc.connect(gain);
+      gain.connect(this.locationBusGain);
+    }
+
+    osc.start(startTime);
+    osc.stop(startTime + 1.9);
   }
 
   /**

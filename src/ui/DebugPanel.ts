@@ -14,6 +14,10 @@ export interface DebugPanelCallbacks {
   getOverridePixelRatio: () => number | null;
   onToggleMusic?: () => boolean;
   isMusicEnabled?: () => boolean;
+  onSetMusicVolume?: (volume: number) => void;
+  getMusicVolume?: () => number;
+  getLocationBlendWeight?: () => number;
+  getActiveLocation?: () => string;
   getNixieBlendWeight?: () => number;
   onTogglePathBoundary?: () => boolean;
   isPathBoundaryDisabled?: () => boolean;
@@ -364,7 +368,7 @@ export class DebugPanel {
           <div class="debug-toggle-row">
             <div>
               <div class="debug-toggle-name">Hintergrundmusik</div>
-              <div class="debug-toggle-desc">Prozedurale Musik (Waldmusik & Zauberthema am Nixenteich: ${Math.round((this.callbacks.getNixieBlendWeight?.() ?? 0) * 100)} % Nixe)</div>
+              <div class="debug-toggle-desc">Prozedurale Musik (Ort: ${this.callbacks.getActiveLocation?.() ?? 'Kreuzung'}, Schauplatz-Anteil: ${Math.round((this.callbacks.getLocationBlendWeight?.() ?? 0) * 100)} %)</div>
             </div>
             <button class="debug-btn ${this.callbacks.isMusicEnabled?.() ? 'is-active' : ''}" id="btn-toggle-music">
               ${this.callbacks.isMusicEnabled?.() ? '🎵 Aktiv' : '🔇 Stumm'}

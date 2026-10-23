@@ -138,41 +138,98 @@ body,
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
 }
 
-.music-badge {
+.music-control-wrap {
   position: absolute;
   top: 3.6rem;
-  left: 20.8rem;
+  left: 9.8rem;
   right: auto;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   background: var(--bg-dark);
   border: 1px solid rgba(108, 168, 112, 0.6);
   border-radius: 999px;
-  padding: 0.28rem 0.75rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--accent-green);
+  padding: 0.24rem 0.75rem;
   backdrop-filter: blur(8px);
   pointer-events: auto;
-  cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   z-index: 10;
   transition: all 0.15s ease;
   user-select: none;
 }
 
-.music-badge:hover {
+.music-control-wrap:hover {
   border-color: var(--accent-gold);
-  color: var(--accent-gold);
-  transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
 }
 
+.music-badge {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--accent-green);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.music-badge:hover {
+  transform: scale(1.15);
+}
+
 .music-badge.is-muted {
-  border-color: rgba(180, 180, 180, 0.35);
-  color: #889988;
-  opacity: 0.75;
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
+.music-volume-slider {
+  width: 62px;
+  height: 5px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.music-volume-slider:hover {
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.music-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  box-shadow: 0 0 6px rgba(234, 179, 8, 0.6);
+  cursor: pointer;
+}
+
+.music-volume-slider::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  box-shadow: 0 0 6px rgba(234, 179, 8, 0.6);
+  cursor: pointer;
+  border: none;
+}
+
+.music-volume-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent-green);
+  min-width: 2.1rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .preset-modal {
@@ -412,18 +469,20 @@ body,
     font-size: 0.7rem;
   }
 
-  .preset-badge {
+  .music-control-wrap {
     top: 0.5rem;
     left: 6.2rem;
-    padding: 0.2rem 0.55rem;
-    font-size: 0.7rem;
+    padding: 0.16rem 0.5rem;
+    gap: 0.35rem;
   }
 
-  .music-badge {
-    top: 0.5rem;
-    left: 15.6rem;
-    padding: 0.2rem 0.55rem;
-    font-size: 0.7rem;
+  .music-volume-slider {
+    width: 44px;
+  }
+
+  .music-volume-label {
+    font-size: 0.65rem;
+    min-width: 1.8rem;
   }
 
   .active-path-badge {
