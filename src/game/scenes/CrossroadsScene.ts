@@ -71,7 +71,7 @@ import { buildMergedTreeStumps, TreeStumpInstance } from '../entities/TreeStump'
 import { buildMergedMushroomClusters, MushroomClusterOptions, MushroomType } from '../entities/MushroomCluster';
 import { buildMergedBirdhouses, BirdhouseInstance } from '../entities/Birdhouse';
 import { buildMergedFlowerClusters, FlowerClusterOptions, FlowerType } from '../entities/ForestFlowers';
-import { buildMergedForestBushes, ForestBushInstance, BushType } from '../entities/ForestBush';
+import { buildMergedForestBushes, ForestBushInstance, BushType, BushFlowerColor } from '../entities/ForestBush';
 import { Vector2D } from '../systems/CrossroadsState';
 import { disposeObject3D } from '../utils/threeUtils';
 import { getTerrainHeight } from '../utils/terrainHeight';
@@ -2293,6 +2293,9 @@ export class CrossroadsScene {
        0.05,  0.30,  0.55,  0.80,  1.05,  1.30,  1.55,  1.80
     ];
 
+    // Farbige Blüten am Nixenteich: Jeweils eine Farbe pro Busch (Rot, Weiß, Gelb, Lila)
+    const flowerColors: BushFlowerColor[] = ['red', 'white', 'yellow', 'purple'];
+
     angles.forEach((angle, idx) => {
       // 1. Buschreihe: Am Ufersaum direkt hinter dem Teich vor der ersten Baumreihe (Radius 4.9 bis 5.6 m)
       const r1 = 4.9 + (idx % 3) * 0.32;
@@ -2307,6 +2310,7 @@ export class CrossroadsScene {
           scale: 0.90 + (idx % 4) * 0.14,
           rotationY: angle + 0.6,
           type: types[idx % types.length],
+          flowerColor: flowerColors[idx % flowerColors.length],
         });
       }
 
@@ -2328,6 +2332,7 @@ export class CrossroadsScene {
             scale: 1.15 + (idx % 3) * 0.18,
             rotationY: angle - 0.4,
             type: types[(idx + 1) % types.length],
+            flowerColor: flowerColors[(idx + 2) % flowerColors.length],
           });
         }
       }
@@ -2349,6 +2354,7 @@ export class CrossroadsScene {
             scale: 1.35 + (idx % 2) * 0.22,
             rotationY: angle + 1.2,
             type: 'lush_bush',
+            flowerColor: flowerColors[(idx + 1) % flowerColors.length],
           });
         }
       }

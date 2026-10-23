@@ -47,7 +47,8 @@ let cachedWoodGrainTexture: TexturePair | null = null;
 let cachedSnowTexture: TexturePair | null = null;
 let cachedSnowyPineFoliageTexture: TexturePair | null = null;
 let cachedFrostyBarkTexture: TexturePair | null = null;
-let cachedBushFoliageTexture: TexturePair | null = null;
+const cachedBushFoliageTextures = new Map<string, TexturePair>();
+export type BushFlowerColor = 'none' | 'red' | 'white' | 'yellow' | 'purple';
 
 /**
  * Erzeugt eine detailreiche, nahtlos kachelbare Wiesentextur für den Waldboden:
@@ -2551,9 +2552,11 @@ export function createFrostyBarkTexture(): { map: THREE.CanvasTexture | null; bu
  * - Schatteneffekte zwischen den Blättern und Lichtreflexe auf den Blattoberseiten
  * - Relief-Bump-Map für erhabene Blattoberflächen und plastische Laubpolster
  */
-export function createBushFoliageTexture(): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
-  if (cachedBushFoliageTexture) {
-    return clonePair(cachedBushFoliageTexture);
+export function createBushFoliageTexture(flowerColor: BushFlowerColor = 'none'): { map: THREE.CanvasTexture | null; bumpMap: THREE.CanvasTexture | null } {
+  const cacheKey = flowerColor;
+  const cached = cachedBushFoliageTextures.get(cacheKey);
+  if (cached) {
+    return clonePair(cached);
   }
   if (typeof document === 'undefined') {
     return { map: null, bumpMap: null };
@@ -2699,8 +2702,94 @@ export function createBushFoliageTexture(): { map: THREE.CanvasTexture | null; b
     // Kantenwrapping für nahtlose Kachelbarkeit
     if (x - len < 0) drawLeaf(x + size, y, len, wid, ang, col);
     if (x + len > size) drawLeaf(x - size, y, len, wid, ang, col);
-    if (y - len < 0) drawLeaf(x, y + size, len, wid, ang, col);
+    if (y - len < 0) drawLeaf(y + size, y, len, wid, ang, col);
     if (y + len > size) drawLeaf(x, y - size, len, wid, ang, col);
+  }
+
+  // 3. Farbige Blüten ergänzen (jeweils Rot, Weiß, Gelb oder Lila pro Textur)
+  if (flowerColor !== 'none') {
+    const flowerRng = rng(flowerColor === 'red' ? 101 : flowerColor === 'white' ? 202 : flowerColor === 'yellow' ? 303 : 404);
+
+    let petalBaseCol = '#e82542';
+    let petalHighlightCol = '#ff526d';
+    let centerCol = '#ffd53d';
+
+    if (flowerColor === 'white') {
+      petalBaseCol = '#f0f6f2';
+      petalHighlightCol = '#ffffff';
+      centerCol = '#ffca28';
+    } else if (flowerColor === 'yellow') {
+      petalBaseCol = '#ffcf14';
+      petalHighlightCol = '#ffea60';
+      centerCol = '#e66800';
+    } else if (flowerColor === 'purple') {
+      petalBaseCol = '#9b3fe6';
+      petalHighlightCol = '#be62f8';
+      centerCol = '#ffea78';
+    }
+
+    const drawFlower = (fx: number, fy: number, fRadius: number, fAngle: number) => {
+      ctx.save();
+      ctx.translate(fx, fy);
+      ctx.rotate(fAngle);
+
+      const numPetals = 5;
+      for (let p = 0; p < numPetals; p++) {
+        const pAng = (p * Math.PI * 2) / numPetals;
+        const px = Math.cos(pAng) * fRadius * 0.58;
+        const py = Math.sin(pAng) * fRadius * 0.58;
+        const pRad = fRadius * 0.44;
+
+        ctx.beginPath();
+        ctx.arc(px, py, pRad, 0, Math.PI * 2);
+        ctx.fillStyle = petalBaseCol;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(px * 0.9, py * 0.9, pRad * 0.65, 0, Math.PI * 2);
+        ctx.fillStyle = petalHighlightCol;
+        ctx.fill();
+      }
+
+      // Blütenmitte (Stempel / Pollen)
+      ctx.beginPath();
+      ctx.arc(0, 0, fRadius * 0.32, 0, Math.PI * 2);
+      ctx.fillStyle = centerCol;
+      ctx.fill();
+
+      ctx.restore();
+
+      if (bumpCtx) {
+        bumpCtx.save();
+        bumpCtx.translate(fx, fy);
+        bumpCtx.beginPath();
+        bumpCtx.arc(0, 0, fRadius * 0.85, 0, Math.PI * 2);
+        bumpCtx.fillStyle = 'rgba(235, 235, 235, 0.9)';
+        bumpCtx.fill();
+
+        bumpCtx.beginPath();
+        bumpCtx.arc(0, 0, fRadius * 0.35, 0, Math.PI * 2);
+        bumpCtx.fillStyle = '#ffffff';
+        bumpCtx.fill();
+        bumpCtx.restore();
+      }
+    };
+
+    const numFlowers = 42;
+    for (let f = 0; f < numFlowers; f++) {
+      const fx = flowerRng() * size;
+      const fy = flowerRng() * size;
+      const fr = 7.5 + flowerRng() * 6.5;
+      const fa = flowerRng() * Math.PI * 2;
+
+      drawFlower(fx, fy, fr, fa);
+
+      // Kantenwrapping
+      if (fx - fr < 0) drawFlower(fx + size, fy, fr, fa);
+      if (fx + fr > size) drawFlower(fx - size, fy, fr, fa);
+      if (fy - fr < 0) drawFlower(fx, fy + size, fr, fa);
+      if (fy + fr > size) drawFlower(fx, fy - size, fr, fa);
+    }
   }
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -2717,6 +2806,7 @@ export function createBushFoliageTexture(): { map: THREE.CanvasTexture | null; b
     bumpTexture.needsUpdate = true;
   }
 
-  cachedBushFoliageTexture = { map: texture, bumpMap: bumpTexture };
-  return clonePair(cachedBushFoliageTexture);
+  const pair: TexturePair = { map: texture, bumpMap: bumpTexture };
+  cachedBushFoliageTextures.set(cacheKey, pair);
+  return clonePair(pair);
 }
