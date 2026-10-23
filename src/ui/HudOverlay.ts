@@ -148,7 +148,7 @@ export class HudOverlay {
     this.musicSliderEl.type = 'range';
     this.musicSliderEl.min = '0';
     this.musicSliderEl.max = '100';
-    this.musicSliderEl.value = '100';
+    this.musicSliderEl.value = '50';
     this.musicSliderEl.title = 'Lautstärke der Hintergrundmusik regeln';
     this.musicSliderEl.addEventListener('input', (e) => {
       e.stopPropagation();
@@ -162,7 +162,7 @@ export class HudOverlay {
 
     this.musicVolumeLabelEl = document.createElement('span');
     this.musicVolumeLabelEl.className = 'music-volume-label';
-    this.musicVolumeLabelEl.textContent = '100%';
+    this.musicVolumeLabelEl.textContent = '50%';
 
     this.musicControlWrapEl.append(
       this.musicBadgeEl,

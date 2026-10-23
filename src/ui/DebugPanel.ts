@@ -368,7 +368,7 @@ export class DebugPanel {
           <div class="debug-toggle-row">
             <div>
               <div class="debug-toggle-name">Hintergrundmusik</div>
-              <div class="debug-toggle-desc">Prozedurale Musik (Ort: ${this.callbacks.getActiveLocation?.() ?? 'Kreuzung'}, Schauplatz-Anteil: ${Math.round((this.callbacks.getLocationBlendWeight?.() ?? 0) * 100)} %)</div>
+              <div class="debug-toggle-desc">Prozedurale Musik (Ort: ${this.callbacks.getActiveLocation?.() ?? 'Kreuzung'}, Schauplatz: ${Math.round((this.callbacks.getLocationBlendWeight?.() ?? 0) * 100)} %, Lautstärke: ${Math.round((this.callbacks.getMusicVolume?.() ?? 0.5) * 100)} %)</div>
             </div>
             <button class="debug-btn ${this.callbacks.isMusicEnabled?.() ? 'is-active' : ''}" id="btn-toggle-music">
               ${this.callbacks.isMusicEnabled?.() ? '🎵 Aktiv' : '🔇 Stumm'}

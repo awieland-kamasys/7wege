@@ -61,18 +61,25 @@ describe('SoundService (Hintergrundmusik, Lautstärkeregler & Schauplatzwechsel 
     delete (globalThis as any).window;
   });
 
-  it('besitzt die erhöhte Basislautstärke (ca. 3x lauter als zuvor)', () => {
-    expect(SoundService.BASE_MUSIC_VOLUME).toBe(0.13);
-    expect(SoundService.DIALOGUE_MUSIC_VOLUME).toBe(0.055);
-    expect(SoundService.BASE_MUSIC_VOLUME).toBeGreaterThan(0.045);
+  it('besitzt die dynamische Basislautstärke (Start bei 50 %, lauter und leiser regelbar)', () => {
+    expect(SoundService.BASE_MUSIC_VOLUME).toBe(0.28);
+    expect(SoundService.DIALOGUE_MUSIC_VOLUME).toBe(0.11);
+    expect(SoundService.BASE_MUSIC_VOLUME).toBeGreaterThan(0.13);
   });
 
-  it('erlaubt stufenlose Lautstärkeregelung (setMusicVolume)', () => {
+  it('startet mit dem Regler bei 50 % und erlaubt stufenlose Lautstärkeregelung nach oben und unten', () => {
+    // Initialer Wert bei 50 %
+    expect(soundService.getMusicVolume()).toBe(0.5);
+    expect(soundService.isMusicEnabled()).toBe(true);
+
+    // Lauter stellen (bis 100 %)
+    soundService.setMusicVolume(1.0);
     expect(soundService.getMusicVolume()).toBe(1.0);
     expect(soundService.isMusicEnabled()).toBe(true);
 
-    soundService.setMusicVolume(0.5);
-    expect(soundService.getMusicVolume()).toBe(0.5);
+    // Leiser stellen (auf 25 %)
+    soundService.setMusicVolume(0.25);
+    expect(soundService.getMusicVolume()).toBe(0.25);
     expect(soundService.isMusicEnabled()).toBe(true);
 
     // Bei Lautstärke 0 wird die Musik stumm geschaltet
@@ -126,19 +133,19 @@ describe('SoundService (Hintergrundmusik, Lautstärkeregler & Schauplatzwechsel 
     expect(soundService.getActiveLocation()).toBe('crossroads');
   });
 
-  it('berechnet auf der Mitte des Weges (ca. 23m) einen kontinuierlichen Mittelwert', () => {
-    // Wegmitte auf Weg 2: Distanz von der Kreuzung r = 23m
+  it('berechnet auf der Mitte des Weges (ca. 21m) einen kontinuierlichen 50/50-Mittelwert', () => {
+    // Wegmitte auf Weg 2: Distanz von der Kreuzung r = 21m (Korridor 14m bis 28m)
     // Winkel zu Feenteich (46.8, -14.2): atan2(-14.2, 46.8) = -0.294 rad
     const cosAngle = 46.8 / Math.hypot(46.8, -14.2);
     const sinAngle = -14.2 / Math.hypot(46.8, -14.2);
-    const midPointPos = { x: 23.0 * cosAngle, z: 23.0 * sinAngle };
+    const midPointPos = { x: 21.0 * cosAngle, z: 21.0 * sinAngle };
 
     for (let i = 0; i < 150; i++) {
       soundService.updateAmbientMusic(0.1, false, midPointPos);
     }
 
     const blend = soundService.getLocationBlendWeight();
-    // Auf halber Strecke zwischen 16m und 30m (23m) sollte der Blendwert ca. 0.5 sein
+    // Auf halber Strecke zwischen 14m und 28m (21m) sollte der Blendwert ca. 0.5 sein
     expect(blend).toBeGreaterThan(0.4);
     expect(blend).toBeLessThan(0.6);
   });

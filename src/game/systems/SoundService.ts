@@ -23,9 +23,9 @@ export class SoundService {
   private nextBirdTimerSec = 2.2;
 
   // --- Lautstärke-Konfiguration für Hintergrundmusik ---
-  public static readonly BASE_MUSIC_VOLUME = 0.13;
-  public static readonly DIALOGUE_MUSIC_VOLUME = 0.055;
-  private musicVolume = 1.0; // Stufenloser Lautstärkeregler (0.0 bis 1.0)
+  public static readonly BASE_MUSIC_VOLUME = 0.28;
+  public static readonly DIALOGUE_MUSIC_VOLUME = 0.11;
+  private musicVolume = 0.5; // Stufenloser Lautstärkeregler (Startet bei 50 %, lauter & leiser regelbar)
 
   // --- Koordinaten der Schauplätze für automatischen Musikwechsel auf halbem Weg ---
   public static readonly LOCATIONS: Record<
@@ -42,8 +42,10 @@ export class SoundService {
   };
 
   // Wegmitte-Übergangskorridor (Distanz von der Kreuzung 0,0)
-  public static readonly CROSSROADS_RADIUS = 16.0; // Bis 16m reine Kreuzungsmusik
-  public static readonly LOCATION_FULL_RADIUS = 30.0; // Ab 30m 100% Location-Musik (Mitte bei ~23m)
+  // Bis 14m: reine Waldkreuzungsmusik | Ab 28m: 100% Schauplatzmusik (Kreuzung VOLLSTÄNDIG aus!)
+  // Mitte des Weges liegt genau bei (14 + 28) / 2 = 21m (~Wegmitte zu allen Schauplätzen)
+  public static readonly CROSSROADS_RADIUS = 14.0;
+  public static readonly LOCATION_FULL_RADIUS = 28.0;
 
   // Legacy-Konstanten für Kompatibilität
   public static readonly NIXIE_POND_X = 46.8;
@@ -106,30 +108,30 @@ export class SoundService {
   private nextMotifTimerSec = 1.0;
   private nextAccentsTimerSec = 2.0;
 
-  // Sphärische, aquatische Pads für den Feenteich
+  // Sphärische, aquatische Pads für den Feenteich (ätherisch, kristallin & ohne tiefes Bassbrummen)
   private readonly feenteichChords: readonly {
     durationSec: number;
     padFreqs: readonly number[];
   }[] = [
     // 1. A-Moll add9 (Spiegelglatte Wasseroberfläche im Waldlicht)
     {
-      durationSec: 8.0,
-      padFreqs: [110.0, 164.81, 220.0, 246.94, 261.63, 329.63], // A2, E3, A3, B3, C4, E4
+      durationSec: 7.5,
+      padFreqs: [220.0, 329.63, 440.0, 493.88, 523.25, 659.25], // A3, E4, A4, B4, C5, E5
     },
     // 2. F-Dur maj7#11 (Märchenhafter Lydischer Glanz der Wasserlilien & Blüten)
     {
-      durationSec: 8.0,
-      padFreqs: [87.31, 130.81, 174.61, 220.0, 246.94, 329.63], // F2, C3, F3, A3, B3, E4
+      durationSec: 7.5,
+      padFreqs: [174.61, 261.63, 349.23, 440.0, 493.88, 659.25], // F3, C4, F4, A4, B4, E5
     },
     // 3. C-Dur add9 (Das goldene Schimmern des Schatzes auf dem Grund)
     {
-      durationSec: 8.0,
-      padFreqs: [130.81, 196.0, 261.63, 293.66, 329.63, 392.0], // C3, G3, C4, D4, E4, G4
+      durationSec: 7.5,
+      padFreqs: [261.63, 329.63, 392.0, 523.25, 587.33, 783.99], // C4, E4, G4, C5, D5, G5
     },
-    // 4. E-Moll9 (Die alte Weisheit und Melancholie der Nixe)
+    // 4. E-Moll9 (Die alte Weisheit und Magie der Nixe)
     {
-      durationSec: 8.0,
-      padFreqs: [82.41, 164.81, 196.0, 246.94, 293.66, 370.0], // E2, E3, G3, B3, D4, F#4
+      durationSec: 7.5,
+      padFreqs: [196.0, 246.94, 293.66, 392.0, 493.88, 659.25], // G3, B3, D4, G4, B4, E5
     },
   ];
 
@@ -142,31 +144,31 @@ export class SoundService {
   }[][] = [
     // Phrase 1: "Der Ruf des Wassers" - Sehnsuchtsvoll aufsteigend und sanft fallend
     [
-      { freq: 659.25, timeOffset: 0.00, duration: 0.60, gain: 0.040 }, // E5
-      { freq: 783.99, timeOffset: 0.38, duration: 0.50, gain: 0.042 }, // G5
-      { freq: 987.77, timeOffset: 0.76, duration: 0.85, gain: 0.048 }, // B5
-      { freq: 880.00, timeOffset: 1.35, duration: 0.48, gain: 0.040 }, // A5
-      { freq: 783.99, timeOffset: 1.70, duration: 0.48, gain: 0.038 }, // G5
-      { freq: 659.25, timeOffset: 2.05, duration: 1.50, gain: 0.044 }, // E5 (ruhend)
+      { freq: 659.25, timeOffset: 0.00, duration: 0.60, gain: 0.070 }, // E5
+      { freq: 783.99, timeOffset: 0.38, duration: 0.50, gain: 0.072 }, // G5
+      { freq: 987.77, timeOffset: 0.76, duration: 0.85, gain: 0.082 }, // B5
+      { freq: 880.00, timeOffset: 1.35, duration: 0.48, gain: 0.070 }, // A5
+      { freq: 783.99, timeOffset: 1.70, duration: 0.48, gain: 0.068 }, // G5
+      { freq: 659.25, timeOffset: 2.05, duration: 1.50, gain: 0.075 }, // E5 (ruhend)
     ],
     // Phrase 2: "Das Schimmern des Wassergolds" - Glanzvoll in kristalline Höhen
     [
-      { freq: 987.77, timeOffset: 0.00, duration: 0.50, gain: 0.042 }, // B5
-      { freq: 1046.50, timeOffset: 0.36, duration: 0.52, gain: 0.044 }, // C6
-      { freq: 1174.66, timeOffset: 0.74, duration: 0.88, gain: 0.050 }, // D6 (kristalliner Glanz)
-      { freq: 987.77, timeOffset: 1.35, duration: 0.48, gain: 0.040 }, // B5
-      { freq: 783.99, timeOffset: 1.70, duration: 0.55, gain: 0.038 }, // G5
-      { freq: 880.00, timeOffset: 2.10, duration: 1.60, gain: 0.044 }, // A5 (verwehend)
+      { freq: 987.77, timeOffset: 0.00, duration: 0.50, gain: 0.072 }, // B5
+      { freq: 1046.50, timeOffset: 0.36, duration: 0.52, gain: 0.075 }, // C6
+      { freq: 1174.66, timeOffset: 0.74, duration: 0.88, gain: 0.085 }, // D6 (kristalliner Glanz)
+      { freq: 987.77, timeOffset: 1.35, duration: 0.48, gain: 0.070 }, // B5
+      { freq: 783.99, timeOffset: 1.70, duration: 0.55, gain: 0.068 }, // G5
+      { freq: 880.00, timeOffset: 2.10, duration: 1.60, gain: 0.076 }, // A5 (verwehend)
     ],
     // Phrase 3: "Der Zauberspruch" - Märchenhaft verspielt und warm aufgelöst
     [
-      { freq: 783.99, timeOffset: 0.00, duration: 0.45, gain: 0.040 }, // G5
-      { freq: 659.25, timeOffset: 0.32, duration: 0.45, gain: 0.038 }, // E5
-      { freq: 587.33, timeOffset: 0.64, duration: 0.50, gain: 0.036 }, // D5
-      { freq: 659.25, timeOffset: 0.98, duration: 0.65, gain: 0.040 }, // E5
-      { freq: 783.99, timeOffset: 1.48, duration: 0.60, gain: 0.042 }, // G5
-      { freq: 739.99, timeOffset: 1.96, duration: 0.60, gain: 0.040 }, // F#5
-      { freq: 659.25, timeOffset: 2.44, duration: 1.70, gain: 0.046 }, // E5
+      { freq: 783.99, timeOffset: 0.00, duration: 0.45, gain: 0.070 }, // G5
+      { freq: 659.25, timeOffset: 0.32, duration: 0.45, gain: 0.068 }, // E5
+      { freq: 587.33, timeOffset: 0.64, duration: 0.50, gain: 0.065 }, // D5
+      { freq: 659.25, timeOffset: 0.98, duration: 0.65, gain: 0.070 }, // E5
+      { freq: 783.99, timeOffset: 1.48, duration: 0.60, gain: 0.072 }, // G5
+      { freq: 739.99, timeOffset: 1.96, duration: 0.60, gain: 0.070 }, // F#5
+      { freq: 659.25, timeOffset: 2.44, duration: 1.70, gain: 0.078 }, // E5
     ],
   ];
 
@@ -395,24 +397,40 @@ export class SoundService {
       }
     }
 
-    // Sehr langsamer, seidiger Übergang (Zeitkonstante ~3.5 bis 5 Sekunden)
-    const blendRate = 0.35 * dtSeconds;
+    // Dynamische Überblendung (weiche Zeitkonstante ca. 1.5 bis 2.5 Sekunden)
+    const blendRate = 1.25 * dtSeconds;
     this.locationBlendWeight += (targetBlend - this.locationBlendWeight) * Math.min(1.0, blendRate);
 
-    // Audio-Bus-Lautstärken regeln:
-    // Wenn locationBlendWeight >= 0.98: Kreuzung ist VOLLSTÄNDIG stummgeschaltet (am Feenteich nur Feenteich-Musik!)
-    if (this.crossroadsBusGain && this.locationBusGain) {
-      const crossGain =
-        this.locationBlendWeight >= 0.98
-          ? 0.00001
-          : Math.max(0.0001, 1.0 - this.locationBlendWeight);
-      const locGain =
-        this.locationBlendWeight <= 0.02
-          ? 0.00001
-          : Math.max(0.0001, this.locationBlendWeight);
+    // Kanten-Rastung: Bei Erreichen der Schauplatz-Endzone oder Kreuzung sauber einrasten
+    if (playerPos) {
+      const dist = Math.hypot(playerPos.x, playerPos.z);
+      if (dist >= SoundService.LOCATION_FULL_RADIUS && this.locationBlendWeight >= 0.88) {
+        this.locationBlendWeight = 1.0;
+      } else if (dist <= SoundService.CROSSROADS_RADIUS && this.locationBlendWeight <= 0.12) {
+        this.locationBlendWeight = 0.0;
+      }
+    }
 
-      this.crossroadsBusGain.gain.setTargetAtTime(crossGain, ctx.currentTime, 0.4);
-      this.locationBusGain.gain.setTargetAtTime(locGain, ctx.currentTime, 0.4);
+    // Audio-Bus-Lautstärken per Equal-Power-Crossfade regeln:
+    // - Ab 75 % Blend (also deutlich vor dem Teich): Kreuzung ist VOLLSTÄNDIG stummgeschaltet (0.00001)!
+    // - Bis 25 % Blend (nahe der Kreuzung): Schauplatz ist VOLLSTÄNDIG stummgeschaltet (0.00001)!
+    // - Auf der Wegmitte (~50 % Blend): Harmonische Gleichverteilung beider Musikstile
+    if (this.crossroadsBusGain && this.locationBusGain) {
+      let crossGain = 0.00001;
+      let locGain = 0.00001;
+
+      if (this.locationBlendWeight < 0.75) {
+        const norm = Math.min(1.0, Math.max(0, this.locationBlendWeight / 0.75));
+        crossGain = Math.cos(norm * 0.5 * Math.PI);
+      }
+
+      if (this.locationBlendWeight > 0.25) {
+        const norm = Math.min(1.0, Math.max(0, (this.locationBlendWeight - 0.25) / 0.75));
+        locGain = Math.sin(norm * 0.5 * Math.PI);
+      }
+
+      this.crossroadsBusGain.gain.setTargetAtTime(crossGain, ctx.currentTime, 0.25);
+      this.locationBusGain.gain.setTargetAtTime(locGain, ctx.currentTime, 0.25);
     }
 
     if (this.isMusicMuted) {
@@ -420,8 +438,8 @@ export class SoundService {
     }
 
     // --- TEIL A: KREUZUNGS-WALDMUSIK ---
-    // Vollständig pausieren, sobald der Schauplatz aktiv ist (am Feenteich nur Feenteich!)
-    if (this.locationBlendWeight < 0.96) {
+    // Vollständig pausieren, sobald die Wegmitte überschritten wird (am Feenteich läuft nur Feenteich-Musik!)
+    if (this.locationBlendWeight < 0.55) {
       if (this.nextChordScheduleTime <= ctx.currentTime + 1.2) {
         const startTime = Math.max(ctx.currentTime + 0.05, this.nextChordScheduleTime);
         const chord = this.ambientChords[this.currentChordIdx];
@@ -442,7 +460,7 @@ export class SoundService {
     }
 
     // --- TEIL B: SCHAUPLATZ-MUSIK (Feenteich, Silberstollen, Lavakrater etc.) ---
-    if (this.locationBlendWeight > 0.04) {
+    if (this.locationBlendWeight > 0.20) {
       this.updateActiveLocationMusic(ctx, dtSeconds);
     }
   }
@@ -496,13 +514,13 @@ export class SoundService {
         this.scheduleFeenteichThemePhrase(ctx, ctx.currentTime + 0.1, phrase);
 
         this.currentMotifIdx = (this.currentMotifIdx + 1) % this.feenteichMotifPhrases.length;
-        this.nextMotifTimerSec = 6.2 + Math.random() * 2.8;
+        this.nextMotifTimerSec = 2.8 + Math.random() * 2.0;
       }
 
       // 3. Kristalline Tröpfchen- & Glitzer-Akzente auf dem See
       this.nextAccentsTimerSec -= dtSeconds;
       if (this.nextAccentsTimerSec <= 0) {
-        this.nextAccentsTimerSec = 2.4 + Math.random() * 3.6;
+        this.nextAccentsTimerSec = 1.8 + Math.random() * 2.2;
         this.scheduleFeenteichWaterDrop(ctx, ctx.currentTime + 0.08);
       }
     } else if (this.activeLocation === 'silberstollen') {
