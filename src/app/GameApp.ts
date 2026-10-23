@@ -101,7 +101,13 @@ export class GameApp {
       isTerrainSimple: () => this.scene.isTerrainSimpleMode(),
       onSetPixelRatio: (dpr) => this.scene.setOverridePixelRatio(dpr),
       getOverridePixelRatio: () => this.scene.getOverridePixelRatio(),
-      onToggleMusic: () => this.sound.toggleMusic(),
+      onToggleMusic: () => {
+        const enabled = this.sound.toggleMusic();
+        this.hud.setMusicActive(enabled);
+        return enabled;
+      },
+      isMusicEnabled: () => this.sound.isMusicEnabled(),
+      getNixieBlendWeight: () => this.sound.getNixieBlendWeight(),
       getGpuDiagnostics: () => this.scene.getGpuDiagnostics(),
       getRenderMetrics: () => this.scene.getRenderMetrics(),
       onTogglePathBoundary: () => {
@@ -986,7 +992,7 @@ export class GameApp {
     this.handleInput(dtSeconds);
     this.updatePointerHover();
     this.sound.updateAmbientBirds(dtSeconds, this.dialogue.isOpen());
-    this.sound.updateAmbientMusic(dtSeconds, this.dialogue.isOpen());
+    this.sound.updateAmbientMusic(dtSeconds, this.dialogue.isOpen(), this.state.getPlayerPosition());
 
     const poi = this.state.getActivePointOfInterest();
     const currentPath = this.state.getCurrentOrClosestPath();

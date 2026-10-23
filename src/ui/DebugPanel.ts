@@ -13,6 +13,8 @@ export interface DebugPanelCallbacks {
   onSetPixelRatio: (dpr: number | null) => void;
   getOverridePixelRatio: () => number | null;
   onToggleMusic?: () => boolean;
+  isMusicEnabled?: () => boolean;
+  getNixieBlendWeight?: () => number;
   onTogglePathBoundary?: () => boolean;
   isPathBoundaryDisabled?: () => boolean;
   getGpuDiagnostics: () => {
@@ -361,6 +363,16 @@ export class DebugPanel {
 
           <div class="debug-toggle-row">
             <div>
+              <div class="debug-toggle-name">Hintergrundmusik</div>
+              <div class="debug-toggle-desc">Prozedurale Musik (Waldmusik & Zauberthema am Nixenteich: ${Math.round((this.callbacks.getNixieBlendWeight?.() ?? 0) * 100)} % Nixe)</div>
+            </div>
+            <button class="debug-btn ${this.callbacks.isMusicEnabled?.() ? 'is-active' : ''}" id="btn-toggle-music">
+              ${this.callbacks.isMusicEnabled?.() ? '🎵 Aktiv' : '🔇 Stumm'}
+            </button>
+          </div>
+
+          <div class="debug-toggle-row">
+            <div>
               <div class="debug-toggle-name">Test-Fehler erzeugen</div>
               <div class="debug-toggle-desc">Löst gezielt eine Ausnahme aus, um die Fehlerkonsole zu prüfen</div>
             </div>
@@ -404,6 +416,13 @@ export class DebugPanel {
     boundaryBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.callbacks.onTogglePathBoundary?.();
+      this.renderTroubleshootTab();
+    });
+
+    const musicBtn = content.querySelector('#btn-toggle-music');
+    musicBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.callbacks.onToggleMusic?.();
       this.renderTroubleshootTab();
     });
 

@@ -57,9 +57,13 @@
   - **Schauplatz-Plateaus (`TERRAIN_PLATEAUS`):** Die Kreuzung liegt bei `y = 0.0 m`. Schauplatz-Plateaus garantieren einen stabilen Stand: Silberstollen-Bergmassiv (`+6.8 m` mit aufsteigendem Gebirgskamm dahinter), Waldteich mit Nixe (`-1.2 m`), Bachtal mit Wehrbrücke (`-1.5 m`), Waldhochebene am Holzfällerlager (`+0.8 m`), Teufelskrater / Höllenschlund (`-5.0 m`), Waldhang an der Jagdhütte (`+1.0 m`) und Hügelkuppe am verschlossenen Tor (`+2.2 m`).
   - **Prozedurale Ambient-Hintergrundmusik & Audio-Engine (`SoundService.ts`):**
     - Vollständig prozedurale Web Audio API-Klangerzeugung ohne externe MP3-Assets oder Download-Ladezeiten.
-    - Seidenweiche, warme D-Dur/G-Dur/H-Moll/A-Dur-Schwebepads mit Tiefpassfilter (540 Hz) und sanft eingestreuten Waldharfen-Tönen im Stereofeld.
-    - Sehr leise und unaufdringlich eingepegelt (Mastergain ~0,045), mit automatischem sanftem Ducking (~0,020) während aktiver NPC-Dialoge.
-    - Direkt stummschaltbar über Taste `M` oder Klick auf das HUD-Musik-Badge (`🎵 / 🔇`).
+    - **Erhöhte Präsenz & Lautstärke:** Mastergain auf ca. `0.13` angehoben (ca. 3× lauter als zuvor), mit automatischem sanftem Ducking (`0.055`) während aktiver NPC-Dialoge.
+    - **Wald-Thema:** Seidenweiche, warme D-Dur/G-Dur/H-Moll/A-Dur-Schwebepads mit Tiefpassfilter (540 Hz) und sanft eingestreuten Waldharfen-Tönen im Stereofeld.
+    - **Zauberhaftes Nixenteich-Thema:** Nähert sich der Spieler dem Nixenteich an Weg 2 (ab Radius 26 m, voll aktiv ab 12 m), überblendet die Musik kontinuierlich (Crossfade über getrennte Sub-Busse) in ein märchenhaft-zauberhaftes Thema:
+      - Glasklares Celesta- & Glockenspiel-Leitmotiv (drei rotierende Melodiephrasen: "Ruf des Wassers", "Schimmern des Wassergolds", "Der Zauberspruch") mit feinem Stereo-Reflexionsecho.
+      - Sphärische, aquatische Unterwasser-Pads (A-Moll add9, F-Dur maj7#11, C-Dur add9, E-Moll9) mit geöffnetem Resonanzfilter (880 Hz, Q = 1.1).
+      - Perlende, fallende Wassertropfen-Akzente auf der Wasseroberfläche.
+    - Direkt stummschaltbar über Taste `M`, das HUD-Musik-Badge (`🎵 / 🔇`) oder das Debug-Panel.
 - **Mobile Resilienz, WebGL Context Loss & Debugmodus (`DebugPanel.ts`, `TerrainMaterial.ts`):**
   - **Android S10 Farbbug-Behebung:** In WebGL 2 / OpenGL ES muss `#version 300 es` die allererste Zeile eines Shaders sein. Durch das korrekte Einfügen der Splatmap-Uniform-Deklarationen hinter `#include <common>` statt vor den Shader-Kopf kompilieren die Shader auf ARM Mali GPUs (Galaxy S10) nun fehlerfrei. Zudem fungiert die gekachelte Gras-Textur als sicheres Basis-Material, sodass bei Treiberfehlern niemals rohe Maskenfarben (Rot/Grün/Blau) gerendert werden.
   - **iOS Safari Crash-Prävention (iPhone 16 Pro Max):** WebGL-Context-Lost- und Context-Restored-Listener auf dem Canvas verhindern unkontrollierte Web-Prozess-Abstürze bei Speicher- oder Füllratenspitzen. Der Render-Loop fängt Ausnahmen sauber per `try/catch` ab.

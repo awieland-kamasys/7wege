@@ -11,10 +11,25 @@ export class SoundService {
   private stepLeftFoot = false;
   private nextBirdTimerSec = 2.2;
 
-  // --- Dezent schwebende Wald-Hintergrundmusik (Ambient) ---
+  // --- Lautstärke-Konfiguration für Hintergrundmusik ---
+  public static readonly BASE_MUSIC_VOLUME = 0.13;
+  public static readonly DIALOGUE_MUSIC_VOLUME = 0.055;
+
+  // --- Koordinaten & Übergangsradien für das Nixenteich-Thema ---
+  public static readonly NIXIE_POND_X = 46.8;
+  public static readonly NIXIE_POND_Z = -14.2;
+  public static readonly NIXIE_INNER_RADIUS = 12.0; // Ab hier 100 % Nixenteich-Musik
+  public static readonly NIXIE_OUTER_RADIUS = 26.0; // Bis hierhin fließender Übergang (Crossfade)
+
+  // --- Audio-Knoten für Hintergrundmusik (Master & Sub-Busse) ---
   private musicMasterGain: GainNode | null = null;
-  private musicFilterNode: BiquadFilterNode | null = null;
+  private forestBusGain: GainNode | null = null;
+  private forestFilterNode: BiquadFilterNode | null = null;
+  private nixieBusGain: GainNode | null = null;
+  private nixieFilterNode: BiquadFilterNode | null = null;
   private isMusicMuted = false;
+
+  // --- Wald-Hintergrundmusik Zustand ---
   private currentChordIdx = 0;
   private nextChordScheduleTime = 0;
   private nextArpTimerSec = 2.5;
@@ -50,6 +65,78 @@ export class SoundService {
     },
   ];
 
+  // --- Nixenteich-Musik Zustand (Zauberhaftes Thema der Nixe) ---
+  private nixieBlendWeight = 0; // 0 = 100 % Waldmusik, 1 = 100 % Nixenteich
+  private currentNixieChordIdx = 0;
+  private nextNixieChordScheduleTime = 0;
+  private currentNixieMotifIdx = 0;
+  private nextNixieMotifTimerSec = 1.0; // Startet zeitnah bei Annäherung
+  private nextNixieDropTimerSec = 2.0;
+
+  // Sphärische, aquatische Pads für den Nixenteich
+  private readonly nixieChords: readonly {
+    durationSec: number;
+    padFreqs: readonly number[];
+  }[] = [
+    // 1. A-Moll add9 (Spiegelglatte Wasseroberfläche im Waldlicht)
+    {
+      durationSec: 8.0,
+      padFreqs: [110.0, 164.81, 220.0, 246.94, 261.63, 329.63], // A2, E3, A3, B3, C4, E4
+    },
+    // 2. F-Dur maj7#11 (Märchenhafter Lydischer Glanz der Wasserlilien & Blüten)
+    {
+      durationSec: 8.0,
+      padFreqs: [87.31, 130.81, 174.61, 220.0, 246.94, 329.63], // F2, C3, F3, A3, B3, E4
+    },
+    // 3. C-Dur add9 (Das goldene Schimmern des Schatzes auf dem Grund)
+    {
+      durationSec: 8.0,
+      padFreqs: [130.81, 196.0, 261.63, 293.66, 329.63, 392.0], // C3, G3, C4, D4, E4, G4
+    },
+    // 4. E-Moll9 (Die alte Weisheit und Melancholie der Nixe)
+    {
+      durationSec: 8.0,
+      padFreqs: [82.41, 164.81, 196.0, 246.94, 293.66, 370.0], // E2, E3, G3, B3, D4, F#4
+    },
+  ];
+
+  // Zauberhafte Melodie-Phrasen des Nixen-Leitmotivs (Celesta-/Glockenspiel)
+  private readonly nixieMotifPhrases: readonly {
+    freq: number;
+    timeOffset: number;
+    duration: number;
+    gain: number;
+  }[][] = [
+    // Phrase 1: "Der Ruf des Wassers" - Sehnsuchtsvoll aufsteigend und sanft fallend
+    [
+      { freq: 659.25, timeOffset: 0.00, duration: 0.60, gain: 0.040 }, // E5
+      { freq: 783.99, timeOffset: 0.38, duration: 0.50, gain: 0.042 }, // G5
+      { freq: 987.77, timeOffset: 0.76, duration: 0.85, gain: 0.048 }, // B5
+      { freq: 880.00, timeOffset: 1.35, duration: 0.48, gain: 0.040 }, // A5
+      { freq: 783.99, timeOffset: 1.70, duration: 0.48, gain: 0.038 }, // G5
+      { freq: 659.25, timeOffset: 2.05, duration: 1.50, gain: 0.044 }, // E5 (ruhend)
+    ],
+    // Phrase 2: "Das Schimmern des Wassergolds" - Glanzvoll in kristalline Höhen
+    [
+      { freq: 987.77, timeOffset: 0.00, duration: 0.50, gain: 0.042 }, // B5
+      { freq: 1046.50, timeOffset: 0.36, duration: 0.52, gain: 0.044 }, // C6
+      { freq: 1174.66, timeOffset: 0.74, duration: 0.88, gain: 0.050 }, // D6 (kristalliner Glanz)
+      { freq: 987.77, timeOffset: 1.35, duration: 0.48, gain: 0.040 }, // B5
+      { freq: 783.99, timeOffset: 1.70, duration: 0.55, gain: 0.038 }, // G5
+      { freq: 880.00, timeOffset: 2.10, duration: 1.60, gain: 0.044 }, // A5 (verwehend)
+    ],
+    // Phrase 3: "Der Zauberspruch" - Märchenhaft verspielt und warm aufgelöst
+    [
+      { freq: 783.99, timeOffset: 0.00, duration: 0.45, gain: 0.040 }, // G5
+      { freq: 659.25, timeOffset: 0.32, duration: 0.45, gain: 0.038 }, // E5
+      { freq: 587.33, timeOffset: 0.64, duration: 0.50, gain: 0.036 }, // D5
+      { freq: 659.25, timeOffset: 0.98, duration: 0.65, gain: 0.040 }, // E5
+      { freq: 783.99, timeOffset: 1.48, duration: 0.60, gain: 0.042 }, // G5
+      { freq: 739.99, timeOffset: 1.96, duration: 0.60, gain: 0.040 }, // F#5
+      { freq: 659.25, timeOffset: 2.44, duration: 1.70, gain: 0.046 }, // E5
+    ],
+  ];
+
   private getContext(): AudioContext | null {
     if (typeof window === 'undefined') {
       return null;
@@ -77,7 +164,7 @@ export class SoundService {
   public unlock(): void {
     const ctx = this.getContext();
     if (ctx && ctx.state === 'running') {
-      this.getMusicMaster(ctx);
+      this.ensureMusicNodes(ctx);
     }
   }
 
@@ -87,7 +174,7 @@ export class SoundService {
   public toggleMusic(): boolean {
     this.isMusicMuted = !this.isMusicMuted;
     if (this.ctx && this.musicMasterGain) {
-      const target = this.isMusicMuted ? 0.00001 : 0.045;
+      const target = this.isMusicMuted ? 0.00001 : SoundService.BASE_MUSIC_VOLUME;
       this.musicMasterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.3);
     }
     return !this.isMusicMuted;
@@ -100,32 +187,68 @@ export class SoundService {
     return !this.isMusicMuted;
   }
 
-  private getMusicMaster(ctx: AudioContext): GainNode {
+  /**
+   * Gibt den aktuellen Überblendungsfaktor zwischen Waldmusik (0.0) und
+   * dem zauberhaften Nixenteich-Thema (1.0) zurück.
+   */
+  public getNixieBlendWeight(): number {
+    return this.nixieBlendWeight;
+  }
+
+  /**
+   * Erstellt und initialisiert den Master-Gain und die beiden parallelen Sub-Busse:
+   * 1. Wald-Bus mit Tiefpassfilter (540 Hz) für die friedliche Waldatmosphäre
+   * 2. Nixenteich-Bus mit glasklarem Filter (880 Hz, Q = 1.1) für das zauberhafte Nixen-Thema
+   */
+  private ensureMusicNodes(ctx: AudioContext): GainNode {
     if (!this.musicMasterGain) {
+      // Master-Gain für die gesamte Hintergrundmusik
       const master = ctx.createGain();
-      // Startet unhörbar und fadet sanft ein
       master.gain.setValueAtTime(0.00001, ctx.currentTime);
-
-      // Weicher Tiefpass-Filter für seidenweichen, unaufdringlichen Wald-Klangteppich
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(540, ctx.currentTime);
-      filter.Q.setValueAtTime(0.7, ctx.currentTime);
-
-      filter.connect(master);
       master.connect(ctx.destination);
-
-      this.musicFilterNode = filter;
       this.musicMasterGain = master;
+
+      // 1. Wald-Subbus
+      const forestBus = ctx.createGain();
+      forestBus.gain.setValueAtTime(1.0, ctx.currentTime);
+      forestBus.connect(master);
+      this.forestBusGain = forestBus;
+
+      const forestFilter = ctx.createBiquadFilter();
+      forestFilter.type = 'lowpass';
+      forestFilter.frequency.setValueAtTime(540, ctx.currentTime);
+      forestFilter.Q.setValueAtTime(0.7, ctx.currentTime);
+      forestFilter.connect(forestBus);
+      this.forestFilterNode = forestFilter;
+
+      // 2. Nixenteich-Subbus
+      const nixieBus = ctx.createGain();
+      nixieBus.gain.setValueAtTime(0.0001, ctx.currentTime);
+      nixieBus.connect(master);
+      this.nixieBusGain = nixieBus;
+
+      const nixieFilter = ctx.createBiquadFilter();
+      nixieFilter.type = 'lowpass';
+      nixieFilter.frequency.setValueAtTime(880, ctx.currentTime);
+      nixieFilter.Q.setValueAtTime(1.1, ctx.currentTime);
+      nixieFilter.connect(nixieBus);
+      this.nixieFilterNode = nixieFilter;
     }
     return this.musicMasterGain;
   }
 
   /**
-   * Aktualisiert die dezent schwebende, unaufdringliche Wald-Hintergrundmusik.
-   * Fadet bei geöffneten Dialogen noch weiter in den Hintergrund (Ducking).
+   * Aktualisiert die Hintergrundmusik dynamisch basierend auf der Spielerposition:
+   * - Im Wald / an der Kreuzung: Schwebende Waldharfen und ruhige Akkorde.
+   * - Am Nixenteich (Weg 2): Fließender Übergang zu einem zauberhaften Celesta-/Glockenspiel-Motiv
+   *   mit sphärischen Wasser-Pads und perlenden Tropfen-Akzenten.
+   * - Sanftes Ducking bei geöffneten Dialogen.
    */
-  public updateAmbientMusic(dtSeconds: number, isDialogueOpen = false): void {
+  public updateAmbientMusic(
+    dtSeconds: number,
+    isDialogueOpen = false,
+    playerPos?: { x: number; z: number }
+  ): void {
     if (dtSeconds <= 0) {
       return;
     }
@@ -134,39 +257,104 @@ export class SoundService {
       return;
     }
 
-    const musicGain = this.getMusicMaster(ctx);
+    const musicMaster = this.ensureMusicNodes(ctx);
 
-    // Sanfte Lautstärkeregelung (sehr dezent, Ducking bei offenem Gespräch)
-    const targetVolume = this.isMusicMuted ? 0.00001 : (isDialogueOpen ? 0.020 : 0.045);
-    musicGain.gain.setTargetAtTime(targetVolume, ctx.currentTime, 0.45);
+    // 1. Gesamtlautstärke steuern (mit Ducking bei aktiven Dialogen)
+    const targetVolume = this.isMusicMuted
+      ? 0.00001
+      : isDialogueOpen
+        ? SoundService.DIALOGUE_MUSIC_VOLUME
+        : SoundService.BASE_MUSIC_VOLUME;
+    musicMaster.gain.setTargetAtTime(targetVolume, ctx.currentTime, 0.45);
+
+    // 2. Dynamischen Übergangsfaktor zum Nixenteich berechnen
+    let targetBlend = 0;
+    if (playerPos) {
+      const distToPond = Math.hypot(
+        playerPos.x - SoundService.NIXIE_POND_X,
+        playerPos.z - SoundService.NIXIE_POND_Z
+      );
+      if (distToPond <= SoundService.NIXIE_INNER_RADIUS) {
+        targetBlend = 1.0;
+      } else if (distToPond < SoundService.NIXIE_OUTER_RADIUS) {
+        targetBlend =
+          1.0 -
+          (distToPond - SoundService.NIXIE_INNER_RADIUS) /
+            (SoundService.NIXIE_OUTER_RADIUS - SoundService.NIXIE_INNER_RADIUS);
+      }
+    }
+
+    // Weiche exponentielle Annäherung (kein abrupter Stilwechsel beim Laufen)
+    const blendRate = 0.85 * dtSeconds;
+    this.nixieBlendWeight += (targetBlend - this.nixieBlendWeight) * Math.min(1.0, blendRate);
+
+    if (this.forestBusGain && this.nixieBusGain) {
+      const forestTarget = Math.max(0.0001, 1.0 - this.nixieBlendWeight);
+      const nixieTarget = Math.max(0.0001, this.nixieBlendWeight);
+      this.forestBusGain.gain.setTargetAtTime(forestTarget, ctx.currentTime, 0.25);
+      this.nixieBusGain.gain.setTargetAtTime(nixieTarget, ctx.currentTime, 0.25);
+    }
 
     if (this.isMusicMuted) {
       return;
     }
 
-    // 1. Sanft schwebende harmonische Ambient-Pads im Hintergrund
-    if (this.nextChordScheduleTime <= ctx.currentTime + 1.2) {
-      const startTime = Math.max(ctx.currentTime + 0.05, this.nextChordScheduleTime);
-      const chord = this.ambientChords[this.currentChordIdx];
+    // --- TEIL A: WALD-MUSIK (nur aktiv, solange nicht 100 % am Nixenteich) ---
+    if (this.nixieBlendWeight < 0.95) {
+      if (this.nextChordScheduleTime <= ctx.currentTime + 1.2) {
+        const startTime = Math.max(ctx.currentTime + 0.05, this.nextChordScheduleTime);
+        const chord = this.ambientChords[this.currentChordIdx];
 
-      this.scheduleAmbientPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
+        this.scheduleAmbientPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
 
-      this.nextChordScheduleTime = startTime + chord.durationSec;
-      this.currentChordIdx = (this.currentChordIdx + 1) % this.ambientChords.length;
+        this.nextChordScheduleTime = startTime + chord.durationSec;
+        this.currentChordIdx = (this.currentChordIdx + 1) % this.ambientChords.length;
+      }
+
+      this.nextArpTimerSec -= dtSeconds;
+      if (this.nextArpTimerSec <= 0) {
+        this.nextArpTimerSec = 3.6 + Math.random() * 4.0;
+        const chord = this.ambientChords[this.currentChordIdx];
+        const note = chord.arpNotes[Math.floor(Math.random() * chord.arpNotes.length)];
+        this.scheduleAmbientPluck(ctx, ctx.currentTime + 0.1, note);
+      }
     }
 
-    // 2. Zarte, perlende Waldharfen-Tupfer
-    this.nextArpTimerSec -= dtSeconds;
-    if (this.nextArpTimerSec <= 0) {
-      this.nextArpTimerSec = 3.8 + Math.random() * 4.2;
-      const chord = this.ambientChords[this.currentChordIdx];
-      const note = chord.arpNotes[Math.floor(Math.random() * chord.arpNotes.length)];
-      this.scheduleAmbientPluck(ctx, ctx.currentTime + 0.1, note);
+    // --- TEIL B: ZAUBERHAFTE NIXENTEICH-MUSIK (aktiv, sobald man sich dem Teich nähert) ---
+    if (this.nixieBlendWeight > 0.05) {
+      // 1. Sphärische Wasser-Pads
+      if (this.nextNixieChordScheduleTime <= ctx.currentTime + 1.2) {
+        const startTime = Math.max(ctx.currentTime + 0.05, this.nextNixieChordScheduleTime);
+        const chord = this.nixieChords[this.currentNixieChordIdx];
+
+        this.scheduleNixiePadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
+
+        this.nextNixieChordScheduleTime = startTime + chord.durationSec;
+        this.currentNixieChordIdx = (this.currentNixieChordIdx + 1) % this.nixieChords.length;
+      }
+
+      // 2. Das zauberhafte Nixen-Leitmotiv (Glockenspiel-/Celesta-Thema)
+      this.nextNixieMotifTimerSec -= dtSeconds;
+      if (this.nextNixieMotifTimerSec <= 0) {
+        const phrase = this.nixieMotifPhrases[this.currentNixieMotifIdx];
+        this.scheduleNixieThemePhrase(ctx, ctx.currentTime + 0.1, phrase);
+
+        this.currentNixieMotifIdx = (this.currentNixieMotifIdx + 1) % this.nixieMotifPhrases.length;
+        // Zauberhafte Pause zwischen den Motiven (5,5 bis 8,2 Sekunden)
+        this.nextNixieMotifTimerSec = 5.8 + Math.random() * 2.8;
+      }
+
+      // 3. Kristalline Tröpfchen- & Glitzer-Akzente auf der Wasseroberfläche
+      this.nextNixieDropTimerSec -= dtSeconds;
+      if (this.nextNixieDropTimerSec <= 0) {
+        this.nextNixieDropTimerSec = 2.4 + Math.random() * 3.6;
+        this.scheduleNixieWaterDrop(ctx, ctx.currentTime + 0.08);
+      }
     }
   }
 
   /**
-   * Erzeugt einen weichen, schwebenden Pad-Akkord mit warmem Ein- und Ausfaden.
+   * Erzeugt einen weichen, schwebenden Pad-Akkord für die Waldlandschaft.
    */
   private scheduleAmbientPadChord(
     ctx: AudioContext,
@@ -174,7 +362,7 @@ export class SoundService {
     durationSec: number,
     frequencies: readonly number[]
   ): void {
-    if (!this.musicFilterNode) {
+    if (!this.forestFilterNode) {
       return;
     }
 
@@ -191,7 +379,7 @@ export class SoundService {
         osc.detune.setValueAtTime(detune, startTime);
 
         const gain = ctx.createGain();
-        const baseLevel = (i === 0 ? 0.07 : 0.05) / frequencies.length;
+        const baseLevel = (i === 0 ? 0.08 : 0.055) / frequencies.length;
 
         gain.gain.setValueAtTime(0.0001, startTime);
         gain.gain.linearRampToValueAtTime(baseLevel, startTime + attack);
@@ -199,7 +387,7 @@ export class SoundService {
         gain.gain.exponentialRampToValueAtTime(0.0001, startTime + totalDuration);
 
         osc.connect(gain);
-        gain.connect(this.musicFilterNode);
+        gain.connect(this.forestFilterNode);
 
         osc.start(startTime);
         osc.stop(startTime + totalDuration + 0.05);
@@ -211,7 +399,7 @@ export class SoundService {
    * Spielt einen einzelnen, zarten Waldharfen-Ton mit weichem Ausklang und Stereo-Panorama.
    */
   private scheduleAmbientPluck(ctx: AudioContext, startTime: number, freq: number): void {
-    if (!this.musicMasterGain) {
+    if (!this.forestBusGain) {
       return;
     }
 
@@ -223,7 +411,7 @@ export class SoundService {
     const duration = 2.2;
 
     gain.gain.setValueAtTime(0.0001, startTime);
-    gain.gain.linearRampToValueAtTime(0.016, startTime + 0.02);
+    gain.gain.linearRampToValueAtTime(0.026, startTime + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
     const pan = Math.random() * 1.2 - 0.6;
@@ -232,14 +420,199 @@ export class SoundService {
       panner.pan.setValueAtTime(pan, startTime);
       osc.connect(gain);
       gain.connect(panner);
-      panner.connect(this.musicMasterGain);
+      panner.connect(this.forestBusGain);
     } else {
       osc.connect(gain);
-      gain.connect(this.musicMasterGain);
+      gain.connect(this.forestBusGain);
     }
 
     osc.start(startTime);
     osc.stop(startTime + duration + 0.05);
+  }
+
+  /**
+   * Erzeugt einen weichen, sphärischen Wasser-Pad-Akkord für den Nixenteich.
+   */
+  private scheduleNixiePadChord(
+    ctx: AudioContext,
+    startTime: number,
+    durationSec: number,
+    frequencies: readonly number[]
+  ): void {
+    if (!this.nixieFilterNode) {
+      return;
+    }
+
+    const attack = 2.2;
+    const release = 3.2;
+    const totalDuration = durationSec + release;
+
+    for (let i = 0; i < frequencies.length; i++) {
+      const freq = frequencies[i];
+      for (const detune of [-2.4, 2.4]) {
+        const osc = ctx.createOscillator();
+        osc.type = i === 0 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+        osc.detune.setValueAtTime(detune, startTime);
+
+        const gain = ctx.createGain();
+        const baseLevel = (i === 0 ? 0.075 : 0.052) / frequencies.length;
+
+        gain.gain.setValueAtTime(0.0001, startTime);
+        gain.gain.linearRampToValueAtTime(baseLevel, startTime + attack);
+        gain.gain.setValueAtTime(baseLevel, startTime + durationSec);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + totalDuration);
+
+        osc.connect(gain);
+        gain.connect(this.nixieFilterNode);
+
+        osc.start(startTime);
+        osc.stop(startTime + totalDuration + 0.05);
+      }
+    }
+  }
+
+  /**
+   * Spielt eine vollständige Phrase des zauberhaften Nixen-Themas ab.
+   */
+  private scheduleNixieThemePhrase(
+    ctx: AudioContext,
+    phraseStartTime: number,
+    phrase: readonly { freq: number; timeOffset: number; duration: number; gain: number }[]
+  ): void {
+    phrase.forEach((note) => {
+      this.scheduleNixieMotifNote(
+        ctx,
+        note.freq,
+        phraseStartTime + note.timeOffset,
+        note.duration,
+        note.gain
+      );
+    });
+  }
+
+  /**
+   * Synthetisiert eine einzelne Note des zauberhaften Leitmotivs als glasklare Celesta / Glockenspiel:
+   * Reiner Grundton + zarte Oktave + feine Obertöne mit natürlicher Stereo-Echo-Reflexion.
+   */
+  private scheduleNixieMotifNote(
+    ctx: AudioContext,
+    freq: number,
+    startTime: number,
+    duration: number,
+    peakGain: number
+  ): void {
+    if (!this.nixieBusGain) {
+      return;
+    }
+
+    // 1. Reiner Sinus-Grundton
+    const osc1 = ctx.createOscillator();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(freq, startTime);
+
+    const gain1 = ctx.createGain();
+    gain1.gain.setValueAtTime(0.0001, startTime);
+    gain1.gain.linearRampToValueAtTime(peakGain, startTime + 0.015);
+    gain1.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    // 2. Transparente Oktave für kristallinen Celesta-/Glockenklang
+    const osc2 = ctx.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(freq * 2, startTime);
+
+    const gain2 = ctx.createGain();
+    gain2.gain.setValueAtTime(0.0001, startTime);
+    gain2.gain.linearRampToValueAtTime(peakGain * 0.28, startTime + 0.012);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.72);
+
+    // 3. Ganz dezent beigemischte Duodezime (3. Harmonische)
+    const osc3 = ctx.createOscillator();
+    osc3.type = 'triangle';
+    osc3.frequency.setValueAtTime(freq * 3.01, startTime);
+
+    const gain3 = ctx.createGain();
+    gain3.gain.setValueAtTime(0.0001, startTime);
+    gain3.gain.linearRampToValueAtTime(peakGain * 0.1, startTime + 0.01);
+    gain3.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.45);
+
+    // Notenmischung
+    const noteMix = ctx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(noteMix);
+    osc2.connect(gain2);
+    gain2.connect(noteMix);
+    osc3.connect(gain3);
+    gain3.connect(noteMix);
+
+    // Stereo-Pan mit feiner Wasser-Reflexion (Echo nach 170 ms)
+    const pan = Math.sin(startTime * 1.6) * 0.35;
+    if (typeof ctx.createStereoPanner === 'function') {
+      const panner = ctx.createStereoPanner();
+      panner.pan.setValueAtTime(pan, startTime);
+      noteMix.connect(panner);
+      panner.connect(this.nixieBusGain);
+
+      // Zartes Reflexions-Echo auf der gegenüberliegenden Stereoseite
+      const echoGain = ctx.createGain();
+      echoGain.gain.setValueAtTime(0.0001, startTime);
+      echoGain.gain.setValueAtTime(0.0001, startTime + 0.17);
+      echoGain.gain.linearRampToValueAtTime(peakGain * 0.28, startTime + 0.185);
+      echoGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.17 + duration * 0.8);
+
+      const echoPanner = ctx.createStereoPanner();
+      echoPanner.pan.setValueAtTime(-pan, startTime);
+      noteMix.connect(echoGain);
+      echoGain.connect(echoPanner);
+      echoPanner.connect(this.nixieBusGain);
+    } else {
+      noteMix.connect(this.nixieBusGain);
+    }
+
+    osc1.start(startTime);
+    osc1.stop(startTime + duration + 0.25);
+    osc2.start(startTime);
+    osc2.stop(startTime + duration + 0.25);
+    osc3.start(startTime);
+    osc3.stop(startTime + duration + 0.25);
+  }
+
+  /**
+   * Spielt einen zarten Wassertropfen-/Glitzerton mit natürlichem Frequenzabfall ab.
+   */
+  private scheduleNixieWaterDrop(ctx: AudioContext, startTime: number): void {
+    if (!this.nixieBusGain) {
+      return;
+    }
+
+    const dropFreqs = [1046.5, 1318.5, 1567.98, 1975.5, 2093.0];
+    const freq = dropFreqs[Math.floor(Math.random() * dropFreqs.length)];
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, startTime);
+    // Tröpfchen-Effekt: Frequenz senkt sich minimal beim Eintauchen
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.88, startTime + 0.14);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(0.02, startTime + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.35);
+
+    const pan = Math.random() * 1.4 - 0.7;
+    if (typeof ctx.createStereoPanner === 'function') {
+      const panner = ctx.createStereoPanner();
+      panner.pan.setValueAtTime(pan, startTime);
+      osc.connect(gain);
+      gain.connect(panner);
+      panner.connect(this.nixieBusGain);
+    } else {
+      osc.connect(gain);
+      gain.connect(this.nixieBusGain);
+    }
+
+    osc.start(startTime);
+    osc.stop(startTime + 0.4);
   }
 
   /**
