@@ -1006,6 +1006,29 @@ export class SoundService {
   }
 
 
+  /**
+   * Spielt einen harmonischen, kristallinen Resonanz-Akkord ab, wenn der Sockel
+   * des Wegweisers berührt wird (Umschalten der Wegbegrenzung) oder ein Edelstein-Rätsel gelöst wird.
+   */
+  public playGemstoneSolved(): void {
+    const ctx = this.getContext();
+    if (!ctx) {
+      return;
+    }
+
+    const now = ctx.currentTime;
+    const notes = [
+      { freq: 523.25, delay: 0.0, dur: 0.65, gain: 0.08 },   // C5
+      { freq: 659.25, delay: 0.06, dur: 0.75, gain: 0.085 }, // E5
+      { freq: 783.99, delay: 0.12, dur: 0.85, gain: 0.09 },  // G5
+      { freq: 1046.5, delay: 0.18, dur: 1.05, gain: 0.075 }, // C6
+    ];
+
+    notes.forEach((n) => {
+      this.scheduleShimmerNote(ctx, n.freq, now + n.delay, n.dur, n.gain);
+    });
+  }
+
   private scheduleShimmerNote(
     ctx: AudioContext,
     freq: number,

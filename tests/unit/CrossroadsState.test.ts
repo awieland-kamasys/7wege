@@ -1021,4 +1021,31 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     state.clearTargetPosition();
     expect(state.isReturning()).toBe(false);
   });
+
+  it('hebt per Wegweiser-Sockel die Wegbegrenzung auf, behält aber Hinderniskollisionen bei', () => {
+    const state = new CrossroadsState();
+    expect(state.isPathBoundaryDisabled()).toBe(false);
+
+    // Punkt mitten im dichten Wald abseits aller Pfade (z.B. x: 25, z: 25)
+    expect(state.isPointOnClearingOrPath(25, 25)).toBe(false);
+    expect(state.isWalkable(25, 25)).toBe(false);
+
+    // Klick auf Wegweiser-Sockel schaltet die Begrenzung aus
+    const active = state.togglePathBoundary();
+    expect(active).toBe(true);
+    expect(state.isPathBoundaryDisabled()).toBe(true);
+
+    // Punkt im Wald ist nun begehbar
+    expect(state.isWalkable(25, 25)).toBe(true);
+
+    // Aber echte Hindernisse (z.B. Schutzhütte bei 0, -1.45 oder Wegweiser selbst bei 2.3, 2.4) bleiben weiterhin blockiert!
+    expect(state.isWalkable(0, -1.45)).toBe(false);
+    expect(state.isWalkable(2.3, 2.4)).toBe(false);
+
+    // Erneuter Klick schaltet die Wegbegrenzung wieder ein
+    const inactive = state.togglePathBoundary();
+    expect(inactive).toBe(false);
+    expect(state.isPathBoundaryDisabled()).toBe(false);
+    expect(state.isWalkable(25, 25)).toBe(false);
+  });
 });

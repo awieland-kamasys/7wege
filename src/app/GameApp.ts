@@ -104,6 +104,18 @@ export class GameApp {
       onToggleMusic: () => this.sound.toggleMusic(),
       getGpuDiagnostics: () => this.scene.getGpuDiagnostics(),
       getRenderMetrics: () => this.scene.getRenderMetrics(),
+      onTogglePathBoundary: () => {
+        const disabled = this.state.togglePathBoundary();
+        this.scene.pulseSignpostBase(disabled);
+        this.sound.playGemstoneSolved();
+        if (disabled) {
+          this.hud.showToast('🌿 Wegbegrenzung aufgehoben: Freies Erkunden des gesamten Geländes aktiviert!', 3800);
+        } else {
+          this.hud.showToast('🧭 Wegbegrenzung wieder aktiv: Wandern entlang der Pfade.', 2800);
+        }
+        return disabled;
+      },
+      isPathBoundaryDisabled: () => this.state.isPathBoundaryDisabled(),
     });
 
     window.addEventListener('keydown', this.onKeyDown);
@@ -602,6 +614,7 @@ export class GameApp {
     this.scene.setHerbsHovered(hit.kind === 'herbs');
     this.scene.setChestHovered(hit.kind === 'chest');
     this.scene.setSignpostCapHovered(hit.kind === 'signpost_cap');
+    this.scene.setSignpostBaseHovered(hit.kind === 'signpost_base');
 
     this.canvas.style.cursor = hit.kind === 'ground' ? 'default' : 'pointer';
   };
@@ -787,6 +800,21 @@ export class GameApp {
           this.hud.showToast('Ein uralter Zauber durchströmt den Wegweiser – alle Wegsperren lösen sich auf!', 3500);
         } else {
           this.hud.showToast('Die Spitze des Wegweisers leuchtet auf – alle Wege sind bereits frei.', 2800);
+        }
+        return;
+      }
+
+      if (hit.kind === 'signpost_base') {
+        // Klick auf den Sockel des Wegweisers hebt die Wegbegrenzung auf (Freies Erkunden des gesamten Geländes)
+        const disabled = this.state.togglePathBoundary();
+        this.scene.pulseSignpostBase(disabled);
+        this.sound.playGemstoneSolved();
+        this.clearPendingActions();
+        this.closeDialogueAndSpeech();
+        if (disabled) {
+          this.hud.showToast('🌿 Wegbegrenzung aufgehoben: Du kannst nun das gesamte Gelände frei durchlaufen!', 3800);
+        } else {
+          this.hud.showToast('🧭 Wegbegrenzung wieder aktiv: Wandern entlang der Pfade.', 2800);
         }
         return;
       }

@@ -106,6 +106,7 @@ export type ScenePickResult =
   | { kind: 'hut'; point: Vector2D }
   | { kind: 'signpost'; point: Vector2D }
   | { kind: 'signpost_cap'; point: Vector2D }
+  | { kind: 'signpost_base'; point: Vector2D }
   | { kind: 'ground'; point: Vector2D };
 
 interface ForestTreeInstance {
@@ -2820,6 +2821,14 @@ export class CrossroadsScene {
     this.signpost.pulseCap();
   }
 
+  public setSignpostBaseHovered(hovered: boolean): void {
+    this.signpost.setBaseHovered(hovered);
+  }
+
+  public pulseSignpostBase(active: boolean): void {
+    this.signpost.pulseBase(active);
+  }
+
   public pulseAllGemstones(): void {
     for (let id = 1; id <= 6; id++) {
       setTimeout(() => {
@@ -2933,6 +2942,9 @@ export class CrossroadsScene {
       }
       if (data.interactableType === 'signpost_cap') {
         return { kind: 'signpost_cap', point };
+      }
+      if (data.interactableType === 'signpost_base') {
+        return { kind: 'signpost_base', point };
       }
       if (data.interactableType === 'path' && typeof data.pathId === 'number') {
         return { kind: 'path', pathId: data.pathId, point };

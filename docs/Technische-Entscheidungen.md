@@ -65,6 +65,13 @@
   - **iOS Safari Crash-Prävention (iPhone 16 Pro Max):** WebGL-Context-Lost- und Context-Restored-Listener auf dem Canvas verhindern unkontrollierte Web-Prozess-Abstürze bei Speicher- oder Füllratenspitzen. Der Render-Loop fängt Ausnahmen sauber per `try/catch` ab.
   - **Vollwertiger Mobile-Debugmodus:** Direkt aktivierbar über das Badge `🪲 Debug` (oben rechts), die Taste `D` oder URL-Parameter `?debug=1`. Bietet Hardware-Inspektion (GPU-Renderer, WebGL-Limits, DPR, VRAM), Fehler- und Warnungskonsole mit Ein-Klick-Zwischenablagekopie sowie Sofort-Schalter zur Fehlerisolation (Schatten an/aus, PBR-Shader vs. einfache Wiese, DPR-Deckelung).
 
+- **Freies Erkunden & dynamische Wegbegrenzung (`CrossroadsState.ts`, `Signpost.ts`):**
+  - Standardmäßig ist die Spielerbewegung auf die befestigten Pfade und die zentrale Kreuzungslichtung beschränkt (`projectOntoWalkableSurface`, `isPointOnClearingOrPath`).
+  - Durch Klick auf den runden Steinsockel des zentralen Wegweisers (`signpost_base`) oder über den Schalter im Debug-Panel (`Taste D`) kann die Wegbegrenzung dynamisch aufgehoben und wieder aktiviert werden.
+  - Bei aufgehobener Wegbegrenzung (`pathBoundaryDisabled = true`) kann die Spielfigur das gesamte 240 m × 240 m große Terrain frei durchwandern (inklusive direkter Zielnavigation im Auto-Walk).
+  - Alle echten Hinderniskollisionen (Bäume, Felsmassive, Gebäude, NPCs, Kraterwände, Zäune) bleiben über `resolveObstacleCollisions` und `isCollidingWithObstacles` zu 100 % aktiv und unüberwindbar.
+  - Visuelles und haptisches Feedback: Der Sockel des Wegweisers pulsiert bei aktivem Freimodus in zartem Smaragdgrün (`0x10b981`), löst beim Umschalten einen Lichtimpuls aus und gibt eine Rückmeldung über Soundeffekt und HUD-Toast.
+
 ## Offene Punkte
 
 - Hosting, Build-Basis-Pfad und Einbindung in die Website prüfen.

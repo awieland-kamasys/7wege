@@ -13,6 +13,8 @@ export interface DebugPanelCallbacks {
   onSetPixelRatio: (dpr: number | null) => void;
   getOverridePixelRatio: () => number | null;
   onToggleMusic?: () => boolean;
+  onTogglePathBoundary?: () => boolean;
+  isPathBoundaryDisabled?: () => boolean;
   getGpuDiagnostics: () => {
     glVersion: string;
     unmaskedVendor: string;
@@ -349,6 +351,16 @@ export class DebugPanel {
 
           <div class="debug-toggle-row">
             <div>
+              <div class="debug-toggle-name">Wegbegrenzung (Freies Laufen)</div>
+              <div class="debug-toggle-desc">Wegbegrenzung aufheben (Klick auf Sockel des Wegweisers oder hier umschalten)</div>
+            </div>
+            <button class="debug-btn ${this.callbacks.isPathBoundaryDisabled?.() ? 'is-active' : ''}" id="btn-toggle-boundary">
+              ${this.callbacks.isPathBoundaryDisabled?.() ? '🌿 Freies Erkunden' : '🧭 Begrenzung aktiv'}
+            </button>
+          </div>
+
+          <div class="debug-toggle-row">
+            <div>
               <div class="debug-toggle-name">Test-Fehler erzeugen</div>
               <div class="debug-toggle-desc">Löst gezielt eine Ausnahme aus, um die Fehlerkonsole zu prüfen</div>
             </div>
@@ -386,6 +398,13 @@ export class DebugPanel {
         }
         this.renderTroubleshootTab();
       });
+    });
+
+    const boundaryBtn = content.querySelector('#btn-toggle-boundary');
+    boundaryBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.callbacks.onTogglePathBoundary?.();
+      this.renderTroubleshootTab();
     });
 
     const testErrorBtn = content.querySelector('#btn-test-error');

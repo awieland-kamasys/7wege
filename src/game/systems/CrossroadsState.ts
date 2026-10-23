@@ -201,6 +201,20 @@ export class CrossroadsState {
   private selectedPathId: number | null = 7;
   private chestOpen = false;
   private isReturningToClearing = false;
+  private pathBoundaryDisabled = false;
+
+  public togglePathBoundary(): boolean {
+    this.pathBoundaryDisabled = !this.pathBoundaryDisabled;
+    return this.pathBoundaryDisabled;
+  }
+
+  public isPathBoundaryDisabled(): boolean {
+    return this.pathBoundaryDisabled;
+  }
+
+  public setPathBoundaryDisabled(disabled: boolean): void {
+    this.pathBoundaryDisabled = disabled;
+  }
 
   public getPlayerPosition(): Readonly<Vector2D> {
     return { ...this.playerPos };
@@ -1161,9 +1175,14 @@ export class CrossroadsState {
 
   /**
    * Prüft, ob eine Position für die Spielfigur gültig und begehbar ist.
+   * Wenn die Wegbegrenzung per Wegweiser-Sockel aufgehoben ist, kann das gesamte 240m-Gelände
+   * frei durchwandert werden. Alle Hinderniskollisionen bleiben dabei voll erhalten.
    */
   public isWalkable(x: number, z: number): boolean {
-    return this.isPointOnClearingOrPath(x, z) && !this.isCollidingWithObstacles(x, z);
+    const withinBounds = this.pathBoundaryDisabled
+      ? Math.hypot(x, z) <= 118.0
+      : this.isPointOnClearingOrPath(x, z);
+    return withinBounds && !this.isCollidingWithObstacles(x, z);
   }
 
   private projectOntoCurvedPath(
@@ -1213,6 +1232,14 @@ export class CrossroadsState {
     z: number,
     allowedPathId: number | null = null
   ): Vector2D {
+    if (this.pathBoundaryDisabled) {
+      const dist = Math.hypot(x, z);
+      if (dist <= 118.0) {
+        return { x, z };
+      }
+      return { x: (x / dist) * 118.0, z: (z / dist) * 118.0 };
+    }
+
     if (this.isPointOnClearingOrPath(x, z)) {
       if (allowedPathId === null || Math.hypot(x, z) <= this.clearingRadius) {
         return { x, z };
@@ -1881,16 +1908,19 @@ export class CrossroadsState {
     const rawX = this.playerPos.x + dx;
     const rawZ = this.playerPos.z + dz;
 
+    const allowedPath =
+      this.pathBoundaryDisabled ? null : (currentPath ? currentPath.id : null);
+
     const onSurface = this.projectOntoWalkableSurface(
       rawX,
       rawZ,
-      currentPath ? currentPath.id : null
+      allowedPath
     );
     const collisionFree = this.resolveObstacleCollisions(onSurface.x, onSurface.z);
     const projectedBack = this.projectOntoWalkableSurface(
       collisionFree.x,
       collisionFree.z,
-      currentPath ? currentPath.id : null
+      allowedPath
     );
     this.playerPos = projectedBack;
 
@@ -2121,7 +2151,9 @@ export class CrossroadsState {
     const targetPath =
       targetDist > this.clearingRadius ? this.getClosestPathAt(this.targetPos.x, this.targetPos.z) : null;
 
-    if (playerPath && (!targetPath || targetPath.id !== playerPath.id)) {
+    if (this.pathBoundaryDisabled && !this.isReturningToClearing) {
+      effectiveTarget = this.targetPos;
+    } else if (playerPath && (!targetPath || targetPath.id !== playerPath.id)) {
       if (playerPath.id === 1) {
         effectiveTarget = this.getNextCurvedWaypoint(
           PATH_1_WAYPOINTS[0],

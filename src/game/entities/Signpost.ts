@@ -7,6 +7,8 @@ export interface SignpostEntity {
   highlightSign: (pathId: number | null, hoveredPathId?: number | null) => void;
   setCapHovered: (hovered: boolean) => void;
   pulseCap: () => void;
+  setBaseHovered: (hovered: boolean) => void;
+  pulseBase: (active: boolean) => void;
   update: (dtSeconds: number) => void;
 }
 
@@ -43,21 +45,29 @@ export function createSignpost(): SignpostEntity {
   }
 
   // Steinernes Fundament mit authentischer Steintextur und Relief-Bump-Map
+  const baseMaterial = new THREE.MeshStandardMaterial({
+    color: 0x767a78,
+    map: stoneTex.map ?? undefined,
+    bumpMap: stoneTex.bumpMap ?? undefined,
+    bumpScale: 0.08,
+    roughness: 0.92,
+    flatShading: true,
+    emissive: new THREE.Color(0x000000),
+    emissiveIntensity: 0.0,
+  });
   const base = new THREE.Mesh(
     new THREE.CylinderGeometry(0.45, 0.58, 0.35, 10),
-    new THREE.MeshStandardMaterial({
-      color: 0x767a78,
-      map: stoneTex.map ?? undefined,
-      bumpMap: stoneTex.bumpMap ?? undefined,
-      bumpScale: 0.08,
-      roughness: 0.92,
-      flatShading: true,
-    })
+    baseMaterial
   );
   base.position.y = 0.175;
   base.receiveShadow = true;
-  base.userData = { interactableType: 'signpost' };
+  base.userData = { interactableType: 'signpost_base' };
   group.add(base);
+
+  // Magisches Licht über dem Sockel beim Aufheben der Wegbegrenzung
+  const baseGlowLight = new THREE.PointLight(0x34d399, 0, 3.8);
+  baseGlowLight.position.set(0, 0.45, 0);
+  group.add(baseGlowLight);
 
   // Holzpfosten
   const postHeight = 3.25;
@@ -93,6 +103,12 @@ export function createSignpost(): SignpostEntity {
   let pulseTimer = 0;
   const pulseDuration = 0.85;
 
+  let isBaseHovered = false;
+  let isBaseActive = false;
+  let pulseTimerBase = 0;
+  const pulseDurationBase = 0.95;
+  let elapsedTotalSeconds = 0;
+
   const setCapHovered = (hovered: boolean) => {
     isCapHovered = hovered;
   };
@@ -101,7 +117,19 @@ export function createSignpost(): SignpostEntity {
     pulseTimer = pulseDuration;
   };
 
+  const setBaseHovered = (hovered: boolean) => {
+    isBaseHovered = hovered;
+  };
+
+  const pulseBase = (active: boolean) => {
+    isBaseActive = active;
+    pulseTimerBase = pulseDurationBase;
+  };
+
   const update = (dtSeconds: number) => {
+    elapsedTotalSeconds += dtSeconds;
+
+    // 1. Spitze (Pulsieren / Hover)
     if (pulseTimer > 0) {
       pulseTimer = Math.max(0, pulseTimer - dtSeconds);
       const progress = pulseTimer / pulseDuration; // 1.0 -> 0.0
@@ -123,6 +151,29 @@ export function createSignpost(): SignpostEntity {
         capMaterial.emissive.setHex(0x000000);
         capMaterial.emissiveIntensity = 0.0;
       }
+    }
+
+    // 2. Sockel (Pulsieren / Hover / Dauer-Glanz bei aufgehobener Wegbegrenzung)
+    if (pulseTimerBase > 0) {
+      pulseTimerBase = Math.max(0, pulseTimerBase - dtSeconds);
+      const progress = pulseTimerBase / pulseDurationBase;
+      baseMaterial.emissive.setHex(isBaseActive ? 0x34d399 : 0x76a38b);
+      baseMaterial.emissiveIntensity = 0.5 + progress * 2.5;
+      baseGlowLight.intensity = progress * 3.5;
+    } else if (isBaseActive) {
+      // Wenn die Wegbegrenzung aufgehoben ist, pulsiert der Sockel zart smaragdgrün
+      const wave = (Math.sin(elapsedTotalSeconds * 2.5) + 1.0) * 0.5;
+      baseMaterial.emissive.setHex(0x10b981);
+      baseMaterial.emissiveIntensity = 0.25 + wave * 0.35;
+      baseGlowLight.intensity = 0.4 + wave * 0.6;
+    } else if (isBaseHovered) {
+      baseMaterial.emissive.setHex(0x34d399);
+      baseMaterial.emissiveIntensity = 0.55;
+      baseGlowLight.intensity = 0.8;
+    } else {
+      baseMaterial.emissive.setHex(0x000000);
+      baseMaterial.emissiveIntensity = 0.0;
+      baseGlowLight.intensity = 0.0;
     }
   };
 
@@ -174,5 +225,5 @@ export function createSignpost(): SignpostEntity {
     });
   };
 
-  return { group, highlightSign, setCapHovered, pulseCap, update };
+  return { group, highlightSign, setCapHovered, pulseCap, setBaseHovered, pulseBase, update };
 }
