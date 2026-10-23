@@ -82,16 +82,15 @@ export function createWeirBridgeScene(
     (gltf) => {
       const model = gltf.scene;
 
-      // Ausrichtung: Modell-Längsachse (X) um -90° drehen -> verläuft entlang der lokalen Z-Achse (Weg 3)
-      model.rotation.y = -Math.PI / 2;
+      // Ausrichtung: Um 180° gedreht (+90° statt -90°), Modell-Längsachse entlang der lokalen Z-Achse (Weg 3)
+      model.rotation.y = Math.PI / 2;
 
-      // Harmonische Skalierung für Spannweite 6.6m und angenehme Begehbarkeit
-      // X = Länge (6.6m), Y = Höhe (3.2m), Z = Breite (5.8m -> 2.76m Gesamtbreite)
-      model.scale.set(6.6, 3.2, 5.8);
+      // Skalierung: Spannweite 6.6m, Breite 2.76m und in der Höhe auf 6.4m verdoppelt (Faktor 6.4)
+      model.scale.set(6.6, 6.4, 5.8);
 
-      // Leichte Absenkung um 16 cm, damit die Balken fest im Ufergestein ruhen
-      // und die Lauffläche flach (~13 cm) über Bodenniveau anschließt
-      model.position.set(0, -0.16, 0);
+      // Absenkung um 46 cm für passgenauen Anschluss des Decks (~12 cm über Bodenniveau)
+      // und solide Verankerung der Holzpfeiler tief im Bachbett
+      model.position.set(0, -0.46, 0);
 
       model.traverse((child) => {
         const mesh = child as THREE.Mesh;
