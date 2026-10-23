@@ -29,6 +29,7 @@ Alle externen Modelle, Texturen, Bilder, Schriften und Audio-Dateien hier dokume
 | Schneebedeckter Minenstollen (`snowy mine tunnel 3d model_ohne.glb`, 2,88 MB, 3D-Tunnelportal mit Holzstützen und Felsformation am Ende von Weg 1) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/snowy mine tunnel 3d model_ohne.glb` | aktiv |
 | Stilisierter Nadelbaum 3D-Modell (`low poly tree model.glb`, 2,48 MB, 9.846 Dreiecke, 2048x2048 PBR-Textur) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/low poly tree model.glb` | evaluiert (Referenzmodell für prozedurale Optimierung) |
 | Fabelwesen Lupo 3D-Charakter (`fantasy+creature+3d+model.glb`, 3,12 MB, animiertes Fabeltier mit 'Häschenhoppeln' und 'run' Animation) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/fantasy+creature+3d+model.glb` | aktiv (Weg 7 Torweg-NPC) |
+| Holzbrücke 3D-Modell beim Riesen (`wooden bridge 3d model.glb`, 3,52 MB, Tripo 3D PBR-Holzbrücke über den Gebirgsbach auf Weg 3) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/wooden bridge 3d model.glb` | aktiv |
 
 
 ## Regeln

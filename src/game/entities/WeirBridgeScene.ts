@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface WeirBridgeEntity {
   group: THREE.Group;
@@ -7,12 +9,14 @@ export interface WeirBridgeEntity {
 
 /**
  * Erstellt die 3D-Szenerie auf dem 3. Weg (Quellenweg):
- * - Begehbare Holz- und Steinbrücke entlang der lokalen Z-Achse (Wegverlauf)
+ * - Begehbare Holzbrücke (3D-Modell `/assets/models/wooden bridge 3d model.glb`) entlang der lokalen Z-Achse (Wegverlauf)
  * - Geschlossenes Wehr (Schütz mit Stellrad und Zahnstangen) an der Oberstromseite (-X) der Brücke
  * - Kleiner Stausee (-X) mit Bergquelle und der Ufer-Heimat des Riesen
  * - Bachlauf, der unter der Brücke hindurch (+X) als schmales Rinnsal Richtung dürres Tal fließt
  */
-export function createWeirBridgeScene(): WeirBridgeEntity {
+export function createWeirBridgeScene(
+  onMeshLoaded?: (mesh: THREE.Mesh) => void
+): WeirBridgeEntity {
   const group = new THREE.Group();
   group.name = 'WeirBridgeScene';
 
@@ -46,67 +50,83 @@ export function createWeirBridgeScene(): WeirBridgeEntity {
   });
 
   // ============================================================================
-  // 1. DIE BRÜCKE (entlang der lokalen Z-Achse von lz = -3.1 bis +3.1)
+  // 1. DIE HÖLZERNE BRÜCKE (wooden bridge 3d model.glb entlang der lokalen Z-Achse)
   // ============================================================================
-  const bridgeGroup = new THREE.Group();
+  const bridgeContainer = new THREE.Group();
+  bridgeContainer.name = 'BridgeContainer';
 
-  // Steinerne Brückenwiderlager am Anfang und Ende der Brücke
-  for (const lz of [-2.95, 2.95]) {
-    const abutment = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.36, 0.75), stoneMat);
-    abutment.position.set(0, 0.08, lz);
+  // Steinerne Brückenauflager an den beiden Uferenden gegen Spalten im Gelände
+  for (const lz of [-3.15, 3.15]) {
+    const abutment = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.28, 0.6), stoneMat);
+    abutment.position.set(0, -0.06, lz);
     abutment.receiveShadow = true;
     abutment.castShadow = true;
     abutment.userData = { interactableType: 'path', pathId: 3 };
-    bridgeGroup.add(abutment);
+    bridgeContainer.add(abutment);
   }
 
-  // Längsträger unter den Brückenbohlen
-  for (const lx of [-0.95, 0, 0.95]) {
-    const beam = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 6.1), darkTimberMat);
-    beam.position.set(lx, 0.04, 0);
-    beam.castShadow = true;
-    bridgeGroup.add(beam);
-  }
+  // Schlanke temporäre Fallback-Brücke während des GLTF-Ladevorgangs
+  const fallbackBridge = new THREE.Group();
+  const fallbackDeck = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 6.4), woodPlankMat);
+  fallbackDeck.position.set(0, 0.06, 0);
+  fallbackDeck.receiveShadow = true;
+  fallbackDeck.castShadow = true;
+  fallbackDeck.userData = { interactableType: 'path', pathId: 3 };
+  fallbackBridge.add(fallbackDeck);
+  bridgeContainer.add(fallbackBridge);
 
-  // Querliegende Eichenbohlen als begehbares Brückendeck (16 Bohlen)
-  const plankCount = 16;
-  for (let i = 0; i < plankCount; i++) {
-    const lz = -2.65 + (i / (plankCount - 1)) * 5.3;
-    const plank = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.06, 0.28), woodPlankMat);
-    plank.position.set(0, 0.075, lz);
-    plank.receiveShadow = true;
-    plank.castShadow = true;
-    plank.userData = { interactableType: 'path', pathId: 3 };
-    bridgeGroup.add(plank);
-  }
+  // Detailreiches 3D-Modell der Holzbrücke laden
+  const loader = new GLTFLoader();
+  loader.load(
+    '/assets/models/wooden bridge 3d model.glb',
+    (gltf) => {
+      const model = gltf.scene;
 
-  // Brückengeländer und Steinpfosten beidseitig (lx = -1.22 und lx = +1.22)
-  for (const side of [-1, 1]) {
-    const lx = side * 1.22;
-    for (const lz of [-2.7, -1.35, 0, 1.35, 2.7]) {
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.95, 0.24), stoneMat);
-      post.position.set(lx, 0.48, lz);
-      post.castShadow = true;
-      post.receiveShadow = true;
-      post.userData = { interactableType: 'weir' };
-      bridgeGroup.add(post);
+      // Ausrichtung: Modell-Längsachse (X) um -90° drehen -> verläuft entlang der lokalen Z-Achse (Weg 3)
+      model.rotation.y = -Math.PI / 2;
+
+      // Harmonische Skalierung für Spannweite 6.6m und angenehme Begehbarkeit
+      // X = Länge (6.6m), Y = Höhe (3.2m), Z = Breite (5.8m -> 2.76m Gesamtbreite)
+      model.scale.set(6.6, 3.2, 5.8);
+
+      // Leichte Absenkung um 16 cm, damit die Balken fest im Ufergestein ruhen
+      // und die Lauffläche flach (~13 cm) über Bodenniveau anschließt
+      model.position.set(0, -0.16, 0);
+
+      model.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.userData = { interactableType: 'path', pathId: 3 };
+
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const mat of mats) {
+            if (mat && 'roughness' in mat) {
+              const stdMat = mat as THREE.MeshStandardMaterial;
+              stdMat.roughness = 0.82;
+              stdMat.metalness = 0.12;
+            }
+          }
+
+          if (onMeshLoaded) {
+            onMeshLoaded(mesh);
+          }
+        }
+      });
+
+      // Fallback-Deck entfernen und detailliertes Modell einsetzen
+      bridgeContainer.remove(fallbackBridge);
+      disposeObject3D(fallbackBridge);
+      bridgeContainer.add(model);
+    },
+    undefined,
+    (err) => {
+      console.warn('wooden bridge 3d model.glb konnte nicht geladen werden, nutze Fallback-Deck:', err);
     }
+  );
 
-    // Oberer und mittlerer Handlauf aus Holz
-    const topRail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 5.5), darkTimberMat);
-    topRail.position.set(lx, 0.88, 0);
-    topRail.castShadow = true;
-    topRail.userData = { interactableType: 'weir' };
-    bridgeGroup.add(topRail);
-
-    const midRail = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.08, 5.5), woodPlankMat);
-    midRail.position.set(lx, 0.52, 0);
-    midRail.castShadow = true;
-    midRail.userData = { interactableType: 'weir' };
-    bridgeGroup.add(midRail);
-  }
-
-  group.add(bridgeGroup);
+  group.add(bridgeContainer);
 
   // ============================================================================
   // 2. DAS GESCHLOSSENE WEHR (an der Oberstromseite lx = -1.38 der Brücke)

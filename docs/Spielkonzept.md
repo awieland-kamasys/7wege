@@ -51,7 +51,7 @@ Alle temporären Wegsperren der Pfade 1 bis 6 sind auf **exakt die gleiche Dista
    - Auf einem **Stein im Teich** sitzt **die Nixe vom Spiegelteich** als NPC (auf verdoppelter Sitzhöhe $y \approx 1{,}18\text{ m}$); unter der Wasseroberfläche funkelt ein Goldhort. Das Gespräch mit der Nixe lässt sich bequem vom befestigten Ufer aus führen.
    - **Inhalt & Konflikt:** Ein verlockender Schatz im Teich ist mit einem Fluch beziehungsweise drohendem Unglück verbunden.
 3. **3. Quellenweg (Osten → Bogen nach Südosten):**
-   - Waldpfad über eine **Holz-/Steinbrücke**, unter der ein **Bach** hindurchfließt. Die Brücke selbst ist vollkommen frei begehbar, während die seitlichen Geländer und das Stauseebecken feste Kollision besitzen.
+   - Waldpfad über die **Holzbrücke** (3D-Modell `wooden bridge 3d model.glb`), unter der ein **Bach** hindurchfließt. Die Brücke selbst ist vollkommen frei begehbar, während die seitlichen Geländer und das Stauseebecken feste Kollision besitzen.
    - **Magische Bachlauf-Blockade & Edelstein-Mechanik:** Zu Spielbeginn ist Weg 3 in 16,3 m Entfernung von der Kreuzung (`x: 15.8, z: 4.1`) durch einen tosenden, quer über den Weg strömenden Gebirgsbach mit Kiesbett, schäumenden Gischtkronen (Wasseroberfläche stabil auf $y = 0.088$, erhaben über dem Weg bei $y = 0.055$) und Barriere-Kollision blockiert. Ein Klick auf den rotierenden kornblumenblauen Edelstein (Saphir) am Pfadanfang entfesselt die Quellmagie, spielt einen reinen Saphir-Akkord mit beruhigendem Wasserrauschen ab und lässt den Bachlauf im Waldboden versickern.
    - Die Brücke besitzt ein **geschlossenes Wehr**, welches den Bach zu einem **kleinen Stausee** zurückstaut.
    - Am Ufer hinter der Brücke bewacht **der Riese am Wehr** den Stausee und das Stellrad.

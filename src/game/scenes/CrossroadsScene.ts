@@ -383,8 +383,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.nixieNpc.group);
 
-    // Brücke mit geschlossenem Wehr, kleinem Stausee und Bachlauf auf dem 3. Weg
-    this.weirBridge = createWeirBridgeScene();
+    // Brücke mit geschlossenem Wehr, kleinem Stausee und Bachlauf auf dem 3. Weg (wooden bridge 3d model.glb)
+    this.weirBridge = createWeirBridgeScene((mesh) => {
+      this.pickableObjects.push(mesh);
+    });
     this.weirBridge.group.position.set(
       WEIR_BRIDGE_POS.x,
       getTerrainHeight(WEIR_BRIDGE_POS.x, WEIR_BRIDGE_POS.z),
