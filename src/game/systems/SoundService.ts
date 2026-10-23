@@ -41,6 +41,21 @@ export class SoundService {
     schlosstor:   { x: -40.5, z: -38.5, name: 'Verschlossenes Schlosstor' },
   };
 
+  // --- Metadaten der individuellen Musikstücke für alle Schauplätze ---
+  public static readonly LOCATION_TRACKS: Record<
+    GameLocationKey,
+    { title: string; subtitle: string; instrument: string }
+  > = {
+    crossroads:   { title: 'Lichtung im Morgendunst', subtitle: 'Waldkreuzung & Schutzhütte', instrument: 'Waldharfe & Schwebepads' },
+    silberstollen:{ title: 'Eiskristall und Bergesraunen', subtitle: 'Weg 1: Bergmassiv & Silbermine', instrument: 'Eis-Zinken, Berg-Glocken & Gebirgspads' },
+    feenteich:    { title: 'Silberglanz der Wasserrose', subtitle: 'Weg 2: Spiegelteich der Nixe', instrument: 'Celesta, Glockenspiel & Wasser-Echo' },
+    wehrbruecke:  { title: 'Die Ballade des Wehrmeisters', subtitle: 'Weg 3: Bachtal & Stausee', instrument: 'Wehr-Flöte, Waldhorn & Quellenrauschen' },
+    holzfaeller:  { title: 'Harzfeuer und Waldgesang', subtitle: 'Weg 4: Holzfällerlager im Hochwald', instrument: 'Okarina, Holzflöte & Marimba' },
+    lavakrater:   { title: 'Der Höllenschlund erwacht', subtitle: 'Weg 5: Feuriger Höllenkrater', instrument: 'Dämonen-Drone & Glut-Posaune' },
+    jagdhuette:   { title: 'Jagdfanfare & Mondwurz-Lied', subtitle: 'Weg 6: Burgruine & Kräutergarten', instrument: 'Jagdhorn & Ritterlaute' },
+    schlosstor:   { title: 'Das Siebente Siegel', subtitle: 'Weg 7: Verschlossenes Schlosstor', instrument: 'Sakral-Choral & Schloss-Glocken' },
+  };
+
   // Wegmitte-Übergangskorridor (Distanz von der Kreuzung 0,0)
   // Bis 14m: reine Waldkreuzungsmusik | Ab 28m: 100% Schauplatzmusik (Kreuzung VOLLSTÄNDIG aus!)
   // Mitte des Weges liegt genau bei (14 + 28) / 2 = 21m (~Wegmitte zu allen Schauplätzen)
@@ -172,23 +187,188 @@ export class SoundService {
     ],
   ];
 
-  // Berg- & Kristall-Pads für den Silberstollen (Weg 1)
-  private readonly silberstollenChords: readonly {
-    durationSec: number;
-    padFreqs: readonly number[];
-  }[] = [
-    { durationSec: 8.5, padFreqs: [146.83, 220.0, 261.63, 329.63, 349.23] }, // D-Moll9
-    { durationSec: 8.5, padFreqs: [110.0, 164.81, 220.0, 246.94, 261.63] },  // A-Moll add9
-    { durationSec: 8.5, padFreqs: [87.31, 130.81, 174.61, 220.0, 261.63] },  // F-Dur maj7
+  // =========================================================================
+  // SCHAUPLATZ-KOMPOSITIONEN: 7 EIGENE MUSIKSTÜCKE FÜR DIE 7 SCHAUPLÄTZE
+  // =========================================================================
+
+  // --- 1. SILBERSTOLLEN (Weg 1): „Eiskristall und Bergesraunen“ ---
+  private readonly silberstollenChords: readonly { durationSec: number; padFreqs: readonly number[] }[] = [
+    { durationSec: 8.0, padFreqs: [146.83, 220.0, 261.63, 329.63, 349.23, 440.0] }, // D-Moll9
+    { durationSec: 8.0, padFreqs: [110.0, 164.81, 220.0, 246.94, 261.63, 329.63] },  // A-Moll add9
+    { durationSec: 8.0, padFreqs: [174.61, 220.0, 261.63, 329.63, 349.23, 440.0] },  // F-Dur maj7
+    { durationSec: 8.0, padFreqs: [130.81, 196.0, 246.94, 261.63, 293.66, 392.0] },  // C-Dur add9
+  ];
+  private readonly silberstollenMotifPhrases: readonly {
+    freq: number; timeOffset: number; duration: number; gain: number;
+  }[][] = [
+    // Phrase 1: "Silberader im Berg" - Zarter, eisiger Zinkenklang
+    [
+      { freq: 587.33, timeOffset: 0.00, duration: 0.55, gain: 0.065 }, // D5
+      { freq: 698.46, timeOffset: 0.38, duration: 0.55, gain: 0.068 }, // F5
+      { freq: 880.00, timeOffset: 0.78, duration: 0.85, gain: 0.075 }, // A5
+      { freq: 1046.50, timeOffset: 1.40, duration: 0.90, gain: 0.080 }, // C6
+      { freq: 880.00, timeOffset: 2.10, duration: 1.60, gain: 0.070 }, // A5
+    ],
+    // Phrase 2: "Das Raunen der Tiefe" - Mystisch hallend
+    [
+      { freq: 880.00, timeOffset: 0.00, duration: 0.50, gain: 0.070 }, // A5
+      { freq: 783.99, timeOffset: 0.36, duration: 0.50, gain: 0.065 }, // G5
+      { freq: 698.46, timeOffset: 0.74, duration: 0.65, gain: 0.065 }, // F5
+      { freq: 659.25, timeOffset: 1.25, duration: 0.65, gain: 0.062 }, // E5
+      { freq: 587.33, timeOffset: 1.75, duration: 1.70, gain: 0.068 }, // D5
+    ],
   ];
 
-  // Düstere Basalt-Drones für den feurigen Höllenschlund (Weg 5)
-  private readonly lavakraterChords: readonly {
-    durationSec: number;
-    padFreqs: readonly number[];
-  }[] = [
-    { durationSec: 9.0, padFreqs: [55.0, 73.42, 110.0, 146.83, 174.61] }, // D1 / D2 / A2 Drone
-    { durationSec: 9.0, padFreqs: [77.78, 116.54, 155.56, 196.0] },      // Es-Dur Glut
+  // --- 2. WEHRBRÜCKE (Weg 3): „Die Ballade des Wehrmeisters“ ---
+  private readonly wehrbrueckeChords: readonly { durationSec: number; padFreqs: readonly number[] }[] = [
+    { durationSec: 8.0, padFreqs: [130.81, 196.0, 246.94, 293.66, 329.63, 392.0] }, // C-Dur maj9
+    { durationSec: 8.0, padFreqs: [98.0, 146.83, 196.0, 220.0, 293.66, 392.0] },   // G-Dur add9
+    { durationSec: 8.0, padFreqs: [146.83, 220.0, 293.66, 329.63, 369.99, 440.0] }, // D-Dur sus4
+    { durationSec: 8.0, padFreqs: [82.41, 123.47, 164.81, 196.0, 246.94, 329.63] }, // E-Moll7
+  ];
+  private readonly wehrbrueckeMotifPhrases: readonly {
+    freq: number; timeOffset: number; duration: number; gain: number;
+  }[][] = [
+    // Phrase 1: "Der Strom des Bachtals" - Wehmütiges Waldhorn / Holzbläser
+    [
+      { freq: 392.00, timeOffset: 0.00, duration: 0.70, gain: 0.070 }, // G4
+      { freq: 523.25, timeOffset: 0.50, duration: 0.85, gain: 0.080 }, // C5
+      { freq: 493.88, timeOffset: 1.15, duration: 0.65, gain: 0.072 }, // B4
+      { freq: 440.00, timeOffset: 1.65, duration: 0.65, gain: 0.068 }, // A4
+      { freq: 392.00, timeOffset: 2.15, duration: 1.80, gain: 0.075 }, // G4
+    ],
+    // Phrase 2: "Die Wacht am Wehr" - Getragen und erhaben
+    [
+      { freq: 329.63, timeOffset: 0.00, duration: 0.60, gain: 0.065 }, // E4
+      { freq: 392.00, timeOffset: 0.45, duration: 0.65, gain: 0.070 }, // G4
+      { freq: 440.00, timeOffset: 0.95, duration: 0.75, gain: 0.075 }, // A4
+      { freq: 493.88, timeOffset: 1.55, duration: 0.85, gain: 0.078 }, // B4
+      { freq: 587.33, timeOffset: 2.20, duration: 0.90, gain: 0.082 }, // D5
+      { freq: 523.25, timeOffset: 2.90, duration: 1.90, gain: 0.078 }, // C5
+    ],
+  ];
+
+  // --- 3. HOLZFÄLLERLAGER (Weg 4): „Harzfeuer und Waldgesang“ ---
+  private readonly holzfaellerChords: readonly { durationSec: number; padFreqs: readonly number[] }[] = [
+    { durationSec: 7.5, padFreqs: [196.0, 246.94, 293.66, 329.63, 392.0, 440.0] }, // G-Dur 6/9
+    { durationSec: 7.5, padFreqs: [164.81, 196.0, 246.94, 293.66, 329.63] },        // E-Moll7
+    { durationSec: 7.5, padFreqs: [130.81, 196.0, 261.63, 293.66, 329.63] },        // C-Dur add9
+    { durationSec: 7.5, padFreqs: [146.83, 220.0, 293.66, 369.99, 440.0] },         // D-Dur
+  ];
+  private readonly holzfaellerMotifPhrases: readonly {
+    freq: number; timeOffset: number; duration: number; gain: number;
+  }[][] = [
+    // Phrase 1: "Lied der Axt & Tanne" - Tänzerische Okarina / Holzflöte
+    [
+      { freq: 392.00, timeOffset: 0.00, duration: 0.40, gain: 0.070 }, // G4
+      { freq: 493.88, timeOffset: 0.28, duration: 0.45, gain: 0.072 }, // B4
+      { freq: 587.33, timeOffset: 0.60, duration: 0.55, gain: 0.080 }, // D5
+      { freq: 659.25, timeOffset: 1.00, duration: 0.65, gain: 0.082 }, // E5
+      { freq: 587.33, timeOffset: 1.45, duration: 0.45, gain: 0.075 }, // D5
+      { freq: 493.88, timeOffset: 1.80, duration: 0.50, gain: 0.070 }, // B4
+      { freq: 392.00, timeOffset: 2.20, duration: 1.50, gain: 0.075 }, // G4
+    ],
+    // Phrase 2: "Tanz am Lagerfeuer" - Fröhlich tänzerisch
+    [
+      { freq: 587.33, timeOffset: 0.00, duration: 0.35, gain: 0.072 }, // D5
+      { freq: 659.25, timeOffset: 0.25, duration: 0.38, gain: 0.075 }, // E5
+      { freq: 783.99, timeOffset: 0.55, duration: 0.60, gain: 0.085 }, // G5
+      { freq: 659.25, timeOffset: 1.00, duration: 0.45, gain: 0.075 }, // E5
+      { freq: 587.33, timeOffset: 1.35, duration: 0.45, gain: 0.072 }, // D5
+      { freq: 493.88, timeOffset: 1.70, duration: 0.55, gain: 0.070 }, // B4
+      { freq: 440.00, timeOffset: 2.10, duration: 0.45, gain: 0.065 }, // A4
+      { freq: 392.00, timeOffset: 2.45, duration: 1.60, gain: 0.075 }, // G4
+    ],
+  ];
+
+  // --- 4. HÖLLENSCHLUND / LAVAKRATER (Weg 5): „Der Höllenschlund erwacht“ ---
+  private readonly lavakraterChords: readonly { durationSec: number; padFreqs: readonly number[] }[] = [
+    { durationSec: 8.5, padFreqs: [55.0, 73.42, 110.0, 146.83, 174.61, 220.0] }, // D1 / D2 / A2 Drone
+    { durationSec: 8.5, padFreqs: [77.78, 116.54, 155.56, 196.0, 233.08] },      // Es-Dur Glut
+    { durationSec: 8.5, padFreqs: [69.30, 110.0, 138.59, 164.81, 207.65] },      // Cis-Vermindert
+    { durationSec: 8.5, padFreqs: [58.27, 87.31, 116.54, 138.59, 174.61] },      // B-Moll tief
+  ];
+  private readonly lavakraterMotifPhrases: readonly {
+    freq: number; timeOffset: number; duration: number; gain: number;
+  }[][] = [
+    // Phrase 1: "Der Zorn der Tiefe" - Düsteres Dämonen-Horn
+    [
+      { freq: 73.42,  timeOffset: 0.00, duration: 1.10, gain: 0.088 }, // D2
+      { freq: 110.00, timeOffset: 0.85, duration: 1.20, gain: 0.092 }, // A2
+      { freq: 116.54, timeOffset: 1.80, duration: 1.30, gain: 0.098 }, // Bb2 (Tritonus/Spannung)
+      { freq: 110.00, timeOffset: 2.80, duration: 1.20, gain: 0.090 }, // A2
+      { freq: 73.42,  timeOffset: 3.80, duration: 2.20, gain: 0.092 }, // D2
+    ],
+    // Phrase 2: "Magmasturm" - Schwellende Bedrohung
+    [
+      { freq: 146.83, timeOffset: 0.00, duration: 0.90, gain: 0.082 }, // D3
+      { freq: 174.61, timeOffset: 0.70, duration: 0.95, gain: 0.088 }, // F3
+      { freq: 207.65, timeOffset: 1.45, duration: 1.10, gain: 0.095 }, // G#3 (Teufelston)
+      { freq: 220.00, timeOffset: 2.30, duration: 1.10, gain: 0.095 }, // A3
+      { freq: 146.83, timeOffset: 3.20, duration: 2.00, gain: 0.088 }, // D3
+    ],
+  ];
+
+  // --- 5. JAGDHÜTTE & BURG (Weg 6): „Jagdfanfare und Mondwurz-Lied“ ---
+  private readonly jagdhuetteChords: readonly { durationSec: number; padFreqs: readonly number[] }[] = [
+    { durationSec: 8.0, padFreqs: [146.83, 220.0, 261.63, 293.66, 349.23, 440.0] }, // D-Dorisch
+    { durationSec: 8.0, padFreqs: [110.0, 164.81, 220.0, 261.63, 329.63, 392.0] },  // A-Moll7
+    { durationSec: 8.0, padFreqs: [98.0, 146.83, 196.0, 246.94, 293.66, 392.0] },   // G-Dur
+    { durationSec: 8.0, padFreqs: [87.31, 130.81, 174.61, 220.0, 261.63, 329.63] },  // F-Dur maj7
+  ];
+  private readonly jagdhuetteMotifPhrases: readonly {
+    freq: number; timeOffset: number; duration: number; gain: number;
+  }[][] = [
+    // Phrase 1: "Der Ruf des Jägers" - Edle Jagdhorn-Fanfare
+    [
+      { freq: 293.66, timeOffset: 0.00, duration: 0.50, gain: 0.078 }, // D4
+      { freq: 440.00, timeOffset: 0.38, duration: 0.55, gain: 0.082 }, // A4
+      { freq: 587.33, timeOffset: 0.78, duration: 0.95, gain: 0.090 }, // D5
+      { freq: 739.99, timeOffset: 1.50, duration: 0.65, gain: 0.085 }, // F#5
+      { freq: 659.25, timeOffset: 2.05, duration: 0.65, gain: 0.080 }, // E5
+      { freq: 587.33, timeOffset: 2.60, duration: 1.80, gain: 0.088 }, // D5
+    ],
+    // Phrase 2: "Das Lied der Mondwurz" - Zarte Minnelied-Melodie
+    [
+      { freq: 440.00, timeOffset: 0.00, duration: 0.45, gain: 0.070 }, // A4
+      { freq: 523.25, timeOffset: 0.36, duration: 0.50, gain: 0.075 }, // C5
+      { freq: 659.25, timeOffset: 0.74, duration: 0.85, gain: 0.080 }, // E5
+      { freq: 587.33, timeOffset: 1.40, duration: 0.50, gain: 0.075 }, // D5
+      { freq: 523.25, timeOffset: 1.80, duration: 0.55, gain: 0.070 }, // C5
+      { freq: 440.00, timeOffset: 2.25, duration: 1.70, gain: 0.072 }, // A4
+    ],
+  ];
+
+  // --- 6. VERSCHLOSSENES SCHLOSSTOR (Weg 7): „Das Siebente Siegel“ ---
+  private readonly schlosstorChords: readonly { durationSec: number; padFreqs: readonly number[] }[] = [
+    { durationSec: 8.5, padFreqs: [130.81, 196.0, 246.94, 261.63, 311.13, 392.0] },  // C-Moll maj7
+    { durationSec: 8.5, padFreqs: [103.83, 155.56, 207.65, 233.08, 261.63, 311.13] }, // As-Dur add9
+    { durationSec: 8.5, padFreqs: [87.31, 130.81, 174.61, 207.65, 261.63, 349.23] },  // F-Moll9
+    { durationSec: 8.5, padFreqs: [98.0, 146.83, 196.0, 261.63, 293.66, 392.0] },    // G-Dur sus4 -> G
+  ];
+  private readonly schlosstorMotifPhrases: readonly {
+    freq: number; timeOffset: number; duration: number; gain: number;
+  }[][] = [
+    // Phrase 1: "Die Sieben Siegel" - Sakrales Choral-Motiv
+    [
+      { freq: 392.00, timeOffset: 0.00, duration: 0.70, gain: 0.072 }, // G4
+      { freq: 523.25, timeOffset: 0.55, duration: 0.85, gain: 0.080 }, // C5
+      { freq: 622.25, timeOffset: 1.25, duration: 0.90, gain: 0.082 }, // Eb5
+      { freq: 587.33, timeOffset: 2.00, duration: 0.65, gain: 0.076 }, // D5
+      { freq: 523.25, timeOffset: 2.55, duration: 0.65, gain: 0.074 }, // C5
+      { freq: 493.88, timeOffset: 3.10, duration: 0.75, gain: 0.072 }, // B4
+      { freq: 523.25, timeOffset: 3.75, duration: 2.20, gain: 0.080 }, // C5
+    ],
+    // Phrase 2: "Das Tor zum Lichte" - Erhaben schwebend
+    [
+      { freq: 622.25, timeOffset: 0.00, duration: 0.65, gain: 0.075 }, // Eb5
+      { freq: 698.46, timeOffset: 0.50, duration: 0.70, gain: 0.078 }, // F5
+      { freq: 783.99, timeOffset: 1.10, duration: 1.10, gain: 0.086 }, // G5
+      { freq: 698.46, timeOffset: 2.05, duration: 0.65, gain: 0.078 }, // F5
+      { freq: 622.25, timeOffset: 2.60, duration: 0.65, gain: 0.074 }, // Eb5
+      { freq: 587.33, timeOffset: 3.15, duration: 0.70, gain: 0.072 }, // D5
+      { freq: 523.25, timeOffset: 3.75, duration: 2.20, gain: 0.080 }, // C5
+    ],
   ];
 
   private getContext(): AudioContext | null {
@@ -266,6 +446,14 @@ export class SoundService {
    */
   public getActiveLocation(): GameLocationKey {
     return this.locationBlendWeight >= 0.5 ? this.activeLocation : 'crossroads';
+  }
+
+  /**
+   * Gibt die Metadaten des aktuellen Musikstücks zurück (Titel, Untertitel, Hauptinstrumente).
+   */
+  public getActiveLocationTrack(): { title: string; subtitle: string; instrument: string } {
+    const loc = this.getActiveLocation();
+    return SoundService.LOCATION_TRACKS[loc] ?? SoundService.LOCATION_TRACKS.crossroads;
   }
 
   /**
@@ -473,90 +661,144 @@ export class SoundService {
     const now = ctx.currentTime;
     switch (loc) {
       case 'feenteich':
-        this.locationFilterNode.frequency.setTargetAtTime(920, now, 0.8);
+        this.locationFilterNode.frequency.setTargetAtTime(950, now, 0.8);
         this.locationFilterNode.Q.setTargetAtTime(1.1, now, 0.8);
         break;
       case 'silberstollen':
-        this.locationFilterNode.frequency.setTargetAtTime(1100, now, 0.8);
+        this.locationFilterNode.frequency.setTargetAtTime(1150, now, 0.8);
         this.locationFilterNode.Q.setTargetAtTime(0.9, now, 0.8);
         break;
-      case 'lavakrater':
-        this.locationFilterNode.frequency.setTargetAtTime(420, now, 0.8);
-        this.locationFilterNode.Q.setTargetAtTime(1.4, now, 0.8);
+      case 'wehrbruecke':
+        this.locationFilterNode.frequency.setTargetAtTime(820, now, 0.8);
+        this.locationFilterNode.Q.setTargetAtTime(0.85, now, 0.8);
         break;
-      default:
-        this.locationFilterNode.frequency.setTargetAtTime(750, now, 0.8);
-        this.locationFilterNode.Q.setTargetAtTime(0.8, now, 0.8);
+      case 'holzfaeller':
+        this.locationFilterNode.frequency.setTargetAtTime(880, now, 0.8);
+        this.locationFilterNode.Q.setTargetAtTime(0.75, now, 0.8);
+        break;
+      case 'lavakrater':
+        this.locationFilterNode.frequency.setTargetAtTime(450, now, 0.8);
+        this.locationFilterNode.Q.setTargetAtTime(1.6, now, 0.8);
+        break;
+      case 'jagdhuette':
+        this.locationFilterNode.frequency.setTargetAtTime(1050, now, 0.8);
+        this.locationFilterNode.Q.setTargetAtTime(0.95, now, 0.8);
+        break;
+      case 'schlosstor':
+        this.locationFilterNode.frequency.setTargetAtTime(780, now, 0.8);
+        this.locationFilterNode.Q.setTargetAtTime(1.2, now, 0.8);
         break;
     }
   }
 
   /**
-   * Aktualisiert die jeweilige Schauplatz-Musik (z. B. am Feenteich nur Feenteich-Musik).
+   * Aktualisiert die jeweilige Schauplatz-Musik (7 eigenständige Musikstücke mit individueller Klangwelt).
    */
   private updateActiveLocationMusic(ctx: AudioContext, dtSeconds: number): void {
-    if (this.activeLocation === 'feenteich') {
-      // 1. Sphärische Feenteich-Wasserpads
-      if (this.nextLocationChordScheduleTime <= ctx.currentTime + 1.2) {
-        const startTime = Math.max(ctx.currentTime + 0.05, this.nextLocationChordScheduleTime);
-        const chord = this.feenteichChords[this.currentLocationChordIdx];
+    // 1. Akkord-Scheduling für den aktuellen Schauplatz
+    if (this.nextLocationChordScheduleTime <= ctx.currentTime + 1.2) {
+      const startTime = Math.max(ctx.currentTime + 0.05, this.nextLocationChordScheduleTime);
+      let chordList: readonly { durationSec: number; padFreqs: readonly number[] }[];
+      switch (this.activeLocation) {
+        case 'feenteich':    chordList = this.feenteichChords; break;
+        case 'silberstollen':chordList = this.silberstollenChords; break;
+        case 'wehrbruecke':  chordList = this.wehrbrueckeChords; break;
+        case 'holzfaeller':  chordList = this.holzfaellerChords; break;
+        case 'lavakrater':   chordList = this.lavakraterChords; break;
+        case 'jagdhuette':   chordList = this.jagdhuetteChords; break;
+        case 'schlosstor':   chordList = this.schlosstorChords; break;
+      }
+      const chord = chordList[this.currentLocationChordIdx % chordList.length];
+      this.scheduleLocationPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
+      this.nextLocationChordScheduleTime = startTime + chord.durationSec;
+      this.currentLocationChordIdx++;
+    }
 
-        this.scheduleLocationPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
+    // 2. Leitmotiv-Scheduling für den aktuellen Schauplatz
+    this.nextMotifTimerSec -= dtSeconds;
+    if (this.nextMotifTimerSec <= 0) {
+      let phrases: readonly { freq: number; timeOffset: number; duration: number; gain: number }[][];
+      let synthFn: (ctx: AudioContext, freq: number, startTime: number, duration: number, gain: number) => void;
 
-        this.nextLocationChordScheduleTime = startTime + chord.durationSec;
-        this.currentLocationChordIdx = (this.currentLocationChordIdx + 1) % this.feenteichChords.length;
+      switch (this.activeLocation) {
+        case 'feenteich':
+          phrases = this.feenteichMotifPhrases;
+          synthFn = (c, f, s, d, g) => this.scheduleFeenteichMotifNote(c, f, s, d, g);
+          this.nextMotifTimerSec = 2.8 + Math.random() * 2.0;
+          break;
+        case 'silberstollen':
+          phrases = this.silberstollenMotifPhrases;
+          synthFn = (c, f, s, d, g) => this.scheduleCrystalNote(c, f, s, d, g);
+          this.nextMotifTimerSec = 3.2 + Math.random() * 2.4;
+          break;
+        case 'wehrbruecke':
+          phrases = this.wehrbrueckeMotifPhrases;
+          synthFn = (c, f, s, d, g) => this.scheduleWehrFluteNote(c, f, s, d, g);
+          this.nextMotifTimerSec = 3.4 + Math.random() * 2.5;
+          break;
+        case 'holzfaeller':
+          phrases = this.holzfaellerMotifPhrases;
+          synthFn = (c, f, s, d, g) => this.scheduleWoodFluteNote(c, f, s, d, g);
+          this.nextMotifTimerSec = 2.9 + Math.random() * 2.2;
+          break;
+        case 'lavakrater':
+          phrases = this.lavakraterMotifPhrases;
+          synthFn = (c, f, s, d, g) => this.scheduleDemonHornNote(c, f, s, d, g);
+          this.nextMotifTimerSec = 3.8 + Math.random() * 2.8;
+          break;
+        case 'jagdhuette':
+          phrases = this.jagdhuetteMotifPhrases;
+          synthFn = (c, f, s, d, g) => this.scheduleHuntingHornNote(c, f, s, d, g);
+          this.nextMotifTimerSec = 3.2 + Math.random() * 2.4;
+          break;
+        case 'schlosstor':
+          phrases = this.schlosstorMotifPhrases;
+          synthFn = (c, f, s, d, g) => this.scheduleSacralChorNote(c, f, s, d, g);
+          this.nextMotifTimerSec = 3.6 + Math.random() * 2.8;
+          break;
       }
 
-      // 2. Das zauberhafte Nixen-Leitmotiv (Celesta-/Glockenspiel)
-      this.nextMotifTimerSec -= dtSeconds;
-      if (this.nextMotifTimerSec <= 0) {
-        const phrase = this.feenteichMotifPhrases[this.currentMotifIdx];
-        this.scheduleFeenteichThemePhrase(ctx, ctx.currentTime + 0.1, phrase);
+      const phrase = phrases[this.currentMotifIdx % phrases.length];
+      phrase.forEach((note) => {
+        synthFn(ctx, note.freq, ctx.currentTime + 0.1 + note.timeOffset, note.duration, note.gain);
+      });
+      this.currentMotifIdx++;
+    }
 
-        this.currentMotifIdx = (this.currentMotifIdx + 1) % this.feenteichMotifPhrases.length;
-        this.nextMotifTimerSec = 2.8 + Math.random() * 2.0;
-      }
-
-      // 3. Kristalline Tröpfchen- & Glitzer-Akzente auf dem See
-      this.nextAccentsTimerSec -= dtSeconds;
-      if (this.nextAccentsTimerSec <= 0) {
-        this.nextAccentsTimerSec = 1.8 + Math.random() * 2.2;
-        this.scheduleFeenteichWaterDrop(ctx, ctx.currentTime + 0.08);
-      }
-    } else if (this.activeLocation === 'silberstollen') {
-      // Berg- und Kristall-Atmosphäre
-      if (this.nextLocationChordScheduleTime <= ctx.currentTime + 1.2) {
-        const startTime = Math.max(ctx.currentTime + 0.05, this.nextLocationChordScheduleTime);
-        const chord = this.silberstollenChords[this.currentLocationChordIdx % this.silberstollenChords.length];
-        this.scheduleLocationPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
-        this.nextLocationChordScheduleTime = startTime + chord.durationSec;
-        this.currentLocationChordIdx++;
-      }
-
-      this.nextMotifTimerSec -= dtSeconds;
-      if (this.nextMotifTimerSec <= 0) {
-        this.nextMotifTimerSec = 3.5 + Math.random() * 3.5;
-        const crystalNotes = [659.25, 880.0, 1046.5, 1318.51, 1567.98];
-        const note = crystalNotes[Math.floor(Math.random() * crystalNotes.length)];
-        this.scheduleCrystalPluck(ctx, ctx.currentTime + 0.1, note);
-      }
-    } else if (this.activeLocation === 'lavakrater') {
-      // Tiefe Basalt-Drones
-      if (this.nextLocationChordScheduleTime <= ctx.currentTime + 1.2) {
-        const startTime = Math.max(ctx.currentTime + 0.05, this.nextLocationChordScheduleTime);
-        const chord = this.lavakraterChords[this.currentLocationChordIdx % this.lavakraterChords.length];
-        this.scheduleLocationPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
-        this.nextLocationChordScheduleTime = startTime + chord.durationSec;
-        this.currentLocationChordIdx++;
-      }
-    } else {
-      // Übrige Schauplätze: Sphärische Stimmung
-      if (this.nextLocationChordScheduleTime <= ctx.currentTime + 1.2) {
-        const startTime = Math.max(ctx.currentTime + 0.05, this.nextLocationChordScheduleTime);
-        const chord = this.feenteichChords[this.currentLocationChordIdx % this.feenteichChords.length];
-        this.scheduleLocationPadChord(ctx, startTime, chord.durationSec, chord.padFreqs);
-        this.nextLocationChordScheduleTime = startTime + chord.durationSec;
-        this.currentLocationChordIdx++;
+    // 3. Schauplatz-spezifische Akzente
+    this.nextAccentsTimerSec -= dtSeconds;
+    if (this.nextAccentsTimerSec <= 0) {
+      switch (this.activeLocation) {
+        case 'feenteich':
+          this.nextAccentsTimerSec = 1.8 + Math.random() * 2.2;
+          this.scheduleFeenteichWaterDrop(ctx, ctx.currentTime + 0.08);
+          break;
+        case 'silberstollen':
+          this.nextAccentsTimerSec = 2.2 + Math.random() * 2.8;
+          const crystalNotes = [659.25, 880.0, 1046.5, 1318.51, 1567.98];
+          const cNote = crystalNotes[Math.floor(Math.random() * crystalNotes.length)];
+          this.scheduleCrystalPluck(ctx, ctx.currentTime + 0.1, cNote);
+          break;
+        case 'wehrbruecke':
+          this.nextAccentsTimerSec = 2.5 + Math.random() * 3.0;
+          this.scheduleWehrWaterSurge(ctx, ctx.currentTime + 0.1);
+          break;
+        case 'holzfaeller':
+          this.nextAccentsTimerSec = 2.0 + Math.random() * 2.5;
+          this.scheduleWoodMarimbaPluck(ctx, ctx.currentTime + 0.1);
+          break;
+        case 'lavakrater':
+          this.nextAccentsTimerSec = 2.4 + Math.random() * 3.2;
+          this.scheduleLavaCrackle(ctx, ctx.currentTime + 0.1);
+          break;
+        case 'jagdhuette':
+          this.nextAccentsTimerSec = 2.2 + Math.random() * 2.6;
+          this.scheduleLutePluck(ctx, ctx.currentTime + 0.1);
+          break;
+        case 'schlosstor':
+          this.nextAccentsTimerSec = 4.0 + Math.random() * 3.5;
+          this.scheduleCastleBell(ctx, ctx.currentTime + 0.1);
+          break;
       }
     }
   }
@@ -678,25 +920,6 @@ export class SoundService {
         osc.stop(startTime + totalDuration + 0.05);
       }
     }
-  }
-
-  /**
-   * Spielt eine vollständige Phrase des zauberhaften Feenteich-Themas ab.
-   */
-  private scheduleFeenteichThemePhrase(
-    ctx: AudioContext,
-    phraseStartTime: number,
-    phrase: readonly { freq: number; timeOffset: number; duration: number; gain: number }[]
-  ): void {
-    phrase.forEach((note) => {
-      this.scheduleFeenteichMotifNote(
-        ctx,
-        note.freq,
-        phraseStartTime + note.timeOffset,
-        note.duration,
-        note.gain
-      );
-    });
   }
 
   /**
@@ -851,6 +1074,366 @@ export class SoundService {
 
     osc.start(startTime);
     osc.stop(startTime + 1.9);
+  }
+
+  /**
+   * Synthetisiert eine Melodienote des Silberstollen-Themas (Zinken- / Eisglocken-Klang).
+   */
+  private scheduleCrystalNote(
+    ctx: AudioContext,
+    freq: number,
+    startTime: number,
+    duration: number,
+    peakGain: number
+  ): void {
+    if (!this.locationBusGain) return;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    const oscOctave = ctx.createOscillator();
+    oscOctave.type = 'triangle';
+    oscOctave.frequency.setValueAtTime(freq * 2, startTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    const gainOctave = ctx.createGain();
+    gainOctave.gain.setValueAtTime(0.0001, startTime);
+    gainOctave.gain.linearRampToValueAtTime(peakGain * 0.35, startTime + 0.01);
+    gainOctave.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.7);
+
+    const pan = Math.sin(startTime * 1.4) * 0.4;
+    const mix = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(mix);
+    oscOctave.connect(gainOctave);
+    gainOctave.connect(mix);
+
+    if (typeof ctx.createStereoPanner === 'function') {
+      const panner = ctx.createStereoPanner();
+      panner.pan.setValueAtTime(pan, startTime);
+      mix.connect(panner);
+      panner.connect(this.locationBusGain);
+    } else {
+      mix.connect(this.locationBusGain);
+    }
+
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.1);
+    oscOctave.start(startTime);
+    oscOctave.stop(startTime + duration + 0.1);
+  }
+
+  /**
+   * Synthetisiert eine Melodienote der Wehrbrücke (warmes Holzhorn / Flöte des Riesen).
+   */
+  private scheduleWehrFluteNote(
+    ctx: AudioContext,
+    freq: number,
+    startTime: number,
+    duration: number,
+    peakGain: number
+  ): void {
+    if (!this.locationBusGain) return;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.08); // Sanftes Anblasen
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    osc.connect(gain);
+    gain.connect(this.locationBusGain);
+
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.1);
+  }
+
+  /**
+   * Rauschende Quell- und Stauwellen an der Wehrbrücke.
+   */
+  private scheduleWehrWaterSurge(ctx: AudioContext, startTime: number): void {
+    if (!this.locationBusGain) return;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(140, startTime);
+    osc.frequency.linearRampToValueAtTime(80, startTime + 0.7);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(0.032, startTime + 0.18);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.75);
+
+    osc.connect(gain);
+    gain.connect(this.locationBusGain);
+
+    osc.start(startTime);
+    osc.stop(startTime + 0.8);
+  }
+
+  /**
+   * Synthetisiert eine Melodienote des Holzfällerlagers (tänzerische Okarina / Holzflöte).
+   */
+  private scheduleWoodFluteNote(
+    ctx: AudioContext,
+    freq: number,
+    startTime: number,
+    duration: number,
+    peakGain: number
+  ): void {
+    if (!this.locationBusGain) return;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    const oscHarm = ctx.createOscillator();
+    oscHarm.type = 'triangle';
+    oscHarm.frequency.setValueAtTime(freq * 2, startTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    const gainHarm = ctx.createGain();
+    gainHarm.gain.setValueAtTime(0.0001, startTime);
+    gainHarm.gain.linearRampToValueAtTime(peakGain * 0.22, startTime + 0.02);
+    gainHarm.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.6);
+
+    const mix = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(mix);
+    oscHarm.connect(gainHarm);
+    gainHarm.connect(mix);
+    mix.connect(this.locationBusGain);
+
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.05);
+    oscHarm.start(startTime);
+    oscHarm.stop(startTime + duration + 0.05);
+  }
+
+  /**
+   * Warmes Marimba-Zupfen am Holzfällerlager.
+   */
+  private scheduleWoodMarimbaPluck(ctx: AudioContext, startTime: number): void {
+    if (!this.locationBusGain) return;
+
+    const freqs = [392.0, 493.88, 587.33, 659.25, 783.99];
+    const freq = freqs[Math.floor(Math.random() * freqs.length)];
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(0.038, startTime + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.32);
+
+    osc.connect(gain);
+    gain.connect(this.locationBusGain);
+
+    osc.start(startTime);
+    osc.stop(startTime + 0.35);
+  }
+
+  /**
+   * Synthetisiert ein bedrohliches Dämonen-Horn am feurigen Höllenschlund.
+   */
+  private scheduleDemonHornNote(
+    ctx: AudioContext,
+    freq: number,
+    startTime: number,
+    duration: number,
+    peakGain: number
+  ): void {
+    if (!this.locationBusGain) return;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, startTime);
+    osc.frequency.linearRampToValueAtTime(freq * 0.96, startTime + duration); // Leichter bedrohlicher Pitch-Drop
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(380, startTime);
+    filter.Q.setValueAtTime(1.8, startTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.locationBusGain);
+
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.1);
+  }
+
+  /**
+   * Knisternde Glut & Funken am Lavakrater.
+   */
+  private scheduleLavaCrackle(ctx: AudioContext, startTime: number): void {
+    if (!this.locationBusGain) return;
+
+    const freq = 60 + Math.random() * 50;
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, startTime);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.6, startTime + 0.28);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(0.032, startTime + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.32);
+
+    osc.connect(gain);
+    gain.connect(this.locationBusGain);
+
+    osc.start(startTime);
+    osc.stop(startTime + 0.35);
+  }
+
+  /**
+   * Synthetisiert eine edle Jagdhorn-Note an der Jagdhütte / Burg.
+   */
+  private scheduleHuntingHornNote(
+    ctx: AudioContext,
+    freq: number,
+    startTime: number,
+    duration: number,
+    peakGain: number
+  ): void {
+    if (!this.locationBusGain) return;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1400, startTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.locationBusGain);
+
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.08);
+  }
+
+  /**
+   * Mittelalterlicher Lauten-Zupfton im Kräutergarten der Jagdhütte.
+   */
+  private scheduleLutePluck(ctx: AudioContext, startTime: number): void {
+    if (!this.locationBusGain) return;
+
+    const luteNotes = [293.66, 369.99, 440.0, 587.33, 659.25];
+    const freq = luteNotes[Math.floor(Math.random() * luteNotes.length)];
+
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(0.042, startTime + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.85);
+
+    osc.connect(gain);
+    gain.connect(this.locationBusGain);
+
+    osc.start(startTime);
+    osc.stop(startTime + 0.9);
+  }
+
+  /**
+   * Synthetisiert eine sakrale Choral-/Orgelnote am verschlossenen Schlosstor.
+   */
+  private scheduleSacralChorNote(
+    ctx: AudioContext,
+    freq: number,
+    startTime: number,
+    duration: number,
+    peakGain: number
+  ): void {
+    if (!this.locationBusGain) return;
+
+    const osc1 = ctx.createOscillator();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(freq, startTime);
+
+    const osc2 = ctx.createOscillator();
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(freq * 1.5, startTime); // Reine Quinte
+
+    const gain1 = ctx.createGain();
+    gain1.gain.setValueAtTime(0.0001, startTime);
+    gain1.gain.linearRampToValueAtTime(peakGain * 0.75, startTime + 0.12);
+    gain1.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    const gain2 = ctx.createGain();
+    gain2.gain.setValueAtTime(0.0001, startTime);
+    gain2.gain.linearRampToValueAtTime(peakGain * 0.35, startTime + 0.18);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.85);
+
+    const mix = ctx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(mix);
+    osc2.connect(gain2);
+    gain2.connect(mix);
+    mix.connect(this.locationBusGain);
+
+    osc1.start(startTime);
+    osc1.stop(startTime + duration + 0.15);
+    osc2.start(startTime);
+    osc2.stop(startTime + duration + 0.15);
+  }
+
+  /**
+   * Tiefer, feierlicher Schlossturm-Glockenschlag am Schlosstor.
+   */
+  private scheduleCastleBell(ctx: AudioContext, startTime: number): void {
+    if (!this.locationBusGain) return;
+
+    const fundamental = 130.81; // C3
+    const partials = [1.0, 2.76, 4.07, 5.43];
+    const duration = 4.2;
+
+    partials.forEach((ratio, idx) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(fundamental * ratio, startTime);
+
+      const gain = ctx.createGain();
+      const level = (idx === 0 ? 0.045 : 0.02) / partials.length;
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.linearRampToValueAtTime(level, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      osc.connect(gain);
+      gain.connect(this.locationBusGain!);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.1);
+    });
   }
 
   /**

@@ -122,6 +122,7 @@ export class GameApp {
       getMusicVolume: () => this.sound.getMusicVolume(),
       getLocationBlendWeight: () => this.sound.getLocationBlendWeight(),
       getActiveLocation: () => this.sound.getActiveLocation(),
+      getActiveLocationTrack: () => this.sound.getActiveLocationTrack(),
       getNixieBlendWeight: () => this.sound.getNixieBlendWeight(),
       getGpuDiagnostics: () => this.scene.getGpuDiagnostics(),
       getRenderMetrics: () => this.scene.getRenderMetrics(),

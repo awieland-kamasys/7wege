@@ -59,11 +59,16 @@
     - Vollständig prozedurale Web Audio API-Klangerzeugung ohne externe MP3-Assets oder Download-Ladezeiten.
     - **Lautstärkeregler (Start bei 50 %):** Der Schieberegler im oberen HUD startet standardmäßig bei 50 % (entspricht der vollen bisherigen Basislautstärke `0.14`), sodass die Musik nun sowohl leiser (bis 0 %, stumm) als auch deutlich lauter (bis 100 % = `0.28`, doppelt so laut) geregelt werden kann. Automatisiertes Ducking (`0.11` bei 50 % $\rightarrow 0.055$) dämpft die Musik sanft während NPC-Gesprächen.
     - **Ortsbasierter Musikwechsel auf Wegmitte:** Die Schauplätze liegen ca. 45–55 m von der Kreuzung $(0,0)$ entfernt. Der Übergangskorridor ist auf `CROSSROADS_RADIUS = 14 m` bis `LOCATION_FULL_RADIUS = 28 m` kalibriert, sodass der exakte 50/50-Crossfade-Punkt genau auf der Wegmitte bei ca. 21 m liegt.
-    - **Equal-Power-Crossfade mit garantiertem Null-Cutoff:** Sobald die Wegmitte überschritten wird ($d \ge 21\text{--}24\,\text{m}$ bzw. Blend $\ge 75\,\%$) wird der Waldkreuzungs-Bus vollständig auf `0.00001` stummgeschaltet und die Tongenerierung für die Kreuzung pausiert. Am Feenteich (42–48 m) ist die Waldkreuzungsmusik absolut unhörbar.
-    - **Zauberhaftes Feenteich-Thema:**
-      - Kristalline, ätherische Wasser- und Lilien-Pads (A-Moll add9, F-Dur maj7#11, C-Dur add9, E-Moll9) in hohen, seidigen Registern ohne tiefes Bassbrummen.
-      - Durchgehend fließendes, präsentes Celesta- & Glockenspiel-Leitmotiv (drei rotierende Melodiephrasen mit Stereo-Echo) in kürzeren Abständen (ca. alle 3 bis 5 Sekunden) für eine lebendige Märchenstimmung.
-      - Perlende Wassertropfen und feine Glitzerakzente im Stereofeld.
+    - **Equal-Power-Crossfade mit garantiertem Null-Cutoff:** Sobald die Wegmitte überschritten wird ($d \ge 21\text{--}24\,\text{m}$ bzw. Blend $\ge 75\,\%$) wird der Waldkreuzungs-Bus vollständig auf `0.00001` stummgeschaltet und die Tongenerierung für die Kreuzung pausiert. An den Schauplätzen ist die Waldkreuzungsmusik absolut unhörbar.
+    - **7 eigenständige Musikstücke für alle Schauplätze (`LOCATION_TRACKS`):**
+      - **Kreuzung:** *„Lichtung im Morgendunst“* – D-Duradd9/G-Durmaj7 Schwebepads, Waldharfe & Vogelgezwitscher.
+      - **Weg 1 (Silberstollen):** *„Eiskristall und Bergesraunen“* – Alpine D-Moll9-Pads, eisige Zinkenklänge & schimmernde Kristallglocken.
+      - **Weg 2 (Feenteich):** *„Silberglanz der Wasserrose“* – Hohe, kristalline Wasserpads (A-Moll add9, F-Dur maj7#11), perlendes Celesta- & Glockenspiel-Leitmotiv der Nixe und Wassertropfen.
+      - **Weg 3 (Wehrbrücke):** *„Die Ballade des Wehrmeisters“* – C-Dur maj9 Flussbettpads, getragenes Holzhorn-Motiv des Riesen und tosendes Quellenrauschen.
+      - **Weg 4 (Holzfällerlager):** *„Harzfeuer und Waldgesang“* – G-Dur 6/9 Waldläufer-Harmonien, fröhliche Okarina/Holzflöte im 3/4-Schwung & warme Marimba-Akzente.
+      - **Weg 5 (Lavakrater):** *„Der Höllenschlund erwacht“* – Sub-Bass-Drones (55–110 Hz), grollendes Dämonen-Horn & knisternde Magmafunken.
+      - **Weg 6 (Jagdhütte / Burg):** *„Jagdfanfare & Mondwurz-Lied“* – D-Dorische Ritter-Harmonien, stolze Jagdhorn-Fanfare & sanfte Laute im Kräutergarten.
+      - **Weg 7 (Schlosstor):** *„Das Siebente Siegel“* – C-Moll maj7 Choral-Pads, sakrales Runen-Motiv & tiefe, feierliche Turmglockenschläge.
 - **Mobile Resilienz, WebGL Context Loss & Debugmodus (`DebugPanel.ts`, `TerrainMaterial.ts`):**
   - **Android S10 Farbbug-Behebung:** In WebGL 2 / OpenGL ES muss `#version 300 es` die allererste Zeile eines Shaders sein. Durch das korrekte Einfügen der Splatmap-Uniform-Deklarationen hinter `#include <common>` statt vor den Shader-Kopf kompilieren die Shader auf ARM Mali GPUs (Galaxy S10) nun fehlerfrei. Zudem fungiert die gekachelte Gras-Textur als sicheres Basis-Material, sodass bei Treiberfehlern niemals rohe Maskenfarben (Rot/Grün/Blau) gerendert werden.
   - **iOS Safari Crash-Prävention (iPhone 16 Pro Max):** WebGL-Context-Lost- und Context-Restored-Listener auf dem Canvas verhindern unkontrollierte Web-Prozess-Abstürze bei Speicher- oder Füllratenspitzen. Der Render-Loop fängt Ausnahmen sauber per `try/catch` ab.

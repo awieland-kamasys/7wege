@@ -30,7 +30,12 @@ describe('SoundService (Hintergrundmusik, Lautstärkeregler & Schauplatzwechsel 
       }),
       createOscillator: vi.fn().mockReturnValue({
         type: 'sine',
-        frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+        frequency: {
+          setValueAtTime: vi.fn(),
+          linearRampToValueAtTime: vi.fn(),
+          exponentialRampToValueAtTime: vi.fn(),
+          setTargetAtTime: vi.fn(),
+        },
         detune: { setValueAtTime: vi.fn() },
         connect: vi.fn(),
         start: vi.fn(),
@@ -159,5 +164,48 @@ describe('SoundService (Hintergrundmusik, Lautstärkeregler & Schauplatzwechsel 
 
     expect(soundService.getLocationBlendWeight()).toBeGreaterThan(0.98);
     expect(soundService.getActiveLocation()).toBe('silberstollen');
+    expect(soundService.getActiveLocationTrack().title).toBe('Eiskristall und Bergesraunen');
+  });
+
+  it('weist jedem Schauplatz ein eigenes, individuelles Musikstück zu', () => {
+    const locations = ['silberstollen', 'feenteich', 'wehrbruecke', 'holzfaeller', 'lavakrater', 'jagdhuette', 'schlosstor'] as const;
+    const titles = new Set<string>();
+
+    locations.forEach((locKey) => {
+      const track = SoundService.LOCATION_TRACKS[locKey];
+      expect(track).toBeDefined();
+      expect(track.title.length).toBeGreaterThan(3);
+      expect(track.subtitle.length).toBeGreaterThan(3);
+      expect(track.instrument.length).toBeGreaterThan(3);
+      titles.add(track.title);
+    });
+
+    // Alle Schauplätze haben komplett unterschiedliche Musiktitel
+    expect(titles.size).toBe(locations.length);
+  });
+
+  it('wechselt an der Wehrbrücke, am Holzfällerlager, am Lavakrater und am Schlosstor zum jeweiligen Musikstück', () => {
+    // 1. Wehrbrücke
+    const wehrPos = { x: 42.0, z: 21.0 };
+    for (let i = 0; i < 80; i++) {
+      soundService.updateAmbientMusic(0.1, false, wehrPos);
+    }
+    expect(soundService.getActiveLocation()).toBe('wehrbruecke');
+    expect(soundService.getActiveLocationTrack().title).toBe('Die Ballade des Wehrmeisters');
+
+    // 2. Zurück zur Kreuzung
+    for (let i = 0; i < 80; i++) {
+      soundService.updateAmbientMusic(0.1, false, { x: 0, z: 0 });
+    }
+    expect(soundService.getActiveLocation()).toBe('crossroads');
+    expect(soundService.getActiveLocationTrack().title).toBe('Lichtung im Morgendunst');
+
+    // 3. Lavakrater
+    const lavaPos = { x: -21.2, z: 44.8 };
+    for (let i = 0; i < 80; i++) {
+      soundService.updateAmbientMusic(0.1, false, lavaPos);
+    }
+    expect(soundService.getActiveLocation()).toBe('lavakrater');
+    expect(soundService.getActiveLocationTrack().title).toBe('Der Höllenschlund erwacht');
   });
 });

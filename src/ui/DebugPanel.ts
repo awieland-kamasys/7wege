@@ -18,6 +18,7 @@ export interface DebugPanelCallbacks {
   getMusicVolume?: () => number;
   getLocationBlendWeight?: () => number;
   getActiveLocation?: () => string;
+  getActiveLocationTrack?: () => { title: string; subtitle: string; instrument: string };
   getNixieBlendWeight?: () => number;
   onTogglePathBoundary?: () => boolean;
   isPathBoundaryDisabled?: () => boolean;
@@ -367,8 +368,8 @@ export class DebugPanel {
 
           <div class="debug-toggle-row">
             <div>
-              <div class="debug-toggle-name">Hintergrundmusik</div>
-              <div class="debug-toggle-desc">Prozedurale Musik (Ort: ${this.callbacks.getActiveLocation?.() ?? 'Kreuzung'}, Schauplatz: ${Math.round((this.callbacks.getLocationBlendWeight?.() ?? 0) * 100)} %, Lautstärke: ${Math.round((this.callbacks.getMusicVolume?.() ?? 0.5) * 100)} %)</div>
+              <div class="debug-toggle-name">Musik: ${this.callbacks.getActiveLocationTrack?.()?.title ?? 'Lichtung im Morgendunst'}</div>
+              <div class="debug-toggle-desc">${this.callbacks.getActiveLocationTrack?.()?.subtitle ?? 'Waldkreuzung'} · ${this.callbacks.getActiveLocationTrack?.()?.instrument ?? 'Waldharfe'} (Schauplatz: ${Math.round((this.callbacks.getLocationBlendWeight?.() ?? 0) * 100)} %, Lautstärke: ${Math.round((this.callbacks.getMusicVolume?.() ?? 0.5) * 100)} %)</div>
             </div>
             <button class="debug-btn ${this.callbacks.isMusicEnabled?.() ? 'is-active' : ''}" id="btn-toggle-music">
               ${this.callbacks.isMusicEnabled?.() ? '🎵 Aktiv' : '🔇 Stumm'}
