@@ -119,7 +119,7 @@ export function createWeirBridgeScene(
   group.add(bridgeContainer);
 
   // ============================================================================
-  // 2. BERGQUELLE, GEBIRGSSEE & HEIMAT DES RIESEN (Oberstrom: lx = -1.5 bis -9.5)
+  // 2. BERGQUELLE, WEITER GEBIRGSSEE & HEIMAT DES RIESEN (Oberstrom: lx = -1.5 bis -18.5)
   // ============================================================================
   const reservoirWaterMat = new THREE.MeshStandardMaterial({
     color: 0x1b6e84,
@@ -131,30 +131,40 @@ export function createWeirBridgeScene(
     opacity: 0.88,
   });
 
-  // Klares Wasserbecken des Gebirgssees bei der Heimat des Riesen
+  // Großes, offenes Hauptwasserbecken des Gebirgssees vor der Brücke und bei der Heimat des Riesen
   const reservoirWater = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.9, 3.7, 0.72, 32),
+    new THREE.CylinderGeometry(4.2, 3.9, 0.72, 32),
     reservoirWaterMat
   );
-  reservoirWater.scale.set(1.18, 1.0, 0.92);
-  reservoirWater.position.set(-5.4, 0.08, 0.0);
+  reservoirWater.scale.set(1.25, 1.0, 1.05);
+  reservoirWater.position.set(-5.6, 0.08, 0.2);
   reservoirWater.receiveShadow = true;
   reservoirWater.userData = { interactableType: 'weir' };
   group.add(reservoirWater);
+
+  // Weites Seewasser, das über 10 Meter offen liegt und direkt durch die Wurzelhöhle des Baumes fließt (lx = -5.0 bis -18.5)
+  const caveChannelWater = new THREE.Mesh(
+    new THREE.BoxGeometry(14.2, 0.72, 4.4),
+    reservoirWaterMat
+  );
+  caveChannelWater.position.set(-11.8, 0.08, -0.3);
+  caveChannelWater.receiveShadow = true;
+  caveChannelWater.userData = { interactableType: 'weir' };
+  group.add(caveChannelWater);
 
   // Freier Wasserlauf zwischen dem Quellsee und der Brücke
   const streamInflow = new THREE.Mesh(
     new THREE.BoxGeometry(2.8, 0.72, 2.6),
     reservoirWaterMat
   );
-  streamInflow.position.set(-2.0, 0.08, 0);
+  streamInflow.position.set(-1.8, 0.08, 0);
   streamInflow.userData = { interactableType: 'weir' };
   group.add(streamInflow);
 
-  // Sprudelnde Bergquelle an den hinteren Felsen des Stausees (lx = -9.4, lz = -0.4)
+  // Sprudelnde Bergquelle an den hinteren Felsen hinter der Wurzelhöhle (lx = -17.6, lz = -0.35)
   const springRock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.65, 1), stoneMat);
   springRock.scale.set(1.1, 1.35, 1.2);
-  springRock.position.set(-9.5, 1.1, -0.4);
+  springRock.position.set(-17.6, 1.1, -0.35);
   springRock.castShadow = true;
   springRock.receiveShadow = true;
   springRock.userData = { interactableType: 'weir' };
@@ -172,7 +182,7 @@ export function createWeirBridgeScene(
     new THREE.CylinderGeometry(0.28, 0.55, 1.45, 12),
     springCascadeMat
   );
-  springWaterfall.position.set(-8.35, 0.85, -0.35);
+  springWaterfall.position.set(-16.45, 0.85, -0.35);
   springWaterfall.rotation.z = -0.35;
   group.add(springWaterfall);
 
@@ -186,19 +196,24 @@ export function createWeirBridgeScene(
     })
   );
   springRipple.rotation.x = -Math.PI / 2;
-  springRipple.position.set(-7.9, 0.455, -0.35);
+  springRipple.position.set(-16.0, 0.455, -0.35);
   group.add(springRipple);
 
-  // Uferfelsen rund um den kleinen Stausee
+  // Uferfelsen rund um den weiten Stausee und den Höhlenkanal
   const reservoirRocks: readonly [number, number, number][] = [
-    [-2.8, -2.2, 0.65],
-    [-4.2, -3.3, 0.78],
-    [-6.1, -3.5, 0.82],
-    [-8.0, -2.6, 0.95],
-    [-8.4, 2.1, 0.88],
-    [-6.6, 3.3, 0.76],
-    [-4.5, 3.4, 0.72],
-    [-2.6, 2.2, 0.62],
+    [-2.8, -2.4, 0.65],
+    [-4.5, -3.6, 0.78],
+    [-7.2, -3.6, 0.82],
+    [-10.4, -3.2, 0.88],
+    [-13.8, -2.9, 0.92],
+    [-16.8, -2.5, 0.95],
+    [-18.5, 0.8, 0.92],
+    [-16.2, 2.2, 0.85],
+    [-13.0, 2.4, 0.80],
+    [-9.6, 3.2, 0.84],
+    [-6.6, 3.6, 0.76],
+    [-4.2, 3.5, 0.72],
+    [-2.6, 2.3, 0.62],
   ];
   for (const [rx, rz, rSize] of reservoirRocks) {
     const rMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(rSize, 0), stoneMat);
@@ -233,7 +248,7 @@ export function createWeirBridgeScene(
   group.add(giantHomeGroup);
 
   // ============================================================================
-  // 3. DER GEBIRGSBACH UNTER DER BRÜCKE & FLUSSLAUF INS TAL (lx = -2.0 bis +8.5)
+  // 3. DER GEBIRGSBACH UNTER DER BRÜCKE & WEITGEFÜHRTER FLUSSLAUF INS TAL (lx = -2.8 bis +28.5)
   // ============================================================================
   const dryBedMat = new THREE.MeshStandardMaterial({
     color: 0x595143,
@@ -248,29 +263,31 @@ export function createWeirBridgeScene(
     opacity: 0.82,
   });
 
-  // Steiniges Bachbett, das frei unter der Holzbrücke hindurch nach Südwesten (+X) fließt
-  const streamBed = new THREE.Mesh(new THREE.BoxGeometry(11.2, 0.04, 2.85), dryBedMat);
-  streamBed.position.set(2.8, 0.015, 0);
+  // Steiniges Bachbett, das frei unter der Holzbrücke hindurch 20 Meter weiter ins Tal (+lx) fließt
+  const streamBed = new THREE.Mesh(new THREE.BoxGeometry(31.4, 0.04, 2.85), dryBedMat);
+  streamBed.position.set(12.85, 0.015, 0);
   streamBed.receiveShadow = true;
   group.add(streamBed);
 
-  // Klarer, frei fließender Gebirgsbach ohne Barriere
-  const streamWater = new THREE.Mesh(new THREE.BoxGeometry(11.0, 0.05, 1.45), streamWaterMat);
-  streamWater.position.set(2.7, 0.03, 0);
+  // Klarer, frei fließender Gebirgsbach ohne Barriere entlang des gesamten 31 Meter langen Tals
+  const streamWater = new THREE.Mesh(new THREE.BoxGeometry(31.2, 0.05, 1.55), streamWaterMat);
+  streamWater.position.set(12.8, 0.03, 0);
   streamWater.userData = { interactableType: 'weir' };
   group.add(streamWater);
 
-  // Uferkiesel entlang des Bachbetts auf der Talseite (+X)
-  for (let i = 0; i < 12; i++) {
-    const lx = -0.4 + i * 0.72;
+  // Uferkiesel und Felsen entlang des gesamten Flusslaufs auf der Talseite (+lx bis 28.5m)
+  for (let i = 0; i < 38; i++) {
+    const lx = -0.4 + i * 0.76;
     for (const side of [-1, 1]) {
+      const isBigRock = i % 5 === 0 && i > 0;
       const pebble = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(0.24 + (i % 3) * 0.08, 0),
+        new THREE.DodecahedronGeometry(isBigRock ? 0.48 : (0.22 + (i % 3) * 0.07), 0),
         i % 2 === 0 ? stoneMat : darkStoneMat
       );
-      pebble.scale.set(1.2, 0.55, 1.0);
-      pebble.position.set(lx, 0.08, side * (1.15 + (i % 2) * 0.2));
+      pebble.scale.set(1.2, isBigRock ? 0.8 : 0.55, 1.0);
+      pebble.position.set(lx, isBigRock ? 0.18 : 0.08, side * (1.2 + (i % 3) * 0.18));
       pebble.castShadow = true;
+      pebble.receiveShadow = true;
       group.add(pebble);
     }
   }

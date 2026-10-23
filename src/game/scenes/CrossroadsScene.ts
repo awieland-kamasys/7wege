@@ -36,6 +36,7 @@ import {
   CREATURE_NPC_POS,
   WORLD_TREE_POS,
   GIANT_WORLD_TREE_POS,
+  HOLLOW_TREE_POS,
 } from '../data/paths';
 import { createClosedGate, ClosedGateEntity } from '../entities/ClosedGate';
 import { createCreatureNpc, CreatureNpcEntity } from '../entities/CreatureNpc';
@@ -168,6 +169,7 @@ export class CrossroadsScene {
   private readonly creatureNpc: CreatureNpcEntity;
   private readonly worldTree: WorldTreeEntity;
   private readonly giantWorldTree: WorldTreeEntity;
+  private readonly hollowTree: WorldTreeEntity;
   private readonly path1Boulder: PathBoulderEntity;
   private readonly path2Puddle: PathPuddleEntity;
   private readonly path3Stream: PathStreamEntity;
@@ -440,12 +442,17 @@ export class CrossroadsScene {
     });
     this.scene.add(this.worldTree.group);
 
-    // Zweiter uralter, riesiger Weltenbaum (fantasy tree 3d model.glb) rechts vom Riesenteich
+    // Zweiter uralter, riesiger Weltenbaum (fantasy tree 3d model.glb) direkt hinter dem Riesen
     this.giantWorldTree = createWorldTree({
       onMeshLoaded: (mesh) => {
         this.pickableObjects.push(mesh);
       },
-      rotationY: 1.35, // leicht versetzte Drehung für organische Vielfalt
+      rotationY: 1.15,
+      sinkDepth: 1.65,
+      moundRadius: 4.8,
+      moundTopRadius: 2.8,
+      moundHeight: 0.75,
+      moundOffsetY: -0.25,
     });
     this.giantWorldTree.group.position.set(
       GIANT_WORLD_TREE_POS.x,
@@ -458,6 +465,30 @@ export class CrossroadsScene {
       }
     });
     this.scene.add(this.giantWorldTree.group);
+
+    // Stilisierter Höhlenbaum (stylized tree 3d model.glb) im Riesenteich, durch dessen Wurzelhöhle der See fließt
+    this.hollowTree = createWorldTree({
+      modelUrl: '/assets/models/stylized tree 3d model.glb',
+      scale: 26.0,
+      rotationY: 1.94, // 30 Grad im Uhrzeigersinn gedreht für optimale Ansicht der Wurzelhöhle
+      sinkDepth: 0.38, // Standhaft im Seegrund verankert mit freiem Höhlenbogen
+      hasMound: false, // Kein Erd-/Mooshügel, damit der See ungehindert durch die Höhle fließt
+      hasAura: true,
+      onMeshLoaded: (mesh) => {
+        this.pickableObjects.push(mesh);
+      },
+    });
+    this.hollowTree.group.position.set(
+      HOLLOW_TREE_POS.x,
+      getTerrainHeight(HOLLOW_TREE_POS.x, HOLLOW_TREE_POS.z),
+      HOLLOW_TREE_POS.z
+    );
+    this.hollowTree.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.hollowTree.group);
 
     // Lagerfeuerszene (Campfire Scene) auf der Waldlichtung am Ende des 4. Weges
     this.lumberCamp = createLumberjackCamp((mesh) => {
@@ -1130,8 +1161,13 @@ export class CrossroadsScene {
     // Freiraum um die riesigen Weltenbäume (keine Fichten im Stamm- und Wurzelbereich)
     if (
       Math.hypot(x - WORLD_TREE_POS.x, z - WORLD_TREE_POS.z) < 6.8 ||
-      Math.hypot(x - GIANT_WORLD_TREE_POS.x, z - GIANT_WORLD_TREE_POS.z) < 6.8
+      Math.hypot(x - GIANT_WORLD_TREE_POS.x, z - GIANT_WORLD_TREE_POS.z) < 11.5 ||
+      Math.hypot(x - HOLLOW_TREE_POS.x, z - HOLLOW_TREE_POS.z) < 6.8
     ) {
+      return;
+    }
+    // Komplette Freihaltung aller Nadelbäume im Bereich hinter dem Riesen
+    if (x >= 42.8 && z >= 12.0 && z <= 28.5) {
       return;
     }
     const snowy = isSnowy ?? (!isBurned && this.isSnowZone(x, z));
@@ -1491,10 +1527,22 @@ export class CrossroadsScene {
   }
 
   private isNearPath3Corridor(x: number, z: number, minDistance = 3.2): boolean {
-    // Auch Stausee (Oberwasser) und Bachbett (Unterwasser) rund um die Wehrbrücke von Bäumen freihalten
+    // Stausee (Oberwasser) und weitergeführten Gebirgsbach (Unterwasser links der Brücke) von Bäumen freihalten
     if (Math.hypot(x - WEIR_BRIDGE_POS.x, z - WEIR_BRIDGE_POS.z) < 10.6) {
       return true;
     }
+
+    // Flusslauf links der Brücke (+lx bis +30m) und weitergeführter See rechts (-lx bis -19m) von Bäumen freihalten
+    const dxBridge = x - WEIR_BRIDGE_POS.x;
+    const dzBridge = z - WEIR_BRIDGE_POS.z;
+    const cosBridge = Math.cos(WEIR_BRIDGE_POS.rotationY);
+    const sinBridge = Math.sin(WEIR_BRIDGE_POS.rotationY);
+    const streamLx = dxBridge * cosBridge - dzBridge * sinBridge;
+    const streamLz = dxBridge * sinBridge + dzBridge * cosBridge;
+    if (streamLx >= -19.0 && streamLx <= 30.0 && Math.abs(streamLz) < 3.2) {
+      return true;
+    }
+
     return this.isNearCurvedCorridor(x, z, PATH_3_WAYPOINTS, PATH_3_END_CLEARING, minDistance);
   }
 
@@ -1771,7 +1819,7 @@ export class CrossroadsScene {
       }
     }
 
-    // Baumkulisse hinter dem Vorplatz des Riesen und seitlich des Stausees
+    // Baumkulisse seitlich des Stausees (hinter dem Riesen komplett freigehalten für den Weltenbaum)
     const cos = Math.cos(WEIR_BRIDGE_POS.rotationY);
     const sin = Math.sin(WEIR_BRIDGE_POS.rotationY);
     const weirSurroundingTrees: readonly [number, number, number, boolean][] = [
@@ -1779,10 +1827,6 @@ export class CrossroadsScene {
       [-11.2, 0.4, 1.24, false],
       [-10.4, 4.2, 1.38, true],
       [-7.5, 7.6, 1.28, false],
-      [-3.8, 9.8, 1.35, true],
-      [0.5, 10.6, 1.22, false],
-      [4.6, 9.6, 1.3, true],
-      [7.8, 6.8, 1.18, false],
     ];
 
     for (const [lx, lz, scale, useDark] of weirSurroundingTrees) {
@@ -3124,6 +3168,7 @@ export class CrossroadsScene {
     // Die uralten Weltenbäume (sanft schwebende Kronenlichter)
     this.worldTree.update(this.elapsedSeconds, dtSeconds);
     this.giantWorldTree.update(this.elapsedSeconds, dtSeconds);
+    this.hollowTree.update(this.elapsedSeconds, dtSeconds);
     // Weg 4: Holzfällerlager & Holzweibchen
     if (distLumber < 33) {
       this.lumberCamp.update(this.elapsedSeconds);

@@ -191,11 +191,21 @@ export const WORLD_TREE_POS: PathPoint2D = {
 
 /**
  * Position des zweiten riesigen Weltenbaums (fantasy tree 3d model.glb),
- * majestätisch rechts am Ufer des Riesenteichs beim Riesen auf Weg 3.
+ * 5 Meter nach vorn gerückt (ca. 10 Meter hinter dem Riesen) im Waldsaum auf Weg 3.
  */
 export const GIANT_WORLD_TREE_POS: PathPoint2D = {
-  x: 45.6,
-  z: 25.6,
+  x: 53.5,
+  z: 20.3,
+};
+
+/**
+ * Position des stilisierten Höhlenbaums (stylized tree 3d model.glb),
+ * nach rechts gerückt (Brücke liegt komplett frei mit über 10 m offenem Wasser davor),
+ * sodass der See und die Bergquelle direkt durch seine Wurzelhöhle fließen.
+ */
+export const HOLLOW_TREE_POS: PathPoint2D = {
+  x: 28.8,
+  z: 30.5,
 };
 
 /**

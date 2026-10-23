@@ -8,6 +8,7 @@ import {
   WEIR_BRIDGE_POS,
   WORLD_TREE_POS,
   GIANT_WORLD_TREE_POS,
+  HOLLOW_TREE_POS,
   PATH_1_WAYPOINTS,
   PATH_2_WAYPOINTS,
   PATH_3_WAYPOINTS,
@@ -49,8 +50,10 @@ export const TERRAIN_PLATEAUS: PlateauDefinition[] = [
   { x: CLOSED_GATE_POS.x, z: CLOSED_GATE_POS.z, radius: 8.0, blendRadius: 14.0, height: 2.2 },
   // 8. Uralter Weltenbaum zwischen Nixe und Riese: Ruhiges Waldplateau
   { x: WORLD_TREE_POS.x, z: WORLD_TREE_POS.z, radius: 4.8, blendRadius: 10.5, height: -0.3 },
-  // 9. Weltenbaum rechts vom Riesenteich: Bündig und eben am Teichplateau des Riesen (-1.50m)
-  { x: GIANT_WORLD_TREE_POS.x, z: GIANT_WORLD_TREE_POS.z, radius: 5.2, blendRadius: 11.0, height: -1.5 },
+  // 9. Zweiter Weltenbaum im Waldsaum ca. 10m hinter dem Riesen (Weg 3): Bündig am Vorplatz (-1.50m)
+  { x: GIANT_WORLD_TREE_POS.x, z: GIANT_WORLD_TREE_POS.z, radius: 5.5, blendRadius: 12.0, height: -1.5 },
+  // 10. Stilisierter Höhlenbaum weiter rechts im Riesenteich: Bündig und eben am Seegrund (-1.50m)
+  { x: HOLLOW_TREE_POS.x, z: HOLLOW_TREE_POS.z, radius: 5.2, blendRadius: 11.0, height: -1.5 },
 ];
 
 function smoothstep(edge0: number, edge1: number, x: number): number {
@@ -178,12 +181,40 @@ export function getTerrainHeight(x: number, z: number): number {
   const clearingBlend = smoothstep(8.2, 12.5, distFromCenter);
   const naturalBaseHeight = (bestPathHeight * bestPathWeight + hills * (1.0 - bestPathWeight)) * clearingBlend + mountainBackdrop;
 
+  // 5. Seetal (Riesenteich) und Flusstal des Gebirgsbachs entlang der Wehrbrücken-Achse:
+  // - Oberstrom / See rechts der Brücke (lx von -1.0 bis -19.0): ebenes Seebecken auf -1.50m
+  // - Unterstrom / Gebirgsbach links der Brücke (lx von -2.5 bis +29.5): Bachtal auf -1.50m
+  const dxBridge = x - WEIR_BRIDGE_POS.x;
+  const dzBridge = z - WEIR_BRIDGE_POS.z;
+  const cosBridge = Math.cos(WEIR_BRIDGE_POS.rotationY);
+  const sinBridge = Math.sin(WEIR_BRIDGE_POS.rotationY);
+  const streamLx = dxBridge * cosBridge - dzBridge * sinBridge;
+  const streamLz = dxBridge * sinBridge + dzBridge * cosBridge;
+
+  let streamValleyWeight = 0;
+  if (streamLx >= -2.5 && streamLx <= 29.5 && Math.abs(streamLz) < 4.2) {
+    const wAcross = 1.0 - smoothstep(1.45, 4.2, Math.abs(streamLz));
+    const wAlong = 1.0 - smoothstep(25.0, 29.5, streamLx);
+    streamValleyWeight = wAcross * wAlong;
+  } else if (streamLx >= -19.0 && streamLx < -1.0 && Math.abs(streamLz) < 6.5) {
+    const wAcrossLake = 1.0 - smoothstep(3.8, 6.5, Math.abs(streamLz));
+    const wAlongLake = 1.0 - smoothstep(15.5, 19.0, Math.abs(streamLx));
+    streamValleyWeight = wAcrossLake * wAlongLake;
+  }
+
+  let terrainHeightResult = naturalBaseHeight;
   // Wenn Plateau-Einfluss vorhanden ist, mit Plateau sanft überblenden
   if (plateauWeightSum > 0) {
     const pWeight = Math.min(1.0, plateauWeightSum);
     const avgPlateauH = plateauHeightSum / plateauWeightSum;
-    return avgPlateauH * pWeight + naturalBaseHeight * (1.0 - pWeight);
+    terrainHeightResult = avgPlateauH * pWeight + naturalBaseHeight * (1.0 - pWeight);
   }
 
-  return naturalBaseHeight;
+  // Flusstal-Einfluss überblenden (schneidet das Bachtal auf -1.50m sanft ein)
+  if (streamValleyWeight > 0) {
+    const riverBedHeight = -1.5;
+    terrainHeightResult = riverBedHeight * streamValleyWeight + terrainHeightResult * (1.0 - streamValleyWeight);
+  }
+
+  return terrainHeightResult;
 }

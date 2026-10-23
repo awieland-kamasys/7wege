@@ -1132,11 +1132,11 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(state.isCollidingWithObstacles(treePos.x + 5.0, treePos.z)).toBe(false);
   });
 
-  it('verwaltet den zweiten riesigen Weltenbaum rechts vom Riesenteich mit solider Stammkollision', () => {
+  it('verwaltet den zweiten riesigen Weltenbaum ca. 10m hinter dem Riesen mit solider Stammkollision', () => {
     const state = new CrossroadsState();
     const giantTreePos = state.getGiantWorldTreePosition();
-    expect(giantTreePos.x).toBeCloseTo(45.6, 1);
-    expect(giantTreePos.z).toBeCloseTo(25.6, 1);
+    expect(giantTreePos.x).toBeCloseTo(53.5, 1);
+    expect(giantTreePos.z).toBeCloseTo(20.3, 1);
 
     // Stammkollision: Exakt am Weltenbaum-Stamm herrscht Kollision
     expect(state.isCollidingWithObstacles(giantTreePos.x, giantTreePos.z)).toBe(true);
@@ -1147,5 +1147,12 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     // Kollisionsauflösung schiebt den Spieler sanft aus dem Stamm heraus
     const resolved = state.resolveObstacleCollisions(giantTreePos.x + 0.5, giantTreePos.z);
     expect(Math.hypot(resolved.x - giantTreePos.x, resolved.z - giantTreePos.z)).toBeGreaterThanOrEqual(2.39);
+  });
+
+  it('verwaltet den stilisierten Höhlenbaum im Riesenteich mit Höhlendurchfluss', () => {
+    const state = new CrossroadsState();
+    const hollowTreePos = state.getHollowTreePosition();
+    expect(hollowTreePos.x).toBeCloseTo(28.8, 1);
+    expect(hollowTreePos.z).toBeCloseTo(30.5, 1);
   });
 });

@@ -8,18 +8,25 @@ export interface WorldTreeEntity {
 }
 
 export interface WorldTreeOptions {
+  modelUrl?: string;
   onMeshLoaded?: (mesh: THREE.Mesh) => void;
   scale?: number;
   rotationY?: number;
   sinkDepth?: number;
+  moundRadius?: number;
+  moundTopRadius?: number;
+  moundHeight?: number;
+  moundOffsetY?: number;
+  hasMound?: boolean;
+  hasAura?: boolean;
 }
 
 /**
- * Erstellt den uralten, monumentalen Weltenbaum (Yggdrasil-Archetyp) auf Weg 2/3:
- * - 3D-Modell `/assets/models/fantasy tree 3d model.glb`
- * - Platziert in der goldenen Mitte zwischen dem Reich der Nixe und des Riesen (WORLD_TREE_POS: x: 44.0, z: 2.5)
- * - Monumentale Höhe von ca. 23 Metern (Skalierungsfaktor 26) mit weit ausladender Krone
- * - Magische Waldlicht-Aura aus sanft schwebenden, leuchtenden Glühwürmchen-Partikeln um die Krone
+ * Erstellt einen uralten, monumentalen Weltenbaum (Yggdrasil-Archetyp) oder stilisierten Riesenbaum:
+ * - Unterstützt 3D-Modelle wie `/assets/models/fantasy tree 3d model.glb` oder `/assets/models/stylized tree 3d model.glb`
+ * - Monumentale Höhe von ca. 21-23 Metern (Skalierungsfaktor 26) mit weit ausladender Krone
+ * - Optionale magische Waldlicht-Aura aus sanft schwebenden, leuchtenden Glühwürmchen-Partikeln um die Krone
+ * - Konfigurierbare Wurzelverankerung und optionaler Moos-/Wurzelhügel
  */
 export function createWorldTree(
   options?: WorldTreeOptions
@@ -28,26 +35,37 @@ export function createWorldTree(
   group.name = 'WorldTree';
   group.userData = { interactableType: 'world_tree' };
 
+  const modelUrl = options?.modelUrl ?? '/assets/models/fantasy tree 3d model.glb';
   const treeScale = options?.scale ?? 26.0;
   const sinkDepth = options?.sinkDepth ?? 1.65;
+  const hasMound = options?.hasMound ?? true;
+  const hasAura = options?.hasAura ?? true;
+
   if (options?.rotationY !== undefined) {
     group.rotation.y = options.rotationY;
   }
 
-  // 1. Sanfter, moosig-erdiger Wurzelhügel an der Basis, der die Wurzeln organisch mit dem Waldboden verschmilzt
-  const moundMat = new THREE.MeshStandardMaterial({
-    color: 0x36442e,
-    roughness: 0.94,
-    flatShading: true,
-  });
-  const rootMound = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.6, 6.4, 0.85, 18),
-    moundMat
-  );
-  rootMound.position.y = -0.25;
-  rootMound.receiveShadow = true;
-  rootMound.userData = { interactableType: 'world_tree' };
-  group.add(rootMound);
+  // 1. Sanfter, moosig-erdiger Wurzelhügel an der Basis (optional, für Bäume mit freiem Wurzelbogen/Höhle deaktivierbar)
+  if (hasMound) {
+    const moundMat = new THREE.MeshStandardMaterial({
+      color: 0x36442e,
+      roughness: 0.94,
+      flatShading: true,
+    });
+    const moundRadius = options?.moundRadius ?? 6.4;
+    const moundTopRadius = options?.moundTopRadius ?? (moundRadius * 0.56);
+    const moundHeight = options?.moundHeight ?? 0.85;
+    const moundOffsetY = options?.moundOffsetY ?? -0.25;
+
+    const rootMound = new THREE.Mesh(
+      new THREE.CylinderGeometry(moundTopRadius, moundRadius, moundHeight, 18),
+      moundMat
+    );
+    rootMound.position.y = moundOffsetY;
+    rootMound.receiveShadow = true;
+    rootMound.userData = { interactableType: 'world_tree' };
+    group.add(rootMound);
+  }
 
   // 2. Platzhalter während des GLTF-Ladevorgangs
   const fallback = new THREE.Group();
@@ -130,13 +148,15 @@ export function createWorldTree(
     depthWrite: false,
   });
 
-  const auraPoints = new THREE.Points(particleGeo, particleMat);
-  group.add(auraPoints);
+  if (hasAura) {
+    const auraPoints = new THREE.Points(particleGeo, particleMat);
+    group.add(auraPoints);
+  }
 
   // 3. GLTF-Ladevorgang des detailreichen 3D-Fantasy-Baums
   const loader = new GLTFLoader();
   loader.load(
-    '/assets/models/fantasy tree 3d model.glb',
+    modelUrl,
     (gltf) => {
       const model = gltf.scene;
 
@@ -179,11 +199,12 @@ export function createWorldTree(
     },
     undefined,
     (err) => {
-      console.warn('fantasy tree 3d model.glb konnte nicht geladen werden, nutze Fallback-Baum:', err);
+      console.warn(`Baum-Modell ${modelUrl} konnte nicht geladen werden, nutze Fallback-Baum:`, err);
     }
   );
 
   const update = (elapsedSeconds: number, _dtSeconds?: number): void => {
+    if (!hasAura) return;
     // Sanfte Kreisanimation der schwebenden Waldlichter um die Krone
     const pos = particleGeo.attributes.position as THREE.BufferAttribute;
     const array = pos.array as Float32Array;

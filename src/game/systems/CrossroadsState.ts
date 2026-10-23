@@ -50,6 +50,7 @@ import {
   WOOD_WOMAN_NPC_POS,
   WORLD_TREE_POS,
   GIANT_WORLD_TREE_POS,
+  HOLLOW_TREE_POS,
 } from '../data/paths';
 
 export interface Vector2D {
@@ -172,6 +173,8 @@ export class CrossroadsState {
   private readonly worldTreeCollisionRadius = 2.4;
   private readonly giantWorldTreePos: Vector2D = { ...GIANT_WORLD_TREE_POS };
   private readonly giantWorldTreeCollisionRadius = 2.4;
+  private readonly hollowTreePos: Vector2D = { ...HOLLOW_TREE_POS };
+  private readonly hollowTreeCollisionRadius = 2.2;
 
   // Am Ende des 4. Weges: Holzfällerlager auf der Waldlichtung und das Holzweibchen
   private readonly lumberCampPos: Vector2D = { x: LUMBER_CAMP_POS.x, z: LUMBER_CAMP_POS.z };
@@ -269,6 +272,14 @@ export class CrossroadsState {
 
   public getGiantWorldTreePosition(): Readonly<Vector2D> {
     return { ...this.giantWorldTreePos };
+  }
+
+  public getHollowTreePosition(): Readonly<Vector2D> {
+    return { ...this.hollowTreePos };
+  }
+
+  public getHollowTreeCollisionRadius(): number {
+    return this.hollowTreeCollisionRadius;
   }
 
   public getWoodWomanPosition(): Readonly<Vector2D> {
