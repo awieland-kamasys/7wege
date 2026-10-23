@@ -7,6 +7,7 @@ import {
   POND_CENTER_POS,
   WEIR_BRIDGE_POS,
   WORLD_TREE_POS,
+  GIANT_WORLD_TREE_POS,
   PATH_1_WAYPOINTS,
   PATH_2_WAYPOINTS,
   PATH_3_WAYPOINTS,
@@ -48,6 +49,8 @@ export const TERRAIN_PLATEAUS: PlateauDefinition[] = [
   { x: CLOSED_GATE_POS.x, z: CLOSED_GATE_POS.z, radius: 8.0, blendRadius: 14.0, height: 2.2 },
   // 8. Uralter Weltenbaum zwischen Nixe und Riese: Ruhiges Waldplateau
   { x: WORLD_TREE_POS.x, z: WORLD_TREE_POS.z, radius: 4.8, blendRadius: 10.5, height: -0.3 },
+  // 9. Weltenbaum rechts vom Riesenteich: Bündig und eben am Teichplateau des Riesen (-1.50m)
+  { x: GIANT_WORLD_TREE_POS.x, z: GIANT_WORLD_TREE_POS.z, radius: 5.2, blendRadius: 11.0, height: -1.5 },
 ];
 
 function smoothstep(edge0: number, edge1: number, x: number): number {

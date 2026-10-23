@@ -1131,4 +1131,21 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     // Außerhalb des Stammradius (z.B. in 5 Metern Entfernung) kollidiert nichts
     expect(state.isCollidingWithObstacles(treePos.x + 5.0, treePos.z)).toBe(false);
   });
+
+  it('verwaltet den zweiten riesigen Weltenbaum rechts vom Riesenteich mit solider Stammkollision', () => {
+    const state = new CrossroadsState();
+    const giantTreePos = state.getGiantWorldTreePosition();
+    expect(giantTreePos.x).toBeCloseTo(45.6, 1);
+    expect(giantTreePos.z).toBeCloseTo(25.6, 1);
+
+    // Stammkollision: Exakt am Weltenbaum-Stamm herrscht Kollision
+    expect(state.isCollidingWithObstacles(giantTreePos.x, giantTreePos.z)).toBe(true);
+
+    // Im Umkreis um den Stammkern ist das Hindernis aktiv
+    expect(state.isCollidingWithObstacles(giantTreePos.x + 1.2, giantTreePos.z)).toBe(true);
+
+    // Kollisionsauflösung schiebt den Spieler sanft aus dem Stamm heraus
+    const resolved = state.resolveObstacleCollisions(giantTreePos.x + 0.5, giantTreePos.z);
+    expect(Math.hypot(resolved.x - giantTreePos.x, resolved.z - giantTreePos.z)).toBeGreaterThanOrEqual(2.39);
+  });
 });

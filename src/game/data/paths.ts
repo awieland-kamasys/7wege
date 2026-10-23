@@ -190,6 +190,15 @@ export const WORLD_TREE_POS: PathPoint2D = {
 };
 
 /**
+ * Position des zweiten riesigen Weltenbaums (fantasy tree 3d model.glb),
+ * majestätisch rechts am Ufer des Riesenteichs beim Riesen auf Weg 3.
+ */
+export const GIANT_WORLD_TREE_POS: PathPoint2D = {
+  x: 45.6,
+  z: 25.6,
+};
+
+/**
  * Position, Ausrichtung und Kollisionsradius des reißenden Bachlaufs, der Weg 3 (Quellenweg) versperrt.
  * Exakt auf die Referenz-Entfernung wie das Feuer (~16.3 m von der Kreuzung) gesetzt.
  * Lässt sich durch Anklicken des rotierenden Saphir-Edelsteins am Pfadanfang beseitigen.

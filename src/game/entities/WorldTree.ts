@@ -9,6 +9,9 @@ export interface WorldTreeEntity {
 
 export interface WorldTreeOptions {
   onMeshLoaded?: (mesh: THREE.Mesh) => void;
+  scale?: number;
+  rotationY?: number;
+  sinkDepth?: number;
 }
 
 /**
@@ -24,6 +27,12 @@ export function createWorldTree(
   const group = new THREE.Group();
   group.name = 'WorldTree';
   group.userData = { interactableType: 'world_tree' };
+
+  const treeScale = options?.scale ?? 26.0;
+  const sinkDepth = options?.sinkDepth ?? 1.65;
+  if (options?.rotationY !== undefined) {
+    group.rotation.y = options.rotationY;
+  }
 
   // 1. Sanfter, moosig-erdiger Wurzelhügel an der Basis, der die Wurzeln organisch mit dem Waldboden verschmilzt
   const moundMat = new THREE.MeshStandardMaterial({
@@ -131,16 +140,14 @@ export function createWorldTree(
     (gltf) => {
       const model = gltf.scene;
 
-      // Monumentale Weltenbaum-Skalierung (Faktor 26 -> ca. 22.7m Höhe, 26m Kronenbreite)
-      const treeScale = 26.0;
+      // Monumentale Weltenbaum-Skalierung mit Wurzelverankerung im Waldboden
       model.scale.setScalar(treeScale);
 
-      // Aufsetzen und tiefe Verankerung im Waldboden (sinkDepth = 1.65m),
+      // Aufsetzen und tiefe Verankerung im Waldboden,
       // sodass die gewaltigen Wurzelstränge natürlich aus der Erde hervortreten
       // und kein Teil der flachen Modellunterseite in der Luft schwebt
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
-      const sinkDepth = 1.65;
       model.position.set(0, -bounds.min.y - sinkDepth, 0);
 
       model.traverse((child) => {

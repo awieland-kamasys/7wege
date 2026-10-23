@@ -49,6 +49,7 @@ import {
   WOOD_WOMAN_LODGE_NPC_POS,
   WOOD_WOMAN_NPC_POS,
   WORLD_TREE_POS,
+  GIANT_WORLD_TREE_POS,
 } from '../data/paths';
 
 export interface Vector2D {
@@ -169,6 +170,8 @@ export class CrossroadsState {
   private readonly giantCollisionRadius = 1.65;
   private readonly worldTreePos: Vector2D = { ...WORLD_TREE_POS };
   private readonly worldTreeCollisionRadius = 2.4;
+  private readonly giantWorldTreePos: Vector2D = { ...GIANT_WORLD_TREE_POS };
+  private readonly giantWorldTreeCollisionRadius = 2.4;
 
   // Am Ende des 4. Weges: Holzfällerlager auf der Waldlichtung und das Holzweibchen
   private readonly lumberCampPos: Vector2D = { x: LUMBER_CAMP_POS.x, z: LUMBER_CAMP_POS.z };
@@ -262,6 +265,10 @@ export class CrossroadsState {
 
   public getWorldTreePosition(): Readonly<Vector2D> {
     return { ...this.worldTreePos };
+  }
+
+  public getGiantWorldTreePosition(): Readonly<Vector2D> {
+    return { ...this.giantWorldTreePos };
   }
 
   public getWoodWomanPosition(): Readonly<Vector2D> {
@@ -1069,6 +1076,11 @@ export class CrossroadsState {
       return true;
     }
 
+    // Stamm des zweiten riesigen Weltenbaums rechts vom Riesenteich
+    if (Math.hypot(x - this.giantWorldTreePos.x, z - this.giantWorldTreePos.z) < this.giantWorldTreeCollisionRadius - eps) {
+      return true;
+    }
+
     // Die Campfire-Insel mit allen Aufbauten (Lagerfeuer, Kessel, Zelt, Scheite, Stämme) auf Weg 4
     if (
       Math.hypot(x - this.lumberCampPos.x, z - this.lumberCampPos.z) <
@@ -1659,6 +1671,16 @@ export class CrossroadsState {
       );
       resolvedX = afterWorldTree.x;
       resolvedZ = afterWorldTree.z;
+
+      // Weltenbaum-Stamm rechts vom Riesenteich
+      const afterGiantWorldTree = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.giantWorldTreePos,
+        this.giantWorldTreeCollisionRadius
+      );
+      resolvedX = afterGiantWorldTree.x;
+      resolvedZ = afterGiantWorldTree.z;
 
       // Holzweibchen-Kollision am Ende von Weg 4
       const afterWoodWoman = this.pushOutOfCircle(

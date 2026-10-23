@@ -35,6 +35,7 @@ import {
   CLOSED_GATE_POS,
   CREATURE_NPC_POS,
   WORLD_TREE_POS,
+  GIANT_WORLD_TREE_POS,
 } from '../data/paths';
 import { createClosedGate, ClosedGateEntity } from '../entities/ClosedGate';
 import { createCreatureNpc, CreatureNpcEntity } from '../entities/CreatureNpc';
@@ -166,6 +167,7 @@ export class CrossroadsScene {
   private readonly closedGate: ClosedGateEntity;
   private readonly creatureNpc: CreatureNpcEntity;
   private readonly worldTree: WorldTreeEntity;
+  private readonly giantWorldTree: WorldTreeEntity;
   private readonly path1Boulder: PathBoulderEntity;
   private readonly path2Puddle: PathPuddleEntity;
   private readonly path3Stream: PathStreamEntity;
@@ -437,6 +439,25 @@ export class CrossroadsScene {
       }
     });
     this.scene.add(this.worldTree.group);
+
+    // Zweiter uralter, riesiger Weltenbaum (fantasy tree 3d model.glb) rechts vom Riesenteich
+    this.giantWorldTree = createWorldTree({
+      onMeshLoaded: (mesh) => {
+        this.pickableObjects.push(mesh);
+      },
+      rotationY: 1.35, // leicht versetzte Drehung für organische Vielfalt
+    });
+    this.giantWorldTree.group.position.set(
+      GIANT_WORLD_TREE_POS.x,
+      getTerrainHeight(GIANT_WORLD_TREE_POS.x, GIANT_WORLD_TREE_POS.z),
+      GIANT_WORLD_TREE_POS.z
+    );
+    this.giantWorldTree.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.giantWorldTree.group);
 
     // Lagerfeuerszene (Campfire Scene) auf der Waldlichtung am Ende des 4. Weges
     this.lumberCamp = createLumberjackCamp((mesh) => {
@@ -1106,8 +1127,11 @@ export class CrossroadsScene {
     birdhouseAngle?: number,
     isSnowy?: boolean
   ): void {
-    // Freiraum um den riesigen Weltenbaum zwischen Nixe und Riese (keine Fichten im Stamm- und Wurzelbereich)
-    if (Math.hypot(x - WORLD_TREE_POS.x, z - WORLD_TREE_POS.z) < 6.8) {
+    // Freiraum um die riesigen Weltenbäume (keine Fichten im Stamm- und Wurzelbereich)
+    if (
+      Math.hypot(x - WORLD_TREE_POS.x, z - WORLD_TREE_POS.z) < 6.8 ||
+      Math.hypot(x - GIANT_WORLD_TREE_POS.x, z - GIANT_WORLD_TREE_POS.z) < 6.8
+    ) {
       return;
     }
     const snowy = isSnowy ?? (!isBurned && this.isSnowZone(x, z));
@@ -3097,8 +3121,9 @@ export class CrossroadsScene {
       );
     }
 
-    // Der uralte Weltenbaum zwischen Nixe und Riese (sanft schwebende Kronenlichter)
+    // Die uralten Weltenbäume (sanft schwebende Kronenlichter)
     this.worldTree.update(this.elapsedSeconds, dtSeconds);
+    this.giantWorldTree.update(this.elapsedSeconds, dtSeconds);
     // Weg 4: Holzfällerlager & Holzweibchen
     if (distLumber < 33) {
       this.lumberCamp.update(this.elapsedSeconds);
