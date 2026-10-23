@@ -4,6 +4,7 @@ import { DialogueSystem } from '../game/systems/DialogueSystem';
 import { SoundService } from '../game/systems/SoundService';
 import { SpeechService } from '../game/systems/SpeechService';
 import { HudOverlay } from '../ui/HudOverlay';
+import { DebugPanel } from '../ui/DebugPanel';
 import { TerrainPresetKey } from '../game/textures/TerrainPresets';
 
 /**
@@ -17,6 +18,7 @@ export class GameApp {
   private readonly sound: SoundService;
   private readonly scene: CrossroadsScene;
   private readonly hud: HudOverlay;
+  private readonly debugPanel: DebugPanel;
   private readonly pressedKeys = new Set<string>();
   private animationFrameId = 0;
   private lastTime = performance.now();
@@ -90,6 +92,18 @@ export class GameApp {
       onSelectTerrainPreset: (presetKey) => {
         this.setTerrainPreset(presetKey);
       },
+    });
+
+    this.debugPanel = new DebugPanel(uiRoot, {
+      onToggleShadows: (enabled) => this.scene.setShadowsEnabled(enabled),
+      isShadowsEnabled: () => this.scene.isShadowsEnabled(),
+      onToggleTerrainSimple: (enabled) => this.scene.setTerrainSimpleMode(enabled),
+      isTerrainSimple: () => this.scene.isTerrainSimpleMode(),
+      onSetPixelRatio: (dpr) => this.scene.setOverridePixelRatio(dpr),
+      getOverridePixelRatio: () => this.scene.getOverridePixelRatio(),
+      onToggleMusic: () => this.sound.toggleMusic(),
+      getGpuDiagnostics: () => this.scene.getGpuDiagnostics(),
+      getRenderMetrics: () => this.scene.getRenderMetrics(),
     });
 
     window.addEventListener('keydown', this.onKeyDown);
@@ -951,29 +965,34 @@ export class GameApp {
     const selectedPath = this.state.getSelectedPath();
     const selectedId = selectedPath ? selectedPath.id : (currentPath ? currentPath.id : null);
 
-    this.scene.update(
-      this.state.getPlayerPosition(),
-      selectedId,
-      this.state.getTargetPosition(),
-      dtSeconds,
-      this.dialogue.isOpen(),
-      this.state.isChestOpen()
-    );
-    this.hud.update(
-      poi,
-      selectedId,
-      this.dialogue.getCurrentNode(),
-      this.state.isChestOpen(),
-      this.state.isOnClearing(),
-      currentPath,
-      this.scene.getRenderMetrics()
-    );
+    try {
+      this.scene.update(
+        this.state.getPlayerPosition(),
+        selectedId,
+        this.state.getTargetPosition(),
+        dtSeconds,
+        this.dialogue.isOpen(),
+        this.state.isChestOpen()
+      );
+      this.hud.update(
+        poi,
+        selectedId,
+        this.dialogue.getCurrentNode(),
+        this.state.isChestOpen(),
+        this.state.isOnClearing(),
+        currentPath,
+        this.scene.getRenderMetrics()
+      );
+    } catch (err) {
+      console.error('[RenderLoop] Fehler im Render-Zyklus:', err);
+    }
 
     this.animationFrameId = requestAnimationFrame(this.loop);
   };
 
   public dispose(): void {
     cancelAnimationFrame(this.animationFrameId);
+    this.debugPanel.close();
     this.speech.stop();
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);

@@ -16,6 +16,8 @@ export interface TerrainMaterialController {
   setLavaPulse: (pulse: number) => void;
   setPreset: (presetKey: TerrainPresetKey) => void;
   getCurrentPreset: () => TerrainPresetKey;
+  setSimpleMode: (simple: boolean) => void;
+  isSimpleMode: () => boolean;
 }
 
 /**
@@ -75,22 +77,25 @@ export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_
 
   const splatMap = createTerrainSplatMap();
 
+  let simpleMode = false;
+
   const uniforms: { [uniform: string]: THREE.IUniform } = {
     uSplatMap: { value: splatMap },
     uGrassMap: { value: grassTex.map },
-    uGrassBump: { value: grassTex.bumpMap },
     uPathMap: { value: pathTex.map },
-    uPathBump: { value: pathTex.bumpMap },
     uLavaMap: { value: lavaTex.map },
     uLavaEmissive: { value: lavaTex.emissiveMap },
     uLavaPulse: { value: 1.0 },
     uSnowMap: { value: snowTex.map },
-    uSnowBump: { value: snowTex.bumpMap },
+    uSimpleMode: { value: 0.0 },
   };
 
+  // Sicheres Basis-Material: Als Basistextur nutzen wir die gekachelte Gras-Textur.
+  // Sollte ein mobiler WebGL-Treiber den erweiterten Splatmap-Shader verwerfen,
+  // rendert der Standard-Shader sanftes Gras statt greller roter/grüner/blauer Maskenfarben!
   const material = new THREE.MeshStandardMaterial({
     color: 0xffffff,
-    map: splatMap ?? undefined,
+    map: grassTex.map ?? undefined,
     emissiveMap: lavaTex.emissiveMap ?? undefined,
     emissive: new THREE.Color(0xffffff),
     emissiveIntensity: 1.0,
@@ -103,48 +108,57 @@ export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
 
-    shader.fragmentShader = `
+    // Uniform-Deklarationen hinter <common> einfügen.
+    // NIEMALS an den Anfang prependen, da OpenGL ES 3.0 / WebGL 2 "#version 300 es"
+    // als allererste Zeile vorschreibt (führt auf Samsung Galaxy S10 / Mali-GPUs sonst zum Shader-Absturz).
+    const uniformsDecl = `
       uniform sampler2D uSplatMap;
       uniform sampler2D uGrassMap;
-      uniform sampler2D uGrassBump;
       uniform sampler2D uPathMap;
-      uniform sampler2D uPathBump;
       uniform sampler2D uLavaMap;
       uniform sampler2D uLavaEmissive;
       uniform float uLavaPulse;
       uniform sampler2D uSnowMap;
-      uniform sampler2D uSnowBump;
-    ` + shader.fragmentShader;
+      uniform float uSimpleMode;
+    `;
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <common>',
+      `#include <common>\n${uniformsDecl}`
+    );
 
     // Farb-Chunk überschreiben: Splatmap-basiertes Mischen von gekachelten Texturen
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <map_fragment>',
       `
       #ifdef USE_MAP
-        vec4 splat = texture2D( uSplatMap, vMapUv );
         vec4 colGrass = texture2D( uGrassMap, vMapUv * 55.0 );
-        vec4 colPath = texture2D( uPathMap, vMapUv * 38.0 );
-        vec4 colLava = texture2D( uLavaMap, vMapUv * 16.0 );
-        vec4 colSnow = texture2D( uSnowMap, vMapUv * 46.0 );
-
-        // Korrekte Konvertierung von sRGB zu Linear für naturgetreue, satte Farbwiedergabe ohne Ausbleichen
         vec3 grassLinear = pow(colGrass.rgb, vec3(2.2));
-        vec3 pathLinear = pow(colPath.rgb, vec3(2.2));
-        vec3 lavaLinear = pow(colLava.rgb, vec3(2.2));
-        vec3 snowLinear = pow(colSnow.rgb, vec3(2.2));
 
-        // 1. Wiese zu Weg mit natürlichem Auslauf
-        vec3 terrainDiff = mix(grassLinear, pathLinear, splat.r);
+        if (uSimpleMode > 0.5) {
+          diffuseColor.rgb *= grassLinear;
+        } else {
+          vec4 splat = texture2D( uSplatMap, vMapUv );
+          vec4 colPath = texture2D( uPathMap, vMapUv * 38.0 );
+          vec4 colLava = texture2D( uLavaMap, vMapUv * 16.0 );
+          vec4 colSnow = texture2D( uSnowMap, vMapUv * 46.0 );
 
-        // 2. Zu tiefschwarzem Obsidianboden um den Lavasee
-        terrainDiff = mix(terrainDiff, lavaLinear * 0.85, splat.g);
+          vec3 pathLinear = pow(colPath.rgb, vec3(2.2));
+          vec3 lavaLinear = pow(colLava.rgb, vec3(2.2));
+          vec3 snowLinear = pow(colSnow.rgb, vec3(2.2));
 
-        // 3. Zu alpiner Schneezone an der Bergmine (Blau-Kanal)
-        // Auf dem Schnee bleibt der begangene Pfad dezent als verdichtete Schneespur erkennbar
-        vec3 snowySurface = mix(snowLinear, snowLinear * vec3(0.92, 0.94, 0.97), splat.r * 0.35);
-        terrainDiff = mix(terrainDiff, snowySurface, splat.b);
+          // 1. Wiese zu Weg mit natürlichem Auslauf
+          vec3 terrainDiff = mix(grassLinear, pathLinear, splat.r);
 
-        diffuseColor.rgb *= terrainDiff;
+          // 2. Zu tiefschwarzem Obsidianboden um den Lavasee
+          terrainDiff = mix(terrainDiff, lavaLinear * 0.85, splat.g);
+
+          // 3. Zu alpiner Schneezone an der Bergmine (Blau-Kanal)
+          vec3 snowySurface = mix(snowLinear, snowLinear * vec3(0.92, 0.94, 0.97), splat.r * 0.35);
+          terrainDiff = mix(terrainDiff, snowySurface, splat.b);
+
+          diffuseColor.rgb *= terrainDiff;
+        }
       #endif
       `
     );
@@ -154,11 +168,13 @@ export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_
       '#include <emissivemap_fragment>',
       `
       #ifdef USE_EMISSIVEMAP
-        vec4 splatE = texture2D( uSplatMap, vMapUv );
-        vec4 lavaEmiss = texture2D( uLavaEmissive, vMapUv * 18.0 );
+        if (uSimpleMode <= 0.5) {
+          vec4 splatE = texture2D( uSplatMap, vMapUv );
+          vec4 lavaEmiss = texture2D( uLavaEmissive, vMapUv * 18.0 );
 
-        // Intensives, dynamisch pulsierendes dunkelrotes Glutlicht im Basaltkessel
-        totalEmissiveRadiance = lavaEmiss.rgb * splatE.g * (uLavaPulse * 2.4);
+          // Intensives, dynamisch pulsierendes dunkelrotes Glutlicht im Basaltkessel
+          totalEmissiveRadiance = lavaEmiss.rgb * splatE.g * (uLavaPulse * 2.4);
+        }
       #endif
       `
     );
@@ -177,11 +193,7 @@ export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_
       nextGrass.map.wrapS = THREE.RepeatWrapping;
       nextGrass.map.wrapT = THREE.RepeatWrapping;
       uniforms.uGrassMap.value = nextGrass.map;
-    }
-    if (nextGrass.bumpMap) {
-      nextGrass.bumpMap.wrapS = THREE.RepeatWrapping;
-      nextGrass.bumpMap.wrapT = THREE.RepeatWrapping;
-      uniforms.uGrassBump.value = nextGrass.bumpMap;
+      material.map = nextGrass.map;
     }
 
     if (nextPath.map) {
@@ -189,16 +201,18 @@ export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_
       nextPath.map.wrapT = THREE.RepeatWrapping;
       uniforms.uPathMap.value = nextPath.map;
     }
-    if (nextPath.bumpMap) {
-      nextPath.bumpMap.wrapS = THREE.RepeatWrapping;
-      nextPath.bumpMap.wrapT = THREE.RepeatWrapping;
-      uniforms.uPathBump.value = nextPath.bumpMap;
-    }
 
     material.needsUpdate = true;
   };
 
+  const setSimpleMode = (simple: boolean) => {
+    simpleMode = simple;
+    uniforms.uSimpleMode.value = simple ? 1.0 : 0.0;
+  };
+
+  const isSimpleMode = () => simpleMode;
+
   const getCurrentPreset = () => currentPreset;
 
-  return { material, setLavaPulse, setPreset, getCurrentPreset };
+  return { material, setLavaPulse, setPreset, getCurrentPreset, setSimpleMode, isSimpleMode };
 }

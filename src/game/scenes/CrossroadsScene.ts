@@ -134,6 +134,11 @@ export class CrossroadsScene {
   public readonly camera: THREE.PerspectiveCamera;
   private readonly renderer: THREE.WebGLRenderer;
   private readonly canvas: HTMLCanvasElement;
+  private isContextLost = false;
+  private overridePixelRatio: number | null = null;
+  private shadowsEnabled = true;
+  private readonly onContextLostHandler: (event: Event) => void;
+  private readonly onContextRestoredHandler: () => void;
   private readonly playerGroup: THREE.Group;
   private readonly targetMarker: THREE.Mesh;
   private readonly signpost: SignpostEntity;
@@ -245,6 +250,21 @@ export class CrossroadsScene {
     this.renderer.setPixelRatio(this.getOptimalPixelRatio());
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // Resilienz gegen WebGL-Kontextverlust (verhindert Totalabsturz auf mobilen Browsern wie iOS Safari)
+    this.onContextLostHandler = (event: Event) => {
+      event.preventDefault();
+      this.isContextLost = true;
+      console.warn('[WebGL] WebGL-Kontext verloren! Pausiere Render-Loop...');
+    };
+    this.onContextRestoredHandler = () => {
+      console.info('[WebGL] WebGL-Kontext wiederhergestellt!');
+      this.isContextLost = false;
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setPixelRatio(this.getOptimalPixelRatio());
+    };
+    this.canvas.addEventListener('webglcontextlost', this.onContextLostHandler);
+    this.canvas.addEventListener('webglcontextrestored', this.onContextRestoredHandler);
 
     this.setupLights();
     this.buildTerrainAndPaths();
@@ -3154,7 +3174,9 @@ export class CrossroadsScene {
 
     this.camera.lookAt(playerPos.x, targetY, playerPos.z);
 
-    this.renderer.render(this.scene, this.camera);
+    if (!this.isContextLost) {
+      this.renderer.render(this.scene, this.camera);
+    }
 
     // Live-FPS ermitteln
     this.frameCount++;
@@ -3193,10 +3215,108 @@ export class CrossroadsScene {
    * um die GPU-Füllrate und Fragment-Shader-Last um bis zu 60% zu senken.
    */
   private getOptimalPixelRatio(): number {
+    if (this.overridePixelRatio !== null && this.overridePixelRatio > 0) {
+      return this.overridePixelRatio;
+    }
     const isMobile =
       /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768;
     const maxDpr = isMobile ? 1.5 : 2.0;
     return Math.min(window.devicePixelRatio || 1, maxDpr);
+  }
+
+  public setOverridePixelRatio(dpr: number | null): void {
+    this.overridePixelRatio = dpr;
+    this.renderer.setPixelRatio(this.getOptimalPixelRatio());
+  }
+
+  public getOverridePixelRatio(): number | null {
+    return this.overridePixelRatio;
+  }
+
+  public setShadowsEnabled(enabled: boolean): void {
+    this.shadowsEnabled = enabled;
+    this.renderer.shadowMap.enabled = enabled;
+    this.scene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mat = (child as THREE.Mesh).material;
+        if (mat) {
+          if (Array.isArray(mat)) {
+            mat.forEach((m) => {
+              m.needsUpdate = true;
+            });
+          } else {
+            mat.needsUpdate = true;
+          }
+        }
+      }
+    });
+  }
+
+  public isShadowsEnabled(): boolean {
+    return this.shadowsEnabled;
+  }
+
+  public setTerrainSimpleMode(enabled: boolean): void {
+    this.terrainMatController?.setSimpleMode(enabled);
+  }
+
+  public isTerrainSimpleMode(): boolean {
+    return this.terrainMatController?.isSimpleMode() ?? false;
+  }
+
+  public getGpuDiagnostics(): {
+    glVersion: string;
+    unmaskedVendor: string;
+    unmaskedRenderer: string;
+    maxTextureSize: number;
+    maxTextureImageUnits: number;
+    maxVertexUniformVectors: number;
+    devicePixelRatio: number;
+    effectivePixelRatio: number;
+    viewportWidth: number;
+    viewportHeight: number;
+    isContextLost: boolean;
+    shadowsEnabled: boolean;
+    terrainSimpleMode: boolean;
+  } {
+    const gl = this.renderer.getContext();
+    let unmaskedVendor = 'Unbekannt';
+    let unmaskedRenderer = 'Unbekannt';
+    let maxTextureSize = 0;
+    let maxTextureImageUnits = 0;
+    let maxVertexUniformVectors = 0;
+    let glVersion = 'Unbekannt';
+
+    if (gl) {
+      glVersion = gl.getParameter(gl.VERSION) || 'WebGL';
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (debugInfo) {
+        unmaskedVendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || unmaskedVendor;
+        unmaskedRenderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || unmaskedRenderer;
+      } else {
+        unmaskedVendor = gl.getParameter(gl.VENDOR) || unmaskedVendor;
+        unmaskedRenderer = gl.getParameter(gl.RENDERER) || unmaskedRenderer;
+      }
+      maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE) || 0;
+      maxTextureImageUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) || 0;
+      maxVertexUniformVectors = gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS) || 0;
+    }
+
+    return {
+      glVersion,
+      unmaskedVendor,
+      unmaskedRenderer,
+      maxTextureSize,
+      maxTextureImageUnits,
+      maxVertexUniformVectors,
+      devicePixelRatio: window.devicePixelRatio || 1,
+      effectivePixelRatio: this.renderer.getPixelRatio(),
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      isContextLost: this.isContextLost,
+      shadowsEnabled: this.shadowsEnabled,
+      terrainSimpleMode: this.isTerrainSimpleMode(),
+    };
   }
 
   private onResize = (): void => {
@@ -3216,6 +3336,8 @@ export class CrossroadsScene {
   }
 
   public dispose(): void {
+    this.canvas.removeEventListener('webglcontextlost', this.onContextLostHandler);
+    this.canvas.removeEventListener('webglcontextrestored', this.onContextRestoredHandler);
     window.removeEventListener('resize', this.onResize);
     disposeObject3D(this.scene);
     this.renderer.dispose();

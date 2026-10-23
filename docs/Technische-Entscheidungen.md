@@ -60,6 +60,10 @@
     - Seidenweiche, warme D-Dur/G-Dur/H-Moll/A-Dur-Schwebepads mit Tiefpassfilter (540 Hz) und sanft eingestreuten Waldharfen-Tönen im Stereofeld.
     - Sehr leise und unaufdringlich eingepegelt (Mastergain ~0,045), mit automatischem sanftem Ducking (~0,020) während aktiver NPC-Dialoge.
     - Direkt stummschaltbar über Taste `M` oder Klick auf das HUD-Musik-Badge (`🎵 / 🔇`).
+- **Mobile Resilienz, WebGL Context Loss & Debugmodus (`DebugPanel.ts`, `TerrainMaterial.ts`):**
+  - **Android S10 Farbbug-Behebung:** In WebGL 2 / OpenGL ES muss `#version 300 es` die allererste Zeile eines Shaders sein. Durch das korrekte Einfügen der Splatmap-Uniform-Deklarationen hinter `#include <common>` statt vor den Shader-Kopf kompilieren die Shader auf ARM Mali GPUs (Galaxy S10) nun fehlerfrei. Zudem fungiert die gekachelte Gras-Textur als sicheres Basis-Material, sodass bei Treiberfehlern niemals rohe Maskenfarben (Rot/Grün/Blau) gerendert werden.
+  - **iOS Safari Crash-Prävention (iPhone 16 Pro Max):** WebGL-Context-Lost- und Context-Restored-Listener auf dem Canvas verhindern unkontrollierte Web-Prozess-Abstürze bei Speicher- oder Füllratenspitzen. Der Render-Loop fängt Ausnahmen sauber per `try/catch` ab.
+  - **Vollwertiger Mobile-Debugmodus:** Direkt aktivierbar über das Badge `🪲 Debug` (oben rechts), die Taste `D` oder URL-Parameter `?debug=1`. Bietet Hardware-Inspektion (GPU-Renderer, WebGL-Limits, DPR, VRAM), Fehler- und Warnungskonsole mit Ein-Klick-Zwischenablagekopie sowie Sofort-Schalter zur Fehlerisolation (Schatten an/aus, PBR-Shader vs. einfache Wiese, DPR-Deckelung).
 
 ## Offene Punkte
 
