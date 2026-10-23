@@ -45,6 +45,7 @@ export class GameApp {
   private pendingTalkToDevil = false;
   private pendingTalkToWildHunter = false;
   private pendingTalkToWoodWomanLodge = false;
+  private pendingTalkToCreature = false;
   private pendingInspectGate = false;
   private pendingToggleChest = false;
   private stepDistanceAccumulator = 1.15;
@@ -175,6 +176,7 @@ export class GameApp {
     this.pendingTalkToDevil = false;
     this.pendingTalkToWildHunter = false;
     this.pendingTalkToWoodWomanLodge = false;
+    this.pendingTalkToCreature = false;
     this.pendingInspectGate = false;
     this.pendingToggleChest = false;
   }
@@ -187,8 +189,13 @@ export class GameApp {
   }
 
   private closeDialogueAndSpeech(): void {
+    const currentNode = this.dialogue.getCurrentNode();
+    const isCreatureDialogue = currentNode?.id.startsWith('creature_') ?? false;
     this.dialogue.closeDialogue();
     this.speech.stop();
+    if (isCreatureDialogue) {
+      this.triggerCreatureFlee();
+    }
   }
 
   private toggleChestWithSound(): void {
@@ -343,14 +350,44 @@ export class GameApp {
     }
   }
 
+  private initiateTalkToCreature(): void {
+    if (this.state.isCreatureFled()) return;
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    this.scene.startCreatureHobbing();
+    if (this.state.isNearCreature()) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode('creature_root');
+    } else {
+      this.pendingTalkToCreature = true;
+      this.state.setTargetToCreature();
+    }
+  }
+
+  private triggerCreatureFlee(): void {
+    if (this.state.isCreatureFled()) return;
+    this.state.setCreatureFled(true);
+    this.scene.triggerCreatureRunAway();
+    this.hud.showToast(
+      'Das Fabelwesen Lupo huscht mit flinken Sprüngen über den Weg und verschwindet im Wald...'
+    );
+  }
+
   private handleDialogueOption(optionIndex: number): void {
+    const currentNode = this.dialogue.getCurrentNode();
+    const isCreatureDialogue = currentNode?.id.startsWith('creature_') ?? false;
     const { node, action } = this.dialogue.selectOption(optionIndex);
     if (node) {
       this.speech.speak(node.text);
     } else {
       this.speech.stop();
+      if (isCreatureDialogue || action?.type === 'creature_flee') {
+        this.triggerCreatureFlee();
+      }
     }
-    if (action?.type === 'select_path') {
+    if (action?.type === 'creature_flee') {
+      this.triggerCreatureFlee();
+    } else if (action?.type === 'select_path') {
       this.clearPendingActions();
       this.state.setTargetToPathEntrance(action.pathId);
     } else if (action?.type === 'walk_to_grey_man') {
@@ -415,7 +452,9 @@ export class GameApp {
     // Taste F oder Enter: kontextabhängige Interaktion
     if (key === 'f' || event.key === 'Enter') {
       if (!this.dialogue.isOpen()) {
-        if (this.state.isNearWildHunter() && this.state.isNearWoodWomanLodge()) {
+        if (this.state.isNearCreature()) {
+          this.initiateTalkToCreature();
+        } else if (this.state.isNearWildHunter() && this.state.isNearWoodWomanLodge()) {
           const p = this.state.getPlayerPosition();
           const hunterPos = this.state.getWildHunterPosition();
           const woodPos = this.state.getWoodWomanLodgePosition();
@@ -628,6 +667,7 @@ export class GameApp {
     this.scene.setWildHunterHovered(hit.kind === 'wild_hunter' || hit.kind === 'hunting_lodge');
     this.scene.setWoodWomanLodgeHovered(hit.kind === 'wood_woman_lodge' || hit.kind === 'herb_garden');
     this.scene.setGateHovered(hit.kind === 'gate');
+    this.scene.setCreatureHovered(hit.kind === 'creature');
     this.scene.setBoulderHovered(hit.kind === 'boulder');
     this.scene.setPuddleHovered(hit.kind === 'puddle');
     this.scene.setStreamHovered(hit.kind === 'stream');
@@ -721,6 +761,11 @@ export class GameApp {
 
       if (hit.kind === 'gate') {
         this.initiateInspectGate();
+        return;
+      }
+
+      if (hit.kind === 'creature') {
+        this.initiateTalkToCreature();
         return;
       }
 
@@ -974,6 +1019,12 @@ export class GameApp {
         this.pendingTalkToWoodWomanLodge = false;
         this.state.clearTargetPosition();
         this.openDialogueNode('wood_lodge_root');
+      }
+      if (this.pendingTalkToCreature && this.state.isNearCreature()) {
+        this.pendingTalkToCreature = false;
+        this.state.clearTargetPosition();
+        this.scene.startCreatureHobbing();
+        this.openDialogueNode('creature_root');
       }
       if (this.pendingInspectGate && this.state.isNearGate()) {
         this.pendingInspectGate = false;

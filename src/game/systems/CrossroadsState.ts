@@ -1,4 +1,5 @@
 import {
+  CREATURE_NPC_NAME,
   DEVIL_NPC_NAME,
   GIANT_NPC_NAME,
   GREY_MAN_NPC_NAME,
@@ -10,6 +11,7 @@ import {
 import {
   CAVE_ENTRANCE_POS,
   CLOSED_GATE_POS,
+  CREATURE_NPC_POS,
   DEVIL_NPC_POS,
   ForestPathData,
   GIANT_NPC_POS,
@@ -55,6 +57,7 @@ export interface Vector2D {
 
 export type PointOfInterest =
   | { type: 'npc'; name: string; label: string }
+  | { type: 'creature'; name: string; label: string }
   | { type: 'grey_man'; name: string; label: string }
   | { type: 'nixie'; name: string; label: string }
   | { type: 'giant'; name: string; label: string }
@@ -190,6 +193,12 @@ export class CrossroadsState {
 
   // Am Ende des 7. Weges: Das geschlossene Tor mit flankierenden Steinmauern
   private readonly gatePos: Vector2D = { x: CLOSED_GATE_POS.x, z: CLOSED_GATE_POS.z };
+
+  // Auf Weg 7: Fabelwesen Lupo (auf halber Strecke vom Startpunkt zur Kreuzung)
+  private readonly creaturePos: Vector2D = { ...CREATURE_NPC_POS };
+  private readonly creatureCollisionRadius = 0.45;
+  private readonly creatureTalkDistance = 3.6;
+  private creatureFled = false;
 
   private readonly clearingRadius = 6.5;
 
@@ -601,6 +610,27 @@ export class CrossroadsState {
       this.playerPos.z - this.woodWomanLodgePos.z
     );
     return dist <= this.woodWomanLodgeCollisionRadius + 1.45;
+  }
+
+  public isNearCreature(): boolean {
+    if (this.creatureFled) return false;
+    const dist = Math.hypot(
+      this.playerPos.x - this.creaturePos.x,
+      this.playerPos.z - this.creaturePos.z
+    );
+    return dist <= this.creatureTalkDistance;
+  }
+
+  public getCreaturePosition(): Readonly<Vector2D> {
+    return { ...this.creaturePos };
+  }
+
+  public isCreatureFled(): boolean {
+    return this.creatureFled;
+  }
+
+  public setCreatureFled(fled: boolean): void {
+    this.creatureFled = fled;
   }
 
   public isNearGate(): boolean {
@@ -1166,6 +1196,18 @@ export class CrossroadsState {
     const gateSin = Math.sin(CLOSED_GATE_POS.rotationY);
     const gateLx = gateDx * gateCos - gateDz * gateSin;
     const gateLz = gateDx * gateSin + gateDz * gateCos;
+
+
+    // Fabelwesen Lupo auf Weg 7 (solange es noch nicht in den Wald geflohen ist)
+    if (!this.creatureFled) {
+      if (
+        Math.hypot(x - this.creaturePos.x, z - this.creaturePos.z) <
+        this.creatureCollisionRadius - eps
+      ) {
+        return true;
+      }
+    }
+
     if (Math.abs(gateLx) < 12.0 && gateLz < 0.75 && gateLz > -4.5) {
       return true;
     }
@@ -1840,7 +1882,21 @@ export class CrossroadsState {
       const gateSin = Math.sin(CLOSED_GATE_POS.rotationY);
       const gateLx = gateDx * gateCos - gateDz * gateSin;
       const gateLz = gateDx * gateSin + gateDz * gateCos;
-      if (Math.abs(gateLx) < 12.0 && gateLz < 0.75 && gateLz > -4.5) {
+
+
+      // Fabelwesen Lupo auf Weg 7 (solange es noch nicht in den Wald geflohen ist)
+      if (!this.creatureFled) {
+        const afterCreature = this.pushOutOfCircle(
+          resolvedX,
+          resolvedZ,
+          this.creaturePos,
+          this.creatureCollisionRadius
+        );
+        resolvedX = afterCreature.x;
+        resolvedZ = afterCreature.z;
+      }
+
+    if (Math.abs(gateLx) < 12.0 && gateLz < 0.75 && gateLz > -4.5) {
         const clampedLz = 0.75;
         resolvedX = CLOSED_GATE_POS.x + gateLx * gateCos + clampedLz * gateSin;
         resolvedZ = CLOSED_GATE_POS.z - gateLx * gateSin + clampedLz * gateCos;
@@ -2045,6 +2101,21 @@ export class CrossroadsState {
   public setTargetToGate(): Readonly<Vector2D> {
     this.selectPath(7);
     return this.setTargetPosition(PATH_7_END_CLEARING.x, PATH_7_END_CLEARING.z);
+  }
+
+  /**
+   * Lässt die Spielfigur auf Weg 7 vor das Fabelwesen Lupo laufen.
+   */
+  public setTargetToCreature(): Readonly<Vector2D> {
+    this.selectPath(7);
+    const dx = this.playerPos.x - this.creaturePos.x;
+    const dz = this.playerPos.z - this.creaturePos.z;
+    const len = Math.hypot(dx, dz) || 1;
+    const stopDist = 1.75;
+    return this.setTargetPosition(
+      this.creaturePos.x + (dx / len) * stopDist,
+      this.creaturePos.z + (dz / len) * stopDist
+    );
   }
 
   /**
@@ -2546,6 +2617,15 @@ export class CrossroadsState {
         type: 'cave',
         label:
           'Alter Silberstollen im Berg – ein Verbot untersagt offenes Licht, doch im Inneren wartet die rettende Silberader.',
+      };
+    }
+
+    if (!this.creatureFled && this.isNearCreature()) {
+      return {
+        type: 'creature',
+        name: CREATURE_NPC_NAME,
+        label:
+          'Fabelwesen Lupo auf dem Torweg – sprich mit dem kleinen Waldhüterling (Klick oder [F]).',
       };
     }
 

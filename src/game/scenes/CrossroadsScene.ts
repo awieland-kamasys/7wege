@@ -33,8 +33,10 @@ import {
   WOOD_WOMAN_LODGE_NPC_POS,
   WOOD_WOMAN_NPC_POS,
   CLOSED_GATE_POS,
+  CREATURE_NPC_POS,
 } from '../data/paths';
 import { createClosedGate, ClosedGateEntity } from '../entities/ClosedGate';
+import { createCreatureNpc, CreatureNpcEntity } from '../entities/CreatureNpc';
 import { createDevilNpc, DevilNpcEntity } from '../entities/DevilNpc';
 import { createGiantNpc, GiantNpcEntity } from '../entities/GiantNpc';
 import { createGreyManNpc, GreyManNpcEntity } from '../entities/GreyManNpc';
@@ -107,6 +109,7 @@ export type ScenePickResult =
   | { kind: 'signpost'; point: Vector2D }
   | { kind: 'signpost_cap'; point: Vector2D }
   | { kind: 'signpost_base'; point: Vector2D }
+  | { kind: 'creature'; point: Vector2D }
   | { kind: 'ground'; point: Vector2D };
 
 interface ForestTreeInstance {
@@ -158,6 +161,7 @@ export class CrossroadsScene {
   private readonly woodWomanLodgeNpc: WoodWomanNpcEntity;
   private readonly woodWomanClassicNpc: WoodWomanNpcEntity;
   private readonly closedGate: ClosedGateEntity;
+  private readonly creatureNpc: CreatureNpcEntity;
   private readonly path1Boulder: PathBoulderEntity;
   private readonly path2Puddle: PathPuddleEntity;
   private readonly path3Stream: PathStreamEntity;
@@ -198,6 +202,7 @@ export class CrossroadsScene {
   private isWildHunterHovered = false;
   private isWoodWomanLodgeHovered = false;
   private isGateHovered = false;
+  private isCreatureHovered = false;
   private isBoulderHovered = false;
   private isPuddleHovered = false;
   private isStreamHovered = false;
@@ -620,6 +625,19 @@ export class CrossroadsScene {
       }
     });
     this.scene.add(this.closedGate.group);
+
+    // Fabelwesen Lupo (NPC) auf dem halben Weg vom Startpunkt zur Kreuzung (Weg 7)
+    this.creatureNpc = createCreatureNpc(CREATURE_NPC_POS, {
+      onMeshLoaded: (mesh) => {
+        this.pickableObjects.push(mesh);
+      },
+    });
+    this.creatureNpc.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.creatureNpc.group);
 
     // Magischer Felsbrocken, der Weg 1 (Silberstollen-Pfad) blockiert (leicht eingesenkt für Felsclipping)
     this.path1Boulder = createPathBoulder();
@@ -2733,6 +2751,18 @@ export class CrossroadsScene {
     this.isGateHovered = hovered;
   }
 
+  public setCreatureHovered(hovered: boolean): void {
+    this.isCreatureHovered = hovered;
+  }
+
+  public startCreatureHobbing(): void {
+    this.creatureNpc.startHobbing();
+  }
+
+  public triggerCreatureRunAway(onFled?: () => void): void {
+    this.creatureNpc.startRunAway(onFled);
+  }
+
   public setBoulderHovered(hovered: boolean): void {
     this.isBoulderHovered = hovered;
   }
@@ -2876,6 +2906,9 @@ export class CrossroadsScene {
       const data = hit.object.userData;
       const point: Vector2D = { x: hit.point.x, z: hit.point.z };
 
+      if (data.interactableType === 'creature') {
+        return { kind: 'creature', point };
+      }
       if (data.interactableType === 'gate') {
         return { kind: 'gate', point };
       }
@@ -3074,6 +3107,14 @@ export class CrossroadsScene {
     if (distGate < 33) {
       this.closedGate.update(this.elapsedSeconds, playerPos, this.isGateHovered);
     }
+
+    // Weg 7: Fabelwesen Lupo (flieht bei Gesprächsende in den Wald)
+    this.creatureNpc.update(
+      this.elapsedSeconds,
+      playerPos,
+      this.isCreatureHovered || isDialogueActive,
+      dtSeconds
+    );
 
     // Hindernisse entlang der Wege
     this.path1Boulder.update(dtSeconds, this.isBoulderHovered);

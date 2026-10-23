@@ -28,6 +28,7 @@ Alle externen Modelle, Texturen, Bilder, Schriften und Audio-Dateien hier dokume
 | Isometrischer Garten 3D-Modell Vorgänger (`isometric garden 3d model.glb`, 2,83 MB, 3D-Gartenanlage) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/isometric garden 3d model.glb` | Archiv (ersetzt durch Pflanzkübel-Set) |
 | Schneebedeckter Minenstollen (`snowy mine tunnel 3d model_ohne.glb`, 2,88 MB, 3D-Tunnelportal mit Holzstützen und Felsformation am Ende von Weg 1) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/snowy mine tunnel 3d model_ohne.glb` | aktiv |
 | Stilisierter Nadelbaum 3D-Modell (`low poly tree model.glb`, 2,48 MB, 9.846 Dreiecke, 2048x2048 PBR-Textur) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/low poly tree model.glb` | evaluiert (Referenzmodell für prozedurale Optimierung) |
+| Fabelwesen Lupo 3D-Charakter (`fantasy+creature+3d+model.glb`, 3,12 MB, animiertes Fabeltier mit 'Häschenhoppeln' und 'run' Animation) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/fantasy+creature+3d+model.glb` | aktiv (Weg 7 Torweg-NPC) |
 
 
 ## Regeln

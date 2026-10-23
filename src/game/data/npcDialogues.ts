@@ -9,6 +9,7 @@ export type DialogueAction =
   | { type: 'walk_to_devil' }
   | { type: 'walk_to_wild_hunter' }
   | { type: 'walk_to_gate' }
+  | { type: 'creature_flee' }
   | { type: 'close' };
 
 export interface DialogueOption {
@@ -46,6 +47,9 @@ export const DEVIL_NPC_ROLE = 'Herr des Höllenschlundes';
 
 export const WILD_HUNTER_NPC_NAME = 'Der Wilde Jäger';
 export const WILD_HUNTER_NPC_ROLE = 'Herr der Jagdhütte';
+
+export const CREATURE_NPC_NAME = 'Fabelwesen Lupo';
+export const CREATURE_NPC_ROLE = 'Waldhüterling auf dem Torweg';
 
 /**
  * Individuelle Hinweise des Waldhüters zu jedem der sieben Wege.
@@ -675,6 +679,87 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
           id: 'back-root',
           playerText: 'Zurück zum Hauptgespräch',
           nextNodeId: 'root',
+        },
+      ],
+    },
+
+    // === FABELWESEN LUPO (auf halbem Weg vom Startpunkt zur Kreuzung auf Weg 7) ===
+    creature_root: {
+      id: 'creature_root',
+      speaker: CREATURE_NPC_NAME,
+      speakerRole: CREATURE_NPC_ROLE,
+      text: '*Schnupper, schnupper...* Ein Wanderer auf dem Torweg! Willkommen im Reich der Sieben Wege. Hast du den Nebelwald durchquert?',
+      options: [
+        {
+          id: 'creature-who',
+          playerText: 'Was bist du denn für ein possierliches Wesen?',
+          nextNodeId: 'creature_who',
+        },
+        {
+          id: 'creature-way',
+          playerText: 'Ich suche den Weg zur Waldkreuzung und zur Schutzhütte.',
+          nextNodeId: 'creature_way',
+        },
+        {
+          id: 'creature-flee-now',
+          playerText: 'Keine Angst, kleiner Waldgeist! Husch schnell in den Wald! (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'creature_flee' },
+        },
+      ],
+    },
+
+    creature_who: {
+      id: 'creature_who',
+      speaker: CREATURE_NPC_NAME,
+      speakerRole: CREATURE_NPC_ROLE,
+      text: 'Ich bin Lupo, ein Hüterling des Nebelwaldes! Ich wache über die verborgenen Moospfade und helfe den Tieren im Dickicht. Doch hüte dich: An der Kreuzung erwarten dich Prüfungen, die mehr als nur Mut verlangen!',
+      options: [
+        {
+          id: 'creature-ask-trials',
+          playerText: 'Welche Prüfungen meinst du?',
+          nextNodeId: 'creature_trials',
+        },
+        {
+          id: 'creature-to-way',
+          playerText: 'Wie gelange ich zur Kreuzung?',
+          nextNodeId: 'creature_way',
+        },
+        {
+          id: 'creature-bye-1',
+          playerText: 'Danke, Lupo! Nun lauf schnell zurück ins schützende Unterholz.',
+          nextNodeId: null,
+          action: { type: 'creature_flee' },
+        },
+      ],
+    },
+
+    creature_trials: {
+      id: 'creature_trials',
+      speaker: CREATURE_NPC_NAME,
+      speakerRole: CREATURE_NPC_ROLE,
+      text: 'Jeder der sieben Wege fordert ein anderes Maß deines Herzens: Weisheit im Silberstollen, Verzicht am Feenteich, Mitgefühl am Wehr, Maßhalten beim Holzweibchen... Waldhüter Arvid an der Hütte wird dir mehr berichten!',
+      options: [
+        {
+          id: 'creature-bye-2',
+          playerText: 'Danke für deinen Rat, Lupo! Lauf nun geschwind in den Wald.',
+          nextNodeId: null,
+          action: { type: 'creature_flee' },
+        },
+      ],
+    },
+
+    creature_way: {
+      id: 'creature_way',
+      speaker: CREATURE_NPC_NAME,
+      speakerRole: CREATURE_NPC_ROLE,
+      text: 'Folge einfach diesem Pfad geradeaus! Gleich hinter der nächsten Biegung lichtet sich der dichte Fichtenwald und du erreichst die 7-Wegekreuzung mit Arvids Schutzhütte und der geheimnisvollen Schatztruhe.',
+      options: [
+        {
+          id: 'creature-bye-3',
+          playerText: 'Vielen Dank, kleiner Freund! Pass gut auf dich auf.',
+          nextNodeId: null,
+          action: { type: 'creature_flee' },
         },
       ],
     },

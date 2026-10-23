@@ -39,6 +39,16 @@ export const START_PLAYER_POS: PathPoint2D = {
 };
 
 /**
+ * Position des Fabelwesens (Fantasy Creature NPC):
+ * Exakt auf dem halben Weg vom Startpunkt (-21.0, -18.4) zur Kreuzung (0, 0)
+ * auf Weg 7 bei ca. (-10.5, -9.2).
+ */
+export const CREATURE_NPC_POS: PathPoint2D = {
+  x: -10.5,
+  z: -9.2,
+};
+
+/**
  * Position und Kollisionsradius des Felsbrockens, der Weg 1 versperrt.
  * Exakt auf die Referenz-Entfernung wie das Feuer (~16.3 m von der Kreuzung) gesetzt.
  * Lässt sich durch Anklicken des rotierenden Edelsteins am Pfadanfang entfernen.

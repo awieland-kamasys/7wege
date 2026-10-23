@@ -1048,4 +1048,71 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(state.isPathBoundaryDisabled()).toBe(false);
     expect(state.isWalkable(25, 25)).toBe(false);
   });
+
+  it('verwaltet das Fabelwesen Lupo auf Weg 7 mit Näherung, Kollision und Fluchtstatus', () => {
+    const state = new CrossroadsState();
+    const creaturePos = state.getCreaturePosition();
+    expect(creaturePos.x).toBeCloseTo(-10.5, 1);
+    expect(creaturePos.z).toBeCloseTo(-9.2, 1);
+    expect(state.isCreatureFled()).toBe(false);
+
+    // Am Startpunkt (-21.0, -18.4) ist der Spieler noch ca. 14 Meter entfernt
+    expect(state.isNearCreature()).toBe(false);
+
+    // Ziel auf Lupo setzen und hinlaufen
+    state.setTargetToCreature();
+    expect(state.getTargetPosition()).not.toBeNull();
+    while (state.getTargetPosition()) {
+      state.updateAutoWalk(0.1);
+    }
+
+    // Spieler ist nun in Sprechdistanz zur Kreatur
+    expect(state.isNearCreature()).toBe(true);
+
+    // Point of Interest zeigt Lupo an
+    const poi = state.getActivePointOfInterest();
+    expect(poi?.type).toBe('creature');
+    if (poi && poi.type === 'creature') {
+      expect(poi.name).toBe('Fabelwesen Lupo');
+    }
+
+    // Kollision: Exakt an Lupos Position kann nicht getreten werden solange anwesend
+    expect(state.isWalkable(creaturePos.x, creaturePos.z)).toBe(false);
+
+    // Lupo flieht in den Wald
+    state.setCreatureFled(true);
+    expect(state.isCreatureFled()).toBe(true);
+    expect(state.isNearCreature()).toBe(false);
+
+    // Nach der Flucht blockiert Lupo die Position nicht mehr
+    // (sofern auf Weg 7 gelegen)
+    expect(state.isWalkable(creaturePos.x, creaturePos.z)).toBe(true);
+  });
+
+  it('führt den Dialog mit Fabelwesen Lupo und schließt mit creature_flee ab', () => {
+    const dialogue = new DialogueSystem();
+    const rootNode = dialogue.startDialogue('creature_root');
+    expect(rootNode).not.toBeNull();
+    expect(rootNode?.speaker).toBe('Fabelwesen Lupo');
+    expect(rootNode?.speakerRole).toContain('Waldhüterling');
+    expect(rootNode?.text).toContain('Wanderer');
+    expect(rootNode?.text).toContain('Torweg');
+
+    // Erste Frage: Wer bist du? (Option 0)
+    const step1 = dialogue.selectOption(0);
+    expect(step1.node?.id).toBe('creature_who');
+    expect(step1.node?.text).toContain('Hüterling');
+
+    // Weiter zu den 7 Prüfungen (Option 0)
+    const step2 = dialogue.selectOption(0);
+    expect(step2.node?.id).toBe('creature_trials');
+    expect(step2.node?.text).toContain('sieben Wege');
+    expect(step2.node?.text).toContain('Arvid');
+
+    // Verabschiedung: Gute Reise (Option 0) -> creature_flee Action
+    const finalStep = dialogue.selectOption(0);
+    expect(finalStep.action?.type).toBe('creature_flee');
+    expect(finalStep.node).toBeNull();
+    expect(dialogue.isOpen()).toBe(false);
+  });
 });
