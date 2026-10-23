@@ -553,8 +553,8 @@ export class CrossroadsScene {
     });
     this.scene.add(this.wildHunterNpc.group);
 
-    // Erstes Holzweibchen (NPC) vor dem Kräutergartenzaun an der Jagdhütte: Neuer Entwurf (forest druid 3d model new style.glb)
-    const lodgePosX1 = WOOD_WOMAN_LODGE_NPC_POS.x - 0.65;
+    // Erstes Holzweibchen (NPC) vor den Pflanzkübeln an der Jagdhütte: Neuer Entwurf (forest druid 3d model new style.glb)
+    const lodgePosX1 = WOOD_WOMAN_LODGE_NPC_POS.x - 0.35;
     const lodgePosZ1 = WOOD_WOMAN_LODGE_NPC_POS.z - 0.2;
     this.woodWomanLodgeNpc = createWoodWomanNpc(
       (mesh) => {
@@ -579,7 +579,7 @@ export class CrossroadsScene {
     this.scene.add(this.woodWomanLodgeNpc.group);
 
     // Zweites Holzweibchen (NPC) direkt daneben zum Modellvergleich: Klassischer Entwurf (forest druid 3d model.glb)
-    const lodgePosX2 = WOOD_WOMAN_LODGE_NPC_POS.x + 0.65;
+    const lodgePosX2 = WOOD_WOMAN_LODGE_NPC_POS.x + 0.35;
     const lodgePosZ2 = WOOD_WOMAN_LODGE_NPC_POS.z + 0.2;
     this.woodWomanClassicNpc = createWoodWomanNpc(
       (mesh) => {

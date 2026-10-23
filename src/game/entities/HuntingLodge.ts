@@ -107,38 +107,35 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
   );
 
   // ==========================================
-  // 2. ISOMETRISCHER GARTEN (isometric garden 3d model.glb)
-  // Platziert direkt vor der Burgruine
+  // 2. PFLANZKÜBEL-SET (garden planter set 3d model.glb)
+  // Platziert vor der Burgruine auf Weg 6
   // ==========================================
   const gardenGroup = new THREE.Group();
-  gardenGroup.name = 'IsometricGarden';
-  gardenGroup.position.set(3.4, 0, 0.4);
+  gardenGroup.name = 'GardenPlanterSet';
+  gardenGroup.position.set(2.6, 0, 0.4);
 
   // Temporärer Platzhalter während des Ladens
   const gardenFallback = new THREE.Mesh(
-    new THREE.BoxGeometry(6.8, 0.60, 6.4),
+    new THREE.BoxGeometry(4.0, 0.45, 3.4),
     soilMat
   );
-  gardenFallback.rotation.y = Math.PI * 0.5;
-  gardenFallback.position.set(0, 0.30, 0);
+  gardenFallback.position.set(0, 0.22, 0);
   gardenFallback.castShadow = true;
   gardenFallback.receiveShadow = true;
   gardenFallback.userData = { interactableType: 'herb_garden' };
   gardenGroup.add(gardenFallback);
 
-  // Sanftes, geheimnisvolles Mondwurz-Licht über dem Garten
-  const moonwortLight = new THREE.PointLight(0x76ebe0, 0.95, 5.5);
-  moonwortLight.position.set(0, 1.1, 0);
+  // Sanftes, geheimnisvolles Mondwurz-Licht über dem Pflanzset
+  const moonwortLight = new THREE.PointLight(0x76ebe0, 0.85, 4.5);
+  moonwortLight.position.set(0, 0.85, 0);
   gardenGroup.add(moonwortLight);
 
   loader.load(
-    '/assets/models/isometric garden 3d model.glb',
+    '/assets/models/garden planter set 3d model.glb',
     (gltf) => {
       const model = gltf.scene;
-      // Verdoppelte Skalierung (Breite ca. 7.0m, Tiefe ca. 6.7m, Höhe ca. 2.2m)
-      model.scale.setScalar(7.0);
-      // Drehung: um 90 Grad gedreht (um 90 Grad zurück von 180 Grad)
-      model.rotation.y = Math.PI * 0.5;
+      // Harmonische Skalierung (Breite ca. 4.0m, Tiefe ca. 3.35m, Höhe ca. 1.08m)
+      model.scale.setScalar(4.0);
 
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
@@ -169,7 +166,7 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
     },
     undefined,
     (err) => {
-      console.warn('Modell isometric garden 3d model.glb konnte nicht geladen werden:', err);
+      console.warn('Modell garden planter set 3d model.glb konnte nicht geladen werden:', err);
     }
   );
 

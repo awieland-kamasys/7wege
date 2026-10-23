@@ -333,19 +333,19 @@ export const HUNTING_LODGE_POS = {
 } as const;
 
 /**
- * Position des Wilden Jägers an der Jagdhütte (auf dem Vorplatz vor dem Kräutergarten).
+ * Position des Wilden Jägers an der Jagdhütte (auf dem Vorplatz vor und neben den Pflanzkübeln).
  */
 export const WILD_HUNTER_NPC_POS: PathPoint2D = {
-  x: -39.2,
-  z: 21.4,
+  x: -38.6,
+  z: 21.0,
 };
 
 /**
- * Position des Holzweibchens, das vor der Pforte des Kräutergartens mit dem Wilden Jäger diskutiert.
+ * Position des Holzweibchens, das vor den Pflanzkübeln mit dem Wilden Jäger diskutiert.
  */
 export const WOOD_WOMAN_LODGE_NPC_POS: PathPoint2D = {
-  x: -39.2,
-  z: 23.6,
+  x: -38.6,
+  z: 24.2,
 };
 
 /**

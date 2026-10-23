@@ -1046,8 +1046,8 @@ export class CrossroadsState {
     }
 
     // Aufbauten und Garten an der Ruinenlichtung auf Weg 6:
-    // Gartenbeete vor der Burg (AABB um -40.8, 23.2)
-    if (Math.abs(x - (-40.8)) < 1.7 - eps && Math.abs(z - 23.2) < 1.6 - eps) {
+    // Pflanzkübel-Set vor der Burg (AABB um -41.6, 23.2)
+    if (Math.abs(x - (-41.6)) < 1.7 - eps && Math.abs(z - 23.2) < 1.5 - eps) {
       return true;
     }
     // Isometrischer Garten neben der Burgruine (AABB um -46.0, 27.4)
@@ -1630,16 +1630,16 @@ export class CrossroadsState {
       resolvedX = afterLodgeWoman.x;
       resolvedZ = afterLodgeWoman.z;
 
-      // Gartenbeete vor der Burg auf Weg 6 (AABB um -40.8, 23.2)
-      const relGardenX = resolvedX - (-40.8);
+      // Pflanzkübel-Set vor der Burg auf Weg 6 (AABB um -41.6, 23.2)
+      const relGardenX = resolvedX - (-41.6);
       const relGardenZ = resolvedZ - 23.2;
-      if (Math.abs(relGardenX) < 1.75 && Math.abs(relGardenZ) < 1.65) {
+      if (Math.abs(relGardenX) < 1.75 && Math.abs(relGardenZ) < 1.55) {
         const penX = 1.75 - Math.abs(relGardenX);
-        const penZ = 1.65 - Math.abs(relGardenZ);
+        const penZ = 1.55 - Math.abs(relGardenZ);
         if (penX < penZ) {
-          resolvedX = -40.8 + (relGardenX >= 0 ? 1.75 : -1.75);
+          resolvedX = -41.6 + (relGardenX >= 0 ? 1.75 : -1.75);
         } else {
-          resolvedZ = 23.2 + (relGardenZ >= 0 ? 1.65 : -1.65);
+          resolvedZ = 23.2 + (relGardenZ >= 0 ? 1.55 : -1.55);
         }
       }
 
@@ -2377,14 +2377,14 @@ export class CrossroadsState {
     }
 
     const distToGarden = Math.hypot(
-      this.playerPos.x - (-40.8),
+      this.playerPos.x - (-41.6),
       this.playerPos.z - 23.2
     );
     if (distToGarden < 3.4) {
       return {
         type: 'herb_garden',
         label:
-          'Malerischer Garten vor der Burgruine mit Buchsbaumbeeten, Zierpflanzen und der seltenen Mondwurz.',
+          'Pflanzkübel-Garnitur vor der Burgruine mit Buchsbaumbeeten, Zierpflanzen und der seltenen Mondwurz.',
       };
     }
 
