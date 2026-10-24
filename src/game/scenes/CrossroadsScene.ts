@@ -74,6 +74,7 @@ import {
 import { createTerrainMaterial, TerrainMaterialController } from '../textures/TerrainMaterial';
 import { TerrainPresetKey } from '../textures/TerrainPresets';
 import { createWoodWomanNpc, WoodWomanNpcEntity } from '../entities/WoodWomanNpc';
+import { createMushroomCreatures, MushroomCreaturesEntity } from '../entities/MushroomCreatureNpc';
 import { buildMergedTreeStumps, TreeStumpInstance } from '../entities/TreeStump';
 import { buildMergedMushroomClusters, MushroomClusterOptions, MushroomType } from '../entities/MushroomCluster';
 import { buildMergedBirdhouses, BirdhouseInstance } from '../entities/Birdhouse';
@@ -115,6 +116,7 @@ export type ScenePickResult =
   | { kind: 'signpost_cap'; point: Vector2D }
   | { kind: 'signpost_base'; point: Vector2D }
   | { kind: 'creature'; point: Vector2D }
+  | { kind: 'mushroom_creature'; pathId: number; point: Vector2D }
   | { kind: 'world_tree'; point: Vector2D }
   | { kind: 'ground'; point: Vector2D };
 
@@ -167,6 +169,7 @@ export class CrossroadsScene {
   private readonly woodWomanLodgeNpc: WoodWomanNpcEntity;
   private readonly closedGate: ClosedGateEntity;
   private readonly creatureNpc: CreatureNpcEntity;
+  private readonly mushroomCreatures: MushroomCreaturesEntity;
   private readonly worldTree: WorldTreeEntity;
   private readonly giantWorldTree: WorldTreeEntity;
   private readonly giantRightWorldTree: WorldTreeEntity;
@@ -724,6 +727,19 @@ export class CrossroadsScene {
       }
     });
     this.scene.add(this.creatureNpc.group);
+
+    // Die 7 Hinweisgeber-Pilzwesen (mushroom+creature+3d+model.glb) auf den Pfaden 1 bis 7
+    this.mushroomCreatures = createMushroomCreatures({
+      onMeshLoaded: (mesh) => {
+        this.pickableObjects.push(mesh);
+      },
+    });
+    this.mushroomCreatures.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.mushroomCreatures.group);
 
     // Magischer Felsbrocken, der Weg 1 (Silberstollen-Pfad) blockiert (leicht eingesenkt für Felsclipping)
     this.path1Boulder = createPathBoulder();
@@ -2866,6 +2882,14 @@ export class CrossroadsScene {
     this.isCreatureHovered = hovered;
   }
 
+  public setMushroomHovered(pathId: number | null): void {
+    this.mushroomCreatures.setHovered(pathId);
+  }
+
+  public triggerMushroomJump(pathId: number): void {
+    this.mushroomCreatures.triggerJump(pathId);
+  }
+
   public startCreatureHobbing(): void {
     this.creatureNpc.startHobbing();
   }
@@ -3022,6 +3046,9 @@ export class CrossroadsScene {
       }
       if (data.interactableType === 'creature') {
         return { kind: 'creature', point };
+      }
+      if (data.interactableType === 'mushroom_creature' && typeof data.pathId === 'number') {
+        return { kind: 'mushroom_creature', pathId: data.pathId, point };
       }
       if (data.interactableType === 'gate') {
         return { kind: 'gate', point };
@@ -3234,6 +3261,9 @@ export class CrossroadsScene {
       this.isCreatureHovered || isDialogueActive,
       dtSeconds
     );
+
+    // Hinweisgeber-Pilzwesen auf den 7 Wegen
+    this.mushroomCreatures.update(this.elapsedSeconds, playerPos, dtSeconds);
 
     // Hindernisse entlang der Wege
     this.path1Boulder.update(dtSeconds, this.isBoulderHovered);

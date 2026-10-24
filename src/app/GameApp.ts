@@ -46,6 +46,7 @@ export class GameApp {
   private pendingTalkToWildHunter = false;
   private pendingTalkToWoodWomanLodge = false;
   private pendingTalkToCreature = false;
+  private pendingTalkToMushroom: number | null = null;
   private pendingInspectGate = false;
   private pendingToggleChest = false;
   private stepDistanceAccumulator = 1.15;
@@ -177,6 +178,7 @@ export class GameApp {
     this.pendingTalkToWildHunter = false;
     this.pendingTalkToWoodWomanLodge = false;
     this.pendingTalkToCreature = false;
+    this.pendingTalkToMushroom = null;
     this.pendingInspectGate = false;
     this.pendingToggleChest = false;
   }
@@ -371,6 +373,19 @@ export class GameApp {
     this.hud.showToast(
       'Das Fabelwesen Lupo huscht mit flinken Sprüngen über den Weg und verschwindet im Wald...'
     );
+  }
+
+  private initiateTalkToMushroom(pathId: number): void {
+    this.clearPendingActions();
+    this.closeDialogueAndSpeech();
+    this.scene.triggerMushroomJump(pathId);
+    if (this.state.isNearMushroom(pathId)) {
+      this.state.clearTargetPosition();
+      this.openDialogueNode(`mushroom_${pathId}_root`);
+    } else {
+      this.pendingTalkToMushroom = pathId;
+      this.state.setTargetToMushroom(pathId);
+    }
   }
 
   private handleDialogueOption(optionIndex: number): void {
@@ -668,6 +683,7 @@ export class GameApp {
     this.scene.setWoodWomanLodgeHovered(hit.kind === 'wood_woman_lodge' || hit.kind === 'herb_garden');
     this.scene.setGateHovered(hit.kind === 'gate');
     this.scene.setCreatureHovered(hit.kind === 'creature');
+    this.scene.setMushroomHovered(hit.kind === 'mushroom_creature' ? hit.pathId : null);
     this.scene.setBoulderHovered(hit.kind === 'boulder');
     this.scene.setPuddleHovered(hit.kind === 'puddle');
     this.scene.setStreamHovered(hit.kind === 'stream');
@@ -766,6 +782,11 @@ export class GameApp {
 
       if (hit.kind === 'creature') {
         this.initiateTalkToCreature();
+        return;
+      }
+
+      if (hit.kind === 'mushroom_creature') {
+        this.initiateTalkToMushroom(hit.pathId);
         return;
       }
 
@@ -1030,6 +1051,16 @@ export class GameApp {
         this.state.clearTargetPosition();
         this.scene.startCreatureHobbing();
         this.openDialogueNode('creature_root');
+      }
+      if (
+        this.pendingTalkToMushroom !== null &&
+        this.state.isNearMushroom(this.pendingTalkToMushroom)
+      ) {
+        const pathId = this.pendingTalkToMushroom;
+        this.pendingTalkToMushroom = null;
+        this.state.clearTargetPosition();
+        this.scene.triggerMushroomJump(pathId);
+        this.openDialogueNode(`mushroom_${pathId}_root`);
       }
       if (this.pendingInspectGate && this.state.isNearGate()) {
         this.pendingInspectGate = false;

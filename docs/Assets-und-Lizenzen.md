@@ -44,6 +44,7 @@ Alle externen Modelle, Texturen, Bilder, Schriften und Audio-Dateien hier dokume
 | Steiniger Bachlauf 3D-Modell (`rocky stream 3d model.glb`, 3,18 MB, reißendes Gebirgsbachbett als magische Wegsperre auf Weg 3) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/rocky stream 3d model.glb` | aktiv |
 | Umgestürzter Baumstamm 3D-Modell (`fallen log 3d model.glb`, 2,82 MB, moosiger Totholzstamm als magische Wegsperre auf Weg 4) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/fallen log 3d model.glb` | aktiv |
 | Fantasiepflanze 3D-Modell (`fantasy plant 3d model.glb`, 2,45 MB, magische Waldpflanze mit Blütenständen hinter dem Geländer auf Weg 6) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/fantasy plant 3d model.glb` | aktiv |
+| Hinweisgeber-Pilzwesen 3D-Charakter (`mushroom+creature+3d+model.glb`, 2,99 MB, animierte Pilzkreatur mit Skelettanimationen 'idle' und 'jump' als 7 weise Hinweisgeber auf jedem der Pfade) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/mushroom+creature+3d+model.glb` | aktiv |
 
 
 ## Regeln

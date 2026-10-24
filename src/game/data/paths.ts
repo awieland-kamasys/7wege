@@ -488,3 +488,75 @@ export const SEVEN_PATHS: readonly ForestPathData[] = [
     colorHex: 0x6e5c8a,
   },
 ];
+
+export interface MushroomCreatureData {
+  pathId: number;
+  name: string;
+  role: string;
+  pos: PathPoint2D;
+  rotationY: number;
+  collisionRadius: number;
+}
+
+/**
+ * Die 7 Hinweisgeber-Pilzwesen (mushroom+creature+3d+model.glb),
+ * jeweils eines auf jedem der sieben Waldwege vor den Wegsperren platziert.
+ */
+export const MUSHROOM_CREATURES_DATA: readonly MushroomCreatureData[] = [
+  {
+    pathId: 1,
+    name: 'Pilzling Morchel',
+    role: 'Hüter der Felssporen auf Weg 1',
+    pos: { x: -1.4, z: -11.0 },
+    rotationY: 0.15,
+    collisionRadius: 0.45,
+  },
+  {
+    pathId: 2,
+    name: 'Pilzling Pfiffer',
+    role: 'Hüter der Feuchtsporen auf Weg 2',
+    pos: { x: 8.4, z: -4.6 },
+    rotationY: -2.0,
+    collisionRadius: 0.45,
+  },
+  {
+    pathId: 3,
+    name: 'Pilzling Bovist',
+    role: 'Hüter der Quellsporen auf Weg 3',
+    pos: { x: 10.2, z: 4.4 },
+    rotationY: -2.5,
+    collisionRadius: 0.45,
+  },
+  {
+    pathId: 4,
+    name: 'Pilzling Trüffel',
+    role: 'Hüter der Baumsporen auf Weg 4',
+    pos: { x: 2.2, z: 9.8 },
+    rotationY: 2.6,
+    collisionRadius: 0.45,
+  },
+  {
+    pathId: 5,
+    name: 'Pilzling Feuerkappe',
+    role: 'Hüter der Glutsporen auf Weg 5',
+    pos: { x: -2.8, z: 9.6 },
+    rotationY: -2.7,
+    collisionRadius: 0.45,
+  },
+  {
+    pathId: 6,
+    name: 'Pilzling Kräuterhut',
+    role: 'Hüter der Waldkräuter auf Weg 6',
+    pos: { x: -10.2, z: 4.2 },
+    rotationY: 2.3,
+    collisionRadius: 0.45,
+  },
+  {
+    pathId: 7,
+    name: 'Pilzling Glimmling',
+    role: 'Hüter der Tor-Aura auf Weg 7',
+    pos: { x: -29.5, z: -25.2 },
+    rotationY: 0.8,
+    collisionRadius: 0.45,
+  },
+];

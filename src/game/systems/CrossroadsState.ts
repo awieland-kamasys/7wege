@@ -19,6 +19,7 @@ import {
   HELL_CHASM_POS,
   HUNTING_LODGE_POS,
   LUMBER_CAMP_POS,
+  MUSHROOM_CREATURES_DATA,
   NIXIE_NPC_POS,
   PATH_1_BOULDER_POS,
   PATH_1_END_CLEARING,
@@ -653,6 +654,21 @@ export class CrossroadsState {
     return dist <= this.creatureTalkDistance;
   }
 
+  public isNearMushroom(pathId: number): boolean {
+    const data = MUSHROOM_CREATURES_DATA.find((m) => m.pathId === pathId);
+    if (!data) return false;
+    const dist = Math.hypot(
+      this.playerPos.x - data.pos.x,
+      this.playerPos.z - data.pos.z
+    );
+    return dist <= 3.4;
+  }
+
+  public getMushroomPosition(pathId: number): Readonly<Vector2D> {
+    const data = MUSHROOM_CREATURES_DATA.find((m) => m.pathId === pathId);
+    return data ? { x: data.pos.x, z: data.pos.z } : { x: 0, z: 0 };
+  }
+
   public getCreaturePosition(): Readonly<Vector2D> {
     return { ...this.creaturePos };
   }
@@ -1251,6 +1267,13 @@ export class CrossroadsState {
         Math.hypot(x - this.creaturePos.x, z - this.creaturePos.z) <
         this.creatureCollisionRadius - eps
       ) {
+        return true;
+      }
+    }
+
+    // Die 7 Hinweisgeber-Pilzwesen auf den Pfaden
+    for (const m of MUSHROOM_CREATURES_DATA) {
+      if (Math.hypot(x - m.pos.x, z - m.pos.z) < m.collisionRadius - eps) {
         return true;
       }
     }
@@ -1973,6 +1996,18 @@ export class CrossroadsState {
         resolvedZ = afterCreature.z;
       }
 
+      // Die 7 Hinweisgeber-Pilzwesen auf den Pfaden
+      for (const m of MUSHROOM_CREATURES_DATA) {
+        const afterMushroom = this.pushOutOfCircle(
+          resolvedX,
+          resolvedZ,
+          m.pos,
+          m.collisionRadius
+        );
+        resolvedX = afterMushroom.x;
+        resolvedZ = afterMushroom.z;
+      }
+
     if (Math.abs(gateLx) < 12.0 && gateLz < 0.75 && gateLz > -4.5) {
         const clampedLz = 0.75;
         resolvedX = CLOSED_GATE_POS.x + gateLx * gateCos + clampedLz * gateSin;
@@ -2192,6 +2227,23 @@ export class CrossroadsState {
     return this.setTargetPosition(
       this.creaturePos.x + (dx / len) * stopDist,
       this.creaturePos.z + (dz / len) * stopDist
+    );
+  }
+
+  /**
+   * Lässt die Spielfigur vor das jeweilige Hinweisgeber-Pilzwesen des Pfades laufen.
+   */
+  public setTargetToMushroom(pathId: number): Readonly<Vector2D> {
+    const data = MUSHROOM_CREATURES_DATA.find((m) => m.pathId === pathId);
+    if (!data) return this.getTargetPosition() ?? this.playerPos;
+    this.selectPath(pathId);
+    const dx = this.playerPos.x - data.pos.x;
+    const dz = this.playerPos.z - data.pos.z;
+    const len = Math.hypot(dx, dz) || 1;
+    const stopDist = 1.6;
+    return this.setTargetPosition(
+      data.pos.x + (dx / len) * stopDist,
+      data.pos.z + (dz / len) * stopDist
     );
   }
 
