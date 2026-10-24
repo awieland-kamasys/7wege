@@ -185,8 +185,8 @@ export const GIANT_NPC_POS: PathPoint2D = {
  * am Ende des Baches, sodass der Gebirgsbach exakt in der Mitte der Wurzelhöhle hindurchfließt.
  */
 export const WORLD_TREE_POS: PathPoint2D = {
-  x: 48.7,
-  z: 4.2,
+  x: 48.9,
+  z: 4.3,
 };
 
 /**

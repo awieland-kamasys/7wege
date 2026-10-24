@@ -180,56 +180,74 @@ export function createWeirBridgeScene(
   group.add(springRipple);
 
   // ============================================================================
-  // 3. DER GEBIRGSBACH UNTER DEM WEHR & DER BRÜCKE INS TAL (lx = -0.7 bis +31.1)
+  // 3. DER GEBIRGSBACH UNTER DEM WEHR & DER BRÜCKE INS TAL (lx = -0.85 bis +31.5)
   // ============================================================================
   const dryBedMat = new THREE.MeshStandardMaterial({
     color: 0x484236,
     roughness: 0.95,
   });
   const streamWaterMat = new THREE.MeshStandardMaterial({
-    color: 0x247a90,
-    emissive: 0x092b34,
-    emissiveIntensity: 0.35,
-    roughness: 0.2,
+    color: 0x228099,
+    emissive: 0x0c3742,
+    emissiveIntensity: 0.45,
+    roughness: 0.18,
     transparent: true,
-    opacity: 0.82,
+    opacity: 0.86,
   });
 
   // Wehrüberlauf direkt unter dem Wehrschütz der Holzbrücke:
   // Das aufgestaute Seewasser fließt nahtlos durch das Wehr in die tiefe Rinne des Baches
   const weirSpillwayMat = new THREE.MeshStandardMaterial({
-    color: 0x8ce8ff,
-    emissive: 0x1f5c6e,
-    emissiveIntensity: 0.45,
-    roughness: 0.25,
+    color: 0xaef0ff,
+    emissive: 0x24788c,
+    emissiveIntensity: 0.65,
+    roughness: 0.22,
     transparent: true,
-    opacity: 0.85,
+    opacity: 0.90,
   });
   const weirSpillway = new THREE.Mesh(
-    new THREE.BoxGeometry(0.55, 0.48, 1.45),
+    new THREE.BoxGeometry(0.70, 0.32, 1.45),
     weirSpillwayMat
   );
-  weirSpillway.position.set(-0.68, -0.16, 0);
+  weirSpillway.position.set(-0.95, -0.06, 0);
   group.add(weirSpillway);
 
-  // Steiniges Bachbett in der tiefen Rinne (reicht nahtlos von unter der Brücke bis ins Tal)
-  const streamBed = new THREE.Mesh(new THREE.BoxGeometry(31.8, 0.05, 1.95), dryBedMat);
-  streamBed.position.set(15.2, -0.42, 0);
+  // Ziseliertes, schäumendes Überlaufwasser direkt am Fall des Wehrs
+  const weirCascade = new THREE.Mesh(
+    new THREE.BoxGeometry(0.35, 0.26, 1.38),
+    new THREE.MeshStandardMaterial({
+      color: 0xe0faff,
+      emissive: 0x4aa6bd,
+      emissiveIntensity: 0.75,
+      roughness: 0.15,
+      transparent: true,
+      opacity: 0.92,
+    })
+  );
+  weirCascade.position.set(-0.76, -0.12, 0);
+  weirCascade.rotation.z = -0.32;
+  group.add(weirCascade);
+
+  // Steiniges Bachbett in der tiefen Rinne (reicht nahtlos von unter dem Wehr & der Brücke bis ins Tal)
+  const streamBed = new THREE.Mesh(new THREE.BoxGeometry(32.4, 0.08, 2.10), dryBedMat);
+  streamBed.position.set(15.3, -0.28, 0);
   streamBed.receiveShadow = true;
   group.add(streamBed);
 
-  // Klarer Gebirgsbach in der tiefen Rinne (fließt direkt aus dem Wehr unter der Brücke durch das Tal)
-  const streamWater = new THREE.Mesh(new THREE.BoxGeometry(31.8, 0.04, 1.25), streamWaterMat);
-  streamWater.position.set(15.2, -0.38, 0);
+  // Klarer Gebirgsbach in der tiefen Rinne (fließt nahtlos aus dem Wehr unter der Brücke hindurch durch das Tal)
+  const streamWater = new THREE.Mesh(new THREE.BoxGeometry(32.4, 0.06, 1.35), streamWaterMat);
+  streamWater.position.set(15.3, -0.18, 0);
   streamWater.userData = { interactableType: 'weir' };
   group.add(streamWater);
-
-
 
   const update = (timeSeconds: number) => {
     // Sanftes Pulsieren der Bergquelle
     const wave = 0.5 + 0.5 * Math.sin(timeSeconds * 2.6);
     springRipple.scale.setScalar(0.92 + wave * 0.22);
+
+    // Lebendiges Fließen des Wehrüberlaufs
+    const spillFlow = 0.5 + 0.5 * Math.sin(timeSeconds * 4.8);
+    weirCascade.scale.y = 0.92 + spillFlow * 0.16;
   };
 
   return { group, update };

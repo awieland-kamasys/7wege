@@ -400,7 +400,7 @@ export class CrossroadsScene {
     });
     this.weirBridge.group.position.set(
       WEIR_BRIDGE_POS.x,
-      getTerrainHeight(WEIR_BRIDGE_POS.x, WEIR_BRIDGE_POS.z),
+      -1.50,
       WEIR_BRIDGE_POS.z
     );
     this.weirBridge.group.rotation.y = WEIR_BRIDGE_POS.rotationY;
@@ -428,13 +428,13 @@ export class CrossroadsScene {
     this.scene.add(this.giantNpc.group);
 
     // Stilisierter Höhlenbaum (stylized tree 3d model.glb) am Ende der tiefen Bachrinne
-    // Um 10 % verkleinert (scale 23.4), Baumhöhle perfekt zentriert über dem Bachbett (rotationY 2.50).
-    // Auf dem Rinnengrund verankert, sodass der Bach exakt in der Mitte der Wurzelhöhle hindurchfließt.
+    // Um 10 % verkleinert (scale 23.4), Wurzelhöhle auf 0.04° exakt parallel zum Bachlauf ausgerichtet (rotationY 2.24).
+    // Auf dem Rinnengrund verankert (sinkDepth 0.85), sodass der Gebirgsbach exakt in der Mitte der Wurzelhöhle hindurchfließt.
     this.worldTree = createWorldTree({
       modelUrl: '/assets/models/stylized tree 3d model.glb',
       scale: 23.4,
-      rotationY: 2.50,
-      sinkDepth: 0.70,
+      rotationY: 2.24,
+      sinkDepth: 0.85,
       hasMound: false,
       hasAura: true,
       onMeshLoaded: (mesh) => {
@@ -2804,11 +2804,29 @@ export class CrossroadsScene {
   }
 
   /**
+   * Ermittelt die exakte Laufhöhe der Spielfigur.
+   * Auf der Holzbrücke (Weg 3) läuft die Spielfigur oben auf den Holzbohlen (-1.50m),
+   * während der Gebirgsbach darunter durch die tiefe Rinne fließt.
+   */
+  private getPlayerGroundHeight(x: number, z: number): number {
+    const dxB = x - WEIR_BRIDGE_POS.x;
+    const dzB = z - WEIR_BRIDGE_POS.z;
+    const cosB = Math.cos(WEIR_BRIDGE_POS.rotationY);
+    const sinB = Math.sin(WEIR_BRIDGE_POS.rotationY);
+    const lx = dxB * cosB - dzB * sinB;
+    const lz = dxB * sinB + dzB * cosB;
+    if (Math.abs(lx) <= 1.45 && Math.abs(lz) <= 3.4) {
+      return -1.50;
+    }
+    return getTerrainHeight(x, z);
+  }
+
+  /**
    * Setzt die Kamera und Spielfigur nach einem Schnellreise-Sprung sofort auf die Zielposition.
    */
   public snapCameraToPlayer(playerPos: Readonly<Vector2D>): void {
     this.lastPlayerPos = { x: playerPos.x, z: playerPos.z };
-    const groundY = getTerrainHeight(playerPos.x, playerPos.z);
+    const groundY = this.getPlayerGroundHeight(playerPos.x, playerPos.z);
     this.playerGroup.position.set(playerPos.x, groundY, playerPos.z);
     this.playerGroup.rotation.y = 0;
     this.cameraOrbitAngle = 0;
@@ -3138,7 +3156,7 @@ export class CrossroadsScene {
       this.playerGroup.rotation.y = targetRotation;
     }
     this.lastPlayerPos = { x: playerPos.x, z: playerPos.z };
-    const groundY = getTerrainHeight(playerPos.x, playerPos.z);
+    const groundY = this.getPlayerGroundHeight(playerPos.x, playerPos.z);
     this.playerGroup.position.set(playerPos.x, groundY, playerPos.z);
 
     // Entfernungs-Culling: Entities, die weiter als 33m entfernt sind (durch Nebel ab 22m verborgen),
