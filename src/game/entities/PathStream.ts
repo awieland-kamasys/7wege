@@ -1,5 +1,7 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { PATH_3_STREAM_POS } from '../data/paths';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface PathStreamEntity {
   group: THREE.Group;
@@ -12,8 +14,8 @@ export interface PathStreamEntity {
 
 /**
  * Erstellt den reißenden Gebirgsbachlauf, der Weg 3 (Quellenweg zum Riesen) versperrt.
- * Fließt quer über den Pfad mit Gischt, Flusskieseln an den Rändern, sanftem Wasserglanz
- * und saphirblau schimmernden Kristallpartikeln.
+ * Lädt das 3D-Modell `/assets/models/rocky stream 3d model.glb` mit steiniger Flussrinne,
+ * schäumendem Gebirgswasser und saphirblau schimmernden Kristallpartikeln.
  */
 export function createPathStream(): PathStreamEntity {
   const group = new THREE.Group();
@@ -23,170 +25,139 @@ export function createPathStream(): PathStreamEntity {
 
   const pickableMeshes: THREE.Object3D[] = [];
 
-  // Wasserbett / Flussrinne (dunkles nasses Kiesbett)
+  // Temporärer Platzhalter während des GLB-Ladens
+  const fallbackGroup = new THREE.Group();
   const bedMaterial = new THREE.MeshLambertMaterial({
     color: 0x242d2a,
     flatShading: true,
   });
-
-  const bedMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(3.2, 0.05, 1.4),
+  const fallbackMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(3.2, 0.08, 1.4),
     bedMaterial
   );
-  bedMesh.position.set(0, 0.045, 0);
-  bedMesh.receiveShadow = true;
-  group.add(bedMesh);
+  fallbackMesh.position.set(0, 0.04, 0);
+  fallbackMesh.userData = { interactableType: 'stream' };
+  fallbackGroup.add(fallbackMesh);
+  group.add(fallbackGroup);
+  pickableMeshes.push(fallbackMesh);
 
-  // Strömende Wasseroberfläche (transparentes, glänzendes Gebirgswasser, deutlich über dem Weg)
-  const waterMaterial = new THREE.MeshStandardMaterial({
-    color: 0x1f5e7a,
-    emissive: 0x0c334d,
-    emissiveIntensity: 0.35,
-    roughness: 0.12,
-    metalness: 0.25,
-    transparent: true,
-    opacity: 0.85,
-    flatShading: true,
-  });
-
-  const waterMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(3.1, 1.25, 6, 4),
-    waterMaterial
-  );
-  waterMesh.rotation.x = -Math.PI / 2;
-  waterMesh.position.set(0, 0.088, 0);
-  waterMesh.receiveShadow = true;
-  group.add(waterMesh);
-
-  // Gischt- / Schaumstreifen an den Uferrändern und in der Mitte
-  const foamMaterial = new THREE.MeshStandardMaterial({
-    color: 0xdff5ff,
-    emissive: 0x6ab0d6,
-    emissiveIntensity: 0.45,
-    roughness: 0.4,
-    transparent: true,
-    opacity: 0.75,
-    flatShading: true,
-  });
-
-  const foamMeshes: THREE.Mesh[] = [];
-  const foamConfigs = [
-    { x: -0.8, z: -0.4, w: 1.1, d: 0.18 },
-    { x: 0.4, z: -0.25, w: 1.3, d: 0.16 },
-    { x: -0.2, z: 0.1, w: 1.5, d: 0.22 },
-    { x: 0.7, z: 0.38, w: 1.0, d: 0.15 },
-    { x: -0.9, z: 0.42, w: 0.9, d: 0.14 },
-  ];
-
-  for (const c of foamConfigs) {
-    const foam = new THREE.Mesh(
-      new THREE.BoxGeometry(c.w, 0.02, c.d),
-      foamMaterial
-    );
-    foam.position.set(c.x, 0.098, c.z);
-    group.add(foam);
-    foamMeshes.push(foam);
-  }
-
-  // Flusskiesel und Uferfelsen links und rechts
-  const rockMaterial = new THREE.MeshStandardMaterial({
-    color: 0x474c4a,
-    roughness: 0.88,
-    metalness: 0.08,
-    flatShading: true,
-  });
-
-  const rockCoords = [
-    { x: -1.45, z: -0.5, r: 0.26, sy: 0.18 },
-    { x: -1.35, z: 0.48, r: 0.22, sy: 0.16 },
-    { x: 1.42, z: -0.45, r: 0.28, sy: 0.2 },
-    { x: 1.38, z: 0.52, r: 0.24, sy: 0.17 },
-    { x: 0.1, z: -0.62, r: 0.18, sy: 0.12 },
-    { x: -0.6, z: 0.65, r: 0.2, sy: 0.14 },
-  ];
-
-  for (const r of rockCoords) {
-    const rock = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(r.r, 0),
-      rockMaterial
-    );
-    rock.position.set(r.x, 0.1 + r.sy * 0.5, r.z);
-    rock.scale.set(1.0, r.sy / r.r, 1.1);
-    rock.castShadow = true;
-    rock.receiveShadow = true;
-    group.add(rock);
-  }
-
-  // Blaues Wasserlicht (Saphir-Resonanz)
-  const streamLight = new THREE.PointLight(0x2d8cd4, 1.2, 3.8);
-  streamLight.position.set(0, 0.45, 0);
+  // Saphirblaues Wasserlicht
+  const streamLight = new THREE.PointLight(0x38b0ff, 0.95, 4.8);
+  streamLight.position.set(0, 0.5, 0);
   group.add(streamLight);
 
-  // Zustandsvariablen für Animation und Beseitigung
-  let elapsed = 0;
-  let dissolving = false;
+  const modelMaterials: THREE.MeshStandardMaterial[] = [];
+
+  // Lade das detaillierte Rocky-Stream-Modell
+  const loader = new GLTFLoader();
+  loader.load(
+    '/assets/models/rocky stream 3d model.glb',
+    (gltf) => {
+      const model = gltf.scene;
+
+      // Skalierung: Breite 3.6m quer über den Weg, Tiefe ca. 1.2m
+      model.scale.set(3.6, 2.5, 3.8);
+
+      // Bounding Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
+      model.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(model);
+      model.position.set(0, -bounds.min.y, 0);
+
+      model.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.userData = { interactableType: 'stream' };
+
+          if (mesh.material && 'roughness' in mesh.material) {
+            const mat = mesh.material as THREE.MeshStandardMaterial;
+            modelMaterials.push(mat);
+          }
+          pickableMeshes.push(mesh);
+        }
+      });
+
+      // Platzhalter entfernen
+      const idx = pickableMeshes.indexOf(fallbackMesh);
+      if (idx !== -1) pickableMeshes.splice(idx, 1);
+      group.remove(fallbackGroup);
+      disposeObject3D(fallbackGroup);
+      group.add(model);
+    },
+    undefined,
+    (err) => {
+      console.warn('Steiniger Bachlauf-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
+    }
+  );
+
+  let state: 'solid' | 'dissolving' | 'removed' = 'solid';
   let dissolveTimer = 0;
   const dissolveDuration = 1.35;
-  let onCompleteCallback: (() => void) | undefined;
-  let removed = false;
+  let onDissolveComplete: (() => void) | null = null;
+  let elapsed = 0;
+
+  const update = (dtSeconds: number, isHovered = false): void => {
+    elapsed += dtSeconds;
+
+    if (state === 'removed') {
+      return;
+    }
+
+    if (state === 'dissolving') {
+      dissolveTimer += dtSeconds;
+      const progress = Math.min(1.0, dissolveTimer / dissolveDuration);
+
+      // Bach trocknet aus und sinkt in den Boden
+      const scale = Math.max(0.001, 1.0 - progress * 0.95);
+      group.scale.set(scale, scale, scale);
+      group.position.y = -progress * 0.8;
+
+      // Intensives Aufglühen beim Austrocknen
+      const glowBoost = Math.max(0, 1.0 - progress * 1.5);
+      streamLight.intensity = 2.2 * glowBoost;
+
+      if (progress >= 1.0) {
+        state = 'removed';
+        group.visible = false;
+        if (onDissolveComplete) {
+          onDissolveComplete();
+          onDissolveComplete = null;
+        }
+      }
+      return;
+    }
+
+    // Zustand 'solid': Rhythmisches Fließen und Glimmen
+    const wave = 0.5 + 0.5 * Math.sin(elapsed * 3.2);
+    const hoverBonus = isHovered ? 0.6 : 0;
+    streamLight.intensity = 0.85 + wave * 0.35 + hoverBonus;
+
+    for (const mat of modelMaterials) {
+      if (mat.emissive) {
+        mat.emissive.setHex(isHovered ? 0x1a4566 : 0x081f30);
+        mat.emissiveIntensity = isHovered ? 0.5 : 0.2;
+      }
+    }
+  };
+
+  const startDissolve = (onComplete?: () => void): void => {
+    if (state !== 'solid') {
+      return;
+    }
+    state = 'dissolving';
+    dissolveTimer = 0;
+    if (onComplete) {
+      onDissolveComplete = onComplete;
+    }
+  };
 
   return {
     group,
     pickableMeshes,
-    update: (dtSeconds: number, isHovered = false) => {
-      if (removed) {
-        return;
-      }
-
-      elapsed += dtSeconds;
-
-      if (dissolving) {
-        dissolveTimer += dtSeconds;
-        const progress = Math.min(1, dissolveTimer / dissolveDuration);
-
-        // Wasserspiegel sinkt ab und trocknet aus
-        const scaleY = Math.max(0.01, 1 - progress);
-        waterMesh.scale.y = scaleY;
-        waterMesh.position.y = 0.05 - progress * 0.04;
-        waterMaterial.opacity = Math.max(0, 0.82 * (1 - progress));
-        foamMaterial.opacity = Math.max(0, 0.72 * (1 - progress));
-        streamLight.intensity = Math.max(0, (1 - progress) * 2.2);
-
-        // Bei Abschluss ausblenden
-        if (progress >= 1) {
-          group.visible = false;
-          removed = true;
-          if (onCompleteCallback) {
-            onCompleteCallback();
-          }
-        }
-        return;
-      }
-
-      // Sanfte Wasser- und Schaumanimation
-      const wave = Math.sin(elapsed * 4.2) * 0.012;
-      waterMesh.position.y = 0.05 + wave;
-
-      // Schaumstreifen schwingen in Querrichtung (Strömung)
-      foamMeshes.forEach((foam, idx) => {
-        foam.position.x += Math.sin(elapsed * 3.5 + idx * 1.2) * 0.0018;
-      });
-
-      // Hover-Pulsieren
-      const hoverBoost = isHovered ? 0.35 : 0;
-      const pulse = 0.5 + 0.5 * Math.sin(elapsed * 2.8);
-      waterMaterial.emissiveIntensity = 0.35 + pulse * 0.2 + hoverBoost;
-      streamLight.intensity = 1.2 + pulse * 0.4 + hoverBoost * 0.6;
-    },
-    startDissolve: (onComplete?: () => void) => {
-      if (dissolving || removed) {
-        return;
-      }
-      dissolving = true;
-      dissolveTimer = 0;
-      onCompleteCallback = onComplete;
-    },
-    isDissolving: () => dissolving,
-    isRemoved: () => removed,
+    update,
+    startDissolve,
+    isDissolving: () => state === 'dissolving',
+    isRemoved: () => state === 'removed',
   };
 }

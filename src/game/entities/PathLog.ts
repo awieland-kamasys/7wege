@@ -1,5 +1,7 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { PATH_4_LOG_POS } from '../data/paths';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface PathLogEntity {
   group: THREE.Group;
@@ -12,8 +14,8 @@ export interface PathLogEntity {
 
 /**
  * Erstellt den umgestürzten Baumstamm, der Weg 4 (Holzfäller-Pfad) versperrt.
- * Wuchtiger Stamm mit Rinde, Bruchästen, Moosauflage und warm bernsteinfarben
- * glimmenden Resonanzrunen.
+ * Lädt das detaillierte Totholzstamm-Modell `/assets/models/fallen log 3d model.glb`
+ * mit Moosauflage, Rindenstruktur und warm bernsteinfarben glimmenden Resonanzrunen.
  */
 export function createPathLog(): PathLogEntity {
   const group = new THREE.Group();
@@ -23,90 +25,72 @@ export function createPathLog(): PathLogEntity {
 
   const pickableMeshes: THREE.Object3D[] = [];
 
-  // Rindenmaterial des Stamms (warmes, sonniges Kiefernholz)
+  // Temporärer Platzhalter während des GLB-Ladens
+  const fallbackGroup = new THREE.Group();
   const barkMaterial = new THREE.MeshLambertMaterial({
     color: 0x8a6242,
     flatShading: true,
   });
-
-  // Helles Kernholz an den Schnitt- und Bruchenden
-  const woodEndMaterial = new THREE.MeshLambertMaterial({
-    color: 0xc9a46a,
-    flatShading: true,
-  });
-
-  // Moosbedeckung auf der Oberseite (frisches Sommerwiesenmoos)
-  const mossMaterial = new THREE.MeshLambertMaterial({
-    color: 0x4f7d34,
-    flatShading: true,
-  });
-
-  // Bernsteinfarben glimmende Bruchrunen
-  const runeMaterial = new THREE.MeshLambertMaterial({
-    color: 0xe89e24,
-    emissive: 0xb06810,
-    emissiveIntensity: 0.8,
-    flatShading: true,
-  });
-
-  // Hauptstamm quer über den Pfad (Länge 3.2m, Durchmesser ~0.58m)
-  const logGeo = new THREE.CylinderGeometry(0.28, 0.33, 3.2, 12);
-  const mainLog = new THREE.Mesh(logGeo, barkMaterial);
-  mainLog.rotation.z = Math.PI / 2;
-  mainLog.position.set(0, 0.28, 0);
-  mainLog.castShadow = true;
-  mainLog.receiveShadow = true;
-  group.add(mainLog);
-
-  // Schnittflächen an beiden Enden
-  for (const side of [-1, 1]) {
-    const endFace = new THREE.Mesh(
-      new THREE.CircleGeometry(0.30, 12),
-      woodEndMaterial
-    );
-    endFace.rotation.y = side * (Math.PI / 2);
-    endFace.position.set(side * 1.601, 0.28, 0);
-    group.add(endFace);
-  }
-
-  // Moosschicht auf dem Stamm
-  const mossPatch = new THREE.Mesh(
-    new THREE.BoxGeometry(2.0, 0.08, 0.38),
-    mossMaterial
+  const fallbackMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.35, 0.40, 3.4, 10),
+    barkMaterial
   );
-  mossPatch.position.set(0.1, 0.54, 0);
-  mossPatch.castShadow = true;
-  group.add(mossPatch);
+  fallbackMesh.rotation.z = Math.PI / 2;
+  fallbackMesh.position.set(0, 0.35, 0);
+  fallbackMesh.userData = { interactableType: 'log' };
+  fallbackGroup.add(fallbackMesh);
+  group.add(fallbackGroup);
+  pickableMeshes.push(fallbackMesh);
 
-  // Abstehende Aststümpfe
-  const branchCoords = [
-    { x: -0.6, y: 0.45, z: 0.22, rx: 0.5, rz: 0.2 },
-    { x: 0.5, y: 0.42, z: -0.25, rx: -0.6, rz: -0.3 },
-  ];
-  for (const b of branchCoords) {
-    const branch = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.06, 0.09, 0.45, 6),
-      barkMaterial
-    );
-    branch.position.set(b.x, b.y, b.z);
-    branch.rotation.set(b.rx, 0, b.rz);
-    branch.castShadow = true;
-    group.add(branch);
-  }
-
-  // Eingeschnittene Bernstein-Runenrisse
-  const runeVein = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.2, 0),
-    runeMaterial
-  );
-  runeVein.position.set(0, 0.38, 0.25);
-  runeVein.scale.set(1.4, 0.4, 0.4);
-  group.add(runeVein);
-
-  // Warmes Bernsteinlicht
-  const logLight = new THREE.PointLight(0xf0a530, 0.8, 3.8);
-  logLight.position.set(0, 0.6, 0.2);
+  // Bernsteinfarbenes Glimmlicht
+  const logLight = new THREE.PointLight(0xe89e24, 0.85, 4.2);
+  logLight.position.set(0, 0.75, 0);
   group.add(logLight);
+
+  const modelMaterials: THREE.MeshStandardMaterial[] = [];
+
+  // Lade das detaillierte Fallen-Log-Modell
+  const loader = new GLTFLoader();
+  loader.load(
+    '/assets/models/fallen log 3d model.glb',
+    (gltf) => {
+      const model = gltf.scene;
+
+      // Skalierung: Stamm auf 3.6m verlängern, um den Pfad quer vollflächig abzuriegeln
+      model.scale.setScalar(3.6);
+
+      // Bounding Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
+      model.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(model);
+      model.position.set(0, -bounds.min.y, 0);
+
+      model.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.userData = { interactableType: 'log' };
+
+          if (mesh.material && 'roughness' in mesh.material) {
+            const mat = mesh.material as THREE.MeshStandardMaterial;
+            modelMaterials.push(mat);
+          }
+          pickableMeshes.push(mesh);
+        }
+      });
+
+      // Platzhalter entfernen
+      const idx = pickableMeshes.indexOf(fallbackMesh);
+      if (idx !== -1) pickableMeshes.splice(idx, 1);
+      group.remove(fallbackGroup);
+      disposeObject3D(fallbackGroup);
+      group.add(model);
+    },
+    undefined,
+    (err) => {
+      console.warn('Baumstamm-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
+    }
+  );
 
   let state: 'solid' | 'dissolving' | 'removed' = 'solid';
   let dissolveTimer = 0;
@@ -125,16 +109,14 @@ export function createPathLog(): PathLogEntity {
       dissolveTimer += dtSeconds;
       const progress = Math.min(1.0, dissolveTimer / dissolveDuration);
 
-      // Stamm sinkt in die Erde ein und schrumpft magisch zusammen
-      group.position.y = -progress * 1.5;
+      // Stamm sinkt in den Boden und löst sich auf
       const scale = Math.max(0.001, 1.0 - progress * 0.95);
       group.scale.set(scale, scale, scale);
+      group.position.y = -progress * 1.2;
 
-      // Goldener Aufblitz-Effekt
-      const glowBoost = 1.0 - Math.abs(progress - 0.3) * 1.5;
-      const currentIntensity = Math.max(0.1, 2.5 * Math.max(0, glowBoost));
-      runeMaterial.emissiveIntensity = currentIntensity;
-      logLight.intensity = currentIntensity * 1.5;
+      // Golden-bernsteinfarbenes Aufglühen
+      const glowBoost = Math.max(0, 1.0 - progress * 1.5);
+      logLight.intensity = 2.2 * glowBoost;
 
       if (progress >= 1.0) {
         state = 'removed';
@@ -147,11 +129,17 @@ export function createPathLog(): PathLogEntity {
       return;
     }
 
-    // Zustand 'solid': Sanftes Atmen der Bernsteinrunen
-    const pulse = 0.5 + 0.5 * Math.sin(elapsed * 2.8);
-    const hoverBonus = isHovered ? 0.5 : 0;
-    runeMaterial.emissiveIntensity = 0.7 + pulse * 0.4 + hoverBonus;
-    logLight.intensity = 0.75 + pulse * 0.4 + hoverBonus;
+    // Zustand 'solid': Rhythmisches bernsteinfarbenes Pulsieren
+    const pulse = 0.5 + 0.5 * Math.sin(elapsed * 2.6);
+    const hoverBonus = isHovered ? 0.6 : 0;
+    logLight.intensity = 0.75 + pulse * 0.35 + hoverBonus;
+
+    for (const mat of modelMaterials) {
+      if (mat.emissive) {
+        mat.emissive.setHex(isHovered ? 0x663f0a : 0x221302);
+        mat.emissiveIntensity = isHovered ? 0.5 : 0.15;
+      }
+    }
   };
 
   const startDissolve = (onComplete?: () => void): void => {

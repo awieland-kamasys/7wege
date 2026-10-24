@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PATH_5_FIRE_POS } from '../data/paths';
+import { createVeinedLavaRockTexture } from '../textures/GroundTextures';
 
 export interface PathFireEntity {
   group: THREE.Group;
@@ -11,112 +12,126 @@ export interface PathFireEntity {
 }
 
 /**
- * Erstellt die lodernde Flammenwand / das Feuer, das Weg 5 (Höllenschlund-Pfad) versperrt.
- * Glühende Kohlen und Felsen am Boden mit tanzenden Flammenzungen und
- * flackerndem, rubinrotem/orangefarbenem Feuerlicht.
+ * Erstellt den riesigen, spitzen Lavaobelisken, der Weg 5 (Höllenschlund-Pfad) versperrt.
+ * Monumentaler schwarzer Obsidian-Monolith mit glühend roten Lava-Adern,
+ * gezackten Stützstelen an der Basis und unheilvoll pulsierendem Magmalicht.
  */
 export function createPathFire(): PathFireEntity {
   const group = new THREE.Group();
-  group.name = 'Path5Fire';
+  group.name = 'Path5LavaObelisk';
   group.position.set(PATH_5_FIRE_POS.x, 0, PATH_5_FIRE_POS.z);
 
   const pickableMeshes: THREE.Object3D[] = [];
 
-  // Verbrannter, aschiger Boden mit Glutrissen
-  const ashMaterial = new THREE.MeshLambertMaterial({
-    color: 0x1f1814,
-    emissive: 0x5a1805,
-    emissiveIntensity: 0.6,
+  // Prozedurale Texturen für schwarzes Lavagestein mit roten Adern
+  const lavaMaps = createVeinedLavaRockTexture();
+  if (lavaMaps.map) {
+    lavaMaps.map.wrapS = THREE.RepeatWrapping;
+    lavaMaps.map.wrapT = THREE.RepeatWrapping;
+    lavaMaps.map.repeat.set(1.5, 3.5);
+  }
+  if (lavaMaps.emissiveMap) {
+    lavaMaps.emissiveMap.wrapS = THREE.RepeatWrapping;
+    lavaMaps.emissiveMap.wrapT = THREE.RepeatWrapping;
+    lavaMaps.emissiveMap.repeat.set(1.5, 3.5);
+  }
+
+  // Basalt- und Obsidianmaterial mit glühenden Magma-Adern
+  const obeliskMaterial = new THREE.MeshStandardMaterial({
+    color: 0x1c1719,
+    map: lavaMaps.map,
+    emissive: 0xff2200,
+    emissiveMap: lavaMaps.emissiveMap,
+    bumpMap: lavaMaps.bumpMap,
+    bumpScale: 0.15,
+    emissiveIntensity: 0.85,
+    roughness: 0.72,
+    metalness: 0.42,
     flatShading: true,
   });
 
-  const ashBase = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.45, 1.6, 0.08, 16),
-    ashMaterial
-  );
-  ashBase.position.y = 0.04;
-  ashBase.receiveShadow = true;
-  group.add(ashBase);
-
-  // Glühende Felsen und Kohlebrocken
-  const coalMat = new THREE.MeshLambertMaterial({
-    color: 0x2b1308,
-    emissive: 0xd93808,
-    emissiveIntensity: 0.9,
+  // Reines glutrotes Adernmaterial für erhabene Lavarisse
+  const magmaVeinMaterial = new THREE.MeshStandardMaterial({
+    color: 0xff3300,
+    emissive: 0xff1100,
+    emissiveIntensity: 1.25,
+    roughness: 0.35,
+    metalness: 0.2,
     flatShading: true,
   });
 
-  const coals = [
-    { x: -0.7, z: 0.4, r: 0.32 },
-    { x: 0.8, z: -0.3, r: 0.38 },
-    { x: 0.1, z: 0.6, r: 0.35 },
-    { x: -0.5, z: -0.5, r: 0.28 },
-    { x: 0.4, z: -0.6, r: 0.3 },
-  ];
-  for (const c of coals) {
-    const coal = new THREE.Mesh(new THREE.DodecahedronGeometry(c.r, 0), coalMat);
-    coal.position.set(c.x, c.r * 0.7, c.z);
-    coal.castShadow = true;
-    coal.receiveShadow = true;
-    group.add(coal);
-  }
+  // 1. Zerkrümelter, aschiger Vulkankrater-Sockel am Boden
+  const baseGeo = new THREE.CylinderGeometry(1.55, 1.85, 0.25, 8);
+  const baseMesh = new THREE.Mesh(baseGeo, obeliskMaterial);
+  baseMesh.position.y = 0.125;
+  baseMesh.castShadow = true;
+  baseMesh.receiveShadow = true;
+  baseMesh.userData = { interactableType: 'fire' };
+  group.add(baseMesh);
+  pickableMeshes.push(baseMesh);
 
-  // Lodernde Flammenzungen (Konen und Pyramiden in mehreren Schichten)
-  const flameMatOuter = new THREE.MeshBasicMaterial({
-    color: 0xff4400,
-    transparent: true,
-    opacity: 0.92,
-  });
+  // 2. Riesiger, spitz zulaufender Vierkant-Obeliskenschaft (Höhe 4.4m)
+  const shaftGeo = new THREE.CylinderGeometry(0.18, 0.75, 4.4, 4);
+  const shaftMesh = new THREE.Mesh(shaftGeo, obeliskMaterial);
+  shaftMesh.position.y = 2.45;
+  shaftMesh.rotation.y = Math.PI / 4;
+  shaftMesh.castShadow = true;
+  shaftMesh.receiveShadow = true;
+  shaftMesh.userData = { interactableType: 'fire' };
+  group.add(shaftMesh);
+  pickableMeshes.push(shaftMesh);
 
-  const flameMatCore = new THREE.MeshBasicMaterial({
-    color: 0xffdd33,
-    transparent: true,
-    opacity: 0.95,
-  });
+  // 3. Messerscharfe pyramidale Obeliskenspitze oben drauf (Höhe 1.3m, Gesamthöhe ~5.3m)
+  const tipGeo = new THREE.ConeGeometry(0.25, 1.3, 4);
+  const tipMesh = new THREE.Mesh(tipGeo, obeliskMaterial);
+  tipMesh.position.y = 5.25;
+  tipMesh.rotation.y = Math.PI / 4;
+  tipMesh.castShadow = true;
+  tipMesh.userData = { interactableType: 'fire' };
+  group.add(tipMesh);
+  pickableMeshes.push(tipMesh);
 
-  interface FlameTongue {
-    mesh: THREE.Mesh;
-    baseY: number;
-    baseScaleY: number;
-    speed: number;
-    phase: number;
-  }
-  const flames: FlameTongue[] = [];
-
-  const flamePositions = [
-    { x: 0, z: 0, scale: 1.35, core: true },
-    { x: -0.55, z: 0.35, scale: 1.1, core: false },
-    { x: 0.6, z: -0.25, scale: 1.15, core: false },
-    { x: -0.3, z: -0.45, scale: 0.95, core: true },
-    { x: 0.45, z: 0.4, scale: 1.0, core: false },
-    { x: 0, z: -0.6, scale: 0.85, core: false },
+  // 4. Gezackte Begleit-Stelen und spitze Lavakristalle an der Basis
+  const shardConfigs = [
+    { x: -0.85, z: 0.45, h: 2.1, r: 0.24, rotZ: 0.18, rotY: 0.4 },
+    { x: 0.90, z: -0.35, h: 2.4, r: 0.26, rotZ: -0.22, rotY: 1.1 },
+    { x: 0.25, z: 0.85, h: 1.8, r: 0.22, rotX: -0.20, rotY: 2.3 },
+    { x: -0.55, z: -0.75, h: 2.0, r: 0.23, rotX: 0.24, rotY: 0.8 },
   ];
 
-  flamePositions.forEach((fp, i) => {
-    const geo = new THREE.ConeGeometry(0.32 * fp.scale, 1.25 * fp.scale, 7);
-    const mat = fp.core ? flameMatCore : flameMatOuter;
-    const flame = new THREE.Mesh(geo, mat);
-    const baseY = (1.25 * fp.scale) / 2 + 0.05;
-    flame.position.set(fp.x, baseY, fp.z);
-    group.add(flame);
+  for (const sc of shardConfigs) {
+    const shard = new THREE.Mesh(
+      new THREE.ConeGeometry(sc.r, sc.h, 4),
+      obeliskMaterial
+    );
+    shard.position.set(sc.x, sc.h * 0.45, sc.z);
+    shard.rotation.set(sc.rotX ?? 0, sc.rotY, sc.rotZ ?? 0);
+    shard.castShadow = true;
+    shard.receiveShadow = true;
+    shard.userData = { interactableType: 'fire' };
+    group.add(shard);
+    pickableMeshes.push(shard);
+  }
 
-    flames.push({
-      mesh: flame,
-      baseY,
-      baseScaleY: fp.scale,
-      speed: 3.5 + (i % 3) * 1.2,
-      phase: i * 1.1,
-    });
-  });
+  // 5. Sichtbare, glühende rote Magma-Adern an den Kanten des Schafts
+  const vein1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.2, 0.08), magmaVeinMaterial);
+  vein1.position.set(0.24, 2.5, 0.24);
+  vein1.rotation.y = Math.PI / 4;
+  group.add(vein1);
 
-  // Flackerndes, warmes Feuerlicht
-  const fireLight = new THREE.PointLight(0xff4400, 1.6, 5.0);
-  fireLight.position.set(0, 1.1, 0);
+  const vein2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.8, 0.08), magmaVeinMaterial);
+  vein2.position.set(-0.24, 2.3, -0.24);
+  vein2.rotation.y = Math.PI / 4;
+  group.add(vein2);
+
+  // Unheilvoll flackerndes, glutrotes Lavazeichen-Licht
+  const fireLight = new THREE.PointLight(0xff2200, 1.85, 8.5);
+  fireLight.position.set(0, 2.8, 0);
   group.add(fireLight);
 
   let state: 'solid' | 'dissolving' | 'removed' = 'solid';
   let dissolveTimer = 0;
-  const dissolveDuration = 1.35;
+  const dissolveDuration = 1.45;
   let onDissolveComplete: (() => void) | null = null;
   let elapsed = 0;
 
@@ -131,16 +146,16 @@ export function createPathFire(): PathFireEntity {
       dissolveTimer += dtSeconds;
       const progress = Math.min(1.0, dissolveTimer / dissolveDuration);
 
-      // Flammen zischen ab, zucken kurz auf und schrumpfen zu Asche zusammen
-      const scale = Math.max(0.001, 1.0 - progress * 0.98);
+      // Obelisk sinkt mit intensivem Glühen tief in die Lava ein
+      group.position.y = -progress * 5.5;
+      const scale = Math.max(0.001, 1.0 - progress * 0.85);
       group.scale.set(scale, scale, scale);
-      group.position.y = -progress * 0.4;
 
-      flameMatOuter.opacity = Math.max(0, 0.92 * (1.0 - progress));
-      flameMatCore.opacity = Math.max(0, 0.95 * (1.0 - progress));
-
-      const flicker = 1.0 - progress;
-      fireLight.intensity = Math.max(0, 2.2 * flicker);
+      // Intensives, glutrotes Aufflackern
+      const glowBoost = Math.max(0, 1.0 - Math.abs(progress - 0.25) * 2.0);
+      obeliskMaterial.emissiveIntensity = 1.0 + glowBoost * 3.5;
+      magmaVeinMaterial.emissiveIntensity = 1.5 + glowBoost * 4.5;
+      fireLight.intensity = 2.5 + glowBoost * 4.0;
 
       if (progress >= 1.0) {
         state = 'removed';
@@ -153,20 +168,12 @@ export function createPathFire(): PathFireEntity {
       return;
     }
 
-    // Zustand 'solid': Dynamisch züngelnde Flammen
-    for (const f of flames) {
-      const osc = Math.sin(elapsed * f.speed + f.phase);
-      const sy = f.baseScaleY * (0.85 + 0.3 * osc);
-      f.mesh.scale.set(f.baseScaleY * (1.0 - 0.1 * osc), sy, f.baseScaleY * (1.0 - 0.1 * osc));
-      f.mesh.position.y = f.baseY + 0.08 * osc;
-      f.mesh.rotation.y = elapsed * 0.8 + f.phase;
-    }
-
-    // Flackerndes Feuerlicht
-    const flicker =
-      0.85 + 0.15 * Math.sin(elapsed * 9.0) + 0.1 * Math.cos(elapsed * 17.5);
+    // Zustand 'solid': Rhythmisches Pulsieren der Glutadern
+    const pulse = 0.5 + 0.5 * Math.sin(elapsed * 3.2);
     const hoverBonus = isHovered ? 0.6 : 0;
-    fireLight.intensity = 1.4 * flicker + hoverBonus;
+    obeliskMaterial.emissiveIntensity = 0.75 + pulse * 0.4 + hoverBonus;
+    magmaVeinMaterial.emissiveIntensity = 1.1 + pulse * 0.5 + hoverBonus;
+    fireLight.intensity = 1.5 + pulse * 0.45 + hoverBonus;
   };
 
   const startDissolve = (onComplete?: () => void): void => {

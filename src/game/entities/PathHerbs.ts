@@ -1,5 +1,7 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { PATH_6_HERBS_POS } from '../data/paths';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface PathHerbsEntity {
   group: THREE.Group;
@@ -12,8 +14,8 @@ export interface PathHerbsEntity {
 
 /**
  * Erstellt die Wegsperre für Weg 6 (Jägerpfad):
- * Ein rustikales Holzgeländer mit hohen, wuchernden Zauberkräutern (Mondwurz, wilde Farne,
- * Alant und purpurne Blütenstände) dahinter.
+ * Ein rustikales Holzgeländer mit wuchernden magischen Fantasiepflanzen dahinter.
+ * Lädt das 3D-Modell `/assets/models/fantasy plant 3d model.glb`.
  */
 export function createPathHerbs(): PathHerbsEntity {
   const group = new THREE.Group();
@@ -29,20 +31,6 @@ export function createPathHerbs(): PathHerbsEntity {
     flatShading: true,
   });
 
-  // Material für die Blätter und Stängel der Kräuter
-  const leafMaterial = new THREE.MeshLambertMaterial({
-    color: 0x2e5c33,
-    flatShading: true,
-  });
-
-  // Material für die leuchtenden violetten Blüten / Zauberknospen (Amethyst-Resonanz)
-  const blossomMaterial = new THREE.MeshLambertMaterial({
-    color: 0xa84cd6,
-    emissive: 0x6e1f96,
-    emissiveIntensity: 0.75,
-    flatShading: true,
-  });
-
   // === 1. DAS HOLZGELÄNDER VOR DEN PFLANZEN (in Richtung Kreuzung bei z = -0.35) ===
   // Drei vertikale Holzpfosten
   const postPositions = [-1.35, 0, 1.35];
@@ -54,7 +42,9 @@ export function createPathHerbs(): PathHerbsEntity {
     post.position.set(px, 0.575, -0.35);
     post.castShadow = true;
     post.receiveShadow = true;
+    post.userData = { interactableType: 'herbs' };
     group.add(post);
+    pickableMeshes.push(post);
 
     // Kappe auf dem Pfosten
     const cap = new THREE.Mesh(
@@ -63,7 +53,9 @@ export function createPathHerbs(): PathHerbsEntity {
     );
     cap.position.set(px, 1.18, -0.35);
     cap.castShadow = true;
+    cap.userData = { interactableType: 'herbs' };
     group.add(cap);
+    pickableMeshes.push(cap);
   }
 
   // Zwei horizontale Querstangen (Geländerbalken quer über die Wegbreite)
@@ -77,67 +69,89 @@ export function createPathHerbs(): PathHerbsEntity {
     rail.position.set(0, ry, -0.35);
     rail.castShadow = true;
     rail.receiveShadow = true;
+    rail.userData = { interactableType: 'herbs' };
     group.add(rail);
+    pickableMeshes.push(rail);
   }
 
-  // === 2. HOHE KRÄUTERPFLANZEN DAHINTER (in Richtung Wegende bei z = 0.15 bis 0.40) ===
+  // === 2. FANTASIEPFLANZEN DAHINTER (in Richtung Wegende bei z = 0.15 bis 0.40) ===
   const plantsGroup = new THREE.Group();
+  plantsGroup.name = 'FantasyPlantsGroup';
   group.add(plantsGroup);
 
-  // Stängel und breite Blätterbüschel
-  const plantConfigs = [
-    { x: -1.2, z: 0.20, h: 1.6, count: 5, bColor: 0x9832cc },
-    { x: -0.8, z: 0.35, h: 1.85, count: 6, bColor: 0xb545e6 },
-    { x: -0.4, z: 0.15, h: 1.5, count: 4, bColor: 0x852db8 },
-    { x: 0.0, z: 0.30, h: 1.95, count: 7, bColor: 0xc455f5 },
-    { x: 0.45, z: 0.18, h: 1.65, count: 5, bColor: 0x9d3ad1 },
-    { x: 0.85, z: 0.38, h: 1.75, count: 6, bColor: 0xb044e0 },
-    { x: 1.25, z: 0.22, h: 1.55, count: 5, bColor: 0x882ebc },
-  ];
+  // Temporärer Platzhalter während des GLB-Ladens
+  const fallbackPlantMat = new THREE.MeshStandardMaterial({
+    color: 0x3d7045,
+    roughness: 0.8,
+  });
+  const fallbackPlant = new THREE.Mesh(
+    new THREE.ConeGeometry(0.65, 1.4, 8),
+    fallbackPlantMat
+  );
+  fallbackPlant.position.set(0, 0.7, 0.25);
+  fallbackPlant.userData = { interactableType: 'herbs' };
+  plantsGroup.add(fallbackPlant);
+  pickableMeshes.push(fallbackPlant);
 
-  for (const p of plantConfigs) {
-    // Zentraler Stängel
-    const stem = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.04, 0.06, p.h, 6),
-      leafMaterial
-    );
-    stem.position.set(p.x, p.h * 0.5, p.z);
-    stem.castShadow = true;
-    plantsGroup.add(stem);
+  const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
-    // Ausladende Farn-/Kräuterblätter
-    for (let i = 0; i < p.count; i++) {
-      const leafAngle = (i * Math.PI * 2) / p.count;
-      const leafHeight = 0.3 + (i / p.count) * (p.h * 0.65);
-      const leaf = new THREE.Mesh(
-        new THREE.BoxGeometry(0.38, 0.04, 0.16),
-        leafMaterial
-      );
-      leaf.position.set(
-        p.x + Math.sin(leafAngle) * 0.22,
-        leafHeight,
-        p.z + Math.cos(leafAngle) * 0.22
-      );
-      leaf.rotation.y = leafAngle;
-      leaf.rotation.z = 0.32;
-      leaf.castShadow = true;
-      plantsGroup.add(leaf);
+  // Lade das 3D-Modell der Fantasiepflanze
+  const loader = new GLTFLoader();
+  loader.load(
+    '/assets/models/fantasy plant 3d model.glb',
+    (gltf) => {
+      // Platzhalter entfernen
+      const idx = pickableMeshes.indexOf(fallbackPlant);
+      if (idx !== -1) pickableMeshes.splice(idx, 1);
+      plantsGroup.remove(fallbackPlant);
+      disposeObject3D(fallbackPlant);
+
+      const basePlant = gltf.scene;
+      basePlant.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(basePlant);
+      const minY = bounds.min.y;
+
+      // 4 Pflanzen-Instanzen hinter dem Geländer arrangieren
+      const instances = [
+        { x: -1.05, z: 0.20, scale: 2.65, rotY: 0.4 },
+        { x: -0.35, z: 0.35, scale: 3.05, rotY: 1.8 },
+        { x: 0.35, z: 0.22, scale: 2.85, rotY: 3.2 },
+        { x: 1.05, z: 0.32, scale: 2.55, rotY: 4.6 },
+      ];
+
+      for (const inst of instances) {
+        const plantClone = basePlant.clone(true);
+        plantClone.scale.setScalar(inst.scale);
+        plantClone.position.set(inst.x, -minY * inst.scale, inst.z);
+        plantClone.rotation.y = inst.rotY;
+
+        plantClone.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'herbs' };
+
+            if (mesh.material && 'roughness' in mesh.material) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              modelMaterials.push(mat);
+            }
+            pickableMeshes.push(mesh);
+          }
+        });
+
+        plantsGroup.add(plantClone);
+      }
+    },
+    undefined,
+    (err) => {
+      console.warn('Fantasy-Pflanze konnte nicht geladen werden, nutze Platzhalter:', err);
     }
-
-    // Leuchtende Blütenkrone / Fruchtstand an der Spitze (Amethystglanz)
-    const bloom = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(0.16, 0),
-      blossomMaterial
-    );
-    bloom.position.set(p.x, p.h + 0.08, p.z);
-    bloom.scale.set(0.9, 1.3, 0.9);
-    bloom.castShadow = true;
-    plantsGroup.add(bloom);
-  }
+  );
 
   // Violettes Punktlicht (Amethyst-Resonanz)
-  const herbLight = new THREE.PointLight(0xa84cd6, 1.2, 4.2);
-  herbLight.position.set(0, 1.2, 0.25);
+  const herbLight = new THREE.PointLight(0xa84cd6, 1.25, 4.5);
+  herbLight.position.set(0, 1.25, 0.25);
   group.add(herbLight);
 
   // Zustandsvariablen für Animation und Beseitigung
@@ -165,8 +179,8 @@ export function createPathHerbs(): PathHerbsEntity {
         // Sanftes Absinken und Schrumpfen
         const scale = Math.max(0.01, 1 - progress);
         group.scale.set(scale, scale, scale);
-        group.position.y = -progress * 0.8;
-        herbLight.intensity = Math.max(0, (1 - progress) * 2.5);
+        group.position.y = -progress * 1.0;
+        herbLight.intensity = Math.max(0, (1 - progress) * 2.8);
 
         if (progress >= 1) {
           group.visible = false;
@@ -178,15 +192,21 @@ export function createPathHerbs(): PathHerbsEntity {
         return;
       }
 
-      // Sanftes Wiegen der Kräuter im Wind
-      const sway = Math.sin(elapsed * 2.2) * 0.04;
+      // Sanftes Wiegen der Pflanzen im Wind
+      const sway = Math.sin(elapsed * 2.2) * 0.035;
       plantsGroup.rotation.z = sway;
 
       // Hover-Pulsieren
-      const hoverBoost = isHovered ? 0.45 : 0;
-      const pulse = 0.5 + 0.5 * Math.sin(elapsed * 3.0);
-      blossomMaterial.emissiveIntensity = 0.75 + pulse * 0.35 + hoverBoost;
-      herbLight.intensity = 1.2 + pulse * 0.5 + hoverBoost * 0.7;
+      const hoverBoost = isHovered ? 0.5 : 0;
+      const pulse = 0.5 + 0.5 * Math.sin(elapsed * 2.8);
+      herbLight.intensity = 1.25 + pulse * 0.45 + hoverBoost * 0.7;
+
+      for (const mat of modelMaterials) {
+        if (mat.emissive) {
+          mat.emissive.setHex(isHovered ? 0x6e1f96 : 0x220530);
+          mat.emissiveIntensity = isHovered ? 0.6 : 0.2;
+        }
+      }
     },
     startDissolve: (onComplete?: () => void) => {
       if (dissolving || removed) {

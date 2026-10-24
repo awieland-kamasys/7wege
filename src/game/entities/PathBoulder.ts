@@ -1,5 +1,7 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { PATH_1_BOULDER_POS } from '../data/paths';
+import { disposeObject3D } from '../utils/threeUtils';
 
 export interface PathBoulderEntity {
   group: THREE.Group;
@@ -12,7 +14,8 @@ export interface PathBoulderEntity {
 
 /**
  * Erstellt den magisch versiegelten Felsbrocken, der Weg 1 (Silberstollen-Pfad) blockiert.
- * Der Felsen ist mit feinen, smaragdgrün glimmenden Kristalladern durchzogen,
+ * Lädt das detaillierte Moosfels-Modell `/assets/models/mossy rock boulder 3d model.glb`.
+ * Der Felsen ist mit smaragdgrün glimmenden Kristalladern durchzogen,
  * die mit dem rotierenden Edelstein am Eingang von Weg 1 harmonieren.
  */
 export function createPathBoulder(): PathBoulderEntity {
@@ -22,17 +25,20 @@ export function createPathBoulder(): PathBoulderEntity {
 
   const pickableMeshes: THREE.Object3D[] = [];
 
-  // Fels-Grundmaterial: uriger, verwitterter Granit
-  const rockMaterial = new THREE.MeshLambertMaterial({
+  // Temporärer Platzhalter während des GLB-Ladens
+  const fallbackGroup = new THREE.Group();
+  const fallbackMat = new THREE.MeshLambertMaterial({
     color: 0x58564f,
     flatShading: true,
   });
-
-  // Moosbedecktes Gesteinsmaterial für obere Kanten
-  const mossRockMaterial = new THREE.MeshLambertMaterial({
-    color: 0x485836,
-    flatShading: true,
-  });
+  const fallbackMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(1.4, 1), fallbackMat);
+  fallbackMesh.position.y = 1.0;
+  fallbackMesh.castShadow = true;
+  fallbackMesh.receiveShadow = true;
+  fallbackMesh.userData = { interactableType: 'boulder' };
+  fallbackGroup.add(fallbackMesh);
+  group.add(fallbackGroup);
+  pickableMeshes.push(fallbackMesh);
 
   // Magisch glimmende Kristalladern / Runenrisse
   const runeMaterial = new THREE.MeshLambertMaterial({
@@ -41,67 +47,73 @@ export function createPathBoulder(): PathBoulderEntity {
     flatShading: true,
   });
 
-  // Hauptfelsbrocken im Zentrum (schwere, kantige Masse)
-  const mainBoulderGeo = new THREE.DodecahedronGeometry(1.28, 1);
-  const mainBoulder = new THREE.Mesh(mainBoulderGeo, rockMaterial);
-  mainBoulder.position.set(0, 0.95, 0);
-  mainBoulder.scale.set(1.3, 0.95, 1.15);
-  mainBoulder.rotation.set(0.35, 0.45, -0.2);
-  mainBoulder.castShadow = true;
-  mainBoulder.receiveShadow = true;
-  group.add(mainBoulder);
-
-  // Zweiter großer Felskeil, der den Wegrand links verkeilt
-  const leftBoulderGeo = new THREE.DodecahedronGeometry(0.85, 0);
-  const leftBoulder = new THREE.Mesh(leftBoulderGeo, mossRockMaterial);
-  leftBoulder.position.set(-1.05, 0.65, 0.2);
-  leftBoulder.scale.set(1.1, 0.9, 1.2);
-  leftBoulder.rotation.set(0.2, -0.5, 0.4);
-  leftBoulder.castShadow = true;
-  leftBoulder.receiveShadow = true;
-  group.add(leftBoulder);
-
-  // Rechter Stützfels am Wegrand
-  const rightBoulderGeo = new THREE.DodecahedronGeometry(0.92, 0);
-  const rightBoulder = new THREE.Mesh(rightBoulderGeo, rockMaterial);
-  rightBoulder.position.set(1.0, 0.72, -0.15);
-  rightBoulder.scale.set(1.05, 1.0, 0.9);
-  rightBoulder.rotation.set(-0.3, 0.6, -0.15);
-  rightBoulder.castShadow = true;
-  rightBoulder.receiveShadow = true;
-  group.add(rightBoulder);
-
-  // Kleine Trümmersteine am Fuß
-  const debrisCoords = [
-    { x: -0.7, z: -0.85, r: 0.36 },
-    { x: 0.8, z: 0.75, r: 0.42 },
-    { x: 0.1, z: 0.95, r: 0.32 },
-  ];
-  for (const c of debrisCoords) {
-    const debris = new THREE.Mesh(new THREE.DodecahedronGeometry(c.r, 0), mossRockMaterial);
-    debris.position.set(c.x, c.r * 0.7, c.z);
-    debris.castShadow = true;
-    debris.receiveShadow = true;
-    group.add(debris);
-  }
-
-  // Eingebettete Kristalladern (geometrisch sichtbare Kristallsegmente)
-  const runeVein1 = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), runeMaterial);
-  runeVein1.position.set(0.35, 1.15, 0.65);
+  // Eingebettete Kristalladern (geometrisch sichtbare Kristallsegmente auf dem Felsen)
+  const runeVein1 = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), runeMaterial);
+  runeVein1.position.set(0.35, 1.25, 0.65);
   runeVein1.scale.set(0.6, 1.4, 0.5);
   runeVein1.rotation.set(0.4, 0.2, 0.6);
+  runeVein1.userData = { interactableType: 'boulder' };
   group.add(runeVein1);
+  pickableMeshes.push(runeVein1);
 
-  const runeVein2 = new THREE.Mesh(new THREE.OctahedronGeometry(0.24, 0), runeMaterial);
-  runeVein2.position.set(-0.4, 0.85, 0.75);
+  const runeVein2 = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), runeMaterial);
+  runeVein2.position.set(-0.4, 0.95, 0.75);
   runeVein2.scale.set(0.5, 1.2, 0.6);
   runeVein2.rotation.set(-0.3, 0.5, -0.4);
+  runeVein2.userData = { interactableType: 'boulder' };
   group.add(runeVein2);
+  pickableMeshes.push(runeVein2);
 
-  // Zartes Glimmlicht
-  const runeLight = new THREE.PointLight(0x55dd88, 0.8, 3.8);
-  runeLight.position.set(0, 1.1, 0.4);
+  // Zartes smaragdgrünes Glimmlicht
+  const runeLight = new THREE.PointLight(0x55dd88, 0.85, 4.2);
+  runeLight.position.set(0, 1.2, 0.5);
   group.add(runeLight);
+
+  const modelMaterials: THREE.MeshStandardMaterial[] = [];
+
+  // Lade das detailreiche Moosfels-Modell
+  const loader = new GLTFLoader();
+  loader.load(
+    '/assets/models/mossy rock boulder 3d model.glb',
+    (gltf) => {
+      const model = gltf.scene;
+
+      // Skalierung: Felsbrocken auf 3.4m Breite vergrößern, um den Pfad massiv zu sperren
+      model.scale.setScalar(3.4);
+
+      // Bounding Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
+      model.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(model);
+      model.position.set(0, -bounds.min.y, 0);
+
+      model.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.userData = { interactableType: 'boulder' };
+
+          if (mesh.material && 'roughness' in mesh.material) {
+            const mat = mesh.material as THREE.MeshStandardMaterial;
+            mat.roughness = 0.90;
+            modelMaterials.push(mat);
+          }
+          pickableMeshes.push(mesh);
+        }
+      });
+
+      // Platzhalter entfernen
+      const idx = pickableMeshes.indexOf(fallbackMesh);
+      if (idx !== -1) pickableMeshes.splice(idx, 1);
+      group.remove(fallbackGroup);
+      disposeObject3D(fallbackGroup);
+      group.add(model);
+    },
+    undefined,
+    (err) => {
+      console.warn('Moosfelsen-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
+    }
+  );
 
   let state: 'solid' | 'dissolving' | 'removed' = 'solid';
   let dissolveTimer = 0;
@@ -121,7 +133,7 @@ export function createPathBoulder(): PathBoulderEntity {
       const progress = Math.min(1.0, dissolveTimer / dissolveDuration);
 
       // Sanftes Absinken in den Erdboden und Schrumpfen
-      group.position.y = -progress * 2.2;
+      group.position.y = -progress * 2.5;
       const scale = Math.max(0.001, 1.0 - progress * 0.95);
       group.scale.set(scale, scale, scale);
 

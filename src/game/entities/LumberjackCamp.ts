@@ -8,10 +8,10 @@ export interface LumberjackCampEntity {
 
 /**
  * Erstellt die 3D-Lagerfeuerszene (Campfire Scene) auf der Waldlichtung am Ende des 4. Weges:
- * - Lädt das detailreiche GLB-Modell `/assets/models/campfire scene 3d model.glb`
- * - Gleichmäßiges Upscaling (Skalierungsfaktor 5.4) für harmonische Proportionen auf der Waldlichtung
+ * - Lädt das detailreiche 3D-Modell `/assets/models/wooden camp scene 3d model.glb`
+ * - Harmonische Skalierung (Faktor 6.5) für eine vollständige Holzfäller-Lagerszene
  * - Präzise Ausrichtung am Geländeniveau (min.y = 0)
- * - Wärmendes, flackerndes Punktlicht im Zentrum des Feuers
+ * - Wärmendes, flackerndes Punktlicht im Zentrum des Lagers
  */
 export function createLumberjackCamp(
   onMeshLoaded?: (object: THREE.Object3D) => void
@@ -37,15 +37,15 @@ export function createLumberjackCamp(
   fireLight.position.set(0, 0.85, 0);
   group.add(fireLight);
 
-  // Lade das Campfire-Scene-Modell
+  // Lade das Camp-Scene-Modell
   const loader = new GLTFLoader();
   loader.load(
-    '/assets/models/campfire scene 3d model.glb',
+    '/assets/models/wooden camp scene 3d model.glb',
     (gltf) => {
       const model = gltf.scene;
 
-      // 1. Gleichmäßiges Upscaling: Originalgröße ~1.0m wird auf 5.4m vergrößert
-      model.scale.setScalar(5.4);
+      // 1. Gleichmäßiges Upscaling: Originalgröße ~1.0m wird auf 6.5m vergrößert
+      model.scale.setScalar(6.5);
 
       // 2. Bounding Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
       model.updateMatrixWorld(true);
@@ -80,7 +80,7 @@ export function createLumberjackCamp(
     },
     undefined,
     (err) => {
-      console.warn('Lagerfeuer-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
+      console.warn('Holzfällercamp-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
     }
   );
 
