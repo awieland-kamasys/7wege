@@ -98,7 +98,7 @@ export function createWorldTree(
 
   group.add(fallback);
 
-  // 2. Magische Glühwürmchen- und Waldlicht-Aura um die Krone
+  // 2. Magische Glühwürmchen- und Waldlicht-Aura um die Krone (in warmem, leuchtendem Gelb)
   const particleCount = 75;
   const particleGeo = new THREE.BufferGeometry();
   const particlePositions = new Float32Array(particleCount * 3);
@@ -109,10 +109,11 @@ export function createWorldTree(
   const particleSpeeds = new Float32Array(particleCount);
 
   const colorPalettes = [
-    new THREE.Color(0x70ffb0), // Helles Smaragdgrün
-    new THREE.Color(0xfff380), // Goldgelbes Licht
-    new THREE.Color(0x5cedff), // Türkisfarbenes Quelllicht
-    new THREE.Color(0xd1ff70), // Zartes Lindgrün
+    new THREE.Color(0xffd700), // Kräftiges Goldgelb
+    new THREE.Color(0xffb800), // Warmes Bernsteingelb
+    new THREE.Color(0xffea00), // Strahlendes Sonnengelb
+    new THREE.Color(0xf59e0b), // Tiefes Honiggelb
+    new THREE.Color(0xffcc00), // Warmes Reingelb
   ];
 
   for (let i = 0; i < particleCount; i++) {
@@ -140,10 +141,10 @@ export function createWorldTree(
   particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
 
   const particleMat = new THREE.PointsMaterial({
-    size: 0.45,
+    size: 0.55,
     vertexColors: true,
     transparent: true,
-    opacity: 0.85,
+    opacity: 0.90,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });

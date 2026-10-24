@@ -7,14 +7,15 @@ export interface WildHunterNpcEntity {
   update: (
     elapsedSeconds: number,
     playerPos: { x: number; z: number },
-    isHighlighted: boolean
+    isHighlighted: boolean,
+    dtSeconds?: number
   ) => void;
 }
 
 /**
  * Erstellt die 3D-Figur "Der Wilde Jäger" an der Jagdhütte auf Weg 6:
- * Lädt das 3D-Modell `/assets/models/hooded forest ranger 3d model.glb`
- * mit Kapuze, Waldläufer-Gewandung, Lederstiefeln und Ausrüstung.
+ * Lädt das 3D-Modell `/assets/models/fantasy+wizard+3d+model.glb`
+ * mit detailreicher Magiergewandung, Zaubererhut und flüssiger Skelettanimation ('standing_relax').
  */
 export function createWildHunterNpc(
   onMeshLoaded?: (mesh: THREE.Mesh) => void
@@ -34,7 +35,7 @@ export function createWildHunterNpc(
     new THREE.OctahedronGeometry(0.15, 0),
     indicatorMat
   );
-  indicator.position.y = 2.35;
+  indicator.position.y = 2.48;
   group.add(indicator);
 
   // 2. Temporäre dezente Platzhalter-Geometrie während des Ladens des GLB-Modells
@@ -56,20 +57,38 @@ export function createWildHunterNpc(
   // Gespeicherte Materialien des geladenen GLB-Modells für den Hover-Effekt
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
-  // 3. Lade das GLB-Modell des Waldläufers (Hooded Forest Ranger)
+  // AnimationMixer für die integrierten Skelettanimationen
+  let mixer: THREE.AnimationMixer | null = null;
+  let animAction: THREE.AnimationAction | null = null;
+  let lastElapsedSeconds = 0;
+
+  // 3. Lade das GLB-Modell des Zauberers/Jägers (fantasy+wizard+3d+model.glb)
   const loader = new GLTFLoader();
   loader.load(
-    '/assets/models/hooded forest ranger 3d model.glb',
+    '/assets/models/fantasy+wizard+3d+model.glb',
     (gltf) => {
       const model = gltf.scene;
 
-      // Skalierung: Originalmodell ist 1.00m hoch -> 2.05x für hünenhafte Körpergröße des Jägers (einen Kopf größer)
+      // Skalierung: Originalmodell ist 1.00m hoch -> 2.05x für hünenhafte Statur
       model.scale.setScalar(2.05);
 
       // Bounding-Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
       model.position.set(0, -bounds.min.y, 0);
+
+      // Skelettanimation aktivieren (bevorzuge "standing_relax")
+      if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(model);
+        const clip =
+          gltf.animations.find((a) => a.name.toLowerCase() === 'standing_relax') ||
+          gltf.animations.find((a) => a.name.toLowerCase().includes('relax')) ||
+          gltf.animations[0];
+        animAction = mixer.clipAction(clip);
+        animAction.setLoop(THREE.LoopRepeat, Infinity);
+        animAction.clampWhenFinished = false;
+        animAction.play();
+      }
 
       model.traverse((child) => {
         const mesh = child as THREE.Mesh;
@@ -102,17 +121,29 @@ export function createWildHunterNpc(
     },
     undefined,
     (err) => {
-      console.warn('Wilde Jäger 3D-Modell konnte nicht geladen werden, verwende Platzhalter:', err);
+      console.warn('Wilde Jäger 3D-Modell fantasy+wizard+3d+model.glb konnte nicht geladen werden, verwende Platzhalter:', err);
     }
   );
 
   const update = (
     elapsedSeconds: number,
     playerPos: { x: number; z: number },
-    isHighlighted: boolean
+    isHighlighted: boolean,
+    dtSeconds?: number
   ): void => {
+    // Delta-Zeit für den AnimationMixer
+    const delta =
+      dtSeconds !== undefined
+        ? dtSeconds
+        : Math.max(0.001, Math.min(0.1, elapsedSeconds - lastElapsedSeconds));
+    lastElapsedSeconds = elapsedSeconds;
+
+    if (mixer) {
+      mixer.update(delta);
+    }
+
     // Kristall-Animation
-    indicator.position.y = 2.35 + Math.sin(elapsedSeconds * 2.6) * 0.06;
+    indicator.position.y = 2.48 + Math.sin(elapsedSeconds * 2.6) * 0.06;
     indicator.rotation.y = elapsedSeconds * 1.4;
 
     indicatorMat.emissiveIntensity = isHighlighted ? 1.25 : 0.65;

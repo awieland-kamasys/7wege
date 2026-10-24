@@ -3212,7 +3212,8 @@ export class CrossroadsScene {
       this.wildHunterNpc.update(
         this.elapsedSeconds,
         playerPos,
-        this.isWildHunterHovered || isDialogueActive
+        this.isWildHunterHovered || isDialogueActive,
+        dtSeconds
       );
       this.woodWomanLodgeNpc.update(
         this.elapsedSeconds,
