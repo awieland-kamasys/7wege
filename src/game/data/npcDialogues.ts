@@ -442,22 +442,22 @@ export function createHerbsDialogueTree(): Record<string, DialogueNode> {
 
 export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNode> {
   return {
-    // === WEG 1: PILZLING MORCHEL (Silberstollen-Pfad) ===
+    // === WEG 1: PILZLING MORCHEL (Silberstollen-Pfad, in der Bergkurve) ===
     mushroom_1_root: {
       id: 'mushroom_1_root',
       speaker: 'Pilzling Morchel',
       speakerRole: 'Hüter der Felssporen auf Weg 1',
-      text: '*Huhu!* Ein Wanderer auf dem Silberstollen-Pfad! Ich bin Morchel, der Sporenhüter dieses Bergsteigs. Siehst du den mächtigen Granitfelsen da vorn? Er versperrt den Aufstieg zur alten Silbermine!',
+      text: '*Huhu!* Ein Wanderer tief in den Felsen des Silberstollen-Pfades! Ich bin Morchel. Du hast den gewaltigen Felsbrocken hinter dir gelassen – beachtlich! Nur noch wenige Schritte den Berg hinauf, und du erreichst die alte Silbermine!',
       options: [
         {
-          id: 'm1-hint',
-          playerText: 'Wie kann ich diesen riesigen Felsen überwinden?',
-          nextNodeId: 'mushroom_1_smaragd',
+          id: 'm1-graumaennchen',
+          playerText: 'Wer wartet denn dort oben am Stollen?',
+          nextNodeId: 'mushroom_1_graumaennchen',
         },
         {
-          id: 'm1-graumaennchen',
-          playerText: 'Wer wartet denn oben am Stollen?',
-          nextNodeId: 'mushroom_1_graumaennchen',
+          id: 'm1-hint',
+          playerText: 'Erzähl mir mehr über das Geheimnis dieses Bergpfades!',
+          nextNodeId: 'mushroom_1_smaragd',
         },
         {
           id: 'm1-close',
@@ -471,16 +471,16 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_1_smaragd',
       speaker: 'Pilzling Morchel',
       speakerRole: 'Hüter der Felssporen auf Weg 1',
-      text: 'Ganz einfach! Schau zurück zur großen Waldkreuzung: Am Anfang unseres Pfades schwebt ein rotierender, smaragdgrüner Edelstein auf einem Steinsockel. Klicke ihn an! Seine uralte Resonanz wird den Felsen augenblicklich in feinen Staub zerfallen lassen!',
+      text: 'Der grüne Smaragd an der Waldkreuzung schützt diesen Pfad mit uralter Erdmagie. Doch hüte dich: Hoch oben am Bergmassiv gelten die alten Gesetze des Berges. Wer gierig nach Silber schürft, verliert oft mehr als nur sein Licht!',
       options: [
         {
           id: 'm1-to-graumaennchen',
-          playerText: 'Und was erwartet mich hinter dem Felsen bei der Mine?',
+          playerText: 'Was hat das Graumännchen mit dem Licht zu tun?',
           nextNodeId: 'mushroom_1_graumaennchen',
         },
         {
           id: 'm1-close-smaragd',
-          playerText: 'Ich mache mich auf den Weg zum Smaragd! (Gespräch beenden)',
+          playerText: 'Ich steige vorsichtig weiter hinauf. (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
@@ -490,11 +490,11 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_1_graumaennchen',
       speaker: 'Pilzling Morchel',
       speakerRole: 'Hüter der Felssporen auf Weg 1',
-      text: 'Dort oben hütet das uralte Graumännchen den Mineneingang! Eine neue Silberader könnte die Zeche und die Bergleute retten – doch er hütet ein uraltes Geheimnis um das Licht im Schacht. Sei bedacht und höflich, wenn du mit ihm sprichst!',
+      text: 'Dort oben hütet das uralte Graumännchen den Mineneingang! Eine neue Silberader könnte die Zeche und die Bergleute retten – doch er fordert Respekt vor dem finsteren Schacht. Sei bedacht und höflich, wenn du mit ihm sprichst!',
       options: [
         {
           id: 'm1-to-smaragd',
-          playerText: 'Wie war das noch gleich mit dem blockierenden Felsen?',
+          playerText: 'Erzähl mir noch etwas über den Bergpfad.',
           nextNodeId: 'mushroom_1_smaragd',
         },
         {
@@ -506,22 +506,22 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       ],
     },
 
-    // === WEG 2: PILZLING PFIFFER (Nixenteich-Pfad) ===
+    // === WEG 2: PILZLING PFIFFER (Nixenteich-Pfad, am Waldsaum) ===
     mushroom_2_root: {
       id: 'mushroom_2_root',
       speaker: 'Pilzling Pfiffer',
       speakerRole: 'Hüter der Feuchtsporen auf Weg 2',
-      text: '*Plitsch, platsch!* Sei gegrüßt auf dem feuchten Nixenteich-Pfad! Ich bin Pfiffer. Pass gut auf deine Stiefel auf: Weiter vorn hat sich ein tiefer, felsiger Wassertümpel gebildet, durch den kein Wanderer waten kann!',
+      text: '*Plitsch, platsch!* Sei gegrüßt auf dem feuchten Nixenteich-Pfad! Ich bin Pfiffer. Wunderbar, wie das Wasser aus dem Felsenteich versickert ist! Weiter vorn lichtet sich der Nebel und gibt den Blick auf das stille Wasser frei!',
       options: [
-        {
-          id: 'm2-hint',
-          playerText: 'Wie lässt sich das Wasser aus dem Pfad ableiten?',
-          nextNodeId: 'mushroom_2_aquamarin',
-        },
         {
           id: 'm2-nixe',
           playerText: 'Erzähl mir von der Nixe und dem Teich!',
           nextNodeId: 'mushroom_2_nixe',
+        },
+        {
+          id: 'm2-hint',
+          playerText: 'Gibt es Gefahren am Seeufer?',
+          nextNodeId: 'mushroom_2_aquamarin',
         },
         {
           id: 'm2-close',
@@ -535,16 +535,16 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_2_aquamarin',
       speaker: 'Pilzling Pfiffer',
       speakerRole: 'Hüter der Feuchtsporen auf Weg 2',
-      text: 'Die Felsen sind mit dem funkelnden türkisfarbenen Aquamarin am Beginn von Weg 2 verbunden! Ein Klick auf diesen leuchtenden Stein am Sockel an der Kreuzung, und das Wasser versickert im Nu tief im Bergmassiv.',
+      text: 'Der türkise Aquamarin an der Kreuzung hält die Uferpfade trocken. Doch am Seeufer selbst trügt der Schein: Das Wasser ist spiegelglatt, aber unendlich tief. Gehe behutsam an den Steg heran!',
       options: [
         {
           id: 'm2-to-nixe',
-          playerText: 'Wer wartet denn am Ende des Weges auf mich?',
+          playerText: 'Wer wartet denn mitten im See auf mich?',
           nextNodeId: 'mushroom_2_nixe',
         },
         {
           id: 'm2-close-aqua',
-          playerText: 'Ich werde den Aquamarin aktivieren! (Gespräch beenden)',
+          playerText: 'Ich werde vorsichtig treten. (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
@@ -554,11 +554,11 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_2_nixe',
       speaker: 'Pilzling Pfiffer',
       speakerRole: 'Hüter der Feuchtsporen auf Weg 2',
-      text: 'Am Ende des Weges liegt ein stiller, nebliger Waldsee. Auf einem Stein im Wasser sitzt die wunderschöne Nixe. Doch nimm dich in Acht: Auf dem Grund ihres Sees ruht ein glänzender Schatz, auf dem ein unheilvoller Fluch liegt!',
+      text: 'Mitten im See sitzt die geheimnisvolle Nixe auf einem bemoosten Felsen. Auf dem Seegrund glänzt ein verlockender Schatz – doch nimm dich in Acht: Wer ihn unbedacht begehrt, wird von einem finsteren Fluch erfasst!',
       options: [
         {
           id: 'm2-to-hint',
-          playerText: 'Wie beseitige ich zuerst die Wasserpfütze?',
+          playerText: 'Wie kann ich dem Fluch entgehen?',
           nextNodeId: 'mushroom_2_aquamarin',
         },
         {
@@ -570,26 +570,26 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       ],
     },
 
-    // === WEG 3: PILZLING BOVIST (Quellenweg) ===
+    // === WEG 3: PILZLING BOVIST (Quellenweg, vor der Wehrbrücke) ===
     mushroom_3_root: {
       id: 'mushroom_3_root',
       speaker: 'Pilzling Bovist',
       speakerRole: 'Hüter der Quellsporen auf Weg 3',
-      text: '*Puff, puff!* Puh, hier weht eine frische Bergbrise! Ich bin Bovist. Hörst du das Tosen? Weiter vorn stürzt ein reißender Gebirgsbach quer über den Weg und schneidet den Pfad zur Brücke ab!',
+      text: '*Puff, puff!* Puh, welch herrlicher Ausblick kurz vor der Wehrbrücke! Ich bin Bovist. Der reißende Bach liegt hinter dir – siehst du dort drüben den antiken Rundbrunnen und den mächtigen Riesen?',
       options: [
         {
-          id: 'm3-hint',
-          playerText: 'Wie kann ich den wilden Bach zähmen?',
-          nextNodeId: 'mushroom_3_saphir',
-        },
-        {
           id: 'm3-riese',
-          playerText: 'Wer wartet hinter dem Bach an der Brücke?',
+          playerText: 'Wer ist dieser Riese am Wehr?',
           nextNodeId: 'mushroom_3_riese',
         },
         {
+          id: 'm3-hint',
+          playerText: 'Warum ist das Wehr eigentlich geschlossen?',
+          nextNodeId: 'mushroom_3_saphir',
+        },
+        {
           id: 'm3-close',
-          playerText: 'Danke für die Warnung, Bovist! (Gespräch beenden)',
+          playerText: 'Danke für die Auskunft, Bovist! (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
@@ -599,16 +599,16 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_3_saphir',
       speaker: 'Pilzling Bovist',
       speakerRole: 'Hüter der Quellsporen auf Weg 3',
-      text: 'Berühre den himmelblauen Saphir am Pfadanfang an der großen Waldkreuzung! Seine Quellmagie bändigt die reißende Strömung und legt sichere Trittsteine im Flussbett frei.',
+      text: 'Das Wehr hält das Quellwasser im antiken Brunnenbecken zurück. Unten im Tal herrscht bittere Dürre – doch wenn das Wehr geöffnet wird, verliert der Riese seine Heimat und die Quelle wird fortgespült!',
       options: [
         {
           id: 'm3-to-riese',
-          playerText: 'Und was hat es mit der Brücke und dem Riesen auf sich?',
+          playerText: 'Lässt sich mit dem Riesen reden?',
           nextNodeId: 'mushroom_3_riese',
         },
         {
           id: 'm3-close-saphir',
-          playerText: 'Ich werde den Saphir berühren. (Gespräch beenden)',
+          playerText: 'Ein schwerer Gewissenskonflikt... (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
@@ -618,38 +618,38 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_3_riese',
       speaker: 'Pilzling Bovist',
       speakerRole: 'Hüter der Quellsporen auf Weg 3',
-      text: 'Hinter der Brücke thront ein antiker Rundbrunnen, und dort haust der gewaltige Riese am Wehr! Das Tal leidet unter Dürre – doch wenn das Wehr geöffnet wird, verliert der Riese seine geliebte Bergquelle.',
+      text: 'Der Riese ist trotz seiner gewaltigen Statur kein Unhold – er liebt die Stille der Quelle und schützt das Wasser. Tritt über die Brücke und sprich ehrlich mit ihm!',
       options: [
         {
           id: 'm3-to-hint',
-          playerText: 'Wie kann ich noch gleich den Bach überqueren?',
+          playerText: 'Erzähl mir noch etwas über die Quelle.',
           nextNodeId: 'mushroom_3_saphir',
         },
         {
           id: 'm3-close-riese',
-          playerText: 'Danke für die Auskunft, Bovist! (Gespräch beenden)',
+          playerText: 'Ich werde zur Brücke gehen. Danke! (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
       ],
     },
 
-    // === WEG 4: PILZLING TRÜFFEL (Holzfäller-Pfad) ===
+    // === WEG 4: PILZLING TRÜFFEL (Holzfäller-Pfad, im Fichtenwald) ===
     mushroom_4_root: {
       id: 'mushroom_4_root',
       speaker: 'Pilzling Trüffel',
       speakerRole: 'Hüter der Baumsporen auf Weg 4',
-      text: '*Schnüff, schnüff!* Mmmh, das duftet nach frischem Fichtenharz! Ich bin Trüffel. Doch achje: Ein riesiger, moosiger Baumstamm ist umgestürzt und liegt quer über unserem Holzfäller-Pfad!',
+      text: '*Schnüff, schnüff!* Mmmh, das duftet nach frischem Fichtenharz! Ich bin Trüffel. Toll, dass du den umgestürzten Stamm hinter dir gelassen hast! Der Pfad führt dich geradewegs zur Holzfällerlichtung.',
       options: [
-        {
-          id: 'm4-hint',
-          playerText: 'Wie bekomme ich diesen massiven Stamm aus dem Weg?',
-          nextNodeId: 'mushroom_4_topas',
-        },
         {
           id: 'm4-weibchen',
           playerText: 'Was geschieht im Holzfällerlager?',
           nextNodeId: 'mushroom_4_weibchen',
+        },
+        {
+          id: 'm4-hint',
+          playerText: 'Wer wacht über diesen Waldabschnitt?',
+          nextNodeId: 'mushroom_4_topas',
         },
         {
           id: 'm4-close',
@@ -663,16 +663,16 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_4_topas',
       speaker: 'Pilzling Trüffel',
       speakerRole: 'Hüter der Baumsporen auf Weg 4',
-      text: 'Sieh dir den sonnengelben Topas an, der am Eingang von Weg 4 an der Kreuzung leuchtet. Klicke auf den Kristall, und die Waldgeister räumen das sperrige Totholz im Handumdrehen zur Seite!',
+      text: 'Der sonnengelbe Topas an der Kreuzung erinnert daran, dass das Holz des Waldes Wärme spendet, aber Ehrfurcht verlangt. Achte auf das Knacken im Unterholz!',
       options: [
         {
           id: 'm4-to-weibchen',
-          playerText: 'Wer wartet im Holzfällercamp auf mich?',
+          playerText: 'Wer wartet am Lagerfeuer auf mich?',
           nextNodeId: 'mushroom_4_weibchen',
         },
         {
           id: 'm4-close-topas',
-          playerText: 'Ich werde den Topas aktivieren! (Gespräch beenden)',
+          playerText: 'Ich setze meinen Weg fort. (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
@@ -682,38 +682,38 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_4_weibchen',
       speaker: 'Pilzling Trüffel',
       speakerRole: 'Hüter der Baumsporen auf Weg 4',
-      text: 'Auf der Waldlichtung brennt das Lagerfeuer der Holzfäller. Dort wacht das Holzweibchen! Die Menschen brauchen Brennholz gegen die Kälte – doch wer zu viele alte Bäume fällt, bricht das Herz des Waldes.',
+      text: 'Auf der Lichtung brennt das Feuer der Holzfäller. Dort wacht das geheimnisvolle Holzweibchen! Die Menschen frieren im Winter, doch wer den Wald kahl schlägt, zerstört die Heimat aller Tiere.',
       options: [
         {
           id: 'm4-to-hint',
-          playerText: 'Wie war noch gleich der Trick mit dem Baumstamm?',
+          playerText: 'Erzähl mir noch etwas über den Wald.',
           nextNodeId: 'mushroom_4_topas',
         },
         {
           id: 'm4-close-weibchen',
-          playerText: 'Danke für deinen Rat, Trüffel! (Gespräch beenden)',
+          playerText: 'Ich werde mir das Lager ansehen. Danke! (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
       ],
     },
 
-    // === WEG 5: PILZLING FEUERKAPPE (Höllenschlund-Pfad) ===
+    // === WEG 5: PILZLING FEUERKAPPE (Höllenschlund-Pfad, vor dem Krater) ===
     mushroom_5_root: {
       id: 'mushroom_5_root',
       speaker: 'Pilzling Feuerkappe',
       speakerRole: 'Hüter der Glutsporen auf Weg 5',
-      text: '*Uff!* Meine Kappe glimmt schon ganz rot! Ich bin Feuerkappe. Vor uns liegt der glühende Höllenschlund-Pfad. Ein gigantischer Lavaobelisk und sengende Flammen versperren jeden Schritt!',
+      text: '*Uff!* Hier draußen vor dem Krater flirrt die Luft ganz gewaltig! Ich bin Feuerkappe. Du hast den feurigen Sperrwall durchquert – bewundernswert! Nur noch wenige Schritte über den Basalt, und du stehst am Abgrund des Höllenschlunds!',
       options: [
-        {
-          id: 'm5-hint',
-          playerText: 'Wie kann man diese Höllenflammen löschen?',
-          nextNodeId: 'mushroom_5_rubin',
-        },
         {
           id: 'm5-teufel',
           playerText: 'Wer herrscht in diesem flammenden Krater?',
           nextNodeId: 'mushroom_5_teufel',
+        },
+        {
+          id: 'm5-hint',
+          playerText: 'Wie gefährlich ist der Höllenschlund?',
+          nextNodeId: 'mushroom_5_rubin',
         },
         {
           id: 'm5-close',
@@ -727,16 +727,16 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_5_rubin',
       speaker: 'Pilzling Feuerkappe',
       speakerRole: 'Hüter der Glutsporen auf Weg 5',
-      text: 'Der feuerrote Rubin am Sockel des 5. Weges an der Kreuzung birgt die Macht, die Glut zu bannen. Ein Klick auf ihn bringt die Flammenwand augenblicklich zum Erlöschen!',
+      text: 'Der feuerrote Rubin hat dir den Pfad freigebrannt. Doch am Kraterrand brodelt die flüssige Lava unerbittlich. Halte Abstand zu den spitzen Obsidiankanten!',
       options: [
         {
           id: 'm5-to-teufel',
-          playerText: 'Und was erwartet mich beim Teufel?',
+          playerText: 'Was will der Teufel von den Wanderern?',
           nextNodeId: 'mushroom_5_teufel',
         },
         {
           id: 'm5-close-rubin',
-          playerText: 'Ich werde den Rubin berühren. (Gespräch beenden)',
+          playerText: 'Ich trete vorsichtig an den Rand. (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
@@ -746,38 +746,38 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_5_teufel',
       speaker: 'Pilzling Feuerkappe',
       speakerRole: 'Hüter der Glutsporen auf Weg 5',
-      text: 'Inmitten des feurigen Schlundes sitzt der Teufel auf seinem pechschwarzen Obsidianfelsen. Er feilscht um Seelen und bietet verlockende Schätze – doch hüte dich vor seinen doppelbödigen Schwüren!',
+      text: 'Inmitten des feurigen Schlundes thront der Teufel auf seinem Obsidianfelsen. Er lockt mit unermesslicher Macht und Reichtum – doch glaube keinem seiner süßen Versprechen!',
       options: [
         {
           id: 'm5-to-hint',
-          playerText: 'Wie lösche ich noch gleich die Flammen?',
+          playerText: 'Danke für die treue Warnung!',
           nextNodeId: 'mushroom_5_rubin',
         },
         {
           id: 'm5-close-teufel',
-          playerText: 'Ich werde vorsichtig sein. Danke! (Gespräch beenden)',
+          playerText: 'Ich lasse mich nicht verführen. (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
       ],
     },
 
-    // === WEG 6: PILZLING KRÄUTERHUT (Jägerpfad) ===
+    // === WEG 6: PILZLING KRÄUTERHUT (Jägerpfad, im Kräutersaum) ===
     mushroom_6_root: {
       id: 'mushroom_6_root',
       speaker: 'Pilzling Kräuterhut',
       speakerRole: 'Hüter der Waldkräuter auf Weg 6',
-      text: '*Hatschi!* Die Pollen kitzeln gar schrecklich in meiner Nase! Ich bin Kräuterhut. Seltsame, übermannshohe Fantasiepflanzen wuchern hier so dicht über den Weg, dass kein Durchkommen ist!',
+      text: '*Hatschi!* Hier duftet es herrlich nach Thymian und Baldrian! Ich bin Kräuterhut. Prima, dass die dichten Fantasiepflanzen den Pfad freigegeben haben! Vor dir liegt der Weg zur Burg und zum Kräutergarten.',
       options: [
-        {
-          id: 'm6-hint',
-          playerText: 'Wie lichte ich das dichte Gestrüpp?',
-          nextNodeId: 'mushroom_6_amethyst',
-        },
         {
           id: 'm6-jaeger',
           playerText: 'Wohin führt dieser geheimnisvolle Pfad?',
           nextNodeId: 'mushroom_6_jaeger',
+        },
+        {
+          id: 'm6-hint',
+          playerText: 'Was hat es mit den Heilkräutern auf sich?',
+          nextNodeId: 'mushroom_6_amethyst',
         },
         {
           id: 'm6-close',
@@ -791,16 +791,16 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_6_amethyst',
       speaker: 'Pilzling Kräuterhut',
       speakerRole: 'Hüter der Waldkräuter auf Weg 6',
-      text: 'Klicke auf den funkelnden violetten Amethyst am Eingang von Weg 6 an der Kreuzung! Seine reinigende Kraft lichtet das dichte Gestrüpp und macht den Pfad frei.',
+      text: 'Der violette Amethyst an der Kreuzung birgt die Weisheit der Heilung. An der Burg wachsen Kräuter, die selbst schwerste Wunden heilen können – doch wer bestimmt, wer sie pflücken darf?',
       options: [
         {
           id: 'm6-to-jaeger',
-          playerText: 'Was erwartet mich an der Jagdhütte?',
+          playerText: 'Wer streitet denn dort oben an der Burg?',
           nextNodeId: 'mushroom_6_jaeger',
         },
         {
           id: 'm6-close-ameth',
-          playerText: 'Ich mache mich an die Arbeit! (Gespräch beenden)',
+          playerText: 'Ich werde mir den Streit anhören. (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
@@ -810,28 +810,28 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_6_jaeger',
       speaker: 'Pilzling Kräuterhut',
       speakerRole: 'Hüter der Waldkräuter auf Weg 6',
-      text: 'Am Ende des Weges ragt eine wehrhafte Burg empor, gesäumt von einem Kräutergarten. Dort streitet der Wilde Jäger mit einem Holzweibchen um Heilkräuter für verletzte Waldtiere. Beide brauchen einen klugen Vermittler!',
+      text: 'Vor den Zinnen der Burg streiten der gestrenge Wilde Jäger und ein zweites Holzweibchen! Er wirft ihr Diebstahl vor, doch sie will nur verletzten Tieren helfen. Ein weiser Schiedsspruch wird dringend gebraucht!',
       options: [
         {
           id: 'm6-to-hint',
-          playerText: 'Wie beseitige ich zuerst die Pflanzensperre?',
+          playerText: 'Erzähl mir noch etwas über die Kräuter.',
           nextNodeId: 'mushroom_6_amethyst',
         },
         {
           id: 'm6-close-jaeger',
-          playerText: 'Ich werde ihnen zuhören. Danke! (Gespräch beenden)',
+          playerText: 'Ich mache mich auf den Weg. Danke! (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
       ],
     },
 
-    // === WEG 7: PILZLING GLIMMLING (Torweg) ===
+    // === WEG 7: PILZLING GLIMMLING (Torweg, tief im Nebelwald) ===
     mushroom_7_root: {
       id: 'mushroom_7_root',
       speaker: 'Pilzling Glimmling',
       speakerRole: 'Hüter der Tor-Aura auf Weg 7',
-      text: '*Psst... Wanderer!* Ich bin Glimmling, der stille Wächter im Schatten der Tor-Uraltbuchen. Du bist weit gewandert auf dem 7. Weg. Nur noch ein kleines Stück, und du stehst vor dem Großen Tor des Wanderlandes!',
+      text: '*Psst... Wanderer!* Ich bin Glimmling, tief im Schatten des Nebelwaldes. Du hast den halben Pfad und Lupo weit hinter dir gelassen! Siehst du den steinernen Vorplatz dort vorn? Dort thront das Große Tor des Wanderlandes!',
       options: [
         {
           id: 'm7-tor',
@@ -855,7 +855,7 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_7_tor',
       speaker: 'Pilzling Glimmling',
       speakerRole: 'Hüter der Tor-Aura auf Weg 7',
-      text: 'Das Tor ist uralt, geschmiedet aus Eisenholz und gebunden mit schweren Ketten. Es trennt die Welt der sieben Prüfungen von den verborgenen Wundern dahinter. Selbst der kleine Lupo traut sich nicht zu nah heran!',
+      text: 'Das Tor ist uralt, geschmiedet aus Eisenholz und gebunden mit schweren Ketten. Es trennt die Welt der sieben Prüfungen von den verborgenen Wundern dahinter. Kein Schlüssel aus Eisen wird dieses Schloss je bezwingen!',
       options: [
         {
           id: 'm7-to-pruef',
@@ -874,7 +874,7 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_7_pruefungen',
       speaker: 'Pilzling Glimmling',
       speakerRole: 'Hüter der Tor-Aura auf Weg 7',
-      text: 'Keine Gewalt der Welt bricht diesen Riegel. Erst wenn du alle Pfade erkundet, die Konflikte der Wächter verstanden und das Siegel der Erkenntnis erlangt hast, wird der Schlossriegel von selbst aufspringen!',
+      text: 'Nur wahre Erkenntnis sprengt diese Ketten! Erkunde die Pfade, höre den Wächtern zu und meistere ihre Prüfungen. Wenn du bereit bist, wird das Tor vor deinen Augen aufspringen!',
       options: [
         {
           id: 'm7-to-tor',

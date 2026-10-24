@@ -507,56 +507,56 @@ export const MUSHROOM_CREATURES_DATA: readonly MushroomCreatureData[] = [
     pathId: 1,
     name: 'Pilzling Morchel',
     role: 'Hüter der Felssporen auf Weg 1',
-    pos: { x: -1.4, z: -11.0 },
-    rotationY: 0.15,
-    collisionRadius: 0.45,
+    pos: { x: 2.3, z: -28.5 }, // Distanz: 28.6m (mitten in der großen Bergkurve nach dem Felsbrocken)
+    rotationY: -0.24,
+    collisionRadius: 0.34,
   },
   {
     pathId: 2,
     name: 'Pilzling Pfiffer',
     role: 'Hüter der Feuchtsporen auf Weg 2',
-    pos: { x: 8.4, z: -4.6 },
-    rotationY: -2.0,
-    collisionRadius: 0.45,
+    pos: { x: 18.0, z: -10.4 }, // Distanz: 20.8m (kurz nach der Wasserpfütze)
+    rotationY: -1.86,
+    collisionRadius: 0.34,
   },
   {
     pathId: 3,
     name: 'Pilzling Bovist',
     role: 'Hüter der Quellsporen auf Weg 3',
-    pos: { x: 10.2, z: 4.4 },
-    rotationY: -2.5,
-    collisionRadius: 0.45,
+    pos: { x: 33.2, z: 16.2 }, // Distanz: 36.9m (weit draußen vor der Wehrbrücke)
+    rotationY: -2.4,
+    collisionRadius: 0.34,
   },
   {
     pathId: 4,
     name: 'Pilzling Trüffel',
     role: 'Hüter der Baumsporen auf Weg 4',
-    pos: { x: 2.2, z: 9.8 },
-    rotationY: 2.6,
-    collisionRadius: 0.45,
+    pos: { x: 11.2, z: 25.8 }, // Distanz: 28.1m (im tiefen Wald hinter dem umgestürzten Baumstamm)
+    rotationY: -2.8,
+    collisionRadius: 0.34,
   },
   {
     pathId: 5,
     name: 'Pilzling Feuerkappe',
     role: 'Hüter der Glutsporen auf Weg 5',
-    pos: { x: -2.8, z: 9.6 },
-    rotationY: -2.7,
-    collisionRadius: 0.45,
+    pos: { x: -17.5, z: 35.5 }, // Distanz: 39.6m (weit draußen vor dem flammenden Krater)
+    rotationY: 2.88,
+    collisionRadius: 0.34,
   },
   {
     pathId: 6,
     name: 'Pilzling Kräuterhut',
     role: 'Hüter der Waldkräuter auf Weg 6',
-    pos: { x: -10.2, z: 4.2 },
-    rotationY: 2.3,
-    collisionRadius: 0.45,
+    pos: { x: -21.2, z: 4.2 }, // Distanz: 21.6m (kurz nach den Fantasiepflanzen)
+    rotationY: 1.73,
+    collisionRadius: 0.34,
   },
   {
     pathId: 7,
     name: 'Pilzling Glimmling',
     role: 'Hüter der Tor-Aura auf Weg 7',
-    pos: { x: -29.5, z: -25.2 },
-    rotationY: 0.8,
-    collisionRadius: 0.45,
+    pos: { x: -34.8, z: -30.8 }, // Distanz: 46.5m (tief im Nebelwald vor dem großen Torvorplatz)
+    rotationY: 0.87,
+    collisionRadius: 0.34,
   },
 ];

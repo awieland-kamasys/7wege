@@ -73,10 +73,10 @@ export function createMushroomCreatures(
       metalness: 0.3,
     });
     const indicator = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.12, 0),
+      new THREE.OctahedronGeometry(0.09, 0),
       indicatorMat
     );
-    indicator.position.y = 1.15;
+    indicator.position.y = 0.88;
     indicator.userData = {
       interactableType: 'mushroom_creature',
       pathId: data.pathId,
@@ -90,17 +90,17 @@ export function createMushroomCreatures(
       depthWrite: false,
     });
     const hitbox = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.65, 0.65, 1.3, 10),
+      new THREE.CylinderGeometry(0.50, 0.50, 1.0, 10),
       hitboxMat
     );
-    hitbox.position.y = 0.65;
+    hitbox.position.y = 0.50;
     hitbox.userData = {
       interactableType: 'mushroom_creature',
       pathId: data.pathId,
     };
     mGroup.add(hitbox);
 
-    // 3. Low-Poly-Fallback-Pilz während des Ladens
+    // 3. Low-Poly-Fallback-Pilz während des Ladens (um 25% geschrumpft)
     const fallback = new THREE.Group();
     fallback.name = 'MushroomFallback';
 
@@ -109,10 +109,10 @@ export function createMushroomCreatures(
       roughness: 0.85,
     });
     const stem = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.14, 0.18, 0.55, 8),
+      new THREE.CylinderGeometry(0.10, 0.14, 0.42, 8),
       stemMat
     );
-    stem.position.y = 0.275;
+    stem.position.y = 0.21;
     stem.castShadow = true;
     stem.userData = {
       interactableType: 'mushroom_creature',
@@ -125,10 +125,10 @@ export function createMushroomCreatures(
       roughness: 0.75,
     });
     const cap = new THREE.Mesh(
-      new THREE.SphereGeometry(0.38, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
+      new THREE.SphereGeometry(0.28, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
       capMat
     );
-    cap.position.y = 0.52;
+    cap.position.y = 0.40;
     cap.scale.set(1.0, 0.75, 1.0);
     cap.castShadow = true;
     cap.userData = {
@@ -170,9 +170,9 @@ export function createMushroomCreatures(
       const animations = gltf.animations || [];
 
       instances.forEach((inst, index) => {
-        // SkinnedMesh-kompatibles Klonen mit SkeletonUtils
+        // SkinnedMesh-kompatibles Klonen mit SkeletonUtils (um 25% geschrumpft)
         const clonedScene = SkeletonUtils.clone(baseScene);
-        clonedScene.scale.setScalar(0.92);
+        clonedScene.scale.setScalar(0.69);
         clonedScene.position.set(0, 0, 0);
 
         // Animationen für diesen Klon initialisieren
@@ -300,7 +300,7 @@ export function createMushroomCreatures(
       inst.indicator.rotation.y = elapsedSeconds * 2.2;
       inst.indicator.rotation.x = Math.sin(elapsedSeconds * 1.5) * 0.2;
       inst.indicator.position.y =
-        1.15 + Math.sin(elapsedSeconds * 3.0 + inst.data.pathId) * 0.06;
+        0.88 + Math.sin(elapsedSeconds * 3.0 + inst.data.pathId) * 0.045;
 
       // 3. Bei Spielerannäherung sanftes Zuwenden zum Spieler
       const dx = playerPos.x - inst.data.pos.x;

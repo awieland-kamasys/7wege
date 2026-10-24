@@ -1168,14 +1168,20 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(Math.hypot(resolved.x - rightTreePos.x, resolved.z - rightTreePos.z)).toBeGreaterThanOrEqual(2.39);
   });
 
-  it('verwaltet die 7 Hinweisgeber-Pilzwesen auf jedem der sieben Pfade', () => {
+  it('verwaltet die 7 Hinweisgeber-Pilzwesen auf jedem der sieben Pfade nach den Wegsperren', () => {
     const state = new CrossroadsState();
     const dialogue = new DialogueSystem();
+    const distances: number[] = [];
 
     for (let pathId = 1; pathId <= 7; pathId++) {
       const pos = state.getMushroomPosition(pathId);
       expect(pos.x).not.toBe(0);
       expect(pos.z).not.toBe(0);
+
+      // Alle Pilzwesen sind NACH den Wegsperren platziert (Distanz zur Kreuzung > 18m)
+      const distToClearing = Math.hypot(pos.x, pos.z);
+      expect(distToClearing).toBeGreaterThan(18.0);
+      distances.push(distToClearing);
 
       // Dialogknoten für jeden Pilzling existiert im Dialogsystem
       const node = dialogue.startDialogue(`mushroom_${pathId}_root`);
@@ -1184,10 +1190,10 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
       expect(node?.options.length).toBeGreaterThanOrEqual(2);
       dialogue.closeDialogue();
 
-      // Kollision an der Position des Pilzlings
+      // Kollision an der Position des Pilzlings (um 25% geschrumpft auf 0.34m Radius)
       expect(state.isCollidingWithObstacles(pos.x, pos.z)).toBe(true);
       const resolved = state.resolveObstacleCollisions(pos.x, pos.z);
-      expect(Math.hypot(resolved.x - pos.x, resolved.z - pos.z)).toBeGreaterThanOrEqual(0.44);
+      expect(Math.hypot(resolved.x - pos.x, resolved.z - pos.z)).toBeGreaterThanOrEqual(0.33);
 
       // Näherungs- und Zielfindungsprüfung
       state.setTargetToMushroom(pathId);
@@ -1197,8 +1203,12 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
         const distToMushroom = Math.hypot(target.x - pos.x, target.z - pos.z);
         // Das Ziel liegt begehbar nahe am Pilzwesen (innerhalb der Gesprächsreichweite <= 3.4m)
         expect(distToMushroom).toBeLessThanOrEqual(3.4);
-        expect(distToMushroom).toBeGreaterThanOrEqual(0.45);
+        expect(distToMushroom).toBeGreaterThanOrEqual(0.34);
       }
     }
+
+    // Die Entfernungen zur Kreuzung variieren stark und sind unvorhersehbar gestaffelt (von ~20.8m bis ~46.5m)
+    expect(Math.min(...distances)).toBeLessThan(22.0);
+    expect(Math.max(...distances)).toBeGreaterThan(45.0);
   });
 });
