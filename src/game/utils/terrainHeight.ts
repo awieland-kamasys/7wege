@@ -49,8 +49,8 @@ export const TERRAIN_PLATEAUS: PlateauDefinition[] = [
   { x: HUNTING_LODGE_POS.x, z: HUNTING_LODGE_POS.z, radius: 8.0, blendRadius: 14.0, height: 1.0 },
   // 7. Verschlossenes Tor (Weg 7): Hügelkuppe
   { x: CLOSED_GATE_POS.x, z: CLOSED_GATE_POS.z, radius: 8.0, blendRadius: 14.0, height: 2.2 },
-  // 8. Stilisierter Höhlenbaum am linken Ende des Baches: Ausgedehntes, ebenes Bodenplateau (-0.30m)
-  { x: WORLD_TREE_POS.x, z: WORLD_TREE_POS.z, radius: 6.5, blendRadius: 12.5, height: -0.3 },
+  // 8. Stilisierter Höhlenbaum am Ende des Bachtals: Ausgedehntes, ebenes Bodenplateau auf Bachtalhöhe (-1.50m)
+  { x: WORLD_TREE_POS.x, z: WORLD_TREE_POS.z, radius: 10.5, blendRadius: 16.0, height: -1.5 },
   // 9. Zweiter Weltenbaum im Waldsaum ca. 10m hinter dem Riesen (Weg 3): Bündig am Vorplatz (-1.50m)
   { x: GIANT_WORLD_TREE_POS.x, z: GIANT_WORLD_TREE_POS.z, radius: 5.5, blendRadius: 12.0, height: -1.5 },
   // 10. Dritter Weltenbaum rechts neben dem Baum hinter dem Riesen (Weg 3): Bündig am Vorplatz (-1.50m)

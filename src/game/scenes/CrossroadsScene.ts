@@ -427,18 +427,15 @@ export class CrossroadsScene {
     });
     this.scene.add(this.giantNpc.group);
 
-    // Stilisierter Höhlenbaum (stylized tree 3d model.glb) am linken Ende des Baches
-    // Um 90 Grad in die Gegenrichtung gedreht (auf 2.72 rad) und am Boden ausgerichtet
+    // Stilisierter Höhlenbaum (stylized tree 3d model.glb) am Ende des Baches
+    // Exakt über der Bachachse platziert, sodass der Gebirgsbach direkt durch die mächtige Baumhöhle fließt.
+    // Mit sinkDepth tief im Erdboden verankert und ohne künstlichen Mound, damit absolut kein Teil in der Luft schwebt.
     this.worldTree = createWorldTree({
       modelUrl: '/assets/models/stylized tree 3d model.glb',
       scale: 26.0,
       rotationY: 2.72,
-      sinkDepth: 0.52,
-      hasMound: true,
-      moundRadius: 6.2,
-      moundTopRadius: 3.5,
-      moundHeight: 0.40,
-      moundOffsetY: -0.12,
+      sinkDepth: 1.40,
+      hasMound: false,
       hasAura: true,
       onMeshLoaded: (mesh) => {
         this.pickableObjects.push(mesh);
@@ -1201,7 +1198,7 @@ export class CrossroadsScene {
   ): void {
     // Freiraum um die riesigen Weltenbäume (keine Fichten im Stamm- und Wurzelbereich)
     if (
-      Math.hypot(x - WORLD_TREE_POS.x, z - WORLD_TREE_POS.z) < 6.8 ||
+      Math.hypot(x - WORLD_TREE_POS.x, z - WORLD_TREE_POS.z) < 13.0 ||
       Math.hypot(x - GIANT_WORLD_TREE_POS.x, z - GIANT_WORLD_TREE_POS.z) < 11.5 ||
       Math.hypot(x - GIANT_RIGHT_WORLD_TREE_POS.x, z - GIANT_RIGHT_WORLD_TREE_POS.z) < 11.5 ||
       Math.hypot(x - HOLLOW_TREE_POS.x, z - HOLLOW_TREE_POS.z) < 6.8

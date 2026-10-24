@@ -181,12 +181,12 @@ export const GIANT_NPC_POS: PathPoint2D = {
 };
 
 /**
- * Position des riesigen Weltenbaums (fantasy tree 3d model.glb),
- * majestätisch in der goldenen Mitte zwischen dem Reich der Nixe (Weg 2) und des Riesen (Weg 3).
+ * Position des stilisierten Höhlenbaums (stylized tree 3d model.glb),
+ * am linken Ende des Baches, sodass der Bach direkt mittig durch die mächtige Baumhöhle fließt.
  */
 export const WORLD_TREE_POS: PathPoint2D = {
-  x: 44.0,
-  z: 2.5,
+  x: 48.9,
+  z: 4.3,
 };
 
 /**

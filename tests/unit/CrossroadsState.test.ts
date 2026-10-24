@@ -1119,8 +1119,8 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
   it('verwaltet den riesigen Weltenbaum zwischen Nixe und Riese mit solider Stammkollision', () => {
     const state = new CrossroadsState();
     const treePos = state.getWorldTreePosition();
-    expect(treePos.x).toBeCloseTo(44.0, 1);
-    expect(treePos.z).toBeCloseTo(2.5, 1);
+    expect(treePos.x).toBeCloseTo(48.9, 1);
+    expect(treePos.z).toBeCloseTo(4.3, 1);
 
     // Stammkollision: Exakt am Weltenbaum-Stamm herrscht Kollision
     expect(state.isCollidingWithObstacles(treePos.x, treePos.z)).toBe(true);
