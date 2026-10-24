@@ -8,6 +8,7 @@ import {
   WEIR_BRIDGE_POS,
   WORLD_TREE_POS,
   GIANT_WORLD_TREE_POS,
+  GIANT_RIGHT_WORLD_TREE_POS,
   HOLLOW_TREE_POS,
   PATH_1_WAYPOINTS,
   PATH_2_WAYPOINTS,
@@ -52,7 +53,9 @@ export const TERRAIN_PLATEAUS: PlateauDefinition[] = [
   { x: WORLD_TREE_POS.x, z: WORLD_TREE_POS.z, radius: 4.8, blendRadius: 10.5, height: -0.3 },
   // 9. Zweiter Weltenbaum im Waldsaum ca. 10m hinter dem Riesen (Weg 3): Bündig am Vorplatz (-1.50m)
   { x: GIANT_WORLD_TREE_POS.x, z: GIANT_WORLD_TREE_POS.z, radius: 5.5, blendRadius: 12.0, height: -1.5 },
-  // 10. Stilisierter Höhlenbaum weiter rechts im Riesenteich: Bündig und eben am Seegrund (-1.50m)
+  // 10. Dritter Weltenbaum rechts neben dem Baum hinter dem Riesen (Weg 3): Bündig am Vorplatz (-1.50m)
+  { x: GIANT_RIGHT_WORLD_TREE_POS.x, z: GIANT_RIGHT_WORLD_TREE_POS.z, radius: 5.5, blendRadius: 12.0, height: -1.5 },
+  // 11. Magischer Baum weiter rechts im Riesenteich: Bündig und eben am Seegrund (-1.50m)
   { x: HOLLOW_TREE_POS.x, z: HOLLOW_TREE_POS.z, radius: 5.2, blendRadius: 11.0, height: -1.5 },
 ];
 

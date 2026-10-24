@@ -1155,4 +1155,16 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(hollowTreePos.x).toBeCloseTo(28.8, 1);
     expect(hollowTreePos.z).toBeCloseTo(30.5, 1);
   });
+
+  it('verwaltet den dritten riesigen Weltenbaum rechts neben dem Weltenbaum hinter dem Riesen mit solider Stammkollision', () => {
+    const state = new CrossroadsState();
+    const rightTreePos = state.getGiantRightWorldTreePosition();
+    expect(rightTreePos.x).toBeCloseTo(52.8, 1);
+    expect(rightTreePos.z).toBeCloseTo(32.5, 1);
+
+    expect(state.isCollidingWithObstacles(rightTreePos.x, rightTreePos.z)).toBe(true);
+    expect(state.isCollidingWithObstacles(rightTreePos.x + 1.2, rightTreePos.z)).toBe(true);
+    const resolved = state.resolveObstacleCollisions(rightTreePos.x + 0.5, rightTreePos.z);
+    expect(Math.hypot(resolved.x - rightTreePos.x, resolved.z - rightTreePos.z)).toBeGreaterThanOrEqual(2.39);
+  });
 });

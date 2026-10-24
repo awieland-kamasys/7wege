@@ -50,6 +50,7 @@ import {
   WOOD_WOMAN_NPC_POS,
   WORLD_TREE_POS,
   GIANT_WORLD_TREE_POS,
+  GIANT_RIGHT_WORLD_TREE_POS,
   HOLLOW_TREE_POS,
 } from '../data/paths';
 
@@ -173,6 +174,8 @@ export class CrossroadsState {
   private readonly worldTreeCollisionRadius = 2.4;
   private readonly giantWorldTreePos: Vector2D = { ...GIANT_WORLD_TREE_POS };
   private readonly giantWorldTreeCollisionRadius = 2.4;
+  private readonly giantRightWorldTreePos: Vector2D = { ...GIANT_RIGHT_WORLD_TREE_POS };
+  private readonly giantRightWorldTreeCollisionRadius = 2.4;
   private readonly hollowTreePos: Vector2D = { ...HOLLOW_TREE_POS };
   private readonly hollowTreeCollisionRadius = 2.2;
 
@@ -272,6 +275,10 @@ export class CrossroadsState {
 
   public getGiantWorldTreePosition(): Readonly<Vector2D> {
     return { ...this.giantWorldTreePos };
+  }
+
+  public getGiantRightWorldTreePosition(): Readonly<Vector2D> {
+    return { ...this.giantRightWorldTreePos };
   }
 
   public getHollowTreePosition(): Readonly<Vector2D> {
@@ -1087,8 +1094,13 @@ export class CrossroadsState {
       return true;
     }
 
-    // Stamm des zweiten riesigen Weltenbaums rechts vom Riesenteich
+    // Stamm des zweiten riesigen Weltenbaums hinter dem Riesen
     if (Math.hypot(x - this.giantWorldTreePos.x, z - this.giantWorldTreePos.z) < this.giantWorldTreeCollisionRadius - eps) {
+      return true;
+    }
+
+    // Stamm des dritten riesigen Weltenbaums rechts neben dem Weltenbaum hinter dem Riesen
+    if (Math.hypot(x - this.giantRightWorldTreePos.x, z - this.giantRightWorldTreePos.z) < this.giantRightWorldTreeCollisionRadius - eps) {
       return true;
     }
 
@@ -1683,7 +1695,7 @@ export class CrossroadsState {
       resolvedX = afterWorldTree.x;
       resolvedZ = afterWorldTree.z;
 
-      // Weltenbaum-Stamm rechts vom Riesenteich
+      // Weltenbaum-Stamm hinter dem Riesen
       const afterGiantWorldTree = this.pushOutOfCircle(
         resolvedX,
         resolvedZ,
@@ -1692,6 +1704,16 @@ export class CrossroadsState {
       );
       resolvedX = afterGiantWorldTree.x;
       resolvedZ = afterGiantWorldTree.z;
+
+      // Weltenbaum-Stamm rechts neben dem Weltenbaum hinter dem Riesen
+      const afterGiantRightTree = this.pushOutOfCircle(
+        resolvedX,
+        resolvedZ,
+        this.giantRightWorldTreePos,
+        this.giantRightWorldTreeCollisionRadius
+      );
+      resolvedX = afterGiantRightTree.x;
+      resolvedZ = afterGiantRightTree.z;
 
       // Holzweibchen-Kollision am Ende von Weg 4
       const afterWoodWoman = this.pushOutOfCircle(

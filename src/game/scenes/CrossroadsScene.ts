@@ -36,6 +36,7 @@ import {
   CREATURE_NPC_POS,
   WORLD_TREE_POS,
   GIANT_WORLD_TREE_POS,
+  GIANT_RIGHT_WORLD_TREE_POS,
   HOLLOW_TREE_POS,
 } from '../data/paths';
 import { createClosedGate, ClosedGateEntity } from '../entities/ClosedGate';
@@ -169,6 +170,7 @@ export class CrossroadsScene {
   private readonly creatureNpc: CreatureNpcEntity;
   private readonly worldTree: WorldTreeEntity;
   private readonly giantWorldTree: WorldTreeEntity;
+  private readonly giantRightWorldTree: WorldTreeEntity;
   private readonly hollowTree: WorldTreeEntity;
   private readonly path1Boulder: PathBoulderEntity;
   private readonly path2Puddle: PathPuddleEntity;
@@ -425,8 +427,18 @@ export class CrossroadsScene {
     });
     this.scene.add(this.giantNpc.group);
 
-    // Der uralte, riesige Weltenbaum (fantasy tree 3d model.glb) zwischen Nixe und Riese
+    // Stilisierter Höhlenbaum (stylized tree 3d model.glb) am linken Ende des Baches
     this.worldTree = createWorldTree({
+      modelUrl: '/assets/models/stylized tree 3d model.glb',
+      scale: 26.0,
+      rotationY: 1.94,
+      sinkDepth: 0.45,
+      hasMound: true,
+      moundRadius: 4.8,
+      moundTopRadius: 2.8,
+      moundHeight: 0.65,
+      moundOffsetY: -0.2,
+      hasAura: true,
       onMeshLoaded: (mesh) => {
         this.pickableObjects.push(mesh);
       },
@@ -467,13 +479,40 @@ export class CrossroadsScene {
     });
     this.scene.add(this.giantWorldTree.group);
 
-    // Stilisierter Höhlenbaum (stylized tree 3d model.glb) im Riesenteich, durch dessen Wurzelhöhle der See fließt
+    // Dritter uralter, riesiger Weltenbaum (fantasy tree 3d model.glb) rechts neben dem Baum hinter dem Riesen
+    this.giantRightWorldTree = createWorldTree({
+      modelUrl: '/assets/models/fantasy tree 3d model.glb',
+      scale: 24.0,
+      rotationY: 2.45,
+      sinkDepth: 1.65,
+      moundRadius: 4.8,
+      moundTopRadius: 2.8,
+      moundHeight: 0.75,
+      moundOffsetY: -0.25,
+      hasAura: true,
+      onMeshLoaded: (mesh) => {
+        this.pickableObjects.push(mesh);
+      },
+    });
+    this.giantRightWorldTree.group.position.set(
+      GIANT_RIGHT_WORLD_TREE_POS.x,
+      getTerrainHeight(GIANT_RIGHT_WORLD_TREE_POS.x, GIANT_RIGHT_WORLD_TREE_POS.z),
+      GIANT_RIGHT_WORLD_TREE_POS.z
+    );
+    this.giantRightWorldTree.group.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        this.pickableObjects.push(child);
+      }
+    });
+    this.scene.add(this.giantRightWorldTree.group);
+
+    // Magischer Baum (magical tree 3d model.glb) im Riesenteich, durch dessen Umgebung der See fließt
     this.hollowTree = createWorldTree({
-      modelUrl: '/assets/models/stylized tree 3d model.glb',
+      modelUrl: '/assets/models/magical tree 3d model.glb',
       scale: 26.0,
-      rotationY: 1.94, // 30 Grad im Uhrzeigersinn gedreht für optimale Ansicht der Wurzelhöhle
-      sinkDepth: 0.38, // Standhaft im Seegrund verankert mit freiem Höhlenbogen
-      hasMound: false, // Kein Erd-/Mooshügel, damit der See ungehindert durch die Höhle fließt
+      rotationY: 1.94,
+      sinkDepth: 0.38,
+      hasMound: false,
       hasAura: true,
       onMeshLoaded: (mesh) => {
         this.pickableObjects.push(mesh);
@@ -1163,12 +1202,13 @@ export class CrossroadsScene {
     if (
       Math.hypot(x - WORLD_TREE_POS.x, z - WORLD_TREE_POS.z) < 6.8 ||
       Math.hypot(x - GIANT_WORLD_TREE_POS.x, z - GIANT_WORLD_TREE_POS.z) < 11.5 ||
+      Math.hypot(x - GIANT_RIGHT_WORLD_TREE_POS.x, z - GIANT_RIGHT_WORLD_TREE_POS.z) < 11.5 ||
       Math.hypot(x - HOLLOW_TREE_POS.x, z - HOLLOW_TREE_POS.z) < 6.8
     ) {
       return;
     }
-    // Komplette Freihaltung aller Nadelbäume im Bereich hinter dem Riesen
-    if (x >= 42.8 && z >= 12.0 && z <= 28.5) {
+    // Komplette Freihaltung aller Nadelbäume im Bereich hinter und rechts vom Riesen
+    if (x >= 42.8 && z >= 12.0 && z <= 39.0) {
       return;
     }
     const snowy = isSnowy ?? (!isBurned && this.isSnowZone(x, z));
@@ -3169,6 +3209,7 @@ export class CrossroadsScene {
     // Die uralten Weltenbäume (sanft schwebende Kronenlichter)
     this.worldTree.update(this.elapsedSeconds, dtSeconds);
     this.giantWorldTree.update(this.elapsedSeconds, dtSeconds);
+    this.giantRightWorldTree.update(this.elapsedSeconds, dtSeconds);
     this.hollowTree.update(this.elapsedSeconds, dtSeconds);
     // Weg 4: Holzfällerlager & Holzweibchen
     if (distLumber < 33) {
