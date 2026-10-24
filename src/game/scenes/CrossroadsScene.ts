@@ -427,14 +427,14 @@ export class CrossroadsScene {
     });
     this.scene.add(this.giantNpc.group);
 
-    // Stilisierter Höhlenbaum (stylized tree 3d model.glb) am Ende des Baches
-    // Exakt über der Bachachse platziert, sodass der Gebirgsbach direkt durch die mächtige Baumhöhle fließt.
-    // Mit sinkDepth tief im Erdboden verankert und ohne künstlichen Mound, damit absolut kein Teil in der Luft schwebt.
+    // Stilisierter Höhlenbaum (stylized tree 3d model.glb) am Ende der tiefen Bachrinne
+    // Um 10 % verkleinert (scale 23.4), Baumhöhle optimal fluchtend zur Rinne ausgerichtet (rotationY 2.10).
+    // Auf dem Rinnengrund verankert, die Wurzeln fassen tief in die Böschungen, der Bach fließt mitten hindurch.
     this.worldTree = createWorldTree({
       modelUrl: '/assets/models/stylized tree 3d model.glb',
-      scale: 26.0,
-      rotationY: 2.72,
-      sinkDepth: 1.40,
+      scale: 23.4,
+      rotationY: 2.10,
+      sinkDepth: 0.65,
       hasMound: false,
       hasAura: true,
       onMeshLoaded: (mesh) => {

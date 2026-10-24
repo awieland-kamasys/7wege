@@ -49,8 +49,8 @@ export const TERRAIN_PLATEAUS: PlateauDefinition[] = [
   { x: HUNTING_LODGE_POS.x, z: HUNTING_LODGE_POS.z, radius: 8.0, blendRadius: 14.0, height: 1.0 },
   // 7. Verschlossenes Tor (Weg 7): Hügelkuppe
   { x: CLOSED_GATE_POS.x, z: CLOSED_GATE_POS.z, radius: 8.0, blendRadius: 14.0, height: 2.2 },
-  // 8. Stilisierter Höhlenbaum am Ende des Bachtals: Ausgedehntes, ebenes Bodenplateau auf Bachtalhöhe (-1.50m)
-  { x: WORLD_TREE_POS.x, z: WORLD_TREE_POS.z, radius: 10.5, blendRadius: 16.0, height: -1.5 },
+  // 8. Stilisierter Höhlenbaum am Ende des Bachtals: Rinnengrund (-2.35m)
+  { x: WORLD_TREE_POS.x, z: WORLD_TREE_POS.z, radius: 2.5, blendRadius: 6.0, height: -2.35 },
   // 9. Zweiter Weltenbaum im Waldsaum ca. 10m hinter dem Riesen (Weg 3): Bündig am Vorplatz (-1.50m)
   { x: GIANT_WORLD_TREE_POS.x, z: GIANT_WORLD_TREE_POS.z, radius: 5.5, blendRadius: 12.0, height: -1.5 },
   // 10. Dritter Weltenbaum rechts neben dem Baum hinter dem Riesen (Weg 3): Bündig am Vorplatz (-1.50m)
@@ -186,7 +186,8 @@ export function getTerrainHeight(x: number, z: number): number {
 
   // 5. Seetal (Riesenteich) und Flusstal des Gebirgsbachs entlang der Wehrbrücken-Achse:
   // - Oberstrom / See rechts der Brücke (lx von -1.0 bis -19.0): ebenes Seebecken auf -1.50m
-  // - Unterstrom / Gebirgsbach links der Brücke (lx von -2.5 bis +29.5): Bachtal auf -1.50m
+  // - Wehrbrücke (lx von -1.0 bis +0.6): Vorplatz und Brückenquerung auf -1.50m
+  // - Unterstrom / Gebirgsbach (lx von +0.6 bis +30.5): Tiefe Bachrinne auf -2.35m mit ansteigenden Böschungen auf -1.50m
   const dxBridge = x - WEIR_BRIDGE_POS.x;
   const dzBridge = z - WEIR_BRIDGE_POS.z;
   const cosBridge = Math.cos(WEIR_BRIDGE_POS.rotationY);
@@ -195,14 +196,24 @@ export function getTerrainHeight(x: number, z: number): number {
   const streamLz = dxBridge * sinBridge + dzBridge * cosBridge;
 
   let streamValleyWeight = 0;
-  if (streamLx >= -2.5 && streamLx <= 29.5 && Math.abs(streamLz) < 4.2) {
-    const wAcross = 1.0 - smoothstep(1.45, 4.2, Math.abs(streamLz));
-    const wAlong = 1.0 - smoothstep(25.0, 29.5, streamLx);
-    streamValleyWeight = wAcross * wAlong;
-  } else if (streamLx >= -19.0 && streamLx < -1.0 && Math.abs(streamLz) < 6.5) {
+  let streamTargetHeight = -1.5;
+
+  if (streamLx >= -19.0 && streamLx < -1.0 && Math.abs(streamLz) < 6.5) {
     const wAcrossLake = 1.0 - smoothstep(3.8, 6.5, Math.abs(streamLz));
     const wAlongLake = 1.0 - smoothstep(15.5, 19.0, Math.abs(streamLx));
     streamValleyWeight = wAcrossLake * wAlongLake;
+    streamTargetHeight = -1.5;
+  } else if (streamLx >= -1.0 && streamLx < 0.6 && Math.abs(streamLz) < 4.2) {
+    const wAcross = 1.0 - smoothstep(1.45, 4.2, Math.abs(streamLz));
+    streamValleyWeight = wAcross;
+    streamTargetHeight = -1.5;
+  } else if (streamLx >= 0.6 && streamLx <= 30.5 && Math.abs(streamLz) < 4.2) {
+    const wValley = (1.0 - smoothstep(1.8, 4.2, Math.abs(streamLz))) * (1.0 - smoothstep(26.0, 30.5, streamLx));
+    const wGullyAcross = 1.0 - smoothstep(0.70, 2.30, Math.abs(streamLz));
+    const wGullyAlong = smoothstep(0.6, 2.2, streamLx) * (1.0 - smoothstep(26.5, 30.5, streamLx));
+    const gullyDepthWeight = wGullyAcross * wGullyAlong;
+    streamTargetHeight = -1.50 - 0.85 * gullyDepthWeight;
+    streamValleyWeight = Math.max(wValley, gullyDepthWeight);
   }
 
   let terrainHeightResult = naturalBaseHeight;
@@ -213,10 +224,9 @@ export function getTerrainHeight(x: number, z: number): number {
     terrainHeightResult = avgPlateauH * pWeight + naturalBaseHeight * (1.0 - pWeight);
   }
 
-  // Flusstal-Einfluss überblenden (schneidet das Bachtal auf -1.50m sanft ein)
+  // Flusstal- und Bachrinnen-Einfluss überblenden
   if (streamValleyWeight > 0) {
-    const riverBedHeight = -1.5;
-    terrainHeightResult = riverBedHeight * streamValleyWeight + terrainHeightResult * (1.0 - streamValleyWeight);
+    terrainHeightResult = streamTargetHeight * streamValleyWeight + terrainHeightResult * (1.0 - streamValleyWeight);
   }
 
   return terrainHeightResult;

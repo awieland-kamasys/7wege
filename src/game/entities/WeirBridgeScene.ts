@@ -180,30 +180,53 @@ export function createWeirBridgeScene(
   group.add(springRipple);
 
   // ============================================================================
-  // 3. DER GEBIRGSBACH UNTER DER BRÜCKE & WEITGEFÜHRTER FLUSSLAUF INS TAL (lx = -2.8 bis +28.5)
+  // 3. DER GEBIRGSBACH ALS TIEFE RINNE UNTER DEM WEHR INS TAL (lx = 0.2 bis 30.0)
   // ============================================================================
   const dryBedMat = new THREE.MeshStandardMaterial({
-    color: 0x595143,
+    color: 0x484236,
     roughness: 0.95,
   });
   const streamWaterMat = new THREE.MeshStandardMaterial({
-    color: 0x2b879e,
-    emissive: 0x0d3842,
+    color: 0x247a90,
+    emissive: 0x092b34,
     emissiveIntensity: 0.35,
     roughness: 0.2,
     transparent: true,
     opacity: 0.82,
   });
 
-  // Steiniges Bachbett, das frei unter der Holzbrücke hindurch 20 Meter weiter ins Tal (+lx) fließt
-  const streamBed = new THREE.Mesh(new THREE.BoxGeometry(31.4, 0.04, 2.85), dryBedMat);
-  streamBed.position.set(12.85, 0.015, 0);
+  // Massive steinerne Wehrmauer / Sockelschwelle unter dem Holzschütz des Wehrs
+  // Trennt das hohe Stauseewasser vom tiefen Bachbett ab und gibt dem Wehr echte bauliche Funktion
+  const weirThreshold = new THREE.Mesh(
+    new THREE.BoxGeometry(0.85, 0.95, 2.75),
+    stoneMat
+  );
+  weirThreshold.position.set(0.35, -0.42, 0);
+  weirThreshold.receiveShadow = true;
+  weirThreshold.castShadow = true;
+  group.add(weirThreshold);
+
+  // Kleiner Wasserauslass am Fuß der Wehrmauer
+  const trickleMat = new THREE.MeshStandardMaterial({
+    color: 0x8ce8ff,
+    emissive: 0x1f5c6e,
+    roughness: 0.25,
+    transparent: true,
+    opacity: 0.8,
+  });
+  const weirTrickle = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.85), trickleMat);
+  weirTrickle.position.set(0.72, -0.62, 0);
+  group.add(weirTrickle);
+
+  // Steiniges Bachbett am Grund der tiefen Rinne (-0.85m unter Uferniveau)
+  const streamBed = new THREE.Mesh(new THREE.BoxGeometry(29.8, 0.05, 1.95), dryBedMat);
+  streamBed.position.set(15.4, -0.85, 0);
   streamBed.receiveShadow = true;
   group.add(streamBed);
 
-  // Klarer, frei fließender Gebirgsbach ohne Barriere entlang des gesamten 31 Meter langen Tals
-  const streamWater = new THREE.Mesh(new THREE.BoxGeometry(31.2, 0.05, 1.55), streamWaterMat);
-  streamWater.position.set(12.8, 0.03, 0);
+  // Schmales Rinnsal am Grund der tiefen Rinne (nur ein wenig Wasser unter dem geschlossenen Wehr)
+  const streamWater = new THREE.Mesh(new THREE.BoxGeometry(29.6, 0.04, 1.05), streamWaterMat);
+  streamWater.position.set(15.4, -0.81, 0);
   streamWater.userData = { interactableType: 'weir' };
   group.add(streamWater);
 
