@@ -100,9 +100,13 @@ export function createWeirBridgeScene(
   group.add(bridgeContainer);
 
   // ============================================================================
-  // 2. BERGQUELLE, WEITER GEBIRGSSEE & STEINRAND DES RIESENTEICHES
-  // (Oberstrom: lx = -1.5 bis -18.5)
+  // 2. ANTIKER RUNDBRUNNEN DES RIESEN (RESERVOIR & BERGQUELLE)
+  // (Ersetzt den alten künstlichen Teich durch ancient circular well 3d model.glb)
   // ============================================================================
+  const wellContainer = new THREE.Group();
+  wellContainer.name = 'AncientWellContainer';
+  group.add(wellContainer);
+
   const reservoirWaterMat = new THREE.MeshStandardMaterial({
     color: 0x1b6e84,
     emissive: 0x0a2e38,
@@ -113,188 +117,121 @@ export function createWeirBridgeScene(
     opacity: 0.88,
   });
 
-  // Großes, offenes Hauptwasserbecken des Gebirgssees vor der Brücke und bei der Heimat des Riesen
-  const reservoirWater = new THREE.Mesh(
-    new THREE.CylinderGeometry(4.2, 3.9, 0.72, 32),
+  // Im Brunneninneren: Glänzende Quellwasseroberfläche (Durchmesser ca. 4.9m, Y = 0.42)
+  const wellWater = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.45, 2.45, 0.2, 32),
     reservoirWaterMat
   );
-  reservoirWater.scale.set(1.25, 1.0, 1.05);
-  reservoirWater.position.set(-5.6, 0.08, 0.2);
-  reservoirWater.receiveShadow = true;
-  reservoirWater.userData = { interactableType: 'weir' };
-  group.add(reservoirWater);
+  wellWater.position.set(-5.4, 0.42, 0);
+  wellWater.receiveShadow = true;
+  wellWater.userData = { interactableType: 'weir' };
+  group.add(wellWater);
 
-  // Weites Seewasser, das über 10 Meter offen liegt und direkt durch die Wurzelhöhle des Baumes fließt (lx = -5.0 bis -18.5)
-  const caveChannelWater = new THREE.Mesh(
-    new THREE.BoxGeometry(14.2, 0.72, 4.4),
-    reservoirWaterMat
-  );
-  caveChannelWater.position.set(-11.8, 0.08, -0.3);
-  caveChannelWater.receiveShadow = true;
-  caveChannelWater.userData = { interactableType: 'weir' };
-  group.add(caveChannelWater);
-
-  // Freier Wasserlauf zwischen dem Quellsee und der Brücke
-  const streamInflow = new THREE.Mesh(
-    new THREE.BoxGeometry(2.8, 0.72, 2.6),
-    reservoirWaterMat
-  );
-  streamInflow.position.set(-1.8, 0.08, 0);
-  streamInflow.userData = { interactableType: 'weir' };
-  group.add(streamInflow);
-
-  // Sprudelnde Bergquelle an den hinteren Felsen hinter der Wurzelhöhle (lx = -17.6, lz = -0.35)
-  const springRock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.65, 1), stoneMat);
-  springRock.scale.set(1.1, 1.35, 1.2);
-  springRock.position.set(-17.6, 1.1, -0.35);
-  springRock.castShadow = true;
-  springRock.receiveShadow = true;
-  springRock.userData = { interactableType: 'weir' };
-  group.add(springRock);
-
-  const springCascadeMat = new THREE.MeshStandardMaterial({
-    color: 0x8ce8ff,
-    emissive: 0x26788f,
-    emissiveIntensity: 0.65,
-    roughness: 0.2,
-    transparent: true,
-    opacity: 0.85,
-  });
-  const springWaterfall = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.55, 1.45, 12),
-    springCascadeMat
-  );
-  springWaterfall.position.set(-16.45, 0.85, -0.35);
-  springWaterfall.rotation.z = -0.35;
-  group.add(springWaterfall);
-
+  // Sprudelnde Bergquell-Ringe im Zentrum des Brunnens
   const springRipple = new THREE.Mesh(
-    new THREE.RingGeometry(0.55, 0.72, 24),
+    new THREE.RingGeometry(0.45, 0.75, 24),
     new THREE.MeshBasicMaterial({
       color: 0xb5f4ff,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.55,
     })
   );
   springRipple.rotation.x = -Math.PI / 2;
-  springRipple.position.set(-16.0, 0.455, -0.35);
+  springRipple.position.set(-5.4, 0.525, 0);
   group.add(springRipple);
 
-  // --- KOMPLETTER STEINRAND DES RIESENTEICHES ---
-  // Ein durchgehender, geschlossener Kranz aus massiven Felsen, Bruchsteinen und Uferkieseln
-  const lakeStoneMat1 = new THREE.MeshStandardMaterial({
-    color: 0x565c60,
-    roughness: 0.88,
+  // Kleiner Quellsprudel in der Mitte des Brunnens
+  const springBubblerMat = new THREE.MeshStandardMaterial({
+    color: 0xaef0ff,
+    emissive: 0x24788c,
+    emissiveIntensity: 0.55,
+    roughness: 0.2,
+    transparent: true,
+    opacity: 0.75,
+  });
+  const springBubbler = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.18, 0.38, 0.28, 16),
+    springBubblerMat
+  );
+  springBubbler.position.set(-5.4, 0.55, 0);
+  group.add(springBubbler);
+
+  // Gemauerter Überlaufkanal vom Brunnen zum Wehr
+  // Brunnenrand liegt bei lx ≈ -2.2, Wehrwand bei lx = -0.95
+  const streamInflow = new THREE.Mesh(
+    new THREE.BoxGeometry(1.6, 0.35, 2.2),
+    reservoirWaterMat
+  );
+  streamInflow.position.set(-1.6, 0.22, 0);
+  streamInflow.userData = { interactableType: 'weir' };
+  group.add(streamInflow);
+
+  // Seitliche gemauerte Wangen / Steine des Überlaufkanals
+  const canalWallMat = new THREE.MeshStandardMaterial({
+    color: 0x4d5357,
+    roughness: 0.86,
     flatShading: true,
   });
-  const lakeStoneMat2 = new THREE.MeshStandardMaterial({
-    color: 0x546252, // Moosiger Fels
-    roughness: 0.90,
-    flatShading: true,
-  });
-  const lakeStoneMat3 = new THREE.MeshStandardMaterial({
-    color: 0x41474a, // Dunkler Schiefer
-    roughness: 0.84,
-    flatShading: true,
-  });
-  const lakeMaterials = [lakeStoneMat1, lakeStoneMat2, lakeStoneMat3];
-
-  const shorelineCoords: { x: number; z: number }[] = [
-    // 1. Nord-Ost-Ufer bei der Brücke
-    { x: -1.2, z: 1.6 },
-    { x: -1.9, z: 2.3 },
-    { x: -3.0, z: 3.4 },
-    { x: -4.3, z: 4.3 },
-    { x: -5.6, z: 4.6 },
-    { x: -6.9, z: 4.0 },
-    { x: -8.1, z: 3.1 },
-    // 2. Nordkante des Quellkanals
-    { x: -9.4, z: 2.4 },
-    { x: -10.6, z: 2.3 },
-    { x: -11.8, z: 2.5 },
-    { x: -13.0, z: 2.3 },
-    { x: -14.2, z: 2.4 },
-    { x: -15.4, z: 2.3 },
-    { x: -16.6, z: 2.4 },
-    { x: -17.6, z: 2.2 },
-    // 3. West-Ufer an der Bergquelle
-    { x: -18.3, z: 1.5 },
-    { x: -18.7, z: 0.7 },
-    { x: -18.8, z: -0.1 },
-    { x: -18.5, z: -0.9 },
-    { x: -18.0, z: -1.7 },
-    // 4. Südkante des Quellkanals
-    { x: -17.2, z: -2.3 },
-    { x: -16.0, z: -2.4 },
-    { x: -14.8, z: -2.3 },
-    { x: -13.6, z: -2.5 },
-    { x: -12.4, z: -2.3 },
-    { x: -11.2, z: -2.4 },
-    { x: -10.0, z: -2.3 },
-    { x: -8.8, z: -2.6 },
-    // 5. Süd-Ufer des großen Hauptbeckens (vor dem Riesen)
-    { x: -7.6, z: -3.4 },
-    { x: -6.6, z: -4.2 },
-    { x: -5.3, z: -4.6 },
-    { x: -4.0, z: -4.3 },
-    { x: -2.8, z: -3.4 },
-    { x: -1.9, z: -2.3 },
-    { x: -1.2, z: -1.6 },
-  ];
-
-  // Platziere primäre Felsen und dichte Zwischensteine entlang der gesamten Uferlinie
-  shorelineCoords.forEach((pt, i) => {
-    const mat = lakeMaterials[i % lakeMaterials.length];
-    const baseRadius = 0.65 + ((i * 7) % 5) * 0.12;
-
-    // Großer Uferfels
-    const mainRock = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(baseRadius, 1),
-      mat
+  for (const pz of [-1.25, 1.25]) {
+    const wall = new THREE.Mesh(
+      new THREE.BoxGeometry(1.5, 0.55, 0.32),
+      canalWallMat
     );
-    mainRock.scale.set(
-      0.9 + ((i * 3) % 4) * 0.12,
-      0.75 + ((i * 5) % 3) * 0.15,
-      0.9 + ((i * 2) % 4) * 0.12
-    );
-    mainRock.position.set(pt.x, 0.14, pt.z);
-    mainRock.rotation.set((i * 0.4) % Math.PI, (i * 0.8) % Math.PI, (i * 0.3) % Math.PI);
-    mainRock.castShadow = true;
-    mainRock.receiveShadow = true;
-    mainRock.userData = { interactableType: 'weir' };
-    group.add(mainRock);
-    if (onMeshLoaded) onMeshLoaded(mainRock);
+    wall.position.set(-1.6, 0.30, pz);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    wall.userData = { interactableType: 'weir' };
+    group.add(wall);
+  }
 
-    // Dazwischen liegender Stein / Kiesel für einen lückenlos geschlossenen Steinrand
-    const nextPt = shorelineCoords[(i + 1) % shorelineCoords.length];
-    const midX = (pt.x + nextPt.x) * 0.5 + Math.sin(i * 1.7) * 0.18;
-    const midZ = (pt.z + nextPt.z) * 0.5 + Math.cos(i * 2.1) * 0.18;
-    const subMat = lakeMaterials[(i + 1) % lakeMaterials.length];
-    const subRock = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(0.38 + ((i * 4) % 4) * 0.08, 0),
-      subMat
-    );
-    subRock.scale.set(1.1, 0.7, 1.0);
-    subRock.position.set(midX, 0.08, midZ);
-    subRock.rotation.y = i * 1.1;
-    subRock.castShadow = true;
-    subRock.receiveShadow = true;
-    subRock.userData = { interactableType: 'weir' };
-    group.add(subRock);
-    if (onMeshLoaded) onMeshLoaded(subRock);
-  });
+  // Lade antiken Rundbrunnen (ancient circular well 3d model.glb)
+  loader.load(
+    '/assets/models/ancient circular well 3d model.glb',
+    (gltf) => {
+      const wellModel = gltf.scene;
+      // Modellmaße X [-0.5, 0.5], Z [-0.495, 0.495], Y [0, 0.351]
+      // Skalierung auf 8.4m Außendurchmesser und 1.54m Mauerhöhe
+      wellModel.scale.set(8.4, 4.4, 8.4);
+      wellModel.position.set(-5.4, 0.0, 0.0);
+      wellModel.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.userData = { interactableType: 'weir' };
+          if (mesh.material && 'roughness' in mesh.material) {
+            const stdMat = mesh.material as THREE.MeshStandardMaterial;
+            stdMat.roughness = 0.85;
+          }
+          if (onMeshLoaded) onMeshLoaded(mesh);
+        }
+      });
+      wellContainer.add(wellModel);
+    },
+    undefined,
+    (err) => {
+      console.warn('ancient circular well 3d model.glb konnte nicht geladen werden, Fallback aktiv:', err);
+      // Fallback-Steinring falls GLB verzögert lädt
+      const fallbackWell = new THREE.Mesh(
+        new THREE.CylinderGeometry(4.2, 4.3, 1.54, 32, 1, true),
+        canalWallMat
+      );
+      fallbackWell.position.set(-5.4, 0.77, 0.0);
+      wellContainer.add(fallbackWell);
+    }
+  );
 
-  // Lade markante Moosfelsen an 4 prominenten Eckpunkten des Riesenteiches
+  // Ergänzende Moosfelsen zur harmonischen Einbettung in die Berglandschaft
   loader.load(
     '/assets/models/mossy rock boulder 3d model.glb',
     (gltf) => {
       const baseBoulder = gltf.scene;
       const prominentSpots = [
-        { x: -5.8, z: 4.8, scale: 2.1, rotY: 0.5 },
-        { x: -18.7, z: 0.6, scale: 2.4, rotY: 2.1 },
-        { x: -5.4, z: -4.8, scale: 2.2, rotY: 3.7 },
-        { x: -12.0, z: -2.6, scale: 1.8, rotY: 1.4 },
+        { x: -9.8, z: 2.8, scale: 2.2, rotY: 0.6 },
+        { x: -9.6, z: -2.8, scale: 2.0, rotY: 2.4 },
+        { x: -6.8, z: 5.2, scale: 1.8, rotY: 1.2 },
+        { x: -6.5, z: -5.0, scale: 1.7, rotY: 3.8 },
       ];
       for (const spot of prominentSpots) {
         const boulder = baseBoulder.clone(true);
@@ -315,7 +252,7 @@ export function createWeirBridgeScene(
     },
     undefined,
     (err) => {
-      console.warn('mossy rock boulder konnte für Teichrand nicht geladen werden:', err);
+      console.warn('mossy rock boulder konnte für Brunneneinbettung nicht geladen werden:', err);
     }
   );
 
@@ -456,9 +393,10 @@ export function createWeirBridgeScene(
   );
 
   const update = (timeSeconds: number) => {
-    // Sanftes Pulsieren der Bergquelle
+    // Sanftes Pulsieren der Bergquelle im Rundbrunnen
     const wave = 0.5 + 0.5 * Math.sin(timeSeconds * 2.6);
     springRipple.scale.setScalar(0.92 + wave * 0.22);
+    springBubbler.scale.set(0.95 + wave * 0.1, 0.9 + wave * 0.2, 0.95 + wave * 0.1);
 
     // Lebendiges Fließen des Wehrüberlaufs
     const spillFlow = 0.5 + 0.5 * Math.sin(timeSeconds * 4.8);

@@ -77,12 +77,13 @@ export function createWildHunterNpc(
       const bounds = new THREE.Box3().setFromObject(model);
       model.position.set(0, -bounds.min.y, 0);
 
-      // Skelettanimation aktivieren (bevorzuge "standing_relax")
+      // Skelettanimation aktivieren (bevorzuge "fold_arms" für wachsamen Waldjäger/Zauberer)
       if (gltf.animations && gltf.animations.length > 0) {
         mixer = new THREE.AnimationMixer(model);
         const clip =
+          gltf.animations.find((a) => a.name.toLowerCase() === 'fold_arms') ||
+          gltf.animations.find((a) => a.name.toLowerCase().includes('fold')) ||
           gltf.animations.find((a) => a.name.toLowerCase() === 'standing_relax') ||
-          gltf.animations.find((a) => a.name.toLowerCase().includes('relax')) ||
           gltf.animations[0];
         animAction = mixer.clipAction(clip);
         animAction.setLoop(THREE.LoopRepeat, Infinity);
