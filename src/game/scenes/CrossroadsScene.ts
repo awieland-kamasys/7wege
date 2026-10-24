@@ -428,16 +428,17 @@ export class CrossroadsScene {
     this.scene.add(this.giantNpc.group);
 
     // Stilisierter Höhlenbaum (stylized tree 3d model.glb) am linken Ende des Baches
+    // Um 45 Grad gegen den Uhrzeigersinn gedreht (von 1.94 auf 1.15 rad) und am Boden ausgerichtet
     this.worldTree = createWorldTree({
       modelUrl: '/assets/models/stylized tree 3d model.glb',
       scale: 26.0,
-      rotationY: 1.94,
-      sinkDepth: 0.45,
+      rotationY: 1.15,
+      sinkDepth: 0.52,
       hasMound: true,
-      moundRadius: 4.8,
-      moundTopRadius: 2.8,
-      moundHeight: 0.65,
-      moundOffsetY: -0.2,
+      moundRadius: 6.2,
+      moundTopRadius: 3.5,
+      moundHeight: 0.40,
+      moundOffsetY: -0.12,
       hasAura: true,
       onMeshLoaded: (mesh) => {
         this.pickableObjects.push(mesh);
@@ -506,12 +507,12 @@ export class CrossroadsScene {
     });
     this.scene.add(this.giantRightWorldTree.group);
 
-    // Magischer Baum (magical tree 3d model.glb) im Riesenteich, durch dessen Umgebung der See fließt
+    // Magischer Baum (magical tree 3d model.glb) im Riesenteich rechts am Ende des Baches (um 20 % verkleinert)
     this.hollowTree = createWorldTree({
       modelUrl: '/assets/models/magical tree 3d model.glb',
-      scale: 26.0,
+      scale: 20.8,
       rotationY: 1.94,
-      sinkDepth: 0.38,
+      sinkDepth: 0.30,
       hasMound: false,
       hasAura: true,
       onMeshLoaded: (mesh) => {
