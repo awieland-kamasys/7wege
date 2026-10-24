@@ -434,7 +434,7 @@ export class CrossroadsScene {
       modelUrl: '/assets/models/stylized tree 3d model.glb',
       scale: 23.4,
       rotationY: 2.50,
-      sinkDepth: 0.85,
+      sinkDepth: 0.70,
       hasMound: false,
       hasAura: true,
       onMeshLoaded: (mesh) => {

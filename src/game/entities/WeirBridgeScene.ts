@@ -180,7 +180,7 @@ export function createWeirBridgeScene(
   group.add(springRipple);
 
   // ============================================================================
-  // 3. DER GEBIRGSBACH ALS TIEFE RINNE UNTER DER BRÜCKE INS TAL (lx = -1.4 bis +31.0)
+  // 3. DER GEBIRGSBACH UNTER DEM WEHR & DER BRÜCKE INS TAL (lx = -0.7 bis +31.1)
   // ============================================================================
   const dryBedMat = new THREE.MeshStandardMaterial({
     color: 0x484236,
@@ -195,26 +195,32 @@ export function createWeirBridgeScene(
     opacity: 0.82,
   });
 
-  // Massive steinerne Wehrmauer / Sockelschwelle an der Oberstromseite der Brücke
-  // Hält das hohe Stauseewasser zurück, sodass der Bach tief abgesenkt unter der Brücke fließt
-  const weirThreshold = new THREE.Mesh(
-    new THREE.BoxGeometry(0.55, 0.85, 2.75),
-    stoneMat
+  // Wehrüberlauf direkt unter dem Wehrschütz der Holzbrücke:
+  // Das aufgestaute Seewasser fließt nahtlos durch das Wehr in die tiefe Rinne des Baches
+  const weirSpillwayMat = new THREE.MeshStandardMaterial({
+    color: 0x8ce8ff,
+    emissive: 0x1f5c6e,
+    emissiveIntensity: 0.45,
+    roughness: 0.25,
+    transparent: true,
+    opacity: 0.85,
+  });
+  const weirSpillway = new THREE.Mesh(
+    new THREE.BoxGeometry(0.55, 0.48, 1.45),
+    weirSpillwayMat
   );
-  weirThreshold.position.set(-1.65, -0.32, 0);
-  weirThreshold.receiveShadow = true;
-  weirThreshold.castShadow = true;
-  group.add(weirThreshold);
+  weirSpillway.position.set(-0.68, -0.16, 0);
+  group.add(weirSpillway);
 
-  // Steiniges Bachbett am Grund der tiefen Rinne (reicht bis weit unter die Brücke)
-  const streamBed = new THREE.Mesh(new THREE.BoxGeometry(32.4, 0.04, 2.0), dryBedMat);
-  streamBed.position.set(14.8, -0.65, 0);
+  // Steiniges Bachbett in der tiefen Rinne (reicht nahtlos von unter der Brücke bis ins Tal)
+  const streamBed = new THREE.Mesh(new THREE.BoxGeometry(31.8, 0.05, 1.95), dryBedMat);
+  streamBed.position.set(15.2, -0.42, 0);
   streamBed.receiveShadow = true;
   group.add(streamBed);
 
-  // Schmales Rinnsal am Grund der tiefen Rinne (reicht von unter der Brücke bis weit ins Tal)
-  const streamWater = new THREE.Mesh(new THREE.BoxGeometry(32.4, 0.035, 1.15), streamWaterMat);
-  streamWater.position.set(14.8, -0.61, 0);
+  // Klarer Gebirgsbach in der tiefen Rinne (fließt direkt aus dem Wehr unter der Brücke durch das Tal)
+  const streamWater = new THREE.Mesh(new THREE.BoxGeometry(31.8, 0.04, 1.25), streamWaterMat);
+  streamWater.position.set(15.2, -0.38, 0);
   streamWater.userData = { interactableType: 'weir' };
   group.add(streamWater);
 
