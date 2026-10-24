@@ -25,19 +25,9 @@ export function createWeirBridgeScene(
     roughness: 0.88,
     flatShading: true,
   });
-  const darkStoneMat = new THREE.MeshStandardMaterial({
-    color: 0x434a4f,
-    roughness: 0.92,
-    flatShading: true,
-  });
   const woodPlankMat = new THREE.MeshStandardMaterial({
     color: 0x6e4e32,
     roughness: 0.85,
-  });
-  const mossMat = new THREE.MeshStandardMaterial({
-    color: 0x38663c,
-    roughness: 0.92,
-    flatShading: true,
   });
 
   // ============================================================================
@@ -45,16 +35,6 @@ export function createWeirBridgeScene(
   // ============================================================================
   const bridgeContainer = new THREE.Group();
   bridgeContainer.name = 'BridgeContainer';
-
-  // Steinerne Brückenauflager an den beiden Uferenden gegen Spalten im Gelände
-  for (const lz of [-3.15, 3.15]) {
-    const abutment = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.28, 0.6), stoneMat);
-    abutment.position.set(0, -0.06, lz);
-    abutment.receiveShadow = true;
-    abutment.castShadow = true;
-    abutment.userData = { interactableType: 'path', pathId: 3 };
-    bridgeContainer.add(abutment);
-  }
 
   // Schlanke temporäre Fallback-Brücke während des GLTF-Ladevorgangs
   const fallbackBridge = new THREE.Group();
@@ -199,54 +179,6 @@ export function createWeirBridgeScene(
   springRipple.position.set(-16.0, 0.455, -0.35);
   group.add(springRipple);
 
-  // Uferfelsen rund um den weiten Stausee und den Höhlenkanal
-  const reservoirRocks: readonly [number, number, number][] = [
-    [-2.8, -2.4, 0.65],
-    [-4.5, -3.6, 0.78],
-    [-7.2, -3.6, 0.82],
-    [-10.4, -3.2, 0.88],
-    [-13.8, -2.9, 0.92],
-    [-16.8, -2.5, 0.95],
-    [-18.5, 0.8, 0.92],
-    [-16.2, 2.2, 0.85],
-    [-13.0, 2.4, 0.80],
-    [-9.6, 3.2, 0.84],
-    [-6.6, 3.6, 0.76],
-    [-4.2, 3.5, 0.72],
-    [-2.6, 2.3, 0.62],
-  ];
-  for (const [rx, rz, rSize] of reservoirRocks) {
-    const rMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(rSize, 0), stoneMat);
-    rMesh.scale.set(1.2, 0.72, 1.05);
-    rMesh.position.set(rx, 0.35, rz);
-    rMesh.castShadow = true;
-    rMesh.receiveShadow = true;
-    group.add(rMesh);
-  }
-
-  // Die Heimat des Riesen direkt am Ufer des Stausees (Wurzel-/Felsunterstand mit Moosdach)
-  const giantHomeGroup = new THREE.Group();
-  giantHomeGroup.position.set(-5.2, 0.38, 3.1);
-
-  const shelterBackWall = new THREE.Mesh(new THREE.DodecahedronGeometry(1.45, 0), darkStoneMat);
-  shelterBackWall.scale.set(1.35, 1.15, 0.85);
-  shelterBackWall.position.set(0, 0.95, 0.55);
-  shelterBackWall.castShadow = true;
-  giantHomeGroup.add(shelterBackWall);
-
-  const shelterMossRoof = new THREE.Mesh(new THREE.ConeGeometry(1.85, 1.1, 7), mossMat);
-  shelterMossRoof.position.set(0, 1.85, 0.35);
-  shelterMossRoof.castShadow = true;
-  giantHomeGroup.add(shelterMossRoof);
-
-  // Große steinerne Sitzbank des Riesen direkt an der Wasserkante
-  const giantBench = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.45, 0.7), stoneMat);
-  giantBench.position.set(1.35, 0.22, -0.35);
-  giantBench.castShadow = true;
-  giantHomeGroup.add(giantBench);
-
-  group.add(giantHomeGroup);
-
   // ============================================================================
   // 3. DER GEBIRGSBACH UNTER DER BRÜCKE & WEITGEFÜHRTER FLUSSLAUF INS TAL (lx = -2.8 bis +28.5)
   // ============================================================================
@@ -275,22 +207,7 @@ export function createWeirBridgeScene(
   streamWater.userData = { interactableType: 'weir' };
   group.add(streamWater);
 
-  // Uferkiesel und Felsen entlang des gesamten Flusslaufs auf der Talseite (+lx bis 28.5m)
-  for (let i = 0; i < 38; i++) {
-    const lx = -0.4 + i * 0.76;
-    for (const side of [-1, 1]) {
-      const isBigRock = i % 5 === 0 && i > 0;
-      const pebble = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(isBigRock ? 0.48 : (0.22 + (i % 3) * 0.07), 0),
-        i % 2 === 0 ? stoneMat : darkStoneMat
-      );
-      pebble.scale.set(1.2, isBigRock ? 0.8 : 0.55, 1.0);
-      pebble.position.set(lx, isBigRock ? 0.18 : 0.08, side * (1.2 + (i % 3) * 0.18));
-      pebble.castShadow = true;
-      pebble.receiveShadow = true;
-      group.add(pebble);
-    }
-  }
+
 
   const update = (timeSeconds: number) => {
     // Sanftes Pulsieren der Bergquelle

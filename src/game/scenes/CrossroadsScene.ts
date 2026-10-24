@@ -428,11 +428,11 @@ export class CrossroadsScene {
     this.scene.add(this.giantNpc.group);
 
     // Stilisierter Höhlenbaum (stylized tree 3d model.glb) am linken Ende des Baches
-    // Um 45 Grad gegen den Uhrzeigersinn gedreht (von 1.94 auf 1.15 rad) und am Boden ausgerichtet
+    // Um 90 Grad in die Gegenrichtung gedreht (auf 2.72 rad) und am Boden ausgerichtet
     this.worldTree = createWorldTree({
       modelUrl: '/assets/models/stylized tree 3d model.glb',
       scale: 26.0,
-      rotationY: 1.15,
+      rotationY: 2.72,
       sinkDepth: 0.52,
       hasMound: true,
       moundRadius: 6.2,
@@ -1208,8 +1208,8 @@ export class CrossroadsScene {
     ) {
       return;
     }
-    // Komplette Freihaltung aller Nadelbäume im Bereich hinter und rechts vom Riesen
-    if (x >= 42.8 && z >= 12.0 && z <= 39.0) {
+    // Komplette Freihaltung aller Nadelbäume auf der gesamten Seite des Riesen und rund um den Teich
+    if (x >= 32.0 && z >= 8.0 && z <= 39.0) {
       return;
     }
     const snowy = isSnowy ?? (!isBurned && this.isSnowZone(x, z));
@@ -1861,21 +1861,7 @@ export class CrossroadsScene {
       }
     }
 
-    // Baumkulisse seitlich des Stausees (hinter dem Riesen komplett freigehalten für den Weltenbaum)
-    const cos = Math.cos(WEIR_BRIDGE_POS.rotationY);
-    const sin = Math.sin(WEIR_BRIDGE_POS.rotationY);
-    const weirSurroundingTrees: readonly [number, number, number, boolean][] = [
-      [-10.8, -3.5, 1.32, true],
-      [-11.2, 0.4, 1.24, false],
-      [-10.4, 4.2, 1.38, true],
-      [-7.5, 7.6, 1.28, false],
-    ];
-
-    for (const [lx, lz, scale, useDark] of weirSurroundingTrees) {
-      const wx = WEIR_BRIDGE_POS.x + lx * cos + lz * sin;
-      const wz = WEIR_BRIDGE_POS.z - lx * sin + lz * cos;
-      this.addTreeToForest(wx, wz, scale, useDark, false);
-    }
+    // Baumkulisse seitlich des Stausees: Auf der Seite des Riesen und am Teich komplett entfernt
   }
 
   /**
