@@ -10,6 +10,7 @@ export interface PathHerbsEntity {
   startDissolve: (onComplete?: () => void) => void;
   isDissolving: () => boolean;
   isRemoved: () => boolean;
+  loadModel?: () => void;
 }
 
 /**
@@ -17,7 +18,7 @@ export interface PathHerbsEntity {
  * Dichte, magisch wuchernde Fantasiepflanzen quer über die Wegbreite (ohne Geländer).
  * Lädt das 3D-Modell `/assets/models/fantasy plant 3d model.glb`.
  */
-export function createPathHerbs(): PathHerbsEntity {
+export function createPathHerbs(options?: { lazy?: boolean }): PathHerbsEntity {
   const group = new THREE.Group();
   group.name = 'Path6Herbs';
   group.position.set(PATH_6_HERBS_POS.x, 0, PATH_6_HERBS_POS.z);
@@ -47,59 +48,69 @@ export function createPathHerbs(): PathHerbsEntity {
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
   // Lade das 3D-Modell der Fantasiepflanze
-  const loader = new GLTFLoader();
-  loader.load(
-    '/assets/models/fantasy plant 3d model.glb',
-    (gltf) => {
-      // Platzhalter entfernen
-      const idx = pickableMeshes.indexOf(fallbackPlant);
-      if (idx !== -1) pickableMeshes.splice(idx, 1);
-      plantsGroup.remove(fallbackPlant);
-      disposeObject3D(fallbackPlant);
+  let isLoadedOrLoading = false;
+  const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
 
-      const basePlant = gltf.scene;
-      basePlant.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(basePlant);
-      const minY = bounds.min.y;
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/fantasy plant 3d model.glb',
+      (gltf) => {
+        // Platzhalter entfernen
+        const idx = pickableMeshes.indexOf(fallbackPlant);
+        if (idx !== -1) pickableMeshes.splice(idx, 1);
+        plantsGroup.remove(fallbackPlant);
+        disposeObject3D(fallbackPlant);
 
-      // 5 dichte Pflanzen-Instanzen quer über die gesamte Wegbreite arrangieren
-      const instances = [
-        { x: -1.25, z: -0.05, scale: 2.85, rotY: 0.4 },
-        { x: -0.65, z: 0.15, scale: 3.20, rotY: 1.8 },
-        { x: 0.00, z: -0.10, scale: 3.35, rotY: 3.2 },
-        { x: 0.65, z: 0.12, scale: 3.05, rotY: 4.6 },
-        { x: 1.25, z: -0.02, scale: 2.80, rotY: 5.8 },
-      ];
+        const basePlant = gltf.scene;
+        basePlant.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(basePlant);
+        const minY = bounds.min.y;
 
-      for (const inst of instances) {
-        const plantClone = basePlant.clone(true);
-        plantClone.scale.setScalar(inst.scale);
-        plantClone.position.set(inst.x, -minY * inst.scale, inst.z);
-        plantClone.rotation.y = inst.rotY;
+        // 5 dichte Pflanzen-Instanzen quer über die gesamte Wegbreite arrangieren
+        const instances = [
+          { x: -1.25, z: -0.05, scale: 2.85, rotY: 0.4 },
+          { x: -0.65, z: 0.15, scale: 3.20, rotY: 1.8 },
+          { x: 0.00, z: -0.10, scale: 3.35, rotY: 3.2 },
+          { x: 0.65, z: 0.12, scale: 3.05, rotY: 4.6 },
+          { x: 1.25, z: -0.02, scale: 2.80, rotY: 5.8 },
+        ];
 
-        plantClone.traverse((child) => {
-          const mesh = child as THREE.Mesh;
-          if (mesh.isMesh) {
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            mesh.userData = { interactableType: 'herbs' };
+        for (const inst of instances) {
+          const plantClone = basePlant.clone(true);
+          plantClone.scale.setScalar(inst.scale);
+          plantClone.position.set(inst.x, -minY * inst.scale, inst.z);
+          plantClone.rotation.y = inst.rotY;
 
-            if (mesh.material && 'roughness' in mesh.material) {
-              const mat = mesh.material as THREE.MeshStandardMaterial;
-              modelMaterials.push(mat);
+          plantClone.traverse((child) => {
+            const mesh = child as THREE.Mesh;
+            if (mesh.isMesh) {
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+              mesh.userData = { interactableType: 'herbs' };
+
+              if (mesh.material && 'roughness' in mesh.material) {
+                const mat = mesh.material as THREE.MeshStandardMaterial;
+                modelMaterials.push(mat);
+              }
+              pickableMeshes.push(mesh);
             }
-            pickableMeshes.push(mesh);
-          }
-        });
+          });
 
-        plantsGroup.add(plantClone);
+          plantsGroup.add(plantClone);
+        }
+      },
+      undefined,
+      (err) => {
+        console.warn('Fantasy-Pflanze konnte nicht geladen werden, nutze Platzhalter:', err);
       }
-    },
-    undefined,
-    (err) => {
-      console.warn('Fantasy-Pflanze konnte nicht geladen werden, nutze Platzhalter:', err);
-    }
-  );
+    );
+  };
+
+  if (!options?.lazy) {
+    startLoad();
+  }
 
   // Zustandsvariablen für Animation und Beseitigung
   let dissolving = false;
@@ -154,5 +165,6 @@ export function createPathHerbs(): PathHerbsEntity {
     },
     isDissolving: () => dissolving,
     isRemoved: () => removed,
+    loadModel: startLoad,
   };
 }

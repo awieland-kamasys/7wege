@@ -6,6 +6,7 @@ import { disposeObject3D } from '../utils/threeUtils';
 export interface HellChasmEntity {
   group: THREE.Group;
   update: (elapsedSeconds: number) => void;
+  loadModel?: () => void;
 }
 
 /**
@@ -101,7 +102,7 @@ function createFlameTexture(): THREE.CanvasTexture | null {
  */
 export function createHellChasm(
   onMeshLoaded?: (mesh: THREE.Object3D) => void,
-  options?: { loadDelayMs?: number }
+  options?: { loadDelayMs?: number; lazy?: boolean }
 ): HellChasmEntity {
   const group = new THREE.Group();
   group.name = 'HellChasm';
@@ -155,7 +156,11 @@ export function createHellChasm(
   let modelLavaMat: THREE.MeshStandardMaterial | null = null;
 
   // Lade das bereinigte 3D-Kratermodell mit verdoppelter Plateau- und Reliefhöhe (15.0)
+  let isLoadedOrLoading = false;
   const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
+
     const loader = new GLTFLoader();
     loader.load(
       '/assets/models/lava-crater.glb',
@@ -207,10 +212,12 @@ export function createHellChasm(
     );
   };
 
-  if (options?.loadDelayMs && options.loadDelayMs > 0) {
-    setTimeout(startLoad, options.loadDelayMs);
-  } else {
-    startLoad();
+  if (!options?.lazy) {
+    if (options?.loadDelayMs && options.loadDelayMs > 0) {
+      setTimeout(startLoad, options.loadDelayMs);
+    } else {
+      startLoad();
+    }
   }
 
   // Realistische lodernde Flammen mit Feuer-Canvas-Textur und Additive Blending
@@ -372,6 +379,7 @@ export function createHellChasm(
 
   return {
     group,
+    loadModel: startLoad,
     update: (elapsedSeconds: number) => {
       // Dynamisches Glüh-Pulsieren für flüssige Lava und spitze Lavasteine
       const lavaPulse = 0.88 + 0.24 * Math.sin(elapsedSeconds * 3.4) + 0.12 * Math.cos(elapsedSeconds * 5.2);

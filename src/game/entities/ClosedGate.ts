@@ -6,6 +6,7 @@ import { disposeObject3D } from '../utils/threeUtils';
 export interface ClosedGateEntity {
   group: THREE.Group;
   update: (timeSeconds: number, playerPos: { x: number; z: number }, highlighted: boolean) => void;
+  loadModel?: () => void;
 }
 
 /**
@@ -18,7 +19,8 @@ export interface ClosedGateEntity {
  * - Schwebender, leuchtender Hinweis-Kristall über dem Torbogen für die Interaktion
  */
 export function createClosedGate(
-  onMeshLoaded?: (mesh: THREE.Mesh) => void
+  onMeshLoaded?: (mesh: THREE.Mesh) => void,
+  options?: { lazy?: boolean }
 ): ClosedGateEntity {
   const group = new THREE.Group();
   group.name = 'ClosedGate';
@@ -72,56 +74,91 @@ export function createClosedGate(
   // Gespeicherte Materialien des GLB-Modells für den Hover-Leuchteffekt
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
-  // 2. GLB-Modell des prachtvollen Ziertores laden
-  const loader = new GLTFLoader();
-  loader.load(
-    '/assets/models/ornate gate 3d model.glb',
-    (gltf) => {
-      const model = gltf.scene;
+  // 2. GLB-Modell des prachtvollen Ziertores laden (On-Demand fähig)
+  let isLoadedOrLoading = false;
+  const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
 
-      // Gleichmäßiges Upscaling auf majestätische Portalgröße
-      model.scale.setScalar(gateScale);
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/ornate gate 3d model.glb',
+      (gltf) => {
+        const model = gltf.scene;
 
-      // Passgenau auf Bodenniveau (y = 0) aufsetzen
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, 0);
+        // Gleichmäßiges Upscaling auf majestätische Portalgröße
+        model.scale.setScalar(gateScale);
 
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'gate' };
+        // Passgenau auf Bodenniveau (y = 0) aufsetzen
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
 
-          const mats = Array.isArray(mesh.material)
-            ? mesh.material
-            : [mesh.material];
-          for (const mat of mats) {
-            if (mat && 'emissive' in mat) {
-              const stdMat = mat as THREE.MeshStandardMaterial;
-              stdMat.roughness = 0.65;
-              stdMat.metalness = 0.52;
-              modelMaterials.push(stdMat);
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'gate' };
+
+            const mats = Array.isArray(mesh.material)
+              ? mesh.material
+              : [mesh.material];
+            for (const mat of mats) {
+              if (mat && 'emissive' in mat) {
+                const stdMat = mat as THREE.MeshStandardMaterial;
+                stdMat.roughness = 0.65;
+                stdMat.metalness = 0.52;
+                modelMaterials.push(stdMat);
+              }
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
             }
           }
+        });
 
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
+        // Platzhalter entfernen und fertiges Tor-Modell einfügen
+        group.remove(fallbackGroup);
+        disposeObject3D(fallbackGroup);
+        group.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Ornate-Gate-GLB konnte nicht geladen werden, nutze Platzhalter:', err);
+      }
+    );
+
+    chestLoader.load(
+      '/assets/models/treasure chest 3d model.glb',
+      (gltf) => {
+        const chestModel = gltf.scene;
+        chestModel.scale.setScalar(1.35);
+        chestModel.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(chestModel);
+        chestModel.position.set(0, -bounds.min.y, 0);
+
+        chestModel.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'gate' };
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
+            }
           }
-        }
-      });
+        });
 
-      // Platzhalter entfernen und fertiges Tor-Modell einfügen
-      group.remove(fallbackGroup);
-      disposeObject3D(fallbackGroup);
-      group.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Ornate-Gate-GLB konnte nicht geladen werden, nutze Platzhalter:', err);
-    }
-  );
+        chestGroup.add(chestModel);
+      },
+      undefined,
+      (err) => {
+        console.warn('Schatztruhe hinter dem Tor konnte nicht geladen werden:', err);
+      }
+    );
+  };
 
   // 3. Geheimnisvolle Schatztruhe direkt hinter dem Tor
   const chestGroup = new THREE.Group();
@@ -130,36 +167,10 @@ export function createClosedGate(
   chestGroup.rotation.y = 0.12; // leicht malerisch gedreht
 
   const chestLoader = new GLTFLoader();
-  chestLoader.load(
-    '/assets/models/treasure chest 3d model.glb',
-    (gltf) => {
-      const chestModel = gltf.scene;
-      // Skalierung: 1.35x für eine stattliche, prächtige Schatztruhe (Breite ca. 1.35m, Höhe ca. 0.91m)
-      chestModel.scale.setScalar(1.35);
 
-      chestModel.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(chestModel);
-      chestModel.position.set(0, -bounds.min.y, 0);
-
-      chestModel.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'gate' };
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
-
-      chestGroup.add(chestModel);
-    },
-    undefined,
-    (err) => {
-      console.warn('Schatztruhe hinter dem Tor konnte nicht geladen werden:', err);
-    }
-  );
+  if (!options?.lazy) {
+    startLoad();
+  }
 
   // Geheimnisvoller, goldener Lichtschein über der Schatztruhe
   const chestLight = new THREE.PointLight(0xffd269, 1.15, 5.0);
@@ -251,5 +262,5 @@ export function createClosedGate(
     chestLight.intensity = 1.05 + 0.22 * Math.sin(timeSeconds * 2.2);
   };
 
-  return { group, update };
+  return { group, update, loadModel: startLoad };
 }

@@ -5,6 +5,7 @@ import { disposeObject3D } from '../utils/threeUtils';
 export interface HuntingLodgeEntity {
   group: THREE.Group;
   update: (elapsedSeconds: number) => void;
+  loadModel?: () => void;
 }
 
 /**
@@ -14,7 +15,10 @@ export interface HuntingLodgeEntity {
  * - Ein wunderbarer, eingezäunter Kräutergarten mit Beeten (Lavendel, Königs-Salbei, seltene Mondwurz, Thymian, Ringelblumen)
  * - Schauplatz für den Wilden Jäger und die Holzweibchen
  */
-export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): HuntingLodgeEntity {
+export function createHuntingLodge(
+  onMeshLoaded?: (mesh: THREE.Mesh) => void,
+  options?: { lazy?: boolean }
+): HuntingLodgeEntity {
   const group = new THREE.Group();
   group.name = 'HuntingLodgeCastle';
 
@@ -64,48 +68,6 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
   castleGroup.add(castleFallback);
   group.add(castleGroup);
 
-  loader.load(
-    '/assets/models/medieval castle 3d model neu.glb',
-    (gltf) => {
-      const model = gltf.scene;
-      // Stattliche Skalierung (Breite ca. 8.2m, Höhe ca. 5.6m, Tiefe ca. 6.2m)
-      model.scale.setScalar(8.2);
-      // Drehung: um 90 Grad gegen den Uhrzeigersinn gedreht (von Math.PI * 0.25 auf Math.PI * 0.75)
-      model.rotation.y = Math.PI * 0.75;
-
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, 0);
-
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'hunting_lodge' };
-
-          if (mesh.material && 'roughness' in mesh.material) {
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            mat.roughness = 0.88;
-            mat.metalness = 0.08;
-          }
-
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
-
-      castleGroup.remove(castleFallback);
-      disposeObject3D(castleFallback);
-      castleGroup.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Modell medieval castle 3d model neu.glb konnte nicht geladen werden:', err);
-    }
-  );
-
   // ==========================================
   // 2. PFLANZKÜBEL-SET (garden planter set 3d model.glb)
   // Platziert vor der Burgruine auf Weg 6
@@ -129,47 +91,6 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
   const moonwortLight = new THREE.PointLight(0x76ebe0, 0.85, 4.5);
   moonwortLight.position.set(0, 0.85, 0);
   gardenGroup.add(moonwortLight);
-
-  loader.load(
-    '/assets/models/garden planter set 3d model.glb',
-    (gltf) => {
-      const model = gltf.scene;
-      // Harmonische Skalierung (Breite ca. 4.0m, Tiefe ca. 3.35m, Höhe ca. 1.08m)
-      model.scale.setScalar(4.0);
-
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, 0);
-
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'herb_garden' };
-
-          if (mesh.material && 'roughness' in mesh.material) {
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            mat.roughness = 0.88;
-            mat.metalness = 0.05;
-          }
-
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
-
-      gardenGroup.remove(gardenFallback);
-      disposeObject3D(gardenFallback);
-      gardenGroup.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Modell garden planter set 3d model.glb konnte nicht geladen werden:', err);
-    }
-  );
-
   group.add(gardenGroup);
 
   // ==========================================
@@ -192,49 +113,139 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
     isoGardenFallback.add(bed);
   }
   isoGardenGroup.add(isoGardenFallback);
-
-  loader.load(
-    '/assets/models/garden beds 3d model.glb',
-    (gltf) => {
-      const model = gltf.scene;
-      // Skalierung passend für die Gartenflanke neben der Burg
-      model.scale.setScalar(3.6);
-      model.rotation.y = Math.PI;
-
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, 0);
-
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'herb_garden' };
-
-          if (mesh.material && 'roughness' in mesh.material) {
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            mat.roughness = 0.88;
-            mat.metalness = 0.05;
-          }
-
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
-
-      isoGardenGroup.remove(isoGardenFallback);
-      disposeObject3D(isoGardenFallback);
-      isoGardenGroup.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Modell garden beds 3d model.glb konnte nicht geladen werden:', err);
-    }
-  );
-
   group.add(isoGardenGroup);
+
+  // ==========================================
+  // ON-DEMAND MODELL-LADEN (Burg + Kübel + Beete)
+  // ==========================================
+  let isLoadedOrLoading = false;
+  const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
+
+    // 1. Mittelalterliche Burg
+    loader.load(
+      '/assets/models/medieval castle 3d model neu.glb',
+      (gltf) => {
+        const model = gltf.scene;
+        model.scale.setScalar(8.2);
+        model.rotation.y = Math.PI * 0.75;
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
+
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'hunting_lodge' };
+
+            if (mesh.material && 'roughness' in mesh.material) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              mat.roughness = 0.88;
+              mat.metalness = 0.08;
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
+            }
+          }
+        });
+
+        castleGroup.remove(castleFallback);
+        disposeObject3D(castleFallback);
+        castleGroup.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Modell medieval castle 3d model neu.glb konnte nicht geladen werden:', err);
+      }
+    );
+
+    // 2. Pflanzkübel-Set
+    loader.load(
+      '/assets/models/garden planter set 3d model.glb',
+      (gltf) => {
+        const model = gltf.scene;
+        model.scale.setScalar(4.0);
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
+
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'herb_garden' };
+
+            if (mesh.material && 'roughness' in mesh.material) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              mat.roughness = 0.88;
+              mat.metalness = 0.05;
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
+            }
+          }
+        });
+
+        gardenGroup.remove(gardenFallback);
+        disposeObject3D(gardenFallback);
+        gardenGroup.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Modell garden planter set 3d model.glb konnte nicht geladen werden:', err);
+      }
+    );
+
+    // 3. Gartenbeete
+    loader.load(
+      '/assets/models/garden beds 3d model.glb',
+      (gltf) => {
+        const model = gltf.scene;
+        model.scale.setScalar(3.6);
+        model.rotation.y = Math.PI;
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
+
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'herb_garden' };
+
+            if (mesh.material && 'roughness' in mesh.material) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              mat.roughness = 0.88;
+              mat.metalness = 0.05;
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
+            }
+          }
+        });
+
+        isoGardenGroup.remove(isoGardenFallback);
+        disposeObject3D(isoGardenFallback);
+        isoGardenGroup.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Modell garden beds 3d model.glb konnte nicht geladen werden:', err);
+      }
+    );
+  };
+
+  if (!options?.lazy) {
+    startLoad();
+  }
 
   // ==========================================
   // UPDATE LOOP (Mondwurz-Pulsieren über den Beeten)
@@ -243,5 +254,5 @@ export function createHuntingLodge(onMeshLoaded?: (mesh: THREE.Mesh) => void): H
     moonwortLight.intensity = 0.85 + Math.sin(elapsedSeconds * 2.5) * 0.35;
   };
 
-  return { group, update };
+  return { group, update, loadModel: startLoad };
 }

@@ -5,6 +5,7 @@ import { disposeObject3D } from '../utils/threeUtils';
 export interface GiantNpcEntity {
   group: THREE.Group;
   update: (timeSeconds: number, playerPos: { x: number; z: number }, highlighted: boolean) => void;
+  loadModel?: () => void;
 }
 
 /**
@@ -14,7 +15,8 @@ export interface GiantNpcEntity {
  * auf monumentale Riesengröße (~6,20 m Höhe).
  */
 export function createGiantNpc(
-  onMeshLoaded?: (mesh: THREE.Mesh) => void
+  onMeshLoaded?: (mesh: THREE.Mesh) => void,
+  options?: { lazy?: boolean }
 ): GiantNpcEntity {
   const group = new THREE.Group();
   group.name = 'GiantNpc';
@@ -57,55 +59,65 @@ export function createGiantNpc(
   let loadedModel: THREE.Group | null = null;
 
   // 3. Lade das GLB-Modell des stilisierten Riesen / Zwerges
-  const loader = new GLTFLoader();
-  loader.load(
-    '/assets/models/stylized dwarf 3d model.glb',
-    (gltf) => {
-      const model = gltf.scene;
-      loadedModel = model;
+  let isLoadedOrLoading = false;
+  const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
 
-      // Skalierung: Originalmodell ist 1.00m hoch -> 6.20x für wahrhaft gigantische Riesengestalt
-      model.scale.setScalar(6.20);
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/stylized dwarf 3d model.glb',
+      (gltf) => {
+        const model = gltf.scene;
+        loadedModel = model;
 
-      // Bounding-Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, 0);
+        // Skalierung: Originalmodell ist 1.00m hoch -> 6.20x für wahrhaft gigantische Riesengestalt
+        model.scale.setScalar(6.20);
 
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'giant' };
+        // Bounding-Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
 
-          const mats = Array.isArray(mesh.material)
-            ? mesh.material
-            : [mesh.material];
-          for (const mat of mats) {
-            if (mat && 'emissive' in mat) {
-              const stdMat = mat as THREE.MeshStandardMaterial;
-              stdMat.roughness = 0.85;
-              modelMaterials.push(stdMat);
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'giant' };
+
+            const mats = Array.isArray(mesh.material)
+              ? mesh.material
+              : [mesh.material];
+            for (const mat of mats) {
+              if (mat && 'emissive' in mat) {
+                const stdMat = mat as THREE.MeshStandardMaterial;
+                stdMat.roughness = 0.85;
+                modelMaterials.push(stdMat);
+              }
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
             }
           }
+        });
 
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
+        // Platzhalter entfernen und fertiges Riesen-Modell einfügen
+        group.remove(fallbackGroup);
+        disposeObject3D(fallbackGroup);
+        group.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Riesen-Modell konnte nicht geladen werden, verwende Platzhalter:', err);
+      }
+    );
+  };
 
-      // Platzhalter entfernen und fertiges Riesen-Modell einfügen
-      group.remove(fallbackGroup);
-      disposeObject3D(fallbackGroup);
-      group.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Riesen-Modell konnte nicht geladen werden, verwende Platzhalter:', err);
-    }
-  );
+  if (!options?.lazy) {
+    startLoad();
+  }
 
   // Blickt standardmäßig zur Brücke hin (-X / -Z)
   group.rotation.y = -2.1;
@@ -157,5 +169,5 @@ export function createGiantNpc(
     }
   };
 
-  return { group, update };
+  return { group, update, loadModel: startLoad };
 }

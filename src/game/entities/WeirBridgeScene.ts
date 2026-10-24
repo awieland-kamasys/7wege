@@ -5,6 +5,7 @@ import { disposeObject3D } from '../utils/threeUtils';
 export interface WeirBridgeEntity {
   group: THREE.Group;
   update: (timeSeconds: number) => void;
+  loadModel?: () => void;
 }
 
 /**
@@ -15,7 +16,8 @@ export interface WeirBridgeEntity {
  * - Bachlauf, der unter der Brücke hindurch (+X) als schmales Rinnsal Richtung dürres Tal fließt
  */
 export function createWeirBridgeScene(
-  onMeshLoaded?: (mesh: THREE.Mesh) => void
+  onMeshLoaded?: (mesh: THREE.Mesh) => void,
+  options?: { lazy?: boolean }
 ): WeirBridgeEntity {
   const group = new THREE.Group();
   group.name = 'WeirBridgeScene';
@@ -47,56 +49,6 @@ export function createWeirBridgeScene(
   fallbackBridge.add(fallbackDeck);
   bridgeContainer.add(fallbackBridge);
 
-  // Detailreiches 3D-Modell der Holzbrücke laden
-  const loader = new GLTFLoader();
-  loader.load(
-    '/assets/models/wooden bridge 3d model.glb',
-    (gltf) => {
-      const model = gltf.scene;
-
-      // Ausrichtung: Modell-Längsachse entlang der lokalen Z-Achse (Weg 3)
-      model.rotation.y = Math.PI / 2;
-
-      // Skalierung: Um die Hälfte vergrößert (Faktor 1.5)
-      // Spannweite 9.9m, Breite 4.14m und Höhe 9.6m
-      model.scale.set(9.9, 9.6, 8.7);
-
-      // Passgenaue Absenkung für bündigen Anschluss des Decks an die Wegoberfläche (-1.50m)
-      model.position.set(0, -0.72, 0);
-
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'path', pathId: 3 };
-
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          for (const mat of mats) {
-            if (mat && 'roughness' in mat) {
-              const stdMat = mat as THREE.MeshStandardMaterial;
-              stdMat.roughness = 0.82;
-              stdMat.metalness = 0.12;
-            }
-          }
-
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
-
-      // Fallback-Deck entfernen und detailliertes Modell einsetzen
-      bridgeContainer.remove(fallbackBridge);
-      disposeObject3D(fallbackBridge);
-      bridgeContainer.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('wooden bridge 3d model.glb konnte nicht geladen werden, nutze Fallback-Deck:', err);
-    }
-  );
-
   group.add(bridgeContainer);
 
   // ============================================================================
@@ -106,6 +58,14 @@ export function createWeirBridgeScene(
   const wellContainer = new THREE.Group();
   wellContainer.name = 'AncientWellContainer';
   group.add(wellContainer);
+
+  // Fallback-Steinring während des Modell-Ladens
+  const fallbackWell = new THREE.Mesh(
+    new THREE.CylinderGeometry(4.2, 4.3, 1.54, 32, 1, true),
+    stoneMat
+  );
+  fallbackWell.position.set(-5.4, 0.77, 0.0);
+  wellContainer.add(fallbackWell);
 
   const reservoirWaterMat = new THREE.MeshStandardMaterial({
     color: 0x1b6e84,
@@ -157,81 +117,9 @@ export function createWeirBridgeScene(
   springBubbler.position.set(-5.4, 0.55, 0);
   group.add(springBubbler);
 
-  // Lade antiken Rundbrunnen (ancient circular well 3d model.glb)
-  loader.load(
-    '/assets/models/ancient circular well 3d model.glb',
-    (gltf) => {
-      const wellModel = gltf.scene;
-      // Modellmaße X [-0.5, 0.5], Z [-0.495, 0.495], Y [0, 0.351]
-      // Skalierung auf 8.4m Außendurchmesser und 1.54m Mauerhöhe
-      wellModel.scale.set(8.4, 4.4, 8.4);
-      wellModel.position.set(-5.4, 0.0, 0.0);
-      wellModel.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'weir' };
-          if (mesh.material && 'roughness' in mesh.material) {
-            const stdMat = mesh.material as THREE.MeshStandardMaterial;
-            stdMat.roughness = 0.85;
-          }
-          if (onMeshLoaded) onMeshLoaded(mesh);
-        }
-      });
-      wellContainer.add(wellModel);
-    },
-    undefined,
-    (err) => {
-      console.warn('ancient circular well 3d model.glb konnte nicht geladen werden, Fallback aktiv:', err);
-      // Fallback-Steinring falls GLB verzögert lädt
-      const fallbackWell = new THREE.Mesh(
-        new THREE.CylinderGeometry(4.2, 4.3, 1.54, 32, 1, true),
-        stoneMat
-      );
-      fallbackWell.position.set(-5.4, 0.77, 0.0);
-      wellContainer.add(fallbackWell);
-    }
-  );
-
-  // Ergänzende Moosfelsen zur harmonischen Einbettung in die Berglandschaft
-  loader.load(
-    '/assets/models/mossy rock boulder 3d model.glb',
-    (gltf) => {
-      const baseBoulder = gltf.scene;
-      const prominentSpots = [
-        { x: -9.8, z: 2.8, scale: 2.2, rotY: 0.6 },
-        { x: -9.6, z: -2.8, scale: 2.0, rotY: 2.4 },
-        { x: -6.8, z: 5.2, scale: 1.8, rotY: 1.2 },
-        { x: -6.5, z: -5.0, scale: 1.7, rotY: 3.8 },
-      ];
-      for (const spot of prominentSpots) {
-        const boulder = baseBoulder.clone(true);
-        boulder.scale.setScalar(spot.scale);
-        boulder.position.set(spot.x, 0.02, spot.z);
-        boulder.rotation.y = spot.rotY;
-        boulder.traverse((child) => {
-          const m = child as THREE.Mesh;
-          if (m.isMesh) {
-            m.castShadow = true;
-            m.receiveShadow = true;
-            m.userData = { interactableType: 'weir' };
-            if (onMeshLoaded) onMeshLoaded(m);
-          }
-        });
-        group.add(boulder);
-      }
-    },
-    undefined,
-    (err) => {
-      console.warn('mossy rock boulder konnte für Brunneneinbettung nicht geladen werden:', err);
-    }
-  );
-
   // ============================================================================
   // 3. DER GEBIRGSBACH UNTER DEM WEHR & DER BRÜCKE INS TAL
   // Tiefe Schlucht mit über 1,07m lichter Höhe unter der Brücke für das durchströmende Wasser.
-  // Vollständig mit 3D-Modell /assets/models/rocky stream 3d model.glb gebaut.
   // ============================================================================
   const streamContainer = new THREE.Group();
   streamContainer.name = 'RockyStreamTalContainer';
@@ -296,41 +184,36 @@ export function createWeirBridgeScene(
   fallbackStream.position.set(15.2, -1.62, 0);
   streamContainer.add(fallbackStream);
 
-  // Lade rocky stream 3d model.glb und bilde den gesamten 32 Meter langen Bachlauf
-  // Auf y = -1.62m abgesenkt für garantierte 1,07m lichte Durchflusshöhe unter dem Brückendeck!
-  loader.load(
-    '/assets/models/rocky stream 3d model.glb',
-    (gltf) => {
-      streamContainer.remove(fallbackStream);
-      disposeObject3D(fallbackStream);
+  let isLoadedOrLoading = false;
+  const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
 
-      const baseStream = gltf.scene;
+    const loader = new GLTFLoader();
 
-      // 5 nahtlose Segmente von lx = -0.8 bis lx = 31.2
-      // Jedes Segment hat 6.4m Länge (scale.x = 6.4), 3.2m Breite (scale.z = 12.8)
-      // und ruht bündig auf dem Grund der tiefen Rinnensohle bei y = -1.62m.
-      const segmentXPositions = [2.4, 8.8, 15.2, 21.6, 28.0];
+    // 1. Detailreiches 3D-Modell der Holzbrücke laden
+    loader.load(
+      '/assets/models/wooden bridge 3d model.glb',
+      (gltf) => {
+        const model = gltf.scene;
+        model.rotation.y = Math.PI / 2;
+        model.scale.set(9.9, 9.6, 8.7);
+        model.position.set(0, -0.72, 0);
 
-      segmentXPositions.forEach((segX, idx) => {
-        const segClone = baseStream.clone(true);
-        segClone.scale.set(6.4, 2.4, 12.8);
-        segClone.position.set(segX, -1.62, 0);
-
-        // Abwechselnde Drehung für organische Felsformationen und fließende Wasserstruktur
-        if (idx % 2 === 1) {
-          segClone.rotation.y = Math.PI;
-        }
-
-        segClone.traverse((child) => {
+        model.traverse((child) => {
           const mesh = child as THREE.Mesh;
           if (mesh.isMesh) {
             mesh.castShadow = true;
             mesh.receiveShadow = true;
-            mesh.userData = { interactableType: 'weir' };
+            mesh.userData = { interactableType: 'path', pathId: 3 };
 
-            if (mesh.material && 'roughness' in mesh.material) {
-              const mat = mesh.material as THREE.MeshStandardMaterial;
-              mat.roughness = 0.35;
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            for (const mat of mats) {
+              if (mat && 'roughness' in mat) {
+                const stdMat = mat as THREE.MeshStandardMaterial;
+                stdMat.roughness = 0.82;
+                stdMat.metalness = 0.12;
+              }
             }
 
             if (onMeshLoaded) {
@@ -339,14 +222,130 @@ export function createWeirBridgeScene(
           }
         });
 
-        streamContainer.add(segClone);
-      });
-    },
-    undefined,
-    (err) => {
-      console.warn('rocky stream 3d model.glb konnte für Bachlauf nicht geladen werden:', err);
-    }
-  );
+        bridgeContainer.remove(fallbackBridge);
+        disposeObject3D(fallbackBridge);
+        bridgeContainer.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('wooden bridge 3d model.glb konnte nicht geladen werden, nutze Fallback-Deck:', err);
+      }
+    );
+
+    // 2. Lade antiken Rundbrunnen (ancient circular well 3d model.glb)
+    loader.load(
+      '/assets/models/ancient circular well 3d model.glb',
+      (gltf) => {
+        const wellModel = gltf.scene;
+        wellModel.scale.set(8.4, 4.4, 8.4);
+        wellModel.position.set(-5.4, 0.0, 0.0);
+        wellModel.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'weir' };
+            if (mesh.material && 'roughness' in mesh.material) {
+              const stdMat = mesh.material as THREE.MeshStandardMaterial;
+              stdMat.roughness = 0.85;
+            }
+            if (onMeshLoaded) onMeshLoaded(mesh);
+          }
+        });
+        wellContainer.remove(fallbackWell);
+        disposeObject3D(fallbackWell);
+        wellContainer.add(wellModel);
+      },
+      undefined,
+      (err) => {
+        console.warn('ancient circular well 3d model.glb konnte nicht geladen werden, Fallback aktiv:', err);
+      }
+    );
+
+    // 3. Ergänzende Moosfelsen zur harmonischen Einbettung in die Berglandschaft
+    loader.load(
+      '/assets/models/mossy rock boulder 3d model.glb',
+      (gltf) => {
+        const baseBoulder = gltf.scene;
+        const prominentSpots = [
+          { x: -9.8, z: 2.8, scale: 2.2, rotY: 0.6 },
+          { x: -9.6, z: -2.8, scale: 2.0, rotY: 2.4 },
+          { x: -6.8, z: 5.2, scale: 1.8, rotY: 1.2 },
+          { x: -6.5, z: -5.0, scale: 1.7, rotY: 3.8 },
+        ];
+        for (const spot of prominentSpots) {
+          const boulder = baseBoulder.clone(true);
+          boulder.scale.setScalar(spot.scale);
+          boulder.position.set(spot.x, 0.02, spot.z);
+          boulder.rotation.y = spot.rotY;
+          boulder.traverse((child) => {
+            const m = child as THREE.Mesh;
+            if (m.isMesh) {
+              m.castShadow = true;
+              m.receiveShadow = true;
+              m.userData = { interactableType: 'weir' };
+              if (onMeshLoaded) onMeshLoaded(m);
+            }
+          });
+          group.add(boulder);
+        }
+      },
+      undefined,
+      (err) => {
+        console.warn('mossy rock boulder konnte für Brunneneinbettung nicht geladen werden:', err);
+      }
+    );
+
+    // 4. Lade rocky stream 3d model.glb und bilde den gesamten 32 Meter langen Bachlauf
+    loader.load(
+      '/assets/models/rocky stream 3d model.glb',
+      (gltf) => {
+        streamContainer.remove(fallbackStream);
+        disposeObject3D(fallbackStream);
+
+        const baseStream = gltf.scene;
+        const segmentXPositions = [2.4, 8.8, 15.2, 21.6, 28.0];
+
+        segmentXPositions.forEach((segX, idx) => {
+          const segClone = baseStream.clone(true);
+          segClone.scale.set(6.4, 2.4, 12.8);
+          segClone.position.set(segX, -1.62, 0);
+
+          if (idx % 2 === 1) {
+            segClone.rotation.y = Math.PI;
+          }
+
+          segClone.traverse((child) => {
+            const mesh = child as THREE.Mesh;
+            if (mesh.isMesh) {
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+              mesh.userData = { interactableType: 'weir' };
+
+              if (mesh.material && 'roughness' in mesh.material) {
+                const mat = mesh.material as THREE.MeshStandardMaterial;
+                mat.roughness = 0.35;
+              }
+
+              if (onMeshLoaded) {
+                onMeshLoaded(mesh);
+              }
+            }
+          });
+
+          streamContainer.add(segClone);
+        });
+      },
+      undefined,
+      (err) => {
+        console.warn('rocky stream 3d model.glb konnte für Bachlauf nicht geladen werden:', err);
+      }
+    );
+  };
+
+  if (!options?.lazy) {
+    startLoad();
+  }
 
   const update = (timeSeconds: number) => {
     // Sanftes Pulsieren der Bergquelle im Rundbrunnen
@@ -359,5 +358,5 @@ export function createWeirBridgeScene(
     weirCascade.scale.y = 0.94 + spillFlow * 0.12;
   };
 
-  return { group, update };
+  return { group, update, loadModel: startLoad };
 }

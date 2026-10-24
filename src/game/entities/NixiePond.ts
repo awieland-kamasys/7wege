@@ -5,6 +5,7 @@ import { disposeObject3D } from '../utils/threeUtils';
 export interface NixiePondEntity {
   group: THREE.Group;
   update: (timeSeconds: number) => void;
+  loadModel?: () => void;
 }
 
 /**
@@ -17,7 +18,7 @@ export interface NixiePondEntity {
  */
 export function createNixiePond(
   onMeshLoaded?: (mesh: THREE.Object3D) => void,
-  options?: { loadDelayMs?: number }
+  options?: { loadDelayMs?: number; lazy?: boolean }
 ): NixiePondEntity {
   const group = new THREE.Group();
   group.name = 'NixiePond';
@@ -53,7 +54,11 @@ export function createNixiePond(
   group.add(fallback);
 
   // 2. Lade das 3D-Seerosenteich-Modell mit verdoppelter Höhe (6.8 statt 3.4)
+  let isLoadedOrLoading = false;
   const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
+
     const loader = new GLTFLoader();
     const pondUrl = '/assets/models/water-lily-pond.glb';
     loader.load(
@@ -103,10 +108,12 @@ export function createNixiePond(
     );
   };
 
-  if (options?.loadDelayMs && options.loadDelayMs > 0) {
-    setTimeout(startLoad, options.loadDelayMs);
-  } else {
-    startLoad();
+  if (!options?.lazy) {
+    if (options?.loadDelayMs && options.loadDelayMs > 0) {
+      setTimeout(startLoad, options.loadDelayMs);
+    } else {
+      startLoad();
+    }
   }
 
   // 3. Konzentrische Wasserwellen-Ringe um den Nixenstein und den versunkenen Schatz
@@ -189,5 +196,5 @@ export function createNixiePond(
     treasureLight.intensity = 1.1 + Math.sin(timeSeconds * 3.1) * 0.35;
   };
 
-  return { group, update };
+  return { group, update, loadModel: startLoad };
 }

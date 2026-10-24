@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 export interface LumberjackCampEntity {
   group: THREE.Group;
   update: (elapsedSeconds: number) => void;
+  loadModel?: () => void;
 }
 
 /**
@@ -14,7 +15,8 @@ export interface LumberjackCampEntity {
  * - Wärmendes, flackerndes Punktlicht im Zentrum des Lagers
  */
 export function createLumberjackCamp(
-  onMeshLoaded?: (object: THREE.Object3D) => void
+  onMeshLoaded?: (object: THREE.Object3D) => void,
+  options?: { lazy?: boolean }
 ): LumberjackCampEntity {
   const group = new THREE.Group();
   group.name = 'LumberjackCamp';
@@ -38,52 +40,62 @@ export function createLumberjackCamp(
   group.add(fireLight);
 
   // Lade das Camp-Scene-Modell
-  const loader = new GLTFLoader();
-  loader.load(
-    '/assets/models/wooden camp scene 3d model.glb',
-    (gltf) => {
-      const model = gltf.scene;
+  let isLoadedOrLoading = false;
+  const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
 
-      // 1. Gleichmäßiges Upscaling: Originalgröße ~1.0m wird auf 6.5m vergrößert
-      model.scale.setScalar(6.5);
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/wooden camp scene 3d model.glb',
+      (gltf) => {
+        const model = gltf.scene;
 
-      // 2. Passgenaue Ausrichtung am terrassierten Geländerelief:
-      // Ein minimales Einsinken um 4 cm verankert alle Baumstämme, Pfähle,
-      // Kisten und Zelte bündig und fest in der Grasnarbe des ansteigenden Bodens.
-      model.updateMatrixWorld(true);
-      model.position.set(0, -0.04, 0);
+        // 1. Gleichmäßiges Upscaling: Originalgröße ~1.0m wird auf 6.5m vergrößert
+        model.scale.setScalar(6.5);
 
-      // 3. Schatten und Interaktivität für alle Meshes
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'lumber_camp' };
+        // 2. Passgenaue Ausrichtung am terrassierten Geländerelief:
+        // Ein minimales Einsinken um 4 cm verankert alle Baumstämme, Pfähle,
+        // Kisten und Zelte bündig und fest in der Grasnarbe des ansteigenden Bodens.
+        model.updateMatrixWorld(true);
+        model.position.set(0, -0.04, 0);
 
-          if (mesh.material && 'roughness' in mesh.material) {
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            mat.roughness = 0.82;
-            mat.metalness = 0.08;
+        // 3. Schatten und Interaktivität für alle Meshes
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'lumber_camp' };
+
+            if (mesh.material && 'roughness' in mesh.material) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              mat.roughness = 0.82;
+              mat.metalness = 0.08;
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
+            }
           }
+        });
 
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
+        // Platzhalter entfernen und fertiges Modell einsetzen
+        group.remove(placeholder);
+        placeholder.geometry.dispose();
+        placeholderMat.dispose();
+        group.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Holzfällercamp-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
+      }
+    );
+  };
 
-      // Platzhalter entfernen und fertiges Modell einsetzen
-      group.remove(placeholder);
-      placeholder.geometry.dispose();
-      placeholderMat.dispose();
-      group.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Holzfällercamp-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
-    }
-  );
+  if (!options?.lazy) {
+    startLoad();
+  }
 
   const update = (elapsedSeconds: number): void => {
     // Sanftes, natürliches Flackern des Lagerfeuers
@@ -94,5 +106,5 @@ export function createLumberjackCamp(
     fireLight.intensity = 1.35 * flicker;
   };
 
-  return { group, update };
+  return { group, update, loadModel: startLoad };
 }

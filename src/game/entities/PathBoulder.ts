@@ -10,6 +10,7 @@ export interface PathBoulderEntity {
   startDissolve: (onComplete?: () => void) => void;
   isDissolving: () => boolean;
   isRemoved: () => boolean;
+  loadModel?: () => void;
 }
 
 /**
@@ -18,7 +19,7 @@ export interface PathBoulderEntity {
  * Der Felsen ist mit smaragdgrün glimmenden Kristalladern durchzogen,
  * die mit dem rotierenden Edelstein am Eingang von Weg 1 harmonieren.
  */
-export function createPathBoulder(): PathBoulderEntity {
+export function createPathBoulder(options?: { lazy?: boolean }): PathBoulderEntity {
   const group = new THREE.Group();
   group.name = 'Path1Boulder';
   group.position.set(PATH_1_BOULDER_POS.x, 0, PATH_1_BOULDER_POS.z);
@@ -72,48 +73,58 @@ export function createPathBoulder(): PathBoulderEntity {
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
   // Lade das detailreiche Moosfels-Modell
-  const loader = new GLTFLoader();
-  loader.load(
-    '/assets/models/mossy rock boulder 3d model.glb',
-    (gltf) => {
-      const model = gltf.scene;
+  let isLoadedOrLoading = false;
+  const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
 
-      // Skalierung: Felsbrocken auf 3.4m Breite vergrößern, um den Pfad massiv zu sperren
-      model.scale.setScalar(3.4);
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/mossy rock boulder 3d model.glb',
+      (gltf) => {
+        const model = gltf.scene;
 
-      // Bounding Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, 0);
+        // Skalierung: Felsbrocken auf 3.4m Breite vergrößern, um den Pfad massiv zu sperren
+        model.scale.setScalar(3.4);
 
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'boulder' };
+        // Bounding Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
 
-          if (mesh.material && 'roughness' in mesh.material) {
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            mat.roughness = 0.90;
-            modelMaterials.push(mat);
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'boulder' };
+
+            if (mesh.material && 'roughness' in mesh.material) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              mat.roughness = 0.90;
+              modelMaterials.push(mat);
+            }
+            pickableMeshes.push(mesh);
           }
-          pickableMeshes.push(mesh);
-        }
-      });
+        });
 
-      // Platzhalter entfernen
-      const idx = pickableMeshes.indexOf(fallbackMesh);
-      if (idx !== -1) pickableMeshes.splice(idx, 1);
-      group.remove(fallbackGroup);
-      disposeObject3D(fallbackGroup);
-      group.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Moosfelsen-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
-    }
-  );
+        // Platzhalter entfernen
+        const idx = pickableMeshes.indexOf(fallbackMesh);
+        if (idx !== -1) pickableMeshes.splice(idx, 1);
+        group.remove(fallbackGroup);
+        disposeObject3D(fallbackGroup);
+        group.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Moosfelsen-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
+      }
+    );
+  };
+
+  if (!options?.lazy) {
+    startLoad();
+  }
 
   let state: 'solid' | 'dissolving' | 'removed' = 'solid';
   let dissolveTimer = 0;
@@ -179,5 +190,6 @@ export function createPathBoulder(): PathBoulderEntity {
     startDissolve,
     isDissolving: () => state === 'dissolving',
     isRemoved: () => state === 'removed',
+    loadModel: startLoad,
   };
 }

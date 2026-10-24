@@ -10,6 +10,7 @@ export interface PathStreamEntity {
   startDissolve: (onComplete?: () => void) => void;
   isDissolving: () => boolean;
   isRemoved: () => boolean;
+  loadModel?: () => void;
 }
 
 /**
@@ -17,7 +18,7 @@ export interface PathStreamEntity {
  * Lädt das 3D-Modell `/assets/models/rocky stream 3d model.glb` in doppelter Größe (7.2m x 7.6m).
  * Vollständig ohne künstliches Licht für eine natürliche Gebirgsbach-Optik.
  */
-export function createPathStream(): PathStreamEntity {
+export function createPathStream(options?: { lazy?: boolean }): PathStreamEntity {
   const group = new THREE.Group();
   group.name = 'Path3Stream';
   group.position.set(PATH_3_STREAM_POS.x, 0, PATH_3_STREAM_POS.z);
@@ -44,47 +45,57 @@ export function createPathStream(): PathStreamEntity {
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
   // Lade das detaillierte Rocky-Stream-Modell
-  const loader = new GLTFLoader();
-  loader.load(
-    '/assets/models/rocky stream 3d model.glb',
-    (gltf) => {
-      const model = gltf.scene;
+  let isLoadedOrLoading = false;
+  const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
 
-      // Skalierung: Komplett verdoppelt auf 7.2m Breite und 7.6m Länge quer über den Weg
-      model.scale.set(7.2, 5.0, 7.6);
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/rocky stream 3d model.glb',
+      (gltf) => {
+        const model = gltf.scene;
 
-      // Bounding Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, 0);
+        // Skalierung: Komplett verdoppelt auf 7.2m Breite und 7.6m Länge quer über den Weg
+        model.scale.set(7.2, 5.0, 7.6);
 
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'stream' };
+        // Bounding Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
 
-          if (mesh.material && 'roughness' in mesh.material) {
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            modelMaterials.push(mat);
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'stream' };
+
+            if (mesh.material && 'roughness' in mesh.material) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              modelMaterials.push(mat);
+            }
+            pickableMeshes.push(mesh);
           }
-          pickableMeshes.push(mesh);
-        }
-      });
+        });
 
-      // Platzhalter entfernen
-      const idx = pickableMeshes.indexOf(fallbackMesh);
-      if (idx !== -1) pickableMeshes.splice(idx, 1);
-      group.remove(fallbackGroup);
-      disposeObject3D(fallbackGroup);
-      group.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Steiniger Bachlauf-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
-    }
-  );
+        // Platzhalter entfernen
+        const idx = pickableMeshes.indexOf(fallbackMesh);
+        if (idx !== -1) pickableMeshes.splice(idx, 1);
+        group.remove(fallbackGroup);
+        disposeObject3D(fallbackGroup);
+        group.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Steiniger Bachlauf-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
+      }
+    );
+  };
+
+  if (!options?.lazy) {
+    startLoad();
+  }
 
   let state: 'solid' | 'dissolving' | 'removed' = 'solid';
   let dissolveTimer = 0;
@@ -143,5 +154,6 @@ export function createPathStream(): PathStreamEntity {
     startDissolve,
     isDissolving: () => state === 'dissolving',
     isRemoved: () => state === 'removed',
+    loadModel: startLoad,
   };
 }

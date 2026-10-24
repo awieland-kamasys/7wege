@@ -10,6 +10,7 @@ export interface WoodWomanNpcEntity {
     isHighlighted: boolean,
     dtSeconds?: number
   ) => void;
+  loadModel?: () => void;
 }
 
 export interface WoodWomanNpcOptions {
@@ -17,6 +18,7 @@ export interface WoodWomanNpcOptions {
   defaultFacingTarget?: { x: number; z: number };
   loadDelayMs?: number;
   modelPath?: string;
+  lazy?: boolean;
 }
 
 /**
@@ -92,7 +94,11 @@ export function createWoodWomanNpc(
   let lastTimeSeconds = 0;
 
   // 3. Lade das GLB-Modell der Waldkreatur
+  let isLoadedOrLoading = false;
   const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
+
     const loader = new GLTFLoader();
     loader.load(
       modelPath,
@@ -164,10 +170,12 @@ export function createWoodWomanNpc(
     );
   };
 
-  if (loadDelayMs > 0) {
-    setTimeout(startLoad, loadDelayMs);
-  } else {
-    startLoad();
+  if (!options.lazy) {
+    if (loadDelayMs > 0) {
+      setTimeout(startLoad, loadDelayMs);
+    } else {
+      startLoad();
+    }
   }
 
   const update = (
@@ -217,5 +225,5 @@ export function createWoodWomanNpc(
     }
   };
 
-  return { group, update };
+  return { group, update, loadModel: startLoad };
 }

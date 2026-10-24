@@ -5,6 +5,7 @@ import { disposeObject3D } from '../utils/threeUtils';
 export interface NixieNpcEntity {
   group: THREE.Group;
   update: (timeSeconds: number, playerPos: { x: number; z: number }, highlighted: boolean) => void;
+  loadModel?: () => void;
 }
 
 /**
@@ -13,7 +14,7 @@ export interface NixieNpcEntity {
  */
 export function createNixieNpc(
   onMeshLoaded?: (mesh: THREE.Object3D) => void,
-  options?: { loadDelayMs?: number }
+  options?: { loadDelayMs?: number; lazy?: boolean }
 ): NixieNpcEntity {
   const group = new THREE.Group();
   group.name = 'NixieNpc';
@@ -65,7 +66,11 @@ export function createNixieNpc(
 
   const mermaidMaterials: THREE.MeshStandardMaterial[] = [];
 
+  let isLoadedOrLoading = false;
   const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
+
     const loader = new GLTFLoader();
     const mermaidUrl = '/assets/models/mermaid.glb';
 
@@ -113,10 +118,12 @@ export function createNixieNpc(
     );
   };
 
-  if (options?.loadDelayMs && options.loadDelayMs > 0) {
-    setTimeout(startLoad, options.loadDelayMs);
-  } else {
-    startLoad();
+  if (!options?.lazy) {
+    if (options?.loadDelayMs && options.loadDelayMs > 0) {
+      setTimeout(startLoad, options.loadDelayMs);
+    } else {
+      startLoad();
+    }
   }
 
   // Standardmäßig blickt die Nixe nach Westen (-X) zum Ufer von Weg 2
@@ -152,5 +159,5 @@ export function createNixieNpc(
     nixieLight.intensity = highlighted ? 1.6 : 1.1;
   };
 
-  return { group, update };
+  return { group, update, loadModel: startLoad };
 }

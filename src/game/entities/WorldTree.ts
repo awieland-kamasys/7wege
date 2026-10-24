@@ -5,6 +5,7 @@ import { disposeObject3D } from '../utils/threeUtils';
 export interface WorldTreeEntity {
   group: THREE.Group;
   update: (elapsedSeconds: number, dtSeconds?: number) => void;
+  loadModel?: () => void;
 }
 
 export interface WorldTreeOptions {
@@ -19,6 +20,7 @@ export interface WorldTreeOptions {
   moundOffsetY?: number;
   hasMound?: boolean;
   hasAura?: boolean;
+  lazy?: boolean;
 }
 
 /**
@@ -155,54 +157,64 @@ export function createWorldTree(
   }
 
   // 3. GLTF-Ladevorgang des detailreichen 3D-Fantasy-Baums
-  const loader = new GLTFLoader();
-  loader.load(
-    modelUrl,
-    (gltf) => {
-      const model = gltf.scene;
+  let isLoadedOrLoading = false;
+  const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
 
-      // Monumentale Weltenbaum-Skalierung mit Wurzelverankerung im Waldboden
-      model.scale.setScalar(treeScale);
+    const loader = new GLTFLoader();
+    loader.load(
+      modelUrl,
+      (gltf) => {
+        const model = gltf.scene;
 
-      // Aufsetzen und tiefe Verankerung im Waldboden,
-      // sodass die gewaltigen Wurzelstränge natürlich aus der Erde hervortreten
-      // und kein Teil der flachen Modellunterseite in der Luft schwebt
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y - sinkDepth, 0);
+        // Monumentale Weltenbaum-Skalierung mit Wurzelverankerung im Waldboden
+        model.scale.setScalar(treeScale);
 
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'world_tree' };
+        // Aufsetzen und tiefe Verankerung im Waldboden,
+        // sodass die gewaltigen Wurzelstränge natürlich aus der Erde hervortreten
+        // und kein Teil der flachen Modellunterseite in der Luft schwebt
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y - sinkDepth, 0);
 
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          for (const mat of mats) {
-            if (mat && 'roughness' in mat) {
-              const stdMat = mat as THREE.MeshStandardMaterial;
-              stdMat.roughness = 0.85;
-              stdMat.metalness = 0.08;
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'world_tree' };
+
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            for (const mat of mats) {
+              if (mat && 'roughness' in mat) {
+                const stdMat = mat as THREE.MeshStandardMaterial;
+                stdMat.roughness = 0.85;
+                stdMat.metalness = 0.08;
+              }
+            }
+
+            if (options?.onMeshLoaded) {
+              options.onMeshLoaded(mesh);
             }
           }
+        });
 
-          if (options?.onMeshLoaded) {
-            options.onMeshLoaded(mesh);
-          }
-        }
-      });
+        // Platzhalter entfernen und fertigen Weltenbaum einsetzen
+        group.remove(fallback);
+        disposeObject3D(fallback);
+        group.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn(`Baum-Modell ${modelUrl} konnte nicht geladen werden, nutze Fallback-Baum:`, err);
+      }
+    );
+  };
 
-      // Platzhalter entfernen und fertigen Weltenbaum einsetzen
-      group.remove(fallback);
-      disposeObject3D(fallback);
-      group.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn(`Baum-Modell ${modelUrl} konnte nicht geladen werden, nutze Fallback-Baum:`, err);
-    }
-  );
+  if (!options?.lazy) {
+    startLoad();
+  }
 
   const update = (elapsedSeconds: number, _dtSeconds?: number): void => {
     if (!hasAura) return;
@@ -222,5 +234,5 @@ export function createWorldTree(
     pos.needsUpdate = true;
   };
 
-  return { group, update };
+  return { group, update, loadModel: startLoad };
 }

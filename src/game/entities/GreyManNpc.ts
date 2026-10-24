@@ -10,6 +10,7 @@ export interface GreyManNpcEntity {
     highlighted: boolean,
     dtSeconds?: number
   ) => void;
+  loadModel?: () => void;
 }
 
 /**
@@ -17,7 +18,7 @@ export interface GreyManNpcEntity {
  * Lädt das stilisierte Zauberer-Modell (`/assets/models/stylized+wizard+3d+model.glb`)
  * mit lebendiger Idle- und Verbeugungs-Animation.
  */
-export function createGreyManNpc(options?: { loadDelayMs?: number }): GreyManNpcEntity {
+export function createGreyManNpc(options?: { loadDelayMs?: number; lazy?: boolean }): GreyManNpcEntity {
   const group = new THREE.Group();
   group.name = 'GreyManNpc';
 
@@ -51,7 +52,11 @@ export function createGreyManNpc(options?: { loadDelayMs?: number }): GreyManNpc
   let waitAction: THREE.AnimationAction | null = null;
   let bowAction: THREE.AnimationAction | null = null;
 
+  let isLoadedOrLoading = false;
   const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
+
     const loader = new GLTFLoader();
     loader.load(
       '/assets/models/stylized+wizard+3d+model.glb',
@@ -112,10 +117,12 @@ export function createGreyManNpc(options?: { loadDelayMs?: number }): GreyManNpc
     );
   };
 
-  if (options?.loadDelayMs && options.loadDelayMs > 0) {
-    setTimeout(startLoad, options.loadDelayMs);
-  } else {
-    startLoad();
+  if (!options?.lazy) {
+    if (options?.loadDelayMs && options.loadDelayMs > 0) {
+      setTimeout(startLoad, options.loadDelayMs);
+    } else {
+      startLoad();
+    }
   }
 
   const silverCrystalMat = new THREE.MeshStandardMaterial({
@@ -186,5 +193,5 @@ export function createGreyManNpc(options?: { loadDelayMs?: number }): GreyManNpc
     silverCrystalMat.emissive.setHex(highlighted ? 0x8bc4f2 : 0x4d7699);
   };
 
-  return { group, update };
+  return { group, update, loadModel: startLoad };
 }

@@ -10,6 +10,7 @@ export interface WildHunterNpcEntity {
     isHighlighted: boolean,
     dtSeconds?: number
   ) => void;
+  loadModel?: () => void;
 }
 
 /**
@@ -18,7 +19,8 @@ export interface WildHunterNpcEntity {
  * mit detailreicher Magiergewandung, Zaubererhut und flüssiger Skelettanimation ('standing_relax').
  */
 export function createWildHunterNpc(
-  onMeshLoaded?: (mesh: THREE.Mesh) => void
+  onMeshLoaded?: (mesh: THREE.Mesh) => void,
+  options?: { lazy?: boolean }
 ): WildHunterNpcEntity {
   const group = new THREE.Group();
   group.name = 'WildHunterNpc';
@@ -63,68 +65,78 @@ export function createWildHunterNpc(
   let lastElapsedSeconds = 0;
 
   // 3. Lade das GLB-Modell des Zauberers/Jägers (fantasy+wizard+3d+model.glb)
-  const loader = new GLTFLoader();
-  loader.load(
-    '/assets/models/fantasy+wizard+3d+model.glb',
-    (gltf) => {
-      const model = gltf.scene;
+  let isLoadedOrLoading = false;
+  const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
 
-      // Skalierung: Originalmodell ist 1.00m hoch -> 2.05x für hünenhafte Statur
-      model.scale.setScalar(2.05);
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/fantasy+wizard+3d+model.glb',
+      (gltf) => {
+        const model = gltf.scene;
 
-      // Bounding-Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, 0);
+        // Skalierung: Originalmodell ist 1.00m hoch -> 2.05x für hünenhafte Statur
+        model.scale.setScalar(2.05);
 
-      // Skelettanimation aktivieren (bevorzuge "fold_arms" für wachsamen Waldjäger/Zauberer)
-      if (gltf.animations && gltf.animations.length > 0) {
-        mixer = new THREE.AnimationMixer(model);
-        const clip =
-          gltf.animations.find((a) => a.name.toLowerCase() === 'fold_arms') ||
-          gltf.animations.find((a) => a.name.toLowerCase().includes('fold')) ||
-          gltf.animations.find((a) => a.name.toLowerCase() === 'standing_relax') ||
-          gltf.animations[0];
-        animAction = mixer.clipAction(clip);
-        animAction.setLoop(THREE.LoopRepeat, Infinity);
-        animAction.clampWhenFinished = false;
-        animAction.play();
-      }
+        // Bounding-Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
 
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'wild_hunter' };
+        // Skelettanimation aktivieren (bevorzuge "fold_arms" für wachsamen Waldjäger/Zauberer)
+        if (gltf.animations && gltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(model);
+          const clip =
+            gltf.animations.find((a) => a.name.toLowerCase() === 'fold_arms') ||
+            gltf.animations.find((a) => a.name.toLowerCase().includes('fold')) ||
+            gltf.animations.find((a) => a.name.toLowerCase() === 'standing_relax') ||
+            gltf.animations[0];
+          animAction = mixer.clipAction(clip);
+          animAction.setLoop(THREE.LoopRepeat, Infinity);
+          animAction.clampWhenFinished = false;
+          animAction.play();
+        }
 
-          const mats = Array.isArray(mesh.material)
-            ? mesh.material
-            : [mesh.material];
-          for (const mat of mats) {
-            if (mat && 'emissive' in mat) {
-              const stdMat = mat as THREE.MeshStandardMaterial;
-              stdMat.roughness = 0.82;
-              modelMaterials.push(stdMat);
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'wild_hunter' };
+
+            const mats = Array.isArray(mesh.material)
+              ? mesh.material
+              : [mesh.material];
+            for (const mat of mats) {
+              if (mat && 'emissive' in mat) {
+                const stdMat = mat as THREE.MeshStandardMaterial;
+                stdMat.roughness = 0.82;
+                modelMaterials.push(stdMat);
+              }
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
             }
           }
+        });
 
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
+        // Platzhalter entfernen und echtes Modell hinzufügen
+        group.remove(fallbackGroup);
+        disposeObject3D(fallbackGroup);
+        group.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Wilde Jäger 3D-Modell fantasy+wizard+3d+model.glb konnte nicht geladen werden, verwende Platzhalter:', err);
+      }
+    );
+  };
 
-      // Platzhalter entfernen und echtes Modell hinzufügen
-      group.remove(fallbackGroup);
-      disposeObject3D(fallbackGroup);
-      group.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Wilde Jäger 3D-Modell fantasy+wizard+3d+model.glb konnte nicht geladen werden, verwende Platzhalter:', err);
-    }
-  );
+  if (!options?.lazy) {
+    startLoad();
+  }
 
   const update = (
     elapsedSeconds: number,
@@ -176,5 +188,5 @@ export function createWildHunterNpc(
     }
   };
 
-  return { group, update };
+  return { group, update, loadModel: startLoad };
 }

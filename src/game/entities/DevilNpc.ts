@@ -11,6 +11,7 @@ export interface DevilNpcEntity {
     isHoveredOrActive: boolean,
     dtSeconds?: number
   ) => void;
+  loadModel?: () => void;
 }
 
 /**
@@ -23,7 +24,7 @@ export interface DevilNpcEntity {
  */
 export function createDevilNpc(
   onMeshLoaded?: (object: THREE.Object3D) => void,
-  options?: { loadDelayMs?: number }
+  options?: { loadDelayMs?: number; lazy?: boolean }
 ): DevilNpcEntity {
   const group = new THREE.Group();
   group.name = 'DevilNpc';
@@ -161,7 +162,11 @@ export function createDevilNpc(
   }
 
   // Lade das Dämonen-Modell low-poly+demon+3d+model.glb
+  let isLoadedOrLoading = false;
   const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
+
     const modelUrl = '/assets/models/low-poly+demon+3d+model.glb';
     const loader = new GLTFLoader();
     loader.load(
@@ -226,14 +231,17 @@ export function createDevilNpc(
     );
   };
 
-  if (options?.loadDelayMs && options.loadDelayMs > 0) {
-    setTimeout(startLoad, options.loadDelayMs);
-  } else {
-    startLoad();
+  if (!options?.lazy) {
+    if (options?.loadDelayMs && options.loadDelayMs > 0) {
+      setTimeout(startLoad, options.loadDelayMs);
+    } else {
+      startLoad();
+    }
   }
 
   return {
     group,
+    loadModel: startLoad,
     update: (
       elapsedSeconds: number,
       playerPos: Readonly<Vector2D>,

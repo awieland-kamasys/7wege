@@ -19,4 +19,4 @@ Der gesamte Projektordner ist zugleich der Obsidian-Vault. Die Projektnotizen li
 
 ## Stand
 
-Das Grundgerüst steht. Spielziel, Kernschleife, Gestaltung und Veröffentlichung sind noch offen.
+Alle 7 Wege, Schauplätze, Wegsperren, NPCs, Dialoge und Audio-Systeme sind implementiert. Die 3D-Welt nutzt schauplatz-basiertes Lazy Loading und Asset-Streaming für einen extrem schnellen initialen Seitenstart (~16 MB).

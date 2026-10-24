@@ -50,7 +50,7 @@ import { createHellChasm, HellChasmEntity } from '../entities/HellChasm';
 import { createHuntingLodge, HuntingLodgeEntity } from '../entities/HuntingLodge';
 import { createLogCabin } from '../entities/LogCabin';
 import { createLumberjackCamp, LumberjackCampEntity } from '../entities/LumberjackCamp';
-import { createMountainCave } from '../entities/MountainCave';
+import { createMountainCave, MountainCaveEntity } from '../entities/MountainCave';
 import { createNixieNpc, NixieNpcEntity } from '../entities/NixieNpc';
 import { createNixiePond, NixiePondEntity } from '../entities/NixiePond';
 import { createSignpost, SignpostEntity } from '../entities/Signpost';
@@ -155,6 +155,7 @@ export class CrossroadsScene {
   private readonly targetMarker: THREE.Mesh;
   private readonly signpost: SignpostEntity;
   private readonly guideNpc: GuideNpcEntity;
+  private readonly mountainCave: MountainCaveEntity;
   private readonly greyManNpc: GreyManNpcEntity;
   private readonly nixiePond: NixiePondEntity;
   private readonly nixieNpc: NixieNpcEntity;
@@ -237,6 +238,10 @@ export class CrossroadsScene {
   private readonly tempTargetCamPos = new THREE.Vector3();
   private cachedCanvasRect: DOMRect | null = null;
   private readonly treeInstances: ForestTreeInstance[] = [];
+
+  // Schauplatz-Streaming / On-Demand Asset-Laden
+  private readonly loadedPaths = new Set<number>();
+  private backgroundStreamTimer: number | null = null;
 
   // Live-Performancemessung
   private currentFps = 60;
@@ -329,26 +334,25 @@ export class CrossroadsScene {
     this.scene.add(this.guideNpc.group);
 
 
-    // Bergmassiv mit Minenstollen am Ende des 1. Weges
-    const mountainCave = createMountainCave((mesh) => {
+    // Bergmassiv mit Minenstollen am Ende des 1. Weges (Lazy On-Demand Streaming)
+    this.mountainCave = createMountainCave((mesh) => {
       this.pickableObjects.push(mesh);
-    });
-    mountainCave.position.set(
+    }, { lazy: true });
+    this.mountainCave.position.set(
       CAVE_ENTRANCE_POS.x,
       getTerrainHeight(CAVE_ENTRANCE_POS.x, CAVE_ENTRANCE_POS.z),
       CAVE_ENTRANCE_POS.z
     );
-    mountainCave.rotation.y = CAVE_ENTRANCE_POS.rotationY;
-    mountainCave.traverse((child) => {
+    this.mountainCave.rotation.y = CAVE_ENTRANCE_POS.rotationY;
+    this.mountainCave.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         this.pickableObjects.push(child);
       }
     });
-    this.scene.add(mountainCave);
+    this.scene.add(this.mountainCave);
 
-    // Das Graumännchen (NPC) direkt vor dem Höhleneingang am Ende des 1. Weges
-    // Gestaffeltes Laden: Modell lädt nach 400ms, um den Startframe nicht zu blockieren
-    this.greyManNpc = createGreyManNpc({ loadDelayMs: 400 });
+    // Das Graumännchen (NPC) direkt vor dem Höhleneingang am Ende des 1. Weges (Lazy Streaming)
+    this.greyManNpc = createGreyManNpc({ lazy: true });
     this.greyManNpc.group.position.set(
       GREY_MAN_NPC_POS.x,
       getTerrainHeight(GREY_MAN_NPC_POS.x, GREY_MAN_NPC_POS.z),
@@ -361,9 +365,8 @@ export class CrossroadsScene {
     });
     this.scene.add(this.greyManNpc.group);
 
-    // Waldteich mit Nixenstein und verfluchtem Schatz am Ende des 2. Weges
-    // Gestaffeltes Laden: Teichmodell lädt nach 750ms
-    this.nixiePond = createNixiePond(undefined, { loadDelayMs: 750 });
+    // Waldteich mit Nixenstein und verfluchtem Schatz am Ende des 2. Weges (Lazy Streaming)
+    this.nixiePond = createNixiePond(undefined, { lazy: true });
     this.nixiePond.group.position.set(
       POND_CENTER_POS.x,
       getTerrainHeight(POND_CENTER_POS.x, POND_CENTER_POS.z),
@@ -376,13 +379,12 @@ export class CrossroadsScene {
     });
     this.scene.add(this.nixiePond.group);
 
-    // Die Nixe / Meerjungfrau (NPC) im Waldteich am Ende des 2. Weges
-    // Gestaffeltes Laden: Meerjungfrauenmodell lädt nach 1100ms
+    // Die Nixe / Meerjungfrau (NPC) im Waldteich am Ende des 2. Weges (Lazy Streaming)
     this.nixieNpc = createNixieNpc(
       (mesh) => {
         this.pickableObjects.push(mesh);
       },
-      { loadDelayMs: 1100 }
+      { lazy: true }
     );
     this.nixieNpc.group.position.set(
       NIXIE_NPC_POS.x,
@@ -396,10 +398,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.nixieNpc.group);
 
-    // Brücke mit geschlossenem Wehr, kleinem Stausee und Bachlauf auf dem 3. Weg (wooden bridge 3d model.glb)
+    // Brücke mit geschlossenem Wehr, kleinem Stausee und Bachlauf auf dem 3. Weg (Lazy Streaming)
     this.weirBridge = createWeirBridgeScene((mesh) => {
       this.pickableObjects.push(mesh);
-    });
+    }, { lazy: true });
     this.weirBridge.group.position.set(
       WEIR_BRIDGE_POS.x,
       -1.50,
@@ -413,10 +415,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.weirBridge.group);
 
-    // Der Riese (NPC) am Ufer hinter der Wehrbrücke am Ende des 3. Weges
+    // Der Riese (NPC) am Ufer hinter der Wehrbrücke am Ende des 3. Weges (Lazy Streaming)
     this.giantNpc = createGiantNpc((mesh) => {
       this.pickableObjects.push(mesh);
-    });
+    }, { lazy: true });
     this.giantNpc.group.position.set(
       GIANT_NPC_POS.x,
       getTerrainHeight(GIANT_NPC_POS.x, GIANT_NPC_POS.z),
@@ -429,9 +431,7 @@ export class CrossroadsScene {
     });
     this.scene.add(this.giantNpc.group);
 
-    // Stilisierter Höhlenbaum (stylized tree 3d model.glb) am Ende der tiefen Bachrinne
-    // Um 10 % verkleinert (scale 23.4), Wurzelhöhle auf 0.04° exakt parallel zum Bachlauf ausgerichtet (rotationY 2.24).
-    // Auf dem Rinnengrund verankert (sinkDepth 0.85), sodass der Gebirgsbach exakt in der Mitte der Wurzelhöhle hindurchfließt.
+    // Stilisierter Höhlenbaum (stylized tree 3d model.glb) am Ende der tiefen Bachrinne (Lazy Streaming)
     this.worldTree = createWorldTree({
       modelUrl: '/assets/models/stylized tree 3d model.glb',
       scale: 23.4,
@@ -439,6 +439,7 @@ export class CrossroadsScene {
       sinkDepth: 0.85,
       hasMound: false,
       hasAura: true,
+      lazy: true,
       onMeshLoaded: (mesh) => {
         this.pickableObjects.push(mesh);
       },
@@ -455,7 +456,7 @@ export class CrossroadsScene {
     });
     this.scene.add(this.worldTree.group);
 
-    // Zweiter uralter, riesiger Weltenbaum (fantasy tree 3d model.glb) direkt hinter dem Riesen
+    // Zweiter uralter, riesiger Weltenbaum (fantasy tree 3d model.glb) direkt hinter dem Riesen (Lazy Streaming)
     this.giantWorldTree = createWorldTree({
       onMeshLoaded: (mesh) => {
         this.pickableObjects.push(mesh);
@@ -466,6 +467,7 @@ export class CrossroadsScene {
       moundTopRadius: 2.8,
       moundHeight: 0.75,
       moundOffsetY: -0.25,
+      lazy: true,
     });
     this.giantWorldTree.group.position.set(
       GIANT_WORLD_TREE_POS.x,
@@ -479,7 +481,7 @@ export class CrossroadsScene {
     });
     this.scene.add(this.giantWorldTree.group);
 
-    // Dritter uralter, riesiger Weltenbaum (fantasy tree 3d model.glb) rechts neben dem Baum hinter dem Riesen
+    // Dritter uralter, riesiger Weltenbaum (fantasy tree 3d model.glb) rechts neben dem Baum hinter dem Riesen (Lazy Streaming)
     this.giantRightWorldTree = createWorldTree({
       modelUrl: '/assets/models/fantasy tree 3d model.glb',
       scale: 24.0,
@@ -490,6 +492,7 @@ export class CrossroadsScene {
       moundHeight: 0.75,
       moundOffsetY: -0.25,
       hasAura: true,
+      lazy: true,
       onMeshLoaded: (mesh) => {
         this.pickableObjects.push(mesh);
       },
@@ -506,7 +509,7 @@ export class CrossroadsScene {
     });
     this.scene.add(this.giantRightWorldTree.group);
 
-    // Magischer Baum (magical tree 3d model.glb) im Riesenteich rechts am Ende des Baches (um 20 % verkleinert)
+    // Magischer Baum (magical tree 3d model.glb) im Riesenteich rechts am Ende des Baches (Lazy Streaming)
     this.hollowTree = createWorldTree({
       modelUrl: '/assets/models/magical tree 3d model.glb',
       scale: 20.8,
@@ -514,6 +517,7 @@ export class CrossroadsScene {
       sinkDepth: 0.30,
       hasMound: false,
       hasAura: true,
+      lazy: true,
       onMeshLoaded: (mesh) => {
         this.pickableObjects.push(mesh);
       },
@@ -530,10 +534,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.hollowTree.group);
 
-    // Lagerfeuerszene (Campfire Scene) auf der Waldlichtung am Ende des 4. Weges
+    // Lagerfeuerszene (Campfire Scene) auf der Waldlichtung am Ende des 4. Weges (Lazy Streaming)
     this.lumberCamp = createLumberjackCamp((mesh) => {
       this.pickableObjects.push(mesh);
-    });
+    }, { lazy: true });
     this.lumberCamp.group.position.set(
       LUMBER_CAMP_POS.x,
       0.80,
@@ -581,7 +585,7 @@ export class CrossroadsScene {
     const lumberStumpsGroup = buildMergedTreeStumps(lumberStumpInstances);
     this.scene.add(lumberStumpsGroup);
 
-    // Das Holzweibchen (NPC) im Holzfällerlager am Ende des 4. Weges (3D-Walddruidin kurz vor der Insel)
+    // Das Holzweibchen (NPC) im Holzfällerlager am Ende des 4. Weges (3D-Walddruidin, Lazy Streaming)
     this.woodWomanNpc = createWoodWomanNpc(
       (mesh) => {
         this.pickableObjects.push(mesh);
@@ -589,6 +593,7 @@ export class CrossroadsScene {
       {
         interactableType: 'wood_woman',
         defaultFacingTarget: { x: 15.2, z: 35.0 },
+        lazy: true,
       }
     );
     this.woodWomanNpc.group.position.set(
@@ -603,13 +608,12 @@ export class CrossroadsScene {
     });
     this.scene.add(this.woodWomanNpc.group);
 
-    // Der feurige Höllenschlund am Ende des 5. Weges (3D-Lavakrater)
-    // Gestaffeltes Laden: Lavakratermodell lädt nach 1500ms
+    // Der feurige Höllenschlund am Ende des 5. Weges (3D-Lavakrater, Lazy Streaming)
     this.hellChasm = createHellChasm(
       (mesh) => {
         this.pickableObjects.push(mesh);
       },
-      { loadDelayMs: 1500 }
+      { lazy: true }
     );
     this.hellChasm.group.position.set(
       HELL_CHASM_POS.x,
@@ -623,13 +627,12 @@ export class CrossroadsScene {
     });
     this.scene.add(this.hellChasm.group);
 
-    // Der Teufel / Dämonenkrieger (NPC) inmitten des Höllenschlundes am Ende des 5. Weges
-    // Gestaffeltes Laden: Teufelmodell lädt nach 1900ms
+    // Der Teufel / Dämonenkrieger (NPC) inmitten des Höllenschlundes am Ende des 5. Weges (Lazy Streaming)
     this.devilNpc = createDevilNpc(
       (mesh) => {
         this.pickableObjects.push(mesh);
       },
-      { loadDelayMs: 1900 }
+      { lazy: true }
     );
     this.devilNpc.group.position.set(
       DEVIL_NPC_POS.x,
@@ -643,10 +646,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.devilNpc.group);
 
-    // Steinruinen (verfallener Steinturm & Mauerruine) mit Kräutergarten am Ende des 6. Weges
+    // Steinruinen (verfallener Steinturm & Mauerruine) mit Kräutergarten am Ende des 6. Weges (Lazy Streaming)
     this.huntingLodge = createHuntingLodge((mesh) => {
       this.pickableObjects.push(mesh);
-    });
+    }, { lazy: true });
     this.huntingLodge.group.position.set(
       HUNTING_LODGE_POS.x,
       getTerrainHeight(HUNTING_LODGE_POS.x, HUNTING_LODGE_POS.z),
@@ -659,10 +662,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.huntingLodge.group);
 
-    // Der Wilde Jäger (NPC) an der Jagdhütte (3D-Waldläufer-Modell)
+    // Der Wilde Jäger (NPC) an der Jagdhütte (3D-Waldläufer-Modell, Lazy Streaming)
     this.wildHunterNpc = createWildHunterNpc((mesh) => {
       this.pickableObjects.push(mesh);
-    });
+    }, { lazy: true });
     this.wildHunterNpc.group.position.set(
       WILD_HUNTER_NPC_POS.x,
       getTerrainHeight(WILD_HUNTER_NPC_POS.x, WILD_HUNTER_NPC_POS.z),
@@ -675,7 +678,7 @@ export class CrossroadsScene {
     });
     this.scene.add(this.wildHunterNpc.group);
 
-    // Holzweibchen (NPC) vor den Pflanzkübeln an der Jagdhütte (forest+creature+3d+model.glb)
+    // Holzweibchen (NPC) vor den Pflanzkübeln an der Jagdhütte (Lazy Streaming)
     this.woodWomanLodgeNpc = createWoodWomanNpc(
       (mesh) => {
         this.pickableObjects.push(mesh);
@@ -684,6 +687,7 @@ export class CrossroadsScene {
         interactableType: 'wood_woman_lodge',
         defaultFacingTarget: WILD_HUNTER_NPC_POS,
         modelPath: '/assets/models/forest+creature+3d+model.glb',
+        lazy: true,
       }
     );
     this.woodWomanLodgeNpc.group.position.set(
@@ -698,10 +702,10 @@ export class CrossroadsScene {
     });
     this.scene.add(this.woodWomanLodgeNpc.group);
 
-    // Das geschlossene Tor mit flankierenden Steinmauern am Ende des 7. Weges (3D-Ziertor)
+    // Das geschlossene Tor mit flankierenden Steinmauern am Ende des 7. Weges (Lazy Streaming)
     this.closedGate = createClosedGate((mesh) => {
       this.pickableObjects.push(mesh);
-    });
+    }, { lazy: true });
     this.closedGate.group.position.set(
       CLOSED_GATE_POS.x,
       getTerrainHeight(CLOSED_GATE_POS.x, CLOSED_GATE_POS.z),
@@ -741,33 +745,35 @@ export class CrossroadsScene {
     });
     this.scene.add(this.mushroomCreatures.group);
 
-    // Magischer Felsbrocken, der Weg 1 (Silberstollen-Pfad) blockiert (leicht eingesenkt für Felsclipping)
-    this.path1Boulder = createPathBoulder();
+    // Magischer Felsbrocken, der Weg 1 (Silberstollen-Pfad) blockiert (Lazy Streaming)
+    this.path1Boulder = createPathBoulder({ lazy: true });
     this.path1Boulder.group.position.y = getTerrainHeight(this.path1Boulder.group.position.x, this.path1Boulder.group.position.z) - 0.22;
     this.scene.add(this.path1Boulder.group);
 
-    // Magische Wasserpfütze, die Weg 2 (Nixenteich-Pfad) blockiert
+    // Magische Wasserpfütze, die Weg 2 (Nixenteich-Pfad) blockiert (prozedural, 0 MB)
     this.path2Puddle = createPathPuddle();
     this.path2Puddle.group.position.y = getTerrainHeight(this.path2Puddle.group.position.x, this.path2Puddle.group.position.z) + 0.015;
     this.scene.add(this.path2Puddle.group);
 
-    // Reißender Gebirgsbach, der Weg 3 (Quellenweg) blockiert
-    this.path3Stream = createPathStream();
+    // Reißender Gebirgsbach, der Weg 3 (Quellenweg) blockiert (Lazy Streaming)
+    this.path3Stream = createPathStream({ lazy: true });
     this.path3Stream.group.position.y = getTerrainHeight(this.path3Stream.group.position.x, this.path3Stream.group.position.z);
     this.scene.add(this.path3Stream.group);
 
-    // Magischer Baumstamm, der Weg 4 (Holzfäller-Pfad) blockiert (fest am Waldboden aufliegend)
-    this.path4Log = createPathLog();
+    // Magischer Baumstamm, der Weg 4 (Holzfäller-Pfad) blockiert (Lazy Streaming)
+    this.path4Log = createPathLog({ lazy: true });
     this.path4Log.group.position.y = getTerrainHeight(this.path4Log.group.position.x, this.path4Log.group.position.z) - 0.08;
     this.scene.add(this.path4Log.group);
 
-    // Magisches Feuer, das Weg 5 (Höllenschlund-Pfad) blockiert
+    // Magisches Feuer, das Weg 5 (Höllenschlund-Pfad) blockiert (prozedural, 0 MB)
     this.path5Fire = createPathFire();
     this.path5Fire.group.position.y = getTerrainHeight(this.path5Fire.group.position.x, this.path5Fire.group.position.z);
     this.scene.add(this.path5Fire.group);
 
-    // Hohe Kräuterpflanzen mit Geländer, die Weg 6 (Jägerpfad) blockieren (Fundament im Boden)
-    this.path6Herbs = createPathHerbs();
+    // Hohe Kräuterpflanzen mit Geländer, die Weg 6 (Jägerpfad) blockieren (Lazy Streaming)
+    this.path6Herbs = createPathHerbs({ lazy: true });
+    this.path6Herbs.group.position.y = getTerrainHeight(this.path6Herbs.group.position.x, this.path6Herbs.group.position.z) - 0.08;
+    this.scene.add(this.path6Herbs.group);
     this.path6Herbs.group.position.y = getTerrainHeight(this.path6Herbs.group.position.x, this.path6Herbs.group.position.z) - 0.08;
     this.scene.add(this.path6Herbs.group);
 
@@ -814,6 +820,7 @@ export class CrossroadsScene {
     this.camera.lookAt(START_PLAYER_POS.x, targetY, START_PLAYER_POS.z);
 
     window.addEventListener('resize', this.onResize);
+    this.startBackgroundAssetStreaming();
   }
 
   private setupLights(): void {
@@ -3137,6 +3144,80 @@ export class CrossroadsScene {
     };
   }
 
+  /**
+   * Lädt die detailreichen 3D-GLB-Modelle für einen bestimmten Schauplatz/Pfad on-demand nach.
+   * Reduziert die initiale Downloadgröße beim Spielstart um über 85 %!
+   */
+  public loadPathScenery(pathId: number): void {
+    if (this.loadedPaths.has(pathId)) {
+      return;
+    }
+    this.loadedPaths.add(pathId);
+
+    switch (pathId) {
+      case 1:
+        this.path1Boulder.loadModel?.();
+        this.mountainCave.loadModel?.();
+        this.greyManNpc.loadModel?.();
+        break;
+      case 2:
+        this.nixiePond.loadModel?.();
+        this.nixieNpc.loadModel?.();
+        break;
+      case 3:
+        this.path3Stream.loadModel?.();
+        this.weirBridge.loadModel?.();
+        this.giantNpc.loadModel?.();
+        this.worldTree.loadModel?.();
+        this.giantWorldTree.loadModel?.();
+        this.giantRightWorldTree.loadModel?.();
+        this.hollowTree.loadModel?.();
+        break;
+      case 4:
+        this.path4Log.loadModel?.();
+        this.lumberCamp.loadModel?.();
+        this.woodWomanNpc.loadModel?.();
+        break;
+      case 5:
+        this.hellChasm.loadModel?.();
+        this.devilNpc.loadModel?.();
+        break;
+      case 6:
+        this.path6Herbs.loadModel?.();
+        this.huntingLodge.loadModel?.();
+        this.wildHunterNpc.loadModel?.();
+        this.woodWomanLodgeNpc.loadModel?.();
+        break;
+      case 7:
+        this.closedGate.loadModel?.();
+        break;
+    }
+  }
+
+  /**
+   * Sanfter Hintergrund-Lader (Idle-Streaming): Lädt nach und nach alle Pfade in entspannten
+   * 2,5-Sekunden-Intervallen nach, solange der Spieler verweilt, ohne den Hauptthread zu blockieren.
+   */
+  private startBackgroundAssetStreaming(): void {
+    let nextPath = 1;
+    setTimeout(() => {
+      this.backgroundStreamTimer = window.setInterval(() => {
+        while (nextPath <= 7 && this.loadedPaths.has(nextPath)) {
+          nextPath++;
+        }
+        if (nextPath > 7 || this.loadedPaths.size >= 7) {
+          if (this.backgroundStreamTimer !== null) {
+            window.clearInterval(this.backgroundStreamTimer);
+            this.backgroundStreamTimer = null;
+          }
+          return;
+        }
+        this.loadPathScenery(nextPath);
+        nextPath++;
+      }, 2500);
+    }, 2500);
+  }
+
   public update(
     playerPos: Readonly<Vector2D>,
     selectedPathId: number | null,
@@ -3167,6 +3248,18 @@ export class CrossroadsScene {
     const distHell = Math.hypot(playerPos.x - HELL_CHASM_POS.x, playerPos.z - HELL_CHASM_POS.z);
     const distLodge = Math.hypot(playerPos.x - HUNTING_LODGE_POS.x, playerPos.z - HUNTING_LODGE_POS.z);
     const distGate = Math.hypot(playerPos.x - CLOSED_GATE_POS.x, playerPos.z - CLOSED_GATE_POS.z);
+
+    // Schauplatz-Streaming: Proximity- und On-Demand-Laden vor dem Auftauchen aus dem Nebel
+    if (selectedPathId && selectedPathId >= 1 && selectedPathId <= 7) {
+      this.loadPathScenery(selectedPathId);
+    }
+    if (distCave < 52) this.loadPathScenery(1);
+    if (distPond < 48) this.loadPathScenery(2);
+    if (distWeir < 48) this.loadPathScenery(3);
+    if (distLumber < 48) this.loadPathScenery(4);
+    if (distHell < 60) this.loadPathScenery(5);
+    if (distLodge < 48) this.loadPathScenery(6);
+    if (distGate < 45) this.loadPathScenery(7);
 
     // Lichtungs-Objekte (immer nah an der Kreuzung)
     this.guideNpc.update(
@@ -3544,6 +3637,10 @@ export class CrossroadsScene {
   }
 
   public dispose(): void {
+    if (this.backgroundStreamTimer !== null) {
+      window.clearInterval(this.backgroundStreamTimer);
+      this.backgroundStreamTimer = null;
+    }
     this.canvas.removeEventListener('webglcontextlost', this.onContextLostHandler);
     this.canvas.removeEventListener('webglcontextrestored', this.onContextRestoredHandler);
     window.removeEventListener('resize', this.onResize);

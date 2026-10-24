@@ -10,6 +10,7 @@ export interface PathLogEntity {
   startDissolve: (onComplete?: () => void) => void;
   isDissolving: () => boolean;
   isRemoved: () => boolean;
+  loadModel?: () => void;
 }
 
 /**
@@ -17,7 +18,7 @@ export interface PathLogEntity {
  * Lädt das detaillierte Totholzstamm-Modell `/assets/models/fallen log 3d model.glb`
  * mit Moosauflage und Rindenstruktur. Vollkommen ohne künstliches Licht.
  */
-export function createPathLog(): PathLogEntity {
+export function createPathLog(options?: { lazy?: boolean }): PathLogEntity {
   const group = new THREE.Group();
   group.name = 'Path4Log';
   group.position.set(PATH_4_LOG_POS.x, 0, PATH_4_LOG_POS.z);
@@ -45,47 +46,57 @@ export function createPathLog(): PathLogEntity {
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
   // Lade das detaillierte Fallen-Log-Modell
-  const loader = new GLTFLoader();
-  loader.load(
-    '/assets/models/fallen log 3d model.glb',
-    (gltf) => {
-      const model = gltf.scene;
+  let isLoadedOrLoading = false;
+  const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
 
-      // Skalierung: Stamm auf 3.6m verlängern, um den Pfad quer vollflächig abzuriegeln
-      model.scale.setScalar(3.6);
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/fallen log 3d model.glb',
+      (gltf) => {
+        const model = gltf.scene;
 
-      // Bounding Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, 0);
+        // Skalierung: Stamm auf 3.6m verlängern, um den Pfad quer vollflächig abzuriegeln
+        model.scale.setScalar(3.6);
 
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'log' };
+        // Bounding Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
 
-          if (mesh.material && 'roughness' in mesh.material) {
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            modelMaterials.push(mat);
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'log' };
+
+            if (mesh.material && 'roughness' in mesh.material) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              modelMaterials.push(mat);
+            }
+            pickableMeshes.push(mesh);
           }
-          pickableMeshes.push(mesh);
-        }
-      });
+        });
 
-      // Platzhalter entfernen
-      const idx = pickableMeshes.indexOf(fallbackMesh);
-      if (idx !== -1) pickableMeshes.splice(idx, 1);
-      group.remove(fallbackGroup);
-      disposeObject3D(fallbackGroup);
-      group.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Baumstamm-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
-    }
-  );
+        // Platzhalter entfernen
+        const idx = pickableMeshes.indexOf(fallbackMesh);
+        if (idx !== -1) pickableMeshes.splice(idx, 1);
+        group.remove(fallbackGroup);
+        disposeObject3D(fallbackGroup);
+        group.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Baumstamm-Modell konnte nicht geladen werden, nutze Platzhalter:', err);
+      }
+    );
+  };
+
+  if (!options?.lazy) {
+    startLoad();
+  }
 
   let state: 'solid' | 'dissolving' | 'removed' = 'solid';
   let dissolveTimer = 0;
@@ -144,5 +155,6 @@ export function createPathLog(): PathLogEntity {
     startDissolve,
     isDissolving: () => state === 'dissolving',
     isRemoved: () => state === 'removed',
+    loadModel: startLoad,
   };
 }

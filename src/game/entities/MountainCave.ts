@@ -237,8 +237,15 @@ function buildMountainBackdrop(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE
  *   an das Tunnelende an, ohne den sichtbaren Eingang zu verdecken.
  * - Warmes Grubenlaternen-Licht im Stolleninneren und funkelnde Silbererz-Drusen am Portal.
  */
-export function createMountainCave(onMeshLoaded?: (mesh: THREE.Mesh) => void): THREE.Group {
-  const group = new THREE.Group();
+export interface MountainCaveEntity extends THREE.Group {
+  loadModel: () => void;
+}
+
+export function createMountainCave(
+  onMeshLoaded?: (mesh: THREE.Mesh) => void,
+  options?: { lazy?: boolean }
+): MountainCaveEntity {
+  const group = new THREE.Group() as MountainCaveEntity;
   group.name = 'MountainCave';
 
   const rockMatDark = new THREE.MeshStandardMaterial({
@@ -282,55 +289,66 @@ export function createMountainCave(onMeshLoaded?: (mesh: THREE.Mesh) => void): T
   fallback.add(fallbackArch);
   tunnelGroup.add(fallback);
 
-  // 3. Lade das detaillierte 3D-Modell des schneebedeckten Minentunnels
-  const loader = new GLTFLoader();
-  loader.load(
-    '/assets/models/snowy mine tunnel 3d model_ohne.glb',
-    (gltf) => {
-      const model = gltf.scene;
+  // 3. Lade das detaillierte 3D-Modell des schneebedeckten Minentunnels (On-Demand / Lazy fähig)
+  let isLoadedOrLoading = false;
+  const startLoad = (): void => {
+    if (isLoadedOrLoading) return;
+    isLoadedOrLoading = true;
 
-      // Skalierung: Faktor 8.5 erzeugt ein stattliches, monumentales Stollenportal
-      // (Breite ~8.5m, Höhe ~5.2m, Durchgangshöhe ~3.4m)
-      model.scale.setScalar(8.5);
+    const loader = new GLTFLoader();
+    loader.load(
+      '/assets/models/snowy mine tunnel 3d model_ohne.glb',
+      (gltf) => {
+        const model = gltf.scene;
 
-      // Modell exakt auf Bodenniveau (y = 0) aufsetzen
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y, 0);
+        // Skalierung: Faktor 8.5 erzeugt ein stattliches, monumentales Stollenportal
+        // (Breite ~8.5m, Höhe ~5.2m, Durchgangshöhe ~3.4m)
+        model.scale.setScalar(8.5);
 
-      model.traverse((child) => {
-        const mesh = child as THREE.Mesh;
-        if (mesh.isMesh) {
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.userData = { interactableType: 'cave' };
+        // Modell exakt auf Bodenniveau (y = 0) aufsetzen
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
 
-          // Optimale Materialabstimmung für eisigen Fels, Holzstützen und Schnee
-          if (mesh.material && 'roughness' in mesh.material) {
-            const mat = mesh.material as THREE.MeshStandardMaterial;
-            mat.roughness = 0.76;
-            mat.metalness = 0.12;
-            if (mat.color) {
-              mat.color.lerp(new THREE.Color(0xd2e5f5), 0.20);
+        model.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.userData = { interactableType: 'cave' };
+
+            // Optimale Materialabstimmung für eisigen Fels, Holzstützen und Schnee
+            if (mesh.material && 'roughness' in mesh.material) {
+              const mat = mesh.material as THREE.MeshStandardMaterial;
+              mat.roughness = 0.76;
+              mat.metalness = 0.12;
+              if (mat.color) {
+                mat.color.lerp(new THREE.Color(0xd2e5f5), 0.20);
+              }
+            }
+
+            if (onMeshLoaded) {
+              onMeshLoaded(mesh);
             }
           }
+        });
 
-          if (onMeshLoaded) {
-            onMeshLoaded(mesh);
-          }
-        }
-      });
+        // Platzhalter entfernen und fertiges Minenmodell in die Tunnelgruppe einfügen
+        tunnelGroup.remove(fallback);
+        disposeObject3D(fallback);
+        tunnelGroup.add(model);
+      },
+      undefined,
+      (err) => {
+        console.warn('Minenmodell snowy mine tunnel 3d model_ohne.glb konnte nicht geladen werden:', err);
+      }
+    );
+  };
 
-      // Platzhalter entfernen und fertiges Minenmodell in die Tunnelgruppe einfügen
-      tunnelGroup.remove(fallback);
-      disposeObject3D(fallback);
-      tunnelGroup.add(model);
-    },
-    undefined,
-    (err) => {
-      console.warn('Minenmodell snowy mine tunnel 3d model_ohne.glb konnte nicht geladen werden:', err);
-    }
-  );
+  group.loadModel = startLoad;
+  if (!options?.lazy) {
+    startLoad();
+  }
 
   // 4. Tiefschwarzer Hintergrund im Inneren des Tunnels für echte Tiefenwirkung (kein Durchscheinen)
   const tunnelBacking = new THREE.Mesh(
