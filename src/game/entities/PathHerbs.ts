@@ -149,13 +149,7 @@ export function createPathHerbs(): PathHerbsEntity {
     }
   );
 
-  // Violettes Punktlicht (Amethyst-Resonanz)
-  const herbLight = new THREE.PointLight(0xa84cd6, 1.25, 4.5);
-  herbLight.position.set(0, 1.25, 0.25);
-  group.add(herbLight);
-
   // Zustandsvariablen für Animation und Beseitigung
-  let elapsed = 0;
   let dissolving = false;
   let dissolveTimer = 0;
   const dissolveDuration = 1.4;
@@ -170,8 +164,6 @@ export function createPathHerbs(): PathHerbsEntity {
         return;
       }
 
-      elapsed += dtSeconds;
-
       if (dissolving) {
         dissolveTimer += dtSeconds;
         const progress = Math.min(1, dissolveTimer / dissolveDuration);
@@ -180,7 +172,6 @@ export function createPathHerbs(): PathHerbsEntity {
         const scale = Math.max(0.01, 1 - progress);
         group.scale.set(scale, scale, scale);
         group.position.y = -progress * 1.0;
-        herbLight.intensity = Math.max(0, (1 - progress) * 2.8);
 
         if (progress >= 1) {
           group.visible = false;
@@ -192,19 +183,12 @@ export function createPathHerbs(): PathHerbsEntity {
         return;
       }
 
-      // Sanftes Wiegen der Pflanzen im Wind
-      const sway = Math.sin(elapsed * 2.2) * 0.035;
-      plantsGroup.rotation.z = sway;
-
-      // Hover-Pulsieren
-      const hoverBoost = isHovered ? 0.5 : 0;
-      const pulse = 0.5 + 0.5 * Math.sin(elapsed * 2.8);
-      herbLight.intensity = 1.25 + pulse * 0.45 + hoverBoost * 0.7;
-
+      // Pflanzen stehen ruhig (keine Windanimation und kein künstliches Licht)
+      // Dezente Hervorhebung bei Maus-Hover
       for (const mat of modelMaterials) {
         if (mat.emissive) {
-          mat.emissive.setHex(isHovered ? 0x6e1f96 : 0x220530);
-          mat.emissiveIntensity = isHovered ? 0.6 : 0.2;
+          mat.emissive.setHex(isHovered ? 0x4a1268 : 0x000000);
+          mat.emissiveIntensity = isHovered ? 0.45 : 0.0;
         }
       }
     },

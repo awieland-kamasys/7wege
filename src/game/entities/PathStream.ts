@@ -14,8 +14,8 @@ export interface PathStreamEntity {
 
 /**
  * Erstellt den reißenden Gebirgsbachlauf, der Weg 3 (Quellenweg zum Riesen) versperrt.
- * Lädt das 3D-Modell `/assets/models/rocky stream 3d model.glb` mit steiniger Flussrinne,
- * schäumendem Gebirgswasser und saphirblau schimmernden Kristallpartikeln.
+ * Lädt das 3D-Modell `/assets/models/rocky stream 3d model.glb` in doppelter Größe (7.2m x 7.6m).
+ * Vollständig ohne künstliches Licht für eine natürliche Gebirgsbach-Optik.
  */
 export function createPathStream(): PathStreamEntity {
   const group = new THREE.Group();
@@ -25,26 +25,21 @@ export function createPathStream(): PathStreamEntity {
 
   const pickableMeshes: THREE.Object3D[] = [];
 
-  // Temporärer Platzhalter während des GLB-Ladens
+  // Temporärer Platzhalter während des GLB-Ladens in doppelter Größe
   const fallbackGroup = new THREE.Group();
   const bedMaterial = new THREE.MeshLambertMaterial({
     color: 0x242d2a,
     flatShading: true,
   });
   const fallbackMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(3.2, 0.08, 1.4),
+    new THREE.BoxGeometry(6.4, 0.16, 2.8),
     bedMaterial
   );
-  fallbackMesh.position.set(0, 0.04, 0);
+  fallbackMesh.position.set(0, 0.08, 0);
   fallbackMesh.userData = { interactableType: 'stream' };
   fallbackGroup.add(fallbackMesh);
   group.add(fallbackGroup);
   pickableMeshes.push(fallbackMesh);
-
-  // Saphirblaues Wasserlicht
-  const streamLight = new THREE.PointLight(0x38b0ff, 0.95, 4.8);
-  streamLight.position.set(0, 0.5, 0);
-  group.add(streamLight);
 
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
@@ -55,8 +50,8 @@ export function createPathStream(): PathStreamEntity {
     (gltf) => {
       const model = gltf.scene;
 
-      // Skalierung: Breite 3.6m quer über den Weg, Tiefe ca. 1.2m
-      model.scale.set(3.6, 2.5, 3.8);
+      // Skalierung: Komplett verdoppelt auf 7.2m Breite und 7.6m Länge quer über den Weg
+      model.scale.set(7.2, 5.0, 7.6);
 
       // Bounding Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
       model.updateMatrixWorld(true);
@@ -95,11 +90,8 @@ export function createPathStream(): PathStreamEntity {
   let dissolveTimer = 0;
   const dissolveDuration = 1.35;
   let onDissolveComplete: (() => void) | null = null;
-  let elapsed = 0;
 
   const update = (dtSeconds: number, isHovered = false): void => {
-    elapsed += dtSeconds;
-
     if (state === 'removed') {
       return;
     }
@@ -111,11 +103,7 @@ export function createPathStream(): PathStreamEntity {
       // Bach trocknet aus und sinkt in den Boden
       const scale = Math.max(0.001, 1.0 - progress * 0.95);
       group.scale.set(scale, scale, scale);
-      group.position.y = -progress * 0.8;
-
-      // Intensives Aufglühen beim Austrocknen
-      const glowBoost = Math.max(0, 1.0 - progress * 1.5);
-      streamLight.intensity = 2.2 * glowBoost;
+      group.position.y = -progress * 1.5;
 
       if (progress >= 1.0) {
         state = 'removed';
@@ -128,15 +116,11 @@ export function createPathStream(): PathStreamEntity {
       return;
     }
 
-    // Zustand 'solid': Rhythmisches Fließen und Glimmen
-    const wave = 0.5 + 0.5 * Math.sin(elapsed * 3.2);
-    const hoverBonus = isHovered ? 0.6 : 0;
-    streamLight.intensity = 0.85 + wave * 0.35 + hoverBonus;
-
+    // Zustand 'solid': Dezente Emissive-Anpassung bei Hover
     for (const mat of modelMaterials) {
       if (mat.emissive) {
-        mat.emissive.setHex(isHovered ? 0x1a4566 : 0x081f30);
-        mat.emissiveIntensity = isHovered ? 0.5 : 0.2;
+        mat.emissive.setHex(isHovered ? 0x1a4566 : 0x000000);
+        mat.emissiveIntensity = isHovered ? 0.35 : 0.0;
       }
     }
   };

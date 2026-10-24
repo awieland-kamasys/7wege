@@ -13,7 +13,7 @@ export interface PathFireEntity {
 
 /**
  * Erstellt den riesigen, spitzen Lavaobelisken, der Weg 5 (Höllenschlund-Pfad) versperrt.
- * Monumentaler schwarzer Obsidian-Monolith mit glühend roten Lava-Adern,
+ * Monumentaler, fast 11 Meter hoher schwarzer Obsidian-Monolith mit glühend roten Lava-Adern,
  * gezackten Stützstelen an der Basis und unheilvoll pulsierendem Magmalicht.
  */
 export function createPathFire(): PathFireEntity {
@@ -28,12 +28,12 @@ export function createPathFire(): PathFireEntity {
   if (lavaMaps.map) {
     lavaMaps.map.wrapS = THREE.RepeatWrapping;
     lavaMaps.map.wrapT = THREE.RepeatWrapping;
-    lavaMaps.map.repeat.set(1.5, 3.5);
+    lavaMaps.map.repeat.set(2.0, 6.0);
   }
   if (lavaMaps.emissiveMap) {
     lavaMaps.emissiveMap.wrapS = THREE.RepeatWrapping;
     lavaMaps.emissiveMap.wrapT = THREE.RepeatWrapping;
-    lavaMaps.emissiveMap.repeat.set(1.5, 3.5);
+    lavaMaps.emissiveMap.repeat.set(2.0, 6.0);
   }
 
   // Basalt- und Obsidianmaterial mit glühenden Magma-Adern
@@ -60,20 +60,20 @@ export function createPathFire(): PathFireEntity {
     flatShading: true,
   });
 
-  // 1. Zerkrümelter, aschiger Vulkankrater-Sockel am Boden
-  const baseGeo = new THREE.CylinderGeometry(1.55, 1.85, 0.25, 8);
+  // 1. Zerkrümelter, aschiger Vulkankrater-Sockel am Boden (doppelte Größe)
+  const baseGeo = new THREE.CylinderGeometry(3.1, 3.7, 0.5, 8);
   const baseMesh = new THREE.Mesh(baseGeo, obeliskMaterial);
-  baseMesh.position.y = 0.125;
+  baseMesh.position.y = 0.25;
   baseMesh.castShadow = true;
   baseMesh.receiveShadow = true;
   baseMesh.userData = { interactableType: 'fire' };
   group.add(baseMesh);
   pickableMeshes.push(baseMesh);
 
-  // 2. Riesiger, spitz zulaufender Vierkant-Obeliskenschaft (Höhe 4.4m)
-  const shaftGeo = new THREE.CylinderGeometry(0.18, 0.75, 4.4, 4);
+  // 2. Riesiger, spitz zulaufender Vierkant-Obeliskenschaft (Höhe 8.8m)
+  const shaftGeo = new THREE.CylinderGeometry(0.36, 1.50, 8.8, 4);
   const shaftMesh = new THREE.Mesh(shaftGeo, obeliskMaterial);
-  shaftMesh.position.y = 2.45;
+  shaftMesh.position.y = 4.90;
   shaftMesh.rotation.y = Math.PI / 4;
   shaftMesh.castShadow = true;
   shaftMesh.receiveShadow = true;
@@ -81,22 +81,22 @@ export function createPathFire(): PathFireEntity {
   group.add(shaftMesh);
   pickableMeshes.push(shaftMesh);
 
-  // 3. Messerscharfe pyramidale Obeliskenspitze oben drauf (Höhe 1.3m, Gesamthöhe ~5.3m)
-  const tipGeo = new THREE.ConeGeometry(0.25, 1.3, 4);
+  // 3. Messerscharfe pyramidale Obeliskenspitze oben drauf (Höhe 2.6m, Gesamthöhe fast 11m!)
+  const tipGeo = new THREE.ConeGeometry(0.50, 2.6, 4);
   const tipMesh = new THREE.Mesh(tipGeo, obeliskMaterial);
-  tipMesh.position.y = 5.25;
+  tipMesh.position.y = 10.5;
   tipMesh.rotation.y = Math.PI / 4;
   tipMesh.castShadow = true;
   tipMesh.userData = { interactableType: 'fire' };
   group.add(tipMesh);
   pickableMeshes.push(tipMesh);
 
-  // 4. Gezackte Begleit-Stelen und spitze Lavakristalle an der Basis
+  // 4. Gezackte Begleit-Stelen und spitze Lavakristalle an der Basis (doppelte Dimensionen)
   const shardConfigs = [
-    { x: -0.85, z: 0.45, h: 2.1, r: 0.24, rotZ: 0.18, rotY: 0.4 },
-    { x: 0.90, z: -0.35, h: 2.4, r: 0.26, rotZ: -0.22, rotY: 1.1 },
-    { x: 0.25, z: 0.85, h: 1.8, r: 0.22, rotX: -0.20, rotY: 2.3 },
-    { x: -0.55, z: -0.75, h: 2.0, r: 0.23, rotX: 0.24, rotY: 0.8 },
+    { x: -1.70, z: 0.90, h: 4.2, r: 0.48, rotZ: 0.18, rotY: 0.4 },
+    { x: 1.80, z: -0.70, h: 4.8, r: 0.52, rotZ: -0.22, rotY: 1.1 },
+    { x: 0.50, z: 1.70, h: 3.6, r: 0.44, rotX: -0.20, rotY: 2.3 },
+    { x: -1.10, z: -1.50, h: 4.0, r: 0.46, rotX: 0.24, rotY: 0.8 },
   ];
 
   for (const sc of shardConfigs) {
@@ -114,24 +114,24 @@ export function createPathFire(): PathFireEntity {
   }
 
   // 5. Sichtbare, glühende rote Magma-Adern an den Kanten des Schafts
-  const vein1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.2, 0.08), magmaVeinMaterial);
-  vein1.position.set(0.24, 2.5, 0.24);
+  const vein1 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 6.4, 0.16), magmaVeinMaterial);
+  vein1.position.set(0.48, 5.0, 0.48);
   vein1.rotation.y = Math.PI / 4;
   group.add(vein1);
 
-  const vein2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.8, 0.08), magmaVeinMaterial);
-  vein2.position.set(-0.24, 2.3, -0.24);
+  const vein2 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 5.6, 0.16), magmaVeinMaterial);
+  vein2.position.set(-0.48, 4.6, -0.48);
   vein2.rotation.y = Math.PI / 4;
   group.add(vein2);
 
   // Unheilvoll flackerndes, glutrotes Lavazeichen-Licht
-  const fireLight = new THREE.PointLight(0xff2200, 1.85, 8.5);
-  fireLight.position.set(0, 2.8, 0);
+  const fireLight = new THREE.PointLight(0xff2200, 2.2, 16.0);
+  fireLight.position.set(0, 5.5, 0);
   group.add(fireLight);
 
   let state: 'solid' | 'dissolving' | 'removed' = 'solid';
   let dissolveTimer = 0;
-  const dissolveDuration = 1.45;
+  const dissolveDuration = 1.6;
   let onDissolveComplete: (() => void) | null = null;
   let elapsed = 0;
 
@@ -147,7 +147,7 @@ export function createPathFire(): PathFireEntity {
       const progress = Math.min(1.0, dissolveTimer / dissolveDuration);
 
       // Obelisk sinkt mit intensivem Glühen tief in die Lava ein
-      group.position.y = -progress * 5.5;
+      group.position.y = -progress * 11.0;
       const scale = Math.max(0.001, 1.0 - progress * 0.85);
       group.scale.set(scale, scale, scale);
 
@@ -173,7 +173,7 @@ export function createPathFire(): PathFireEntity {
     const hoverBonus = isHovered ? 0.6 : 0;
     obeliskMaterial.emissiveIntensity = 0.75 + pulse * 0.4 + hoverBonus;
     magmaVeinMaterial.emissiveIntensity = 1.1 + pulse * 0.5 + hoverBonus;
-    fireLight.intensity = 1.5 + pulse * 0.45 + hoverBonus;
+    fireLight.intensity = 1.8 + pulse * 0.5 + hoverBonus;
   };
 
   const startDissolve = (onComplete?: () => void): void => {

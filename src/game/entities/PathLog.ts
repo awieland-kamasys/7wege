@@ -15,7 +15,7 @@ export interface PathLogEntity {
 /**
  * Erstellt den umgestürzten Baumstamm, der Weg 4 (Holzfäller-Pfad) versperrt.
  * Lädt das detaillierte Totholzstamm-Modell `/assets/models/fallen log 3d model.glb`
- * mit Moosauflage, Rindenstruktur und warm bernsteinfarben glimmenden Resonanzrunen.
+ * mit Moosauflage und Rindenstruktur. Vollkommen ohne künstliches Licht.
  */
 export function createPathLog(): PathLogEntity {
   const group = new THREE.Group();
@@ -41,11 +41,6 @@ export function createPathLog(): PathLogEntity {
   fallbackGroup.add(fallbackMesh);
   group.add(fallbackGroup);
   pickableMeshes.push(fallbackMesh);
-
-  // Bernsteinfarbenes Glimmlicht
-  const logLight = new THREE.PointLight(0xe89e24, 0.85, 4.2);
-  logLight.position.set(0, 0.75, 0);
-  group.add(logLight);
 
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
@@ -96,11 +91,8 @@ export function createPathLog(): PathLogEntity {
   let dissolveTimer = 0;
   const dissolveDuration = 1.35;
   let onDissolveComplete: (() => void) | null = null;
-  let elapsed = 0;
 
   const update = (dtSeconds: number, isHovered = false): void => {
-    elapsed += dtSeconds;
-
     if (state === 'removed') {
       return;
     }
@@ -114,10 +106,6 @@ export function createPathLog(): PathLogEntity {
       group.scale.set(scale, scale, scale);
       group.position.y = -progress * 1.2;
 
-      // Golden-bernsteinfarbenes Aufglühen
-      const glowBoost = Math.max(0, 1.0 - progress * 1.5);
-      logLight.intensity = 2.2 * glowBoost;
-
       if (progress >= 1.0) {
         state = 'removed';
         group.visible = false;
@@ -129,15 +117,11 @@ export function createPathLog(): PathLogEntity {
       return;
     }
 
-    // Zustand 'solid': Rhythmisches bernsteinfarbenes Pulsieren
-    const pulse = 0.5 + 0.5 * Math.sin(elapsed * 2.6);
-    const hoverBonus = isHovered ? 0.6 : 0;
-    logLight.intensity = 0.75 + pulse * 0.35 + hoverBonus;
-
+    // Zustand 'solid': Dezente Emissive-Anpassung bei Hover
     for (const mat of modelMaterials) {
       if (mat.emissive) {
-        mat.emissive.setHex(isHovered ? 0x663f0a : 0x221302);
-        mat.emissiveIntensity = isHovered ? 0.5 : 0.15;
+        mat.emissive.setHex(isHovered ? 0x4a2d07 : 0x000000);
+        mat.emissiveIntensity = isHovered ? 0.35 : 0.0;
       }
     }
   };
