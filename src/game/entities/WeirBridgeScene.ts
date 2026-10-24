@@ -321,14 +321,38 @@ export function createWeirBridgeScene(
 
   // ============================================================================
   // 3. DER GEBIRGSBACH UNTER DEM WEHR & DER BRÜCKE INS TAL
-  // Vollständig mit 3D-Modell /assets/models/rocky stream 3d model.glb gebaut
+  // Tiefe Schlucht mit über 1,07m lichter Höhe unter der Brücke für das durchströmende Wasser.
+  // Vollständig mit 3D-Modell /assets/models/rocky stream 3d model.glb gebaut.
   // ============================================================================
   const streamContainer = new THREE.Group();
   streamContainer.name = 'RockyStreamTalContainer';
   group.add(streamContainer);
 
-  // Wehrüberlauf direkt unter dem Wehrschütz der Holzbrücke:
-  // Das aufgestaute Seewasser fließt nahtlos durch das Wehr in die tiefe Rinne des Baches
+  // 3.1 Wehr-Konstruktion an der Oberstromseite der Brücke:
+  // Hölzerne Wehrmauer / Schütz (hält das Seewasser auf +0.08m zurück)
+  const weirWall = new THREE.Mesh(
+    new THREE.BoxGeometry(0.36, 1.55, 3.2),
+    woodPlankMat
+  );
+  weirWall.position.set(-0.95, -0.68, 0);
+  weirWall.castShadow = true;
+  weirWall.receiveShadow = true;
+  weirWall.userData = { interactableType: 'weir' };
+  group.add(weirWall);
+
+  // Seitliche vertikale Führungsbalken des Wehrs
+  for (const pz of [-1.35, 1.35]) {
+    const weirPost = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.14, 1.85, 8),
+      woodPlankMat
+    );
+    weirPost.position.set(-0.95, -0.60, pz);
+    weirPost.castShadow = true;
+    weirPost.userData = { interactableType: 'weir' };
+    group.add(weirPost);
+  }
+
+  // Wehrüberlauf oben an der Überfallkante
   const weirSpillwayMat = new THREE.MeshStandardMaterial({
     color: 0xaef0ff,
     emissive: 0x24788c,
@@ -338,35 +362,49 @@ export function createWeirBridgeScene(
     opacity: 0.90,
   });
   const weirSpillway = new THREE.Mesh(
-    new THREE.BoxGeometry(0.70, 0.32, 1.45),
+    new THREE.BoxGeometry(0.52, 0.18, 2.2),
     weirSpillwayMat
   );
-  weirSpillway.position.set(-0.95, -0.06, 0);
+  weirSpillway.position.set(-0.95, 0.02, 0);
   group.add(weirSpillway);
 
-  // Ziseliertes, schäumendes Überlaufwasser direkt am Fall des Wehrs
+  // Tosender, 1.4 Meter hoher Wasserfall vom Wehr hinab in das tiefe Bachbett
+  const weirCascadeMat = new THREE.MeshStandardMaterial({
+    color: 0xe0faff,
+    emissive: 0x4aa6bd,
+    emissiveIntensity: 0.75,
+    roughness: 0.15,
+    transparent: true,
+    opacity: 0.92,
+  });
   const weirCascade = new THREE.Mesh(
-    new THREE.BoxGeometry(0.35, 0.26, 1.38),
-    new THREE.MeshStandardMaterial({
-      color: 0xe0faff,
-      emissive: 0x4aa6bd,
-      emissiveIntensity: 0.75,
-      roughness: 0.15,
-      transparent: true,
-      opacity: 0.92,
-    })
+    new THREE.BoxGeometry(0.55, 1.44, 2.1),
+    weirCascadeMat
   );
-  weirCascade.position.set(-0.76, -0.12, 0);
-  weirCascade.rotation.z = -0.32;
+  weirCascade.position.set(-0.74, -0.70, 0);
+  weirCascade.rotation.z = -0.15;
   group.add(weirCascade);
+
+  // Seitliche Brückenpfeiler am Böschungsrand (die mittlere Rinne bleibt vollkommen offen)
+  for (const pz of [-2.05, 2.05]) {
+    const bridgePier = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.20, 1.45, 8),
+      stoneMat
+    );
+    bridgePier.position.set(0, -0.95, pz);
+    bridgePier.castShadow = true;
+    bridgePier.receiveShadow = true;
+    group.add(bridgePier);
+  }
 
   // Temporärer Platzhalter während des GLB-Ladens des Baches
   const fallbackBedMat = new THREE.MeshStandardMaterial({ color: 0x242d2a, roughness: 0.9 });
-  const fallbackStream = new THREE.Mesh(new THREE.BoxGeometry(32.4, 0.08, 2.4), fallbackBedMat);
-  fallbackStream.position.set(15.2, -0.28, 0);
+  const fallbackStream = new THREE.Mesh(new THREE.BoxGeometry(32.4, 0.08, 2.8), fallbackBedMat);
+  fallbackStream.position.set(15.2, -1.62, 0);
   streamContainer.add(fallbackStream);
 
   // Lade rocky stream 3d model.glb und bilde den gesamten 32 Meter langen Bachlauf
+  // Auf y = -1.62m abgesenkt für garantierte 1,07m lichte Durchflusshöhe unter dem Brückendeck!
   loader.load(
     '/assets/models/rocky stream 3d model.glb',
     (gltf) => {
@@ -377,13 +415,13 @@ export function createWeirBridgeScene(
 
       // 5 nahtlose Segmente von lx = -0.8 bis lx = 31.2
       // Jedes Segment hat 6.4m Länge (scale.x = 6.4), 3.2m Breite (scale.z = 12.8)
-      // und schmiegt sich bündig in die Rinnensohle auf y = -0.38m ein.
+      // und ruht bündig auf dem Grund der tiefen Rinnensohle bei y = -1.62m.
       const segmentXPositions = [2.4, 8.8, 15.2, 21.6, 28.0];
 
       segmentXPositions.forEach((segX, idx) => {
         const segClone = baseStream.clone(true);
-        segClone.scale.set(6.4, 3.2, 12.8);
-        segClone.position.set(segX, -0.38, 0);
+        segClone.scale.set(6.4, 2.4, 12.8);
+        segClone.position.set(segX, -1.62, 0);
 
         // Abwechselnde Drehung für organische Felsformationen und fließende Wasserstruktur
         if (idx % 2 === 1) {
@@ -424,7 +462,7 @@ export function createWeirBridgeScene(
 
     // Lebendiges Fließen des Wehrüberlaufs
     const spillFlow = 0.5 + 0.5 * Math.sin(timeSeconds * 4.8);
-    weirCascade.scale.y = 0.92 + spillFlow * 0.16;
+    weirCascade.scale.y = 0.94 + spillFlow * 0.12;
   };
 
   return { group, update };

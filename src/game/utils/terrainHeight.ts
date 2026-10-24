@@ -50,8 +50,8 @@ export const TERRAIN_PLATEAUS: PlateauDefinition[] = [
   { x: HUNTING_LODGE_POS.x, z: HUNTING_LODGE_POS.z, radius: 8.0, blendRadius: 14.0, height: 1.0 },
   // 7. Verschlossenes Tor (Weg 7): Hügelkuppe
   { x: CLOSED_GATE_POS.x, z: CLOSED_GATE_POS.z, radius: 8.0, blendRadius: 14.0, height: 2.2 },
-  // 8. Stilisierter Höhlenbaum am Ende des Bachtals: Rinnengrund (-1.88m)
-  { x: WORLD_TREE_POS.x, z: WORLD_TREE_POS.z, radius: 2.5, blendRadius: 5.5, height: -1.88 },
+  // 8. Stilisierter Höhlenbaum am Ende des Bachtals: Rinnengrund (-3.12m)
+  { x: WORLD_TREE_POS.x, z: WORLD_TREE_POS.z, radius: 2.8, blendRadius: 6.0, height: -3.12 },
   // 9. Zweiter Weltenbaum im Waldsaum ca. 10m hinter dem Riesen (Weg 3): Bündig am Vorplatz (-1.50m)
   { x: GIANT_WORLD_TREE_POS.x, z: GIANT_WORLD_TREE_POS.z, radius: 5.5, blendRadius: 12.0, height: -1.5 },
   // 10. Dritter Weltenbaum rechts neben dem Baum hinter dem Riesen (Weg 3): Bündig am Vorplatz (-1.50m)
@@ -205,12 +205,13 @@ export function getTerrainHeight(x: number, z: number): number {
     const wAlongLake = 1.0 - smoothstep(15.5, 19.0, Math.abs(streamLx));
     streamValleyWeight = wAcrossLake * wAlongLake;
     streamTargetHeight = -1.50;
-  } else if (streamLx >= -0.8 && streamLx <= 31.0 && Math.abs(streamLz) < 2.6) {
-    // Schmale, tiefe Bachrinne: flache Sohle auf -1.88m bis |streamLz| <= 1.10m, sanfte Böschung bis 2.6m
-    const wGullyAcross = 1.0 - smoothstep(1.10, 2.60, Math.abs(streamLz));
+  } else if (streamLx >= -0.8 && streamLx <= 31.0 && Math.abs(streamLz) < 3.1) {
+    // Schmale, tiefe Bachrinne: flache Sohle auf -3.12m bis |streamLz| <= 1.35m, sanfte Böschung bis 3.10m
+    // Garantiert über 1 Meter lichten Raum unter der Brücke für das durchströmende Wasser
+    const wGullyAcross = 1.0 - smoothstep(1.35, 3.10, Math.abs(streamLz));
     const wGullyAlong = 1.0 - smoothstep(27.5, 31.0, streamLx);
     const gullyDepthWeight = wGullyAcross * wGullyAlong;
-    streamTargetHeight = -1.88;
+    streamTargetHeight = -3.12;
     streamValleyWeight = gullyDepthWeight;
   }
 
