@@ -120,21 +120,33 @@ export class DebugPanel {
     this.callbacks = callbacks;
     this.container = parent;
 
-    // 1. Schwebendes Debug-Badge oben rechts
-    this.badgeEl = document.createElement('div');
-    this.badgeEl.className = 'debug-badge';
-    this.badgeEl.title = 'Diagnose & Debug-Modus umschalten (Taste D oder Klick)';
-    this.badgeEl.innerHTML = '🪲 <span class="debug-badge-text">Debug</span>';
-    this.badgeEl.addEventListener('click', (e) => {
+    // 1. Schwebender Debug-Button oben rechts (ausschließlich per direktem Button-Klick öffenbar)
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'debug-badge';
+    button.title = 'Diagnose & Debug-Modus umschalten (ausschließlich per Klick auf diesen Button)';
+    button.innerHTML = '🪲 <span class="debug-badge-text">Debug</span>';
+    button.addEventListener('click', (e) => {
       e.stopPropagation();
       this.toggle();
     });
+    this.badgeEl = button;
 
     // 2. Modales Diagnose-Panel
     this.modalEl = document.createElement('div');
     this.modalEl.className = 'debug-modal is-hidden';
+    this.modalEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
 
     this.container.append(this.badgeEl, this.modalEl);
+
+    // Klick außerhalb schließt das Debugfenster sicher
+    window.addEventListener('click', (e) => {
+      if (this.isOpen && !this.modalEl.contains(e.target as Node) && !this.badgeEl.contains(e.target as Node)) {
+        this.close();
+      }
+    });
 
     // Auf neue Logs hören, um Zähler zu aktualisieren
     onNewLogListener = () => {
@@ -145,22 +157,9 @@ export class DebugPanel {
       }
     };
 
-    // Globales Tastaturkürzel (D)
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'd' || e.key === 'D') {
-        // Nur wenn nicht in Textfeld getippt wird
-        const target = e.target as HTMLElement | null;
-        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-          return;
-        }
-        this.toggle();
-      }
-    });
-
-    // Automatisches Öffnen bei ?debug=1 oder gespeicherter Einstellung
+    // Automatisches Öffnen ausschließlich bei explizitem URL-Parameter ?debug=1
     const urlParams = new URLSearchParams(window.location.search);
-    const shouldOpen = urlParams.has('debug') || localStorage.getItem('7wege_debug_panel') === '1';
-    if (shouldOpen) {
+    if (urlParams.has('debug')) {
       this.open();
     }
   }
@@ -178,7 +177,6 @@ export class DebugPanel {
     this.unreadErrors = 0;
     this.updateBadge();
     this.modalEl.classList.remove('is-hidden');
-    localStorage.setItem('7wege_debug_panel', '1');
     this.render();
 
     if (this.updateInterval === null) {
@@ -193,7 +191,6 @@ export class DebugPanel {
   public close(): void {
     this.isOpen = false;
     this.modalEl.classList.add('is-hidden');
-    localStorage.removeItem('7wege_debug_panel');
     if (this.updateInterval !== null) {
       window.clearInterval(this.updateInterval);
       this.updateInterval = null;

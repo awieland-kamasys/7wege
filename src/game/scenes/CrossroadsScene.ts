@@ -428,13 +428,13 @@ export class CrossroadsScene {
     this.scene.add(this.giantNpc.group);
 
     // Stilisierter Höhlenbaum (stylized tree 3d model.glb) am Ende der tiefen Bachrinne
-    // Um 10 % verkleinert (scale 23.4), Baumhöhle optimal fluchtend zur Rinne ausgerichtet (rotationY 2.10).
-    // Auf dem Rinnengrund verankert, die Wurzeln fassen tief in die Böschungen, der Bach fließt mitten hindurch.
+    // Um 10 % verkleinert (scale 23.4), Baumhöhle perfekt zentriert über dem Bachbett (rotationY 2.50).
+    // Auf dem Rinnengrund verankert, sodass der Bach exakt in der Mitte der Wurzelhöhle hindurchfließt.
     this.worldTree = createWorldTree({
       modelUrl: '/assets/models/stylized tree 3d model.glb',
       scale: 23.4,
-      rotationY: 2.10,
-      sinkDepth: 0.65,
+      rotationY: 2.50,
+      sinkDepth: 0.85,
       hasMound: false,
       hasAura: true,
       onMeshLoaded: (mesh) => {
