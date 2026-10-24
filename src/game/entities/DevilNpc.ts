@@ -15,10 +15,10 @@ export interface DevilNpcEntity {
 
 /**
  * Erstellt die 3D-Figur „Der Teufel / Dämonenkrieger“ am Ende des 5. Weges:
- * Lädt das Modell `demon+warrior+3d+model_ohne_Dreizack.glb` (ohne Dreizack),
+ * Lädt das Modell `/assets/models/low-poly+demon+3d+model.glb`,
  * skaliert ihn auf imposante Dämonengröße (~5.2m Höhe) und stellt ihn erhaben
- * auf die Oberfläche des zentralen Felsplateaus.
- * Spielt die integrierte 6-Sekunden-Animation ("wait.001") dauerhaft als Schleife ab
+ * auf die Oberfläche des zentralen Felsplateaus im Lavakrater.
+ * Spielt die integrierte Skelettanimation ("idle" / "wait") dauerhaft als Schleife ab
  * und richtet den Teufel bei Annäherung auf die Spielfigur aus.
  */
 export function createDevilNpc(
@@ -115,10 +115,10 @@ export function createDevilNpc(
       model.getObjectByName('mixamorigHead') || model.getObjectByName('mixamorig:Head');
 
     if (headBone) {
-      // Exakte Positionierung im lokalen Koordinatenraum des Kopf-Knochens:
+      // Exakte Positionierung im lokalen Koordinatenraum des Kopf-Knochens (mixamorig:Head):
       // Dadurch bewegen sich die Augen 100% synchron mit Kopfbewegung und Atmung mit.
-      const leftEyePos = new THREE.Vector3(0.036, 0.0712, 0.0228);
-      const rightEyePos = new THREE.Vector3(0.022, 0.0712, -0.0334);
+      const leftEyePos = new THREE.Vector3(0.033, 0.049, 0.052);
+      const rightEyePos = new THREE.Vector3(-0.033, 0.049, 0.052);
 
       // Linkes Auge (Kern + Glüh-Aura)
       const leftEyeCore = new THREE.Mesh(eyeGeo, eyeCoreMat);
@@ -136,51 +136,53 @@ export function createDevilNpc(
 
       // Rotes Punktlicht vor den Augen, das die Stirnknochen und Hörner teuflisch beleuchtet
       eyeLight = new THREE.PointLight(0xff3300, 1.8, 6.0);
-      eyeLight.position.set(0.04, 0.073, -0.005);
+      eyeLight.position.set(0, 0.052, 0.075);
       headBone.add(eyeLight);
     } else {
       // Ausweichlösung, falls kein Kopfknochen vorhanden sein sollte (an Modellgruppe geheftet)
       const leftEyeGroup = new THREE.Group();
       leftEyeGroup.scale.setScalar(5.2);
-      leftEyeGroup.position.set(-0.151, 4.493, 0.55);
+      leftEyeGroup.position.set(-0.17, 6.16, 0.57);
       leftEyeGroup.add(new THREE.Mesh(eyeGeo, eyeCoreMat));
       leftEyeGroup.add(new THREE.Mesh(auraGeo, eyeAuraMat));
       model.add(leftEyeGroup);
 
       const rightEyeGroup = new THREE.Group();
       rightEyeGroup.scale.setScalar(5.2);
-      rightEyeGroup.position.set(0.151, 4.493, 0.55);
+      rightEyeGroup.position.set(0.17, 6.16, 0.57);
       rightEyeGroup.add(new THREE.Mesh(eyeGeo, eyeCoreMat));
       rightEyeGroup.add(new THREE.Mesh(auraGeo, eyeAuraMat));
       model.add(rightEyeGroup);
 
       eyeLight = new THREE.PointLight(0xff3300, 2.0, 7.0);
-      eyeLight.position.set(0, 4.5, 0.6);
+      eyeLight.position.set(0, 6.16, 0.7);
       model.add(eyeLight);
     }
   }
 
-  // Lade das Dämonenkrieger-Modell ohne Dreizack
+  // Lade das Dämonen-Modell low-poly+demon+3d+model.glb
   const startLoad = (): void => {
-    const modelUrl = '/assets/models/demon-warrior-no-trident.glb';
+    const modelUrl = '/assets/models/low-poly+demon+3d+model.glb';
     const loader = new GLTFLoader();
     loader.load(
       modelUrl,
       (gltf) => {
         const model = gltf.scene;
 
-        // 1. Skalierung: 5.2x (ergibt ca. 5.17m Gesamthöhe)
+        // 1. Skalierung: 5.2x (ergibt ca. 5.20m Gesamthöhe)
         model.scale.setScalar(5.2);
 
         // 2. Positionierung auf der Felsenplattform des Lavakraters (Plattformhöhe 1.80m):
         // Die Klauensohlen stehen exakt bündig oben auf den Felsplatten.
         model.position.set(0, 1.80, 0);
 
-        // 3. Animation aktivieren
+        // 3. Animation aktivieren (bevorzuge "idle", "wait" oder erste Animation)
         if (gltf.animations && gltf.animations.length > 0) {
           mixer = new THREE.AnimationMixer(model);
-          // Bevorzuge die Animation "wait.001" oder den ersten Clip
-          const clip = gltf.animations.find((a) => a.name.includes('wait')) ?? gltf.animations[0];
+          const clip =
+            gltf.animations.find((a) => a.name.toLowerCase() === 'idle') ||
+            gltf.animations.find((a) => a.name.toLowerCase().includes('wait')) ||
+            gltf.animations[0];
           animAction = mixer.clipAction(clip);
           animAction.setLoop(THREE.LoopRepeat, Infinity);
           animAction.clampWhenFinished = false;
@@ -219,7 +221,7 @@ export function createDevilNpc(
       },
       undefined,
       (err) => {
-        console.warn('Dämonenkrieger-Modell demon-warrior-no-trident.glb konnte nicht geladen werden, nutze Platzhalter:', err);
+        console.warn('Dämonen-Modell low-poly+demon+3d+model.glb konnte nicht geladen werden, nutze Platzhalter:', err);
       }
     );
   };
