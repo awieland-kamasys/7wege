@@ -40,7 +40,8 @@ export function createTerrainSplatMap(): THREE.CanvasTexture | null {
     return null;
   }
 
-  const size = 2048;
+  const isMobile = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  const size = isMobile ? 1024 : 2048;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;

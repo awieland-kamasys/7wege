@@ -97,7 +97,7 @@ export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_
     color: 0xffffff,
     map: grassTex.map ?? undefined,
     emissiveMap: lavaTex.emissiveMap ?? undefined,
-    emissive: new THREE.Color(0xffffff),
+    emissive: new THREE.Color(0x000000),
     emissiveIntensity: 1.0,
     bumpMap: grassTex.bumpMap ?? undefined,
     bumpScale: 0.045,
@@ -128,37 +128,37 @@ export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_
     );
 
     // Farb-Chunk überschreiben: Splatmap-basiertes Mischen von gekachelten Texturen
+    // Wichtig für mobile ARM Mali-GPUs (Galaxy S10):
+    // Alle Textur-Samplings müssen im einheitlichen Kontrollfluss (außerhalb dynamischer if/else-Blöcke)
+    // liegen, damit implizite Mipmap-Ableitungen (dFdx/dFdy) stabil berechnet werden und keine fehlerhaften LOD-Stufen entstehen.
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <map_fragment>',
       `
       #ifdef USE_MAP
         vec4 colGrass = texture2D( uGrassMap, vMapUv * 55.0 );
+        vec4 splat = texture2D( uSplatMap, vMapUv );
+        vec4 colPath = texture2D( uPathMap, vMapUv * 38.0 );
+        vec4 colLava = texture2D( uLavaMap, vMapUv * 16.0 );
+        vec4 colSnow = texture2D( uSnowMap, vMapUv * 46.0 );
+
         vec3 grassLinear = pow(colGrass.rgb, vec3(2.2));
+        vec3 pathLinear = pow(colPath.rgb, vec3(2.2));
+        vec3 lavaLinear = pow(colLava.rgb, vec3(2.2));
+        vec3 snowLinear = pow(colSnow.rgb, vec3(2.2));
 
-        if (uSimpleMode > 0.5) {
-          diffuseColor.rgb *= grassLinear;
-        } else {
-          vec4 splat = texture2D( uSplatMap, vMapUv );
-          vec4 colPath = texture2D( uPathMap, vMapUv * 38.0 );
-          vec4 colLava = texture2D( uLavaMap, vMapUv * 16.0 );
-          vec4 colSnow = texture2D( uSnowMap, vMapUv * 46.0 );
+        // 1. Wiese zu Weg mit natürlichem Auslauf
+        vec3 terrainDiff = mix(grassLinear, pathLinear, splat.r);
 
-          vec3 pathLinear = pow(colPath.rgb, vec3(2.2));
-          vec3 lavaLinear = pow(colLava.rgb, vec3(2.2));
-          vec3 snowLinear = pow(colSnow.rgb, vec3(2.2));
+        // 2. Zu tiefschwarzem Obsidianboden um den Lavasee
+        terrainDiff = mix(terrainDiff, lavaLinear * 0.85, splat.g);
 
-          // 1. Wiese zu Weg mit natürlichem Auslauf
-          vec3 terrainDiff = mix(grassLinear, pathLinear, splat.r);
+        // 3. Zu alpiner Schneezone an der Bergmine (Blau-Kanal)
+        vec3 snowySurface = mix(snowLinear, snowLinear * vec3(0.92, 0.94, 0.97), splat.r * 0.35);
+        terrainDiff = mix(terrainDiff, snowySurface, splat.b);
 
-          // 2. Zu tiefschwarzem Obsidianboden um den Lavasee
-          terrainDiff = mix(terrainDiff, lavaLinear * 0.85, splat.g);
-
-          // 3. Zu alpiner Schneezone an der Bergmine (Blau-Kanal)
-          vec3 snowySurface = mix(snowLinear, snowLinear * vec3(0.92, 0.94, 0.97), splat.r * 0.35);
-          terrainDiff = mix(terrainDiff, snowySurface, splat.b);
-
-          diffuseColor.rgb *= terrainDiff;
-        }
+        // Bei aktivem uSimpleMode stufenlos zur reinen Wiese überblenden
+        vec3 finalTerrain = mix(terrainDiff, grassLinear, clamp(uSimpleMode, 0.0, 1.0));
+        diffuseColor.rgb *= finalTerrain;
       #endif
       `
     );
@@ -168,13 +168,11 @@ export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_
       '#include <emissivemap_fragment>',
       `
       #ifdef USE_EMISSIVEMAP
-        if (uSimpleMode <= 0.5) {
-          vec4 splatE = texture2D( uSplatMap, vMapUv );
-          vec4 lavaEmiss = texture2D( uLavaEmissive, vMapUv * 18.0 );
+        vec4 splatE = texture2D( uSplatMap, vMapUv );
+        vec4 lavaEmiss = texture2D( uLavaEmissive, vMapUv * 18.0 );
 
-          // Intensives, dynamisch pulsierendes dunkelrotes Glutlicht im Basaltkessel
-          totalEmissiveRadiance = lavaEmiss.rgb * splatE.g * (uLavaPulse * 2.4);
-        }
+        // Intensives, dynamisch pulsierendes dunkelrotes Glutlicht im Basaltkessel (im SimpleMode ausgeblendet)
+        totalEmissiveRadiance = lavaEmiss.rgb * splatE.g * (uLavaPulse * 2.4) * (1.0 - clamp(uSimpleMode, 0.0, 1.0));
       #endif
       `
     );
