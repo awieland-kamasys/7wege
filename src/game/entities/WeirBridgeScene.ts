@@ -157,34 +157,6 @@ export function createWeirBridgeScene(
   springBubbler.position.set(-5.4, 0.55, 0);
   group.add(springBubbler);
 
-  // Gemauerter Überlaufkanal vom Brunnen zum Wehr
-  // Brunnenrand liegt bei lx ≈ -2.2, Wehrwand bei lx = -0.95
-  const streamInflow = new THREE.Mesh(
-    new THREE.BoxGeometry(1.6, 0.35, 2.2),
-    reservoirWaterMat
-  );
-  streamInflow.position.set(-1.6, 0.22, 0);
-  streamInflow.userData = { interactableType: 'weir' };
-  group.add(streamInflow);
-
-  // Seitliche gemauerte Wangen / Steine des Überlaufkanals
-  const canalWallMat = new THREE.MeshStandardMaterial({
-    color: 0x4d5357,
-    roughness: 0.86,
-    flatShading: true,
-  });
-  for (const pz of [-1.25, 1.25]) {
-    const wall = new THREE.Mesh(
-      new THREE.BoxGeometry(1.5, 0.55, 0.32),
-      canalWallMat
-    );
-    wall.position.set(-1.6, 0.30, pz);
-    wall.castShadow = true;
-    wall.receiveShadow = true;
-    wall.userData = { interactableType: 'weir' };
-    group.add(wall);
-  }
-
   // Lade antiken Rundbrunnen (ancient circular well 3d model.glb)
   loader.load(
     '/assets/models/ancient circular well 3d model.glb',
@@ -215,7 +187,7 @@ export function createWeirBridgeScene(
       // Fallback-Steinring falls GLB verzögert lädt
       const fallbackWell = new THREE.Mesh(
         new THREE.CylinderGeometry(4.2, 4.3, 1.54, 32, 1, true),
-        canalWallMat
+        stoneMat
       );
       fallbackWell.position.set(-5.4, 0.77, 0.0);
       wellContainer.add(fallbackWell);
@@ -289,22 +261,6 @@ export function createWeirBridgeScene(
     group.add(weirPost);
   }
 
-  // Wehrüberlauf oben an der Überfallkante
-  const weirSpillwayMat = new THREE.MeshStandardMaterial({
-    color: 0xaef0ff,
-    emissive: 0x24788c,
-    emissiveIntensity: 0.65,
-    roughness: 0.22,
-    transparent: true,
-    opacity: 0.90,
-  });
-  const weirSpillway = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 0.18, 2.2),
-    weirSpillwayMat
-  );
-  weirSpillway.position.set(-0.95, 0.02, 0);
-  group.add(weirSpillway);
-
   // Tosender, 1.4 Meter hoher Wasserfall vom Wehr hinab in das tiefe Bachbett
   const weirCascadeMat = new THREE.MeshStandardMaterial({
     color: 0xe0faff,
@@ -318,7 +274,7 @@ export function createWeirBridgeScene(
     new THREE.BoxGeometry(0.55, 1.44, 2.1),
     weirCascadeMat
   );
-  weirCascade.position.set(-0.74, -0.70, 0);
+  weirCascade.position.set(-0.74, -0.78, 0);
   weirCascade.rotation.z = -0.15;
   group.add(weirCascade);
 
