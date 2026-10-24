@@ -127,14 +127,15 @@ export function createNixiePond(
     transparent: true,
     opacity: 0.28,
   });
-  const rippleRing2 = new THREE.Mesh(new THREE.RingGeometry(0.65, 0.73, 28), rippleMat2);
+  const rippleRing2 = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.63, 28), rippleMat2);
   rippleRing2.rotation.x = -Math.PI / 2;
-  rippleRing2.position.set(-2.5, 0.22, 0.8);
+  rippleRing2.position.set(-1.78, 0.22, 0.20);
   group.add(rippleRing2);
 
   // 4. Der verlockende, verfluchte Schatz unter der Wasseroberfläche
+  // Direkt am Fuß des Nixenfelsens platziert (ca. 27 cm vom Steinzentrum)
   const treasureGroup = new THREE.Group();
-  treasureGroup.position.set(-2.5, 0.16, 0.8);
+  treasureGroup.position.set(-1.78, 0.16, 0.20);
 
   const goldMat = new THREE.MeshStandardMaterial({
     color: 0xffd452,
