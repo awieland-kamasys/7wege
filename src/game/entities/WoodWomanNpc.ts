@@ -7,7 +7,8 @@ export interface WoodWomanNpcEntity {
   update: (
     elapsedSeconds: number,
     playerPos: { x: number; z: number },
-    isHighlighted: boolean
+    isHighlighted: boolean,
+    dtSeconds?: number
   ) => void;
 }
 
@@ -19,11 +20,10 @@ export interface WoodWomanNpcOptions {
 }
 
 /**
- * Erstellt die 3D-Figur "Das Holzweibchen" (Walddruidin):
- * Lädt standardmäßig das detailreiche 3D-Modell `/assets/models/forest druid 3d model new style.glb`
- * (oder optional das klassische Modell `/assets/models/forest druid 3d model.glb`)
- * mit naturverbundener Robe, Umhang und Geweih-Krone.
- * Wird sowohl im Holzfällercamp (Weg 4) als auch an der Jagdhütte (Weg 6) verwendet.
+ * Erstellt die 3D-Figur "Das Holzweibchen" (Waldkreatur/Walddruidin):
+ * Lädt das animierte 3D-Modell `/assets/models/forest+creature+3d+model.glb`
+ * mit natürlicher Umschau- und Gestik-Animation.
+ * Steht im Holzfällercamp (Weg 4).
  */
 export function createWoodWomanNpc(
   onMeshLoadedOrOptions?: ((mesh: THREE.Mesh) => void) | WoodWomanNpcOptions,
@@ -45,7 +45,7 @@ export function createWoodWomanNpc(
     interactableType = 'wood_woman',
     defaultFacingTarget,
     loadDelayMs = 0,
-    modelPath = '/assets/models/forest druid 3d model new style.glb',
+    modelPath = '/assets/models/forest+creature+3d+model.glb',
   } = options;
 
   const group = new THREE.Group();
@@ -63,7 +63,7 @@ export function createWoodWomanNpc(
     new THREE.OctahedronGeometry(0.15, 0),
     indicatorMat
   );
-  indicator.position.y = 1.55;
+  indicator.position.y = 1.62;
   group.add(indicator);
 
   // 2. Temporäre dezente Platzhalter-Geometrie während des Ladens des GLB-Modells
@@ -85,7 +85,13 @@ export function createWoodWomanNpc(
   // Gespeicherte Materialien des geladenen GLB-Modells für den Hover-Effekt
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
-  // 3. Lade das GLB-Modell des Wald-Druiden
+  // AnimationMixer für die Waldkreatur
+  let mixer: THREE.AnimationMixer | null = null;
+  let lookAroundAction: THREE.AnimationAction | null = null;
+  let foldArmsAction: THREE.AnimationAction | null = null;
+  let lastTimeSeconds = 0;
+
+  // 3. Lade das GLB-Modell der Waldkreatur
   const startLoad = (): void => {
     const loader = new GLTFLoader();
     loader.load(
@@ -93,8 +99,8 @@ export function createWoodWomanNpc(
       (gltf) => {
         const model = gltf.scene;
 
-        // Skalierung: Originalmodell ist 1.00m hoch -> 1.30x für zierliche Gestalt des Holzweibchens (1.30m)
-        model.scale.setScalar(1.30);
+        // Skalierung: Originalmodell ist 1.00m hoch -> 1.35x für passende Holzweibchen-Größe (1.35m)
+        model.scale.setScalar(1.35);
 
         // Bounding-Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
         model.updateMatrixWorld(true);
@@ -114,7 +120,7 @@ export function createWoodWomanNpc(
             for (const mat of mats) {
               if (mat && 'emissive' in mat) {
                 const stdMat = mat as THREE.MeshStandardMaterial;
-                stdMat.roughness = 0.85;
+                stdMat.roughness = 0.82;
                 modelMaterials.push(stdMat);
               }
             }
@@ -125,7 +131,28 @@ export function createWoodWomanNpc(
           }
         });
 
-        // Platzhalter entfernen und fertiges Druiden-Modell einfügen
+        // Animationen vorbereiten
+        if (gltf.animations && gltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(model);
+
+          const clipLook =
+            gltf.animations.find((a) => a.name.toLowerCase().includes('look')) ??
+            gltf.animations[3] ??
+            gltf.animations[0];
+          if (clipLook) {
+            lookAroundAction = mixer.clipAction(clipLook);
+            lookAroundAction.setLoop(THREE.LoopRepeat, Infinity);
+            lookAroundAction.play();
+          }
+
+          const clipFold = gltf.animations.find((a) => a.name.toLowerCase().includes('fold'));
+          if (clipFold) {
+            foldArmsAction = mixer.clipAction(clipFold);
+            foldArmsAction.setLoop(THREE.LoopRepeat, Infinity);
+          }
+        }
+
+        // Platzhalter entfernen und fertiges Modell einfügen
         group.remove(fallbackGroup);
         disposeObject3D(fallbackGroup);
         group.add(model);
@@ -146,10 +173,22 @@ export function createWoodWomanNpc(
   const update = (
     elapsedSeconds: number,
     playerPos: { x: number; z: number },
-    isHighlighted: boolean
+    isHighlighted: boolean,
+    dtSeconds?: number
   ): void => {
+    // Delta-Zeit für den AnimationMixer
+    let dt = dtSeconds;
+    if (dt === undefined) {
+      dt = lastTimeSeconds > 0 ? Math.min(0.1, Math.max(0.001, elapsedSeconds - lastTimeSeconds)) : 0.016;
+    }
+    lastTimeSeconds = elapsedSeconds;
+
+    if (mixer) {
+      mixer.update(dt);
+    }
+
     // Sanftes Schweben und Rotieren des Kristalls
-    indicator.position.y = 1.55 + Math.sin(elapsedSeconds * 2.5) * 0.05;
+    indicator.position.y = 1.62 + Math.sin(elapsedSeconds * 2.5) * 0.05;
     indicator.rotation.y = elapsedSeconds * 1.3;
 
     indicatorMat.emissiveIntensity = isHighlighted ? 1.25 : 0.6;
@@ -164,7 +203,7 @@ export function createWoodWomanNpc(
     }
 
     // Holzweibchen wendet sich der spielenden Person zu, sobald diese nahe ist;
-    // sonst blickt sie zur Standard-Blickrichtung (z.B. zum Wilden Jäger an der Jagdhütte)
+    // sonst blickt sie zur Standard-Blickrichtung
     const dx = playerPos.x - group.position.x;
     const dz = playerPos.z - group.position.z;
     const dist = Math.hypot(dx, dz);

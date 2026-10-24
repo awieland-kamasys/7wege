@@ -165,7 +165,6 @@ export class CrossroadsScene {
   private readonly huntingLodge: HuntingLodgeEntity;
   private readonly wildHunterNpc: WildHunterNpcEntity;
   private readonly woodWomanLodgeNpc: WoodWomanNpcEntity;
-  private readonly woodWomanClassicNpc: WoodWomanNpcEntity;
   private readonly closedGate: ClosedGateEntity;
   private readonly creatureNpc: CreatureNpcEntity;
   private readonly worldTree: WorldTreeEntity;
@@ -673,9 +672,7 @@ export class CrossroadsScene {
     });
     this.scene.add(this.wildHunterNpc.group);
 
-    // Erstes Holzweibchen (NPC) vor den Pflanzkübeln an der Jagdhütte: Neuer Entwurf (forest druid 3d model new style.glb)
-    const lodgePosX1 = WOOD_WOMAN_LODGE_NPC_POS.x - 0.35;
-    const lodgePosZ1 = WOOD_WOMAN_LODGE_NPC_POS.z - 0.2;
+    // Holzweibchen (NPC) vor den Pflanzkübeln an der Jagdhütte (forest+creature+3d+model.glb)
     this.woodWomanLodgeNpc = createWoodWomanNpc(
       (mesh) => {
         this.pickableObjects.push(mesh);
@@ -683,13 +680,13 @@ export class CrossroadsScene {
       {
         interactableType: 'wood_woman_lodge',
         defaultFacingTarget: WILD_HUNTER_NPC_POS,
-        modelPath: '/assets/models/forest druid 3d model new style.glb',
+        modelPath: '/assets/models/forest+creature+3d+model.glb',
       }
     );
     this.woodWomanLodgeNpc.group.position.set(
-      lodgePosX1,
-      getTerrainHeight(lodgePosX1, lodgePosZ1),
-      lodgePosZ1
+      WOOD_WOMAN_LODGE_NPC_POS.x,
+      getTerrainHeight(WOOD_WOMAN_LODGE_NPC_POS.x, WOOD_WOMAN_LODGE_NPC_POS.z),
+      WOOD_WOMAN_LODGE_NPC_POS.z
     );
     this.woodWomanLodgeNpc.group.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -697,31 +694,6 @@ export class CrossroadsScene {
       }
     });
     this.scene.add(this.woodWomanLodgeNpc.group);
-
-    // Zweites Holzweibchen (NPC) direkt daneben zum Modellvergleich: Klassischer Entwurf (forest druid 3d model.glb)
-    const lodgePosX2 = WOOD_WOMAN_LODGE_NPC_POS.x + 0.35;
-    const lodgePosZ2 = WOOD_WOMAN_LODGE_NPC_POS.z + 0.2;
-    this.woodWomanClassicNpc = createWoodWomanNpc(
-      (mesh) => {
-        this.pickableObjects.push(mesh);
-      },
-      {
-        interactableType: 'wood_woman_lodge',
-        defaultFacingTarget: WILD_HUNTER_NPC_POS,
-        modelPath: '/assets/models/forest druid 3d model.glb',
-      }
-    );
-    this.woodWomanClassicNpc.group.position.set(
-      lodgePosX2,
-      getTerrainHeight(lodgePosX2, lodgePosZ2),
-      lodgePosZ2
-    );
-    this.woodWomanClassicNpc.group.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        this.pickableObjects.push(child);
-      }
-    });
-    this.scene.add(this.woodWomanClassicNpc.group);
 
     // Das geschlossene Tor mit flankierenden Steinmauern am Ende des 7. Weges (3D-Ziertor)
     this.closedGate = createClosedGate((mesh) => {
@@ -3185,7 +3157,8 @@ export class CrossroadsScene {
         this.greyManNpc.update(
           this.elapsedSeconds,
           playerPos,
-          this.isGreyManHovered || isDialogueActive
+          this.isGreyManHovered || isDialogueActive,
+          dtSeconds
         );
       }
     }
@@ -3219,7 +3192,8 @@ export class CrossroadsScene {
       this.woodWomanNpc.update(
         this.elapsedSeconds,
         playerPos,
-        this.isWoodWomanHovered || isDialogueActive
+        this.isWoodWomanHovered || isDialogueActive,
+        dtSeconds
       );
     }
     // Weg 5: Höllenschlund & Teufel (bereits ab 58m aktiv, damit der Krater vom Rand aus lebendig wirkt)
@@ -3243,12 +3217,8 @@ export class CrossroadsScene {
       this.woodWomanLodgeNpc.update(
         this.elapsedSeconds,
         playerPos,
-        this.isWoodWomanLodgeHovered || isDialogueActive
-      );
-      this.woodWomanClassicNpc.update(
-        this.elapsedSeconds,
-        playerPos,
-        this.isWoodWomanLodgeHovered || isDialogueActive
+        this.isWoodWomanLodgeHovered || isDialogueActive,
+        dtSeconds
       );
     }
     // Weg 7: Verschlossenes Tor

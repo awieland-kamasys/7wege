@@ -10,8 +10,8 @@ export interface GuideNpcEntity {
 
 /**
  * Erstellt die 3D-Figur des Hinweisgebers (Waldhüter Arvid) direkt an der Schutzhütte.
- * Lädt das Low-Poly-Charaktermodell (`/assets/models/arvid.glb`) und behält
- * den charakteristischen, schwebenden Hinweis-Marker über dem Kopf bei.
+ * Lädt das stilisierte Zwergen-Waldhüter-Modell (`/assets/models/stylized+dwarf+character+3d+model.glb`)
+ * mit stimmungsvoller Idle- und Gestik-Animation.
  */
 export function createGuideNpc(onMeshLoaded?: (object: THREE.Object3D) => void): GuideNpcEntity {
   const group = new THREE.Group();
@@ -23,8 +23,8 @@ export function createGuideNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
     opacity: 0,
     depthWrite: false,
   });
-  const hitbox = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 1.85, 12), hitboxMat);
-  hitbox.position.y = 0.925;
+  const hitbox = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 1.65, 12), hitboxMat);
+  hitbox.position.y = 0.825;
   hitbox.userData = { interactableType: 'npc' };
   group.add(hitbox);
 
@@ -35,12 +35,12 @@ export function createGuideNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
     roughness: 0.85,
     flatShading: true,
   });
-  const fallbackBody = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.42, 1.35, 10), fallbackMat);
-  fallbackBody.position.y = 0.68;
+  const fallbackBody = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.42, 1.25, 10), fallbackMat);
+  fallbackBody.position.y = 0.625;
   fallbackBody.castShadow = true;
   fallbackGroup.add(fallbackBody);
   const fallbackHead = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), fallbackMat);
-  fallbackHead.position.y = 1.5;
+  fallbackHead.position.y = 1.40;
   fallbackGroup.add(fallbackHead);
   group.add(fallbackGroup);
 
@@ -59,76 +59,49 @@ export function createGuideNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
     flatShading: true,
   });
   const indicator = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), indicatorMat);
-  indicator.position.y = 2.08;
+  indicator.position.y = 1.82;
   indicator.userData = { interactableType: 'npc' };
   group.add(indicator);
 
   // Materialien des geladenen GLB-Modells für den Hover-Effekt sammeln
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
-  // Knochen für prozedurale Animation (Atmung, Kopfneigung, Zuprosten mit Bierflasche)
-  let spineBone: THREE.Bone | null = null;
-  let headBone: THREE.Bone | null = null;
-  let rightArmBone: THREE.Bone | null = null;
-  let rightForeArmBone: THREE.Bone | null = null;
-
-  const initialSpineRot = new THREE.Euler();
-  const initialHeadRot = new THREE.Euler();
-  const initialRightArmRot = new THREE.Euler();
-  const initialRightForeArmRot = new THREE.Euler();
-
-  let loadedModel: THREE.Group | null = null;
-  let baseModelY = 0;
-
-  const cheersDuration = 1.6;
-  let cheersTimer = 0;
+  let mixer: THREE.AnimationMixer | null = null;
+  let waitAction: THREE.AnimationAction | null = null;
+  let cheerAction: THREE.AnimationAction | null = null;
 
   const triggerCheers = () => {
-    cheersTimer = cheersDuration;
+    if (cheerAction && waitAction) {
+      cheerAction.reset();
+      cheerAction.setLoop(THREE.LoopOnce, 1);
+      cheerAction.clampWhenFinished = true;
+      cheerAction.play();
+      cheerAction.crossFadeFrom(waitAction, 0.25, true);
+      setTimeout(() => {
+        if (waitAction && cheerAction) {
+          waitAction.reset();
+          waitAction.play();
+          waitAction.crossFadeFrom(cheerAction, 0.35, true);
+        }
+      }, 3500);
+    }
   };
 
   const loader = new GLTFLoader();
   loader.load(
-    '/assets/models/arvid.glb',
+    '/assets/models/stylized+dwarf+character+3d+model.glb',
     (gltf) => {
       const model = gltf.scene;
-      loadedModel = model;
-      // Modellhöhe im Rohzustand ca. 0.98m -> Skalierung auf 1.88 für Lebensgröße (~1.85m)
-      model.scale.setScalar(1.88);
+
+      // Skalierung: Originalmodell ist 1.00m hoch -> Skalierung auf 1.52 für stämmige Zwergen-Statur (~1.52m)
+      model.scale.setScalar(1.52);
 
       // Berechne Bounding Box, damit die Fußsohlen exakt auf Bodenniveau (y = 0) stehen
       model.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model);
-      baseModelY = -bounds.min.y;
-      model.position.set(0, baseModelY, 0);
+      model.position.set(0, -bounds.min.y, 0);
 
-      const toRemove: THREE.Object3D[] = [];
       model.traverse((child) => {
-        // Studio-Boden und Test-Würfel aus der Modellierungsdatei entfernen
-        if (child.name === 'Studio_Boden' || child.name === 'Cube') {
-          toRemove.push(child);
-          return;
-        }
-
-        // Knochen für prozedurales Rigging erfassen
-        if ((child as THREE.Bone).isBone) {
-          const bone = child as THREE.Bone;
-          const lower = bone.name.toLowerCase();
-          if (lower.includes('spine') && !spineBone) {
-            spineBone = bone;
-            initialSpineRot.copy(bone.rotation);
-          } else if (lower.includes('head') && !headBone) {
-            headBone = bone;
-            initialHeadRot.copy(bone.rotation);
-          } else if ((lower.includes('rightarm') || lower.includes('right_arm')) && !rightArmBone) {
-            rightArmBone = bone;
-            initialRightArmRot.copy(bone.rotation);
-          } else if ((lower.includes('rightforearm') || lower.includes('right_forearm')) && !rightForeArmBone) {
-            rightForeArmBone = bone;
-            initialRightForeArmRot.copy(bone.rotation);
-          }
-        }
-
         const mesh = child as THREE.Mesh;
         if (mesh.isMesh) {
           mesh.castShadow = true;
@@ -138,7 +111,9 @@ export function createGuideNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
           const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
           for (const mat of mats) {
             if (mat && 'emissive' in mat) {
-              modelMaterials.push(mat as THREE.MeshStandardMaterial);
+              const stdMat = mat as THREE.MeshStandardMaterial;
+              stdMat.roughness = 0.82;
+              modelMaterials.push(stdMat);
             }
           }
           if (onMeshLoaded) {
@@ -147,8 +122,27 @@ export function createGuideNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
         }
       });
 
-      for (const obj of toRemove) {
-        obj.removeFromParent();
+      // Animationen einrichten
+      if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(model);
+
+        const clipWait =
+          gltf.animations.find((a) => a.name.toLowerCase().includes('wait')) ??
+          gltf.animations[4] ??
+          gltf.animations[0];
+        if (clipWait) {
+          waitAction = mixer.clipAction(clipWait);
+          waitAction.setLoop(THREE.LoopRepeat, Infinity);
+          waitAction.play();
+        }
+
+        const clipCheer =
+          gltf.animations.find((a) => a.name.toLowerCase().includes('clap')) ??
+          gltf.animations.find((a) => a.name.toLowerCase().includes('agree')) ??
+          gltf.animations[5];
+        if (clipCheer) {
+          cheerAction = mixer.clipAction(clipCheer);
+        }
       }
 
       group.remove(fallbackGroup);
@@ -172,12 +166,12 @@ export function createGuideNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
     const delta = dtSeconds !== undefined ? dtSeconds : Math.max(0.001, Math.min(0.1, timeSeconds - lastTimeSeconds));
     lastTimeSeconds = timeSeconds;
 
-    if (cheersTimer > 0) {
-      cheersTimer = Math.max(0, cheersTimer - delta);
+    if (mixer) {
+      mixer.update(delta);
     }
 
     // Sanftes Schweben und Rotieren des Kristalls
-    indicator.position.y = 2.08 + Math.sin(timeSeconds * 2.6) * 0.06;
+    indicator.position.y = 1.82 + Math.sin(timeSeconds * 2.6) * 0.06;
     indicator.rotation.y = timeSeconds * 1.3;
 
     // Arvid wendet sich ruhig der spielenden Person zu, wenn diese in der Nähe ist
@@ -187,26 +181,6 @@ export function createGuideNpc(onMeshLoaded?: (object: THREE.Object3D) => void):
     if (dist < 7.5 && dist > 0.1) {
       const targetAngle = Math.atan2(dx, dz);
       group.rotation.y = targetAngle;
-    }
-
-    // Animation entfernt: Arvid steht vollkommen ruhig, stabil und standfest auf dem Boden
-    if (loadedModel) {
-      loadedModel.position.set(0, baseModelY, 0);
-      loadedModel.rotation.set(0, 0, 0);
-    }
-
-    // Knochen bleiben in ihrer natürlichen Ursprungsausrichtung
-    if (spineBone) {
-      spineBone.rotation.copy(initialSpineRot);
-    }
-    if (headBone) {
-      headBone.rotation.copy(initialHeadRot);
-    }
-    if (rightArmBone) {
-      rightArmBone.rotation.copy(initialRightArmRot);
-    }
-    if (rightForeArmBone) {
-      rightForeArmBone.rotation.copy(initialRightForeArmRot);
     }
 
     // Hervorhebung bei Mouseover / Dialogaktivität

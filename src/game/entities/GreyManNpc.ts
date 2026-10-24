@@ -4,12 +4,18 @@ import { disposeObject3D } from '../utils/threeUtils';
 
 export interface GreyManNpcEntity {
   group: THREE.Group;
-  update: (timeSeconds: number, playerPos: { x: number; z: number }, highlighted: boolean) => void;
+  update: (
+    timeSeconds: number,
+    playerPos: { x: number; z: number },
+    highlighted: boolean,
+    dtSeconds?: number
+  ) => void;
 }
 
 /**
  * Erstellt die 3D-Figur des „Graumännchens“ vor dem Höhleneingang am Ende des 1. Weges.
- * Lädt das optimierte 3D-Charaktermodell (`/assets/models/grey-man.glb`).
+ * Lädt das stilisierte Zauberer-Modell (`/assets/models/stylized+wizard+3d+model.glb`)
+ * mit lebendiger Idle- und Verbeugungs-Animation.
  */
 export function createGreyManNpc(options?: { loadDelayMs?: number }): GreyManNpcEntity {
   const group = new THREE.Group();
@@ -41,15 +47,23 @@ export function createGreyManNpc(options?: { loadDelayMs?: number }): GreyManNpc
   // Gespeicherte Materialien des geladenen GLB-Modells für den Hover-Leuchteffekt
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
 
+  let mixer: THREE.AnimationMixer | null = null;
+  let waitAction: THREE.AnimationAction | null = null;
+  let bowAction: THREE.AnimationAction | null = null;
+
   const startLoad = (): void => {
     const loader = new GLTFLoader();
     loader.load(
-      '/assets/models/grey-man.glb',
+      '/assets/models/stylized+wizard+3d+model.glb',
       (gltf) => {
         const model = gltf.scene;
-        // Das Originalmodell ist ca. 0.98 Einheiten hoch (Y: 0 bis 0.98) -> Skalierung auf ~1.62 m Körpergröße
+        // Skalierung: Originalmodell ist 1.00m hoch -> 1.65m für würdevolle Magier-Statur
         model.scale.setScalar(1.65);
-        model.position.set(0, 0, 0);
+
+        // Fußsohlen exakt bündig auf Bodenniveau (y = 0) aufsetzen
+        model.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(model);
+        model.position.set(0, -bounds.min.y, 0);
 
         model.traverse((child) => {
           const mesh = child as THREE.Mesh;
@@ -66,6 +80,26 @@ export function createGreyManNpc(options?: { loadDelayMs?: number }): GreyManNpc
             }
           }
         });
+
+        // Animationen vorbereiten
+        if (gltf.animations && gltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(model);
+
+          const clipWait =
+            gltf.animations.find((a) => a.name.toLowerCase().includes('wait')) ??
+            gltf.animations[1] ??
+            gltf.animations[0];
+          if (clipWait) {
+            waitAction = mixer.clipAction(clipWait);
+            waitAction.setLoop(THREE.LoopRepeat, Infinity);
+            waitAction.play();
+          }
+
+          const clipBow = gltf.animations.find((a) => a.name.toLowerCase().includes('bow'));
+          if (clipBow) {
+            bowAction = mixer.clipAction(clipBow);
+          }
+        }
 
         group.remove(fallbackGroup);
         disposeObject3D(fallbackGroup);
@@ -94,7 +128,7 @@ export function createGreyManNpc(options?: { loadDelayMs?: number }): GreyManNpc
 
   // Schwebendes Silbererz-Symbol über dem Kopf des Graumännchens
   const indicator = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), silverCrystalMat);
-  indicator.position.y = 1.92;
+  indicator.position.y = 1.95;
   indicator.userData = { interactableType: 'grey_man' };
   group.add(indicator);
 
@@ -102,12 +136,40 @@ export function createGreyManNpc(options?: { loadDelayMs?: number }): GreyManNpc
   softSilverLight.position.set(0, 1.85, 0.45);
   group.add(softSilverLight);
 
+  let lastTimeSeconds = 0;
+  let wasHighlighted = false;
+
   const update = (
     timeSeconds: number,
     playerPos: { x: number; z: number },
-    highlighted: boolean
+    highlighted: boolean,
+    dtSeconds?: number
   ) => {
-    indicator.position.y = 1.92 + Math.sin(timeSeconds * 2.5 + 1.0) * 0.07;
+    const delta = dtSeconds !== undefined ? dtSeconds : Math.max(0.001, Math.min(0.1, timeSeconds - lastTimeSeconds));
+    lastTimeSeconds = timeSeconds;
+
+    if (mixer) {
+      mixer.update(delta);
+    }
+
+    // Höfliche Verbeugung bei Beginn des Dialogs
+    if (highlighted && !wasHighlighted && bowAction && waitAction) {
+      bowAction.reset();
+      bowAction.setLoop(THREE.LoopOnce, 1);
+      bowAction.clampWhenFinished = true;
+      bowAction.play();
+      bowAction.crossFadeFrom(waitAction, 0.25, true);
+      setTimeout(() => {
+        if (waitAction && bowAction) {
+          waitAction.reset();
+          waitAction.play();
+          waitAction.crossFadeFrom(bowAction, 0.35, true);
+        }
+      }, 4500);
+    }
+    wasHighlighted = highlighted;
+
+    indicator.position.y = 1.95 + Math.sin(timeSeconds * 2.5 + 1.0) * 0.07;
     indicator.rotation.y = -timeSeconds * 1.3;
 
     const dx = playerPos.x - group.position.x;
