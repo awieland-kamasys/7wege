@@ -32,9 +32,9 @@ export function createLumberjackCamp(
   placeholder.userData = { interactableType: 'lumber_camp' };
   group.add(placeholder);
 
-  // Wärmendes, lebendig flackerndes Lagerfeuerlicht
+  // Wärmendes, lebendig flackerndes Lagerfeuerlicht über der Feuerstelle
   const fireLight = new THREE.PointLight(0xff7a29, 1.45, 10.5);
-  fireLight.position.set(0, 0.45, 0);
+  fireLight.position.set(0, 0.75, 0);
   group.add(fireLight);
 
   // Lade das Camp-Scene-Modell
@@ -47,12 +47,11 @@ export function createLumberjackCamp(
       // 1. Gleichmäßiges Upscaling: Originalgröße ~1.0m wird auf 6.5m vergrößert
       model.scale.setScalar(6.5);
 
-      // 2. Bounding Box berechnen und Modell passgenau auf Bodenniveau aufsetzen:
-      // Das Modell wird um 48 cm abgesenkt, sodass alle Gebäude, Zelte und Sitzstämme
-      // bündig und fest auf dem Waldboden stehen, ohne in der Luft zu schweben.
+      // 2. Passgenaue Ausrichtung am terrassierten Geländerelief:
+      // Ein minimales Einsinken um 4 cm verankert alle Baumstämme, Pfähle,
+      // Kisten und Zelte bündig und fest in der Grasnarbe des ansteigenden Bodens.
       model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      model.position.set(0, -bounds.min.y - 0.48, 0);
+      model.position.set(0, -0.04, 0);
 
       // 3. Schatten und Interaktivität für alle Meshes
       model.traverse((child) => {

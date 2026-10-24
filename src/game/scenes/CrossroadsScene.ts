@@ -533,7 +533,7 @@ export class CrossroadsScene {
     });
     this.lumberCamp.group.position.set(
       LUMBER_CAMP_POS.x,
-      getTerrainHeight(LUMBER_CAMP_POS.x, LUMBER_CAMP_POS.z),
+      0.80,
       LUMBER_CAMP_POS.z
     );
     this.lumberCamp.group.rotation.y = LUMBER_CAMP_POS.rotationY;

@@ -42,8 +42,8 @@ export const TERRAIN_PLATEAUS: PlateauDefinition[] = [
   { x: POND_CENTER_POS.x, z: POND_CENTER_POS.z, radius: 8.5, blendRadius: 14.0, height: -1.2 },
   // 3. Vorplatz beim Riesen am Stausee (Weg 3): Ebenes Schauplatz-Plateau hinter der Brücke (-1.50m)
   { x: PATH_3_END_CLEARING.x, z: PATH_3_END_CLEARING.z, radius: 4.5, blendRadius: 8.5, height: -1.5 },
-  // 4. Holzfällerlager (Weg 4): Sanfte Waldhochebene
-  { x: LUMBER_CAMP_POS.x, z: LUMBER_CAMP_POS.z, radius: 8.0, blendRadius: 14.0, height: 0.8 },
+  // 4. Vorplatz vor dem Holzfällerlager (Weg 4): Sanfter Übergang von Pfad 4 auf die Lichtung
+  { x: LUMBER_CAMP_POS.x, z: 40.5, radius: 3.5, blendRadius: 7.0, height: 0.8 },
   // 5. Höllenschlund / Teufelskrater (Weg 5): Tiefer Vulkankessel
   { x: HELL_CHASM_POS.x, z: HELL_CHASM_POS.z, radius: 10.0, blendRadius: 17.5, height: -5.0 },
   // 6. Jagdhütte (Weg 6): Sanfter Waldhang
@@ -227,6 +227,28 @@ export function getTerrainHeight(x: number, z: number): number {
   // Flusstal- und Bachrinnen-Einfluss überblenden
   if (streamValleyWeight > 0) {
     terrainHeightResult = streamTargetHeight * streamValleyWeight + terrainHeightResult * (1.0 - streamValleyWeight);
+  }
+
+  // 6. Holzfällercamp (Weg 4): Terrassiertes Waldplateau mit passgenauem Hang für das Camp-Modell:
+  // - Vorplatz & Baumstämme (z <= 42.8): Ebene auf 0.80m
+  // - Ansteigender Hang (z von 42.8 bis 45.4): sanfte Terrassierung von 0.80m auf 1.75m (+0.95m Stufe des Modells)
+  // - Zelt, Unterstand & Palisaden (z >= 45.4): obere Hochebene auf 1.75m
+  const dxCamp = LUMBER_CAMP_POS.x - x;
+  const dzCamp = LUMBER_CAMP_POS.z - z;
+  const campLatDist = Math.abs(dxCamp);
+  const campZl = dzCamp; // mit rotationY = Math.PI ist zl = LUMBER_CAMP_POS.z - z
+  const campTotalDist = Math.hypot(dxCamp, dzCamp);
+
+  if (campTotalDist < 12.0) {
+    const tStep = smoothstep(1.2, -1.6, campZl);
+    const lumberCampHeight = 0.80 + tStep * 0.95;
+    const wLat = 1.0 - smoothstep(3.8, 8.0, campLatDist);
+    const wLong = campZl > 0 ? (1.0 - smoothstep(2.8, 6.5, campZl)) : (1.0 - smoothstep(3.2, 7.5, -campZl));
+    const lumberCampWeight = wLat * wLong;
+
+    if (lumberCampWeight > 0) {
+      terrainHeightResult = lumberCampHeight * lumberCampWeight + terrainHeightResult * (1.0 - lumberCampWeight);
+    }
   }
 
   return terrainHeightResult;

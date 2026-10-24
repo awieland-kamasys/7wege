@@ -37,4 +37,11 @@ describe('TerrainHeight', () => {
     const endH = getTerrainHeight(HELL_CHASM_POS.x, HELL_CHASM_POS.z);
     expect(endH).toBeCloseTo(-5.0, 1);
   });
+
+  it('sollte am Holzfällercamp die Terrassierung von 0.80m auf 1.75m abbilden', () => {
+    // Vorplatz / Baumstämme (z <= 42.5)
+    expect(getTerrainHeight(16.5, 42.0)).toBeCloseTo(0.80, 1);
+    // Hinterer Bereich / Zelt (z >= 45.8)
+    expect(getTerrainHeight(16.5, 46.0)).toBeCloseTo(1.75, 1);
+  });
 });
