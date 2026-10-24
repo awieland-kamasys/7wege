@@ -12,20 +12,16 @@ export function createTreasureChest(): TreasureChestEntity {
   const group = new THREE.Group();
   group.name = 'TreasureChest';
 
-  const woodMat = new THREE.MeshStandardMaterial({
+  const woodMat = new THREE.MeshLambertMaterial({
     color: 0x5a381e,
-    roughness: 0.85,
     emissive: 0x000000,
   });
-  const metalMat = new THREE.MeshStandardMaterial({
+  const metalMat = new THREE.MeshLambertMaterial({
     color: 0xb89246,
-    roughness: 0.4,
-    metalness: 0.65,
     emissive: 0x000000,
   });
-  const interiorMat = new THREE.MeshStandardMaterial({
+  const interiorMat = new THREE.MeshLambertMaterial({
     color: 0x26170c,
-    roughness: 0.95,
   });
   const treasureGlowMat = new THREE.MeshStandardMaterial({
     color: 0xffd86b,

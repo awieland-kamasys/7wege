@@ -22,10 +22,8 @@ export function createPathPuddle(): PathPuddleEntity {
   const pickableMeshes: THREE.Object3D[] = [];
 
   // Feuchter, schlammiger Erdboden-Ring am Rand der Pfütze
-  const mudMaterial = new THREE.MeshStandardMaterial({
+  const mudMaterial = new THREE.MeshLambertMaterial({
     color: 0x3a3326,
-    roughness: 0.95,
-    metalness: 0.05,
     flatShading: true,
   });
 

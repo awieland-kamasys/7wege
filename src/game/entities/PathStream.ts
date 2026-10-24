@@ -24,10 +24,8 @@ export function createPathStream(): PathStreamEntity {
   const pickableMeshes: THREE.Object3D[] = [];
 
   // Wasserbett / Flussrinne (dunkles nasses Kiesbett)
-  const bedMaterial = new THREE.MeshStandardMaterial({
+  const bedMaterial = new THREE.MeshLambertMaterial({
     color: 0x242d2a,
-    roughness: 0.88,
-    metalness: 0.1,
     flatShading: true,
   });
 

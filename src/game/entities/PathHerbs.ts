@@ -24,27 +24,22 @@ export function createPathHerbs(): PathHerbsEntity {
   const pickableMeshes: THREE.Object3D[] = [];
 
   // Holzmaterial für das Geländer
-  const woodMaterial = new THREE.MeshStandardMaterial({
+  const woodMaterial = new THREE.MeshLambertMaterial({
     color: 0x5a3e26,
-    roughness: 0.9,
-    metalness: 0.05,
     flatShading: true,
   });
 
   // Material für die Blätter und Stängel der Kräuter
-  const leafMaterial = new THREE.MeshStandardMaterial({
+  const leafMaterial = new THREE.MeshLambertMaterial({
     color: 0x2e5c33,
-    roughness: 0.75,
-    metalness: 0.08,
     flatShading: true,
   });
 
   // Material für die leuchtenden violetten Blüten / Zauberknospen (Amethyst-Resonanz)
-  const blossomMaterial = new THREE.MeshStandardMaterial({
+  const blossomMaterial = new THREE.MeshLambertMaterial({
     color: 0xa84cd6,
     emissive: 0x6e1f96,
     emissiveIntensity: 0.75,
-    roughness: 0.35,
     flatShading: true,
   });
 

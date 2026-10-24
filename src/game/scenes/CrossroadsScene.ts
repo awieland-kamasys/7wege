@@ -259,6 +259,7 @@ export class CrossroadsScene {
       canvas,
       antialias: true,
       powerPreference: 'high-performance',
+      precision: 'highp', // Erzwingt volle FP32-Präzision auf ARM Mali GPUs (verhindert PBR-Fehlfarben / NaN-Glitches auf Android)
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(this.getOptimalPixelRatio());
@@ -2747,7 +2748,7 @@ export class CrossroadsScene {
 
     const body = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.28, 0.65, 8, 12),
-      new THREE.MeshStandardMaterial({ color: 0xe2b86b, roughness: 0.45 })
+      new THREE.MeshLambertMaterial({ color: 0xe2b86b })
     );
     body.position.y = 0.65;
     body.castShadow = true;
@@ -2755,7 +2756,7 @@ export class CrossroadsScene {
 
     const cloak = new THREE.Mesh(
       new THREE.ConeGeometry(0.4, 0.85, 12),
-      new THREE.MeshStandardMaterial({ color: 0x3b6e4c, roughness: 0.7 })
+      new THREE.MeshLambertMaterial({ color: 0x3b6e4c })
     );
     cloak.position.y = 0.55;
     cloak.castShadow = true;

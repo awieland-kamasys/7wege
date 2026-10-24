@@ -23,11 +23,10 @@ export function createPathFire(): PathFireEntity {
   const pickableMeshes: THREE.Object3D[] = [];
 
   // Verbrannter, aschiger Boden mit Glutrissen
-  const ashMaterial = new THREE.MeshStandardMaterial({
+  const ashMaterial = new THREE.MeshLambertMaterial({
     color: 0x1f1814,
     emissive: 0x5a1805,
     emissiveIntensity: 0.6,
-    roughness: 0.95,
     flatShading: true,
   });
 
@@ -40,11 +39,10 @@ export function createPathFire(): PathFireEntity {
   group.add(ashBase);
 
   // Glühende Felsen und Kohlebrocken
-  const coalMat = new THREE.MeshStandardMaterial({
+  const coalMat = new THREE.MeshLambertMaterial({
     color: 0x2b1308,
     emissive: 0xd93808,
     emissiveIntensity: 0.9,
-    roughness: 0.85,
     flatShading: true,
   });
 
@@ -64,20 +62,14 @@ export function createPathFire(): PathFireEntity {
   }
 
   // Lodernde Flammenzungen (Konen und Pyramiden in mehreren Schichten)
-  const flameMatOuter = new THREE.MeshStandardMaterial({
-    color: 0xff3800,
-    emissive: 0xff4400,
-    emissiveIntensity: 1.5,
-    roughness: 0.2,
+  const flameMatOuter = new THREE.MeshBasicMaterial({
+    color: 0xff4400,
     transparent: true,
     opacity: 0.92,
   });
 
-  const flameMatCore = new THREE.MeshStandardMaterial({
+  const flameMatCore = new THREE.MeshBasicMaterial({
     color: 0xffdd33,
-    emissive: 0xffbb11,
-    emissiveIntensity: 2.2,
-    roughness: 0.1,
     transparent: true,
     opacity: 0.95,
   });

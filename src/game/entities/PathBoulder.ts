@@ -23,28 +23,21 @@ export function createPathBoulder(): PathBoulderEntity {
   const pickableMeshes: THREE.Object3D[] = [];
 
   // Fels-Grundmaterial: uriger, verwitterter Granit
-  const rockMaterial = new THREE.MeshStandardMaterial({
+  const rockMaterial = new THREE.MeshLambertMaterial({
     color: 0x58564f,
-    roughness: 0.92,
-    metalness: 0.08,
     flatShading: true,
   });
 
   // Moosbedecktes Gesteinsmaterial für obere Kanten
-  const mossRockMaterial = new THREE.MeshStandardMaterial({
+  const mossRockMaterial = new THREE.MeshLambertMaterial({
     color: 0x485836,
-    roughness: 0.96,
-    metalness: 0.04,
     flatShading: true,
   });
 
   // Magisch glimmende Kristalladern / Runenrisse
-  const runeMaterial = new THREE.MeshStandardMaterial({
+  const runeMaterial = new THREE.MeshLambertMaterial({
     color: 0x55dd88,
     emissive: 0x22aa55,
-    emissiveIntensity: 0.85,
-    roughness: 0.3,
-    metalness: 0.2,
     flatShading: true,
   });
 

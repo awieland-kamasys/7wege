@@ -24,33 +24,28 @@ export function createPathLog(): PathLogEntity {
   const pickableMeshes: THREE.Object3D[] = [];
 
   // Rindenmaterial des Stamms (warmes, sonniges Kiefernholz)
-  const barkMaterial = new THREE.MeshStandardMaterial({
+  const barkMaterial = new THREE.MeshLambertMaterial({
     color: 0x8a6242,
-    roughness: 0.82,
-    metalness: 0.05,
     flatShading: true,
   });
 
   // Helles Kernholz an den Schnitt- und Bruchenden
-  const woodEndMaterial = new THREE.MeshStandardMaterial({
+  const woodEndMaterial = new THREE.MeshLambertMaterial({
     color: 0xc9a46a,
-    roughness: 0.78,
     flatShading: true,
   });
 
   // Moosbedeckung auf der Oberseite (frisches Sommerwiesenmoos)
-  const mossMaterial = new THREE.MeshStandardMaterial({
+  const mossMaterial = new THREE.MeshLambertMaterial({
     color: 0x4f7d34,
-    roughness: 0.88,
     flatShading: true,
   });
 
   // Bernsteinfarben glimmende Bruchrunen
-  const runeMaterial = new THREE.MeshStandardMaterial({
+  const runeMaterial = new THREE.MeshLambertMaterial({
     color: 0xe89e24,
     emissive: 0xb06810,
     emissiveIntensity: 0.8,
-    roughness: 0.35,
     flatShading: true,
   });
 

@@ -22,50 +22,42 @@ export interface MushroomClusterEntity {
 export class MushroomMaterialCache {
   private static instance: MushroomMaterialCache;
 
-  public readonly stemMat = new THREE.MeshStandardMaterial({
+  public readonly stemMat = new THREE.MeshLambertMaterial({
     color: 0xf0ebd8,
-    roughness: 0.85,
     flatShading: true,
   });
 
-  public readonly stemBoleteMat = new THREE.MeshStandardMaterial({
+  public readonly stemBoleteMat = new THREE.MeshLambertMaterial({
     color: 0xdfd3b8,
-    roughness: 0.88,
     flatShading: true,
   });
 
-  public readonly flyAgaricCapMat = new THREE.MeshStandardMaterial({
+  public readonly flyAgaricCapMat = new THREE.MeshLambertMaterial({
     color: 0xc82a24,
-    roughness: 0.5,
     flatShading: true,
   });
 
-  public readonly dotMat = new THREE.MeshStandardMaterial({
+  public readonly dotMat = new THREE.MeshLambertMaterial({
     color: 0xffffff,
-    roughness: 0.6,
   });
 
-  public readonly boleteCapMat = new THREE.MeshStandardMaterial({
+  public readonly boleteCapMat = new THREE.MeshLambertMaterial({
     color: 0x543216,
-    roughness: 0.65,
     flatShading: true,
   });
 
-  public readonly boleteSpongeMat = new THREE.MeshStandardMaterial({
+  public readonly boleteSpongeMat = new THREE.MeshLambertMaterial({
     color: 0xd9c88b,
-    roughness: 0.9,
     flatShading: true,
   });
 
-  public readonly chanterelleMat = new THREE.MeshStandardMaterial({
+  public readonly chanterelleMat = new THREE.MeshLambertMaterial({
     color: 0xeda321,
-    roughness: 0.7,
     flatShading: true,
   });
 
-  public readonly mossMat = new THREE.MeshStandardMaterial({
+  public readonly mossMat = new THREE.MeshLambertMaterial({
     color: 0x2d4f25,
-    roughness: 0.92,
     flatShading: true,
   });
 

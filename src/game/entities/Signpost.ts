@@ -177,7 +177,7 @@ export function createSignpost(): SignpostEntity {
     }
   };
 
-  const signMaterials = new Map<number, THREE.MeshStandardMaterial>();
+  const signMaterials = new Map<number, THREE.MeshLambertMaterial>();
 
   // Sieben Schilder gestaffelt am Pfosten, jeweils in Richtung ihres Weges gedreht
   SEVEN_PATHS.forEach((path, index) => {
@@ -188,9 +188,8 @@ export function createSignpost(): SignpostEntity {
     // Drehung passend zur Wegrichtung (0 Rad = Norden / -Z)
     signPivot.rotation.y = -path.angleRad + Math.PI / 2;
 
-    const mat = new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshLambertMaterial({
       color: path.colorHex,
-      roughness: 0.65,
       emissive: 0x000000,
     });
     signMaterials.set(path.id, mat);
