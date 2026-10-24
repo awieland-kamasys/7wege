@@ -1073,10 +1073,10 @@ export class CrossroadsState {
     }
 
     // Wehrbrücke & Stausee auf Weg 3:
-    // Die Brücke selbst (|lx| <= 1.05) ist begehbar. Außerhalb der Geländer (|lx| > 1.1) und im Stauseebecken herrscht Kollision.
+    // Die Brücke selbst (|lx| <= 1.55) ist begehbar. Außerhalb der Geländer (|lx| > 1.60) und im Stauseebecken herrscht Kollision.
     const localBridge = this.toBridgeLocal(x, z);
-    if (Math.abs(localBridge.lz) < 3.3) {
-      if (Math.abs(localBridge.lx) > 1.08 && Math.abs(localBridge.lx) < 4.5) {
+    if (Math.abs(localBridge.lz) < 4.85) {
+      if (Math.abs(localBridge.lx) > 1.60 && Math.abs(localBridge.lx) < 5.5) {
         return true;
       }
     }
@@ -1649,12 +1649,12 @@ export class CrossroadsState {
       resolvedZ = afterPond.z;
 
       // Wehrbrücke & Stausee auf Weg 3:
-      // Auf der Brücke selbst (|localBridge.lz| < 3.2) bleibt die Gehfläche frei begehbar (|localBridge.lx| <= 1.02),
+      // Auf der vergrößerten Brücke selbst (|localBridge.lz| < 4.8) bleibt die Gehfläche frei begehbar (|localBridge.lx| <= 1.55),
       // aber das Geländer hält den Spieler sicher auf dem Steg.
       let localBridge = this.toBridgeLocal(resolvedX, resolvedZ);
-      if (Math.abs(localBridge.lz) < 3.2) {
-        if (Math.abs(localBridge.lx) > 1.02 && Math.abs(localBridge.lx) < 4.5) {
-          localBridge.lx = Math.sign(localBridge.lx) * 1.02;
+      if (Math.abs(localBridge.lz) < 4.8) {
+        if (Math.abs(localBridge.lx) > 1.55 && Math.abs(localBridge.lx) < 5.5) {
+          localBridge.lx = Math.sign(localBridge.lx) * 1.55;
           const worldOnBridge = this.fromBridgeLocal(localBridge.lx, localBridge.lz);
           resolvedX = worldOnBridge.x;
           resolvedZ = worldOnBridge.z;

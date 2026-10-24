@@ -2787,7 +2787,7 @@ export class CrossroadsScene {
     const sinB = Math.sin(WEIR_BRIDGE_POS.rotationY);
     const lx = dxB * cosB - dzB * sinB;
     const lz = dxB * sinB + dzB * cosB;
-    if (Math.abs(lx) <= 1.45 && Math.abs(lz) <= 3.4) {
+    if (Math.abs(lx) <= 2.1 && Math.abs(lz) <= 4.9) {
       return -1.50;
     }
     return getTerrainHeight(x, z);
