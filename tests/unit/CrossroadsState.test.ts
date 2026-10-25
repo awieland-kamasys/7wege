@@ -1073,7 +1073,7 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     const poi = state.getActivePointOfInterest();
     expect(poi?.type).toBe('creature');
     if (poi && poi.type === 'creature') {
-      expect(poi.name).toBe('Fabelwesen Lupo');
+      expect(poi.name).toBe('Lupo');
     }
 
     // Kollision: Exakt an Lupos Position kann nicht getreten werden solange anwesend
@@ -1089,31 +1089,45 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(state.isWalkable(creaturePos.x, creaturePos.z)).toBe(true);
   });
 
-  it('führt den Dialog mit Fabelwesen Lupo und schließt mit creature_flee ab', () => {
+    it('führt den eingekürzten Dialog mit Lupo und schließt mit creature_flee ab', () => {
     const dialogue = new DialogueSystem();
     const rootNode = dialogue.startDialogue('creature_root');
     expect(rootNode).not.toBeNull();
-    expect(rootNode?.speaker).toBe('Fabelwesen Lupo');
-    expect(rootNode?.speakerRole).toContain('Waldhüterling');
-    expect(rootNode?.text).toContain('Wanderer');
-    expect(rootNode?.text).toContain('Torweg');
+    expect(rootNode?.speaker).toBe('Lupo');
+    expect(rootNode?.text).toContain('fressen');
 
-    // Erste Frage: Wer bist du? (Option 0)
+    // Option 0: Wer?
     const step1 = dialogue.selectOption(0);
-    expect(step1.node?.id).toBe('creature_who');
-    expect(step1.node?.text).toContain('Hüterling');
+    expect(step1.node?.id).toBe('creature_node_1');
+    expect(step1.node?.text).toBe('Na ER!');
 
-    // Weiter zu den 7 Prüfungen (Option 0)
+    // Option 0: Kenn ich nicht
     const step2 = dialogue.selectOption(0);
-    expect(step2.node?.id).toBe('creature_trials');
-    expect(step2.node?.text).toContain('sieben Wege');
-    expect(step2.node?.text).toContain('Arvid');
+    expect(step2.node?.id).toBe('creature_node_1_1');
+    expect(step2.node?.text).toBe('Das ist ein Problem.');
 
-    // Verabschiedung: Gute Reise (Option 0) -> creature_flee Action
+    // Weiter zu Lupos Verabschiedung
+    const step3 = dialogue.selectOption(0);
+    expect(step3.node?.id).toBe('creature_final');
+    expect(step3.node?.text).toBe('Viel Spaß noch hier, du Opfer!');
+
+    // Abgang Lupo -> creature_flee Action
     const finalStep = dialogue.selectOption(0);
     expect(finalStep.action?.type).toBe('creature_flee');
     expect(finalStep.node).toBeNull();
     expect(dialogue.isOpen()).toBe(false);
+
+    // Zweiter Pfad: Wer bist du denn? -> Lupo. -> Wie der VW? -> Ja, du mich auch du Komiker.
+    const dialogue2 = new DialogueSystem();
+    dialogue2.startDialogue('creature_root');
+    const stepB1 = dialogue2.selectOption(1); // Wer bist du denn?
+    expect(stepB1.node?.text).toBe('Lupo.');
+    const stepB2 = dialogue2.selectOption(1); // Wie der VW?
+    expect(stepB2.node?.text).toBe('Ja, du mich auch du Komiker.');
+    const stepB3 = dialogue2.selectOption(0); // Weiter
+    expect(stepB3.node?.text).toBe('Viel Spaß noch hier, du Opfer!');
+    const finalStepB = dialogue2.selectOption(0);
+    expect(finalStepB.action?.type).toBe('creature_flee');
   });
 
   it('verwaltet den riesigen Weltenbaum zwischen Nixe und Riese mit solider Stammkollision', () => {

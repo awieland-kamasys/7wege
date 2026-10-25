@@ -30,9 +30,9 @@ Eine spielende Person kommt an eine Waldkreuzung mit sieben Wegen und entscheide
 
 ## Spielstart & Startpunkt
 
-- **Initialer Einstieg:** Ein neues Spiel beginnt immer exakt auf **Weg 7 (Torweg)** in **halber Strecke** (ca. 27,9 m von der Kreuzung entfernt bei `x: -21.0, z: -18.4`).
-- **Perspektive & Blickrichtung:** Die Spielfigur und die Verfolgerkamera blicken entlang des Weges nach vorn in Richtung der geheimnisvollen 7-Wegekreuzung.
-- **Fabelwesen Lupo (Torweg-NPC):** Auf halbem Weg zwischen Startpunkt und Kreuzung (`x: -10.5, z: -9.2`) begegnet der Spieler dem Waldhüterling Lupo (`fantasy+creature+3d+model.glb`). Beim Anklicken oder Ansprechen beginnt Lupo neugierig zu hoppeln (`Häschenhoppeln` / "hobbing"). Nach Abschluss des Gesprächs wechselt Lupo in den Laufmodus (`run` / "laufen"), huscht flink quer über den Weg in den dichten Fichtenwald und verschwindet im Nebel.
+- **Initialer Einstieg:** Ein neues Spiel beginnt immer exakt auf **Weg 7 (Torweg)** (ca. 42,9 m von der Kreuzung entfernt bei `x: -31.5, z: -29.1`).
+- **Perspektive & Blickrichtung:** Die Spielfigur und die Verfolgerkamera blicken entlang des Weges nach vorn in Richtung der 7-Wegekreuzung. Vom Startpunkt und von Lupos Standort aus liegt die Kreuzung bei `fog.far = 25.0 m` vollständig und geheimnisvoll im dichten Waldnebel.
+- **Fabelwesen Lupo (Torweg-NPC):** In 14 m Entfernung vom Startpunkt (`x: -21.7, z: -19.1`, ca. 28,9 m von der Kreuzung) begegnet der Spieler Lupo (`fantasy+creature+3d+model.glb`). Beim Anklicken oder Ansprechen beginnt Lupo neugierig zu hoppeln (`Häschenhoppeln` / "hobbing"). Nach Abschluss des pointierten Kurz-Dialogs („Oh je. Er wird dich fressen!“) wechselt Lupo in den Laufmodus (`run` / "laufen"), huscht per ruckelfreier In-Place-Animations-Loop flink quer über den Weg in den Fichtenwald und blendet im Unterholz sanft aus.
 - **HUD links unten:** Am unteren linken Bildschirmrand wird dauerhaft die aktuelle Wegbezeichnung (`🧭 7. Torweg`) sowie der Schnellreise-Link `↩ Zur 7-Wegekreuzung` angezeigt.
 
 ## Die Sieben Waldwege & Sperren-System

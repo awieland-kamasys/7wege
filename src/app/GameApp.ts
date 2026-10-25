@@ -1,6 +1,7 @@
 import { CrossroadsScene } from '../game/scenes/CrossroadsScene';
 import { CrossroadsState } from '../game/systems/CrossroadsState';
 import { DialogueSystem } from '../game/systems/DialogueSystem';
+import { DialogueNode } from '../game/data/npcDialogues';
 import { SoundService } from '../game/systems/SoundService';
 import { SpeechService } from '../game/systems/SpeechService';
 import { HudOverlay } from '../ui/HudOverlay';
@@ -183,10 +184,20 @@ export class GameApp {
     this.pendingToggleChest = false;
   }
 
+  private speakDialogueNode(node: DialogueNode): void {
+    const isLupo = node.speaker.toLowerCase().includes('lupo') || node.id.startsWith('creature_');
+    if (isLupo) {
+      // Stimme Lupo schnell und hoch
+      this.speech.speak(node.text, { rate: 1.28, pitch: 1.45 });
+    } else {
+      this.speech.speak(node.text);
+    }
+  }
+
   private openDialogueNode(startNodeId: string): void {
     const node = this.dialogue.startDialogue(startNodeId);
     if (node) {
-      this.speech.speak(node.text);
+      this.speakDialogueNode(node);
     }
   }
 
@@ -393,7 +404,7 @@ export class GameApp {
     const isCreatureDialogue = currentNode?.id.startsWith('creature_') ?? false;
     const { node, action } = this.dialogue.selectOption(optionIndex);
     if (node) {
-      this.speech.speak(node.text);
+      this.speakDialogueNode(node);
     } else {
       this.speech.stop();
       if (isCreatureDialogue || action?.type === 'creature_flee') {

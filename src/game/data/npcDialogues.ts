@@ -48,8 +48,8 @@ export const DEVIL_NPC_ROLE = 'Herr des Höllenschlundes';
 export const WILD_HUNTER_NPC_NAME = 'Der Wilde Jäger';
 export const WILD_HUNTER_NPC_ROLE = 'Herr der Jagdhütte';
 
-export const CREATURE_NPC_NAME = 'Fabelwesen Lupo';
-export const CREATURE_NPC_ROLE = 'Waldhüterling auf dem Torweg';
+export const CREATURE_NPC_NAME = 'Lupo';
+export const CREATURE_NPC_ROLE = 'Hüterling auf dem Torweg';
 
 /**
  * Individuelle Hinweise des Waldhüters zu jedem der sieben Wege.
@@ -1135,81 +1135,129 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       ],
     },
 
-    // === FABELWESEN LUPO (auf halbem Weg vom Startpunkt zur Kreuzung auf Weg 7) ===
+    // === FABELWESEN LUPO (auf Weg 7) ===
     creature_root: {
       id: 'creature_root',
       speaker: CREATURE_NPC_NAME,
       speakerRole: CREATURE_NPC_ROLE,
-      text: '*Schnupper, schnupper...* Ein Wanderer auf dem Torweg! Willkommen im Reich der Sieben Wege. Hast du den Nebelwald durchquert?',
+      text: 'Oh je. Er wird dich fressen!',
       options: [
         {
-          id: 'creature-who',
-          playerText: 'Was bist du denn für ein possierliches Wesen?',
-          nextNodeId: 'creature_who',
+          id: 'creature-opt-1',
+          playerText: 'Wer?',
+          nextNodeId: 'creature_node_1',
         },
         {
-          id: 'creature-way',
-          playerText: 'Ich suche den Weg zur Waldkreuzung und zur Schutzhütte.',
-          nextNodeId: 'creature_way',
-        },
-        {
-          id: 'creature-flee-now',
-          playerText: 'Keine Angst, kleiner Waldgeist! Husch schnell in den Wald! (Gespräch beenden)',
-          nextNodeId: null,
-          action: { type: 'creature_flee' },
+          id: 'creature-opt-2',
+          playerText: 'Wer bist du denn?',
+          nextNodeId: 'creature_node_2',
         },
       ],
     },
 
-    creature_who: {
-      id: 'creature_who',
+    creature_node_1: {
+      id: 'creature_node_1',
       speaker: CREATURE_NPC_NAME,
       speakerRole: CREATURE_NPC_ROLE,
-      text: 'Ich bin Lupo, ein Hüterling des Nebelwaldes! Ich wache über die verborgenen Moospfade und helfe den Tieren im Dickicht. Doch hüte dich: An der Kreuzung erwarten dich Prüfungen, die mehr als nur Mut verlangen!',
+      text: 'Na ER!',
       options: [
         {
-          id: 'creature-ask-trials',
-          playerText: 'Welche Prüfungen meinst du?',
-          nextNodeId: 'creature_trials',
+          id: 'creature-opt-1-1',
+          playerText: 'Kenn ich nicht',
+          nextNodeId: 'creature_node_1_1',
         },
         {
-          id: 'creature-to-way',
-          playerText: 'Wie gelange ich zur Kreuzung?',
-          nextNodeId: 'creature_way',
-        },
-        {
-          id: 'creature-bye-1',
-          playerText: 'Danke, Lupo! Nun lauf schnell zurück ins schützende Unterholz.',
-          nextNodeId: null,
-          action: { type: 'creature_flee' },
+          id: 'creature-opt-1-2',
+          playerText: 'Gehts genauer?',
+          nextNodeId: 'creature_node_1_2',
         },
       ],
     },
 
-    creature_trials: {
-      id: 'creature_trials',
+    creature_node_2: {
+      id: 'creature_node_2',
       speaker: CREATURE_NPC_NAME,
       speakerRole: CREATURE_NPC_ROLE,
-      text: 'Jeder der sieben Wege fordert ein anderes Maß deines Herzens: Weisheit im Silberstollen, Verzicht am Feenteich, Mitgefühl am Wehr, Maßhalten beim Holzweibchen... Waldhüter Arvid an der Hütte wird dir mehr berichten!',
+      text: 'Lupo.',
       options: [
         {
-          id: 'creature-bye-2',
-          playerText: 'Danke für deinen Rat, Lupo! Lauf nun geschwind in den Wald.',
-          nextNodeId: null,
-          action: { type: 'creature_flee' },
+          id: 'creature-opt-2-1',
+          playerText: 'Ich meine, was bist du?',
+          nextNodeId: 'creature_node_2_1',
+        },
+        {
+          id: 'creature-opt-2-2',
+          playerText: 'Wie der VW?',
+          nextNodeId: 'creature_node_2_2',
         },
       ],
     },
 
-    creature_way: {
-      id: 'creature_way',
+    creature_node_1_1: {
+      id: 'creature_node_1_1',
       speaker: CREATURE_NPC_NAME,
       speakerRole: CREATURE_NPC_ROLE,
-      text: 'Folge einfach diesem Pfad geradeaus! Gleich hinter der nächsten Biegung lichtet sich der dichte Fichtenwald und du erreichst die 7-Wegekreuzung mit Arvids Schutzhütte und der geheimnisvollen Schatztruhe.',
+      text: 'Das ist ein Problem.',
       options: [
         {
-          id: 'creature-bye-3',
-          playerText: 'Vielen Dank, kleiner Freund! Pass gut auf dich auf.',
+          id: 'creature-continue-1-1',
+          playerText: 'Weiter',
+          nextNodeId: 'creature_final',
+        },
+      ],
+    },
+
+    creature_node_1_2: {
+      id: 'creature_node_1_2',
+      speaker: CREATURE_NPC_NAME,
+      speakerRole: CREATURE_NPC_ROLE,
+      text: 'Lieber nicht.',
+      options: [
+        {
+          id: 'creature-continue-1-2',
+          playerText: 'Weiter',
+          nextNodeId: 'creature_final',
+        },
+      ],
+    },
+
+    creature_node_2_1: {
+      id: 'creature_node_2_1',
+      speaker: CREATURE_NPC_NAME,
+      speakerRole: CREATURE_NPC_ROLE,
+      text: 'Deine Mutter du Nullchecker.',
+      options: [
+        {
+          id: 'creature-continue-2-1',
+          playerText: 'Weiter',
+          nextNodeId: 'creature_final',
+        },
+      ],
+    },
+
+    creature_node_2_2: {
+      id: 'creature_node_2_2',
+      speaker: CREATURE_NPC_NAME,
+      speakerRole: CREATURE_NPC_ROLE,
+      text: 'Ja, du mich auch du Komiker.',
+      options: [
+        {
+          id: 'creature-continue-2-2',
+          playerText: 'Weiter',
+          nextNodeId: 'creature_final',
+        },
+      ],
+    },
+
+    creature_final: {
+      id: 'creature_final',
+      speaker: CREATURE_NPC_NAME,
+      speakerRole: CREATURE_NPC_ROLE,
+      text: 'Viel Spaß noch hier, du Opfer!',
+      options: [
+        {
+          id: 'creature-bye',
+          playerText: 'Abgang Lupo',
           nextNodeId: null,
           action: { type: 'creature_flee' },
         },

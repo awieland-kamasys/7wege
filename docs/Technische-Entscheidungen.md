@@ -45,6 +45,11 @@
     - **Proximity-Streaming:** Nähert sich die Spielfigur einem Schauplatz (ab 45–52 m bzw. 25 m bei Wegsperren), wird das Modell im dichten Waldnebel geladen, lange bevor der Schauplatz für den Spieler sichtbar wird.
     - **On-Demand-Auswahl:** Wählt der Spieler einen Pfad per Dialog, Klick oder HUD-Auswahl, wird der Schauplatz sofort priorisiert geladen.
     - **Sanfter Idle-Hintergrund-Lader:** Verweilt der Spieler an der Kreuzung, lädt eine Hintergrund-Warteschlange alle 2,5 Sekunden sequenziell einen weiteren Pfad nach, ohne jemals Framerate oder Netzwerkbandbreite zu blockieren.
+- **Modernes Dialogsystem („Thumb Zone“ & Card-/Chip-Design):**
+  - **Minimalistischer Screen Space:** Keine veralteten Kästen oder Schmuckrahmen mehr. Schwebende Untertitel mit 60–80 % Transparenz (`rgba(12, 18, 14, 0.72)`, Backdrop-Blur) und ausgeprägtem Textschatten für gestochen scharfe Lesbarkeit auf jedem Untergrund (alpine Schneezone, glühende Lava oder Waldwiese).
+  - **Ergonomische Thumb Zone im unteren Bilddrittel:** Alle interaktiven Antwort-Buttons liegen zwingend im unteren Bereich, der bequem mit den Daumen (auch einhändig auf Touchscreens) erreichbar ist. Der NPC-Sprechtext schwebt unmittelbar darüber.
+  - **Card- & Chip-Design:** Antworten werden als großzügige Touch-Karten mit mindestens 48 dp Trefferfläche (`min-height: 48px`), runden Ziffernbadges und sanftem Glassmorphism gerendert.
+  - **Modulierte Sprachausgabe (`SpeechService`):** Unterstützung individueller Stimmprofile per Web Speech API; für Lupo wird eine quirlige, schnelle (`rate = 1.28`) und hohe (`pitch = 1.45`) Sprechstimme generiert.
 - **Einstiegspunkt & Atmosphäre auf Weg 7:**
   - **Neuer Spieler-Startpunkt:** Die Spielfigur startet auf Weg 7 bei `(-31.5, -29.1)` (ca. 42,9 m von der Kreuzung entfernt) mit Blickrichtung entlang des Pfades zur Kreuzung.
   - **Standort Fabelwesen Lupo:** Lupo rückt 15 m mit zurück auf `(-21.7, -19.1)` (ca. 28,9 m von der Kreuzung entfernt; Distanz zum Spieler unverändert 14 m).

@@ -1,3 +1,8 @@
+export interface SpeechOptions {
+  rate?: number;
+  pitch?: number;
+}
+
 /**
  * Schlanker Service für die deutsche Browser-Sprachausgabe (Web Speech API).
  * Funktioniert fehlertolerant auch in Umgebungen ohne speechSynthesis (z. B. Unit-Tests).
@@ -5,6 +10,7 @@
 export class SpeechService {
   private enabled = true;
   private lastSpokenText: string | null = null;
+  private lastSpokenOptions: SpeechOptions | undefined = undefined;
 
   private isSupported(): boolean {
     return (
@@ -24,17 +30,21 @@ export class SpeechService {
       this.stop();
     } else if (this.lastSpokenText) {
       const textToRepeat = this.lastSpokenText;
+      const optsToRepeat = this.lastSpokenOptions;
       this.lastSpokenText = null;
-      this.speak(textToRepeat);
+      this.lastSpokenOptions = undefined;
+      this.speak(textToRepeat, optsToRepeat);
     }
     return this.enabled;
   }
 
   /**
    * Spricht den übergebenen Text auf Deutsch vor, sofern die Sprachausgabe aktiv ist.
+   * Unterstützt optionale Anpassung von Sprechgeschwindigkeit (rate) und Tonhöhe (pitch).
    */
-  public speak(text: string): void {
+  public speak(text: string, options?: SpeechOptions): void {
     this.lastSpokenText = text;
+    this.lastSpokenOptions = options;
     if (!this.enabled || !this.isSupported()) {
       return;
     }
@@ -44,8 +54,8 @@ export class SpeechService {
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'de-DE';
-      utterance.rate = 0.96;
-      utterance.pitch = 0.92;
+      utterance.rate = options?.rate ?? 0.96;
+      utterance.pitch = options?.pitch ?? 0.92;
 
       const voices = window.speechSynthesis.getVoices();
       const germanVoice =

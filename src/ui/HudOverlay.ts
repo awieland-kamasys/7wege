@@ -175,29 +175,33 @@ export class HudOverlay {
     this.toastEl.className = 'hud-toast is-hidden';
     this.toastEl.setAttribute('aria-live', 'assertive');
 
-    // Kommunikationsmenü: wird ausschließlich eingeblendet, wenn aktive Kommunikation stattfindet
+    // Schwebendes, flaches Dialogsystem im unteren Bilddrittel ("Thumb Zone")
     this.dialogueModalEl = document.createElement('aside');
     this.dialogueModalEl.className = 'dialogue-panel is-hidden';
-    this.dialogueModalEl.style.marginLeft = 'auto';
     this.dialogueModalEl.setAttribute('role', 'dialog');
     this.dialogueModalEl.setAttribute('aria-label', 'Gespräch mit NPC');
 
-    const dialogueHeader = document.createElement('div');
-    dialogueHeader.className = 'dialogue-header';
+    // 1. Schwebende Untertitel-Karte (flaches Design, 60–80 % Transparenz, starker Textschatten)
+    const speechCard = document.createElement('div');
+    speechCard.className = 'dialogue-speech-card';
 
-    const speakerWrap = document.createElement('div');
+    const dialogueSpeakerBar = document.createElement('div');
+    dialogueSpeakerBar.className = 'dialogue-speaker-bar';
+
+    const speakerBadge = document.createElement('div');
+    speakerBadge.className = 'dialogue-speaker-badge';
     this.dialogueSpeakerEl = document.createElement('h2');
     this.dialogueSpeakerEl.className = 'dialogue-speaker';
     this.dialogueRoleEl = document.createElement('span');
     this.dialogueRoleEl.className = 'dialogue-role';
-    speakerWrap.append(this.dialogueSpeakerEl, this.dialogueRoleEl);
+    speakerBadge.append(this.dialogueSpeakerEl, this.dialogueRoleEl);
 
-    const headerActions = document.createElement('div');
-    headerActions.className = 'dialogue-header-actions';
+    const quickActions = document.createElement('div');
+    quickActions.className = 'dialogue-quick-actions';
 
     this.speechToggleBtn = document.createElement('button');
     this.speechToggleBtn.type = 'button';
-    this.speechToggleBtn.className = 'dialogue-close-btn';
+    this.speechToggleBtn.className = 'dialogue-action-btn';
     this.speechToggleBtn.textContent = '🔊';
     this.speechToggleBtn.title = 'Sprachausgabe ein-/ausschalten';
     this.speechToggleBtn.addEventListener('click', () => {
@@ -207,39 +211,35 @@ export class HudOverlay {
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
-    closeBtn.className = 'dialogue-close-btn';
+    closeBtn.className = 'dialogue-action-btn';
     closeBtn.textContent = '✕';
     closeBtn.title = 'Gespräch schließen (Esc)';
     closeBtn.addEventListener('click', () => this.callbacks.onCloseDialogue());
 
-    headerActions.append(this.speechToggleBtn, closeBtn);
-    dialogueHeader.append(speakerWrap, headerActions);
+    quickActions.append(this.speechToggleBtn, closeBtn);
+    dialogueSpeakerBar.append(speakerBadge, quickActions);
 
     this.dialogueTextEl = document.createElement('p');
     this.dialogueTextEl.className = 'dialogue-text';
 
-    const playerPromptLabel = document.createElement('div');
-    playerPromptLabel.className = 'dialogue-player-label';
-    playerPromptLabel.textContent = 'Antwort wählen:';
+    speechCard.append(dialogueSpeakerBar, this.dialogueTextEl);
 
+    // 2. Thumb Zone: Großzügige Touch-Karten / Chips (>= 48 dp)
     this.dialogueOptionsEl = document.createElement('div');
     this.dialogueOptionsEl.className = 'dialogue-options';
+    this.dialogueOptionsEl.setAttribute('role', 'group');
+    this.dialogueOptionsEl.setAttribute('aria-label', 'Antwortmöglichkeiten');
 
-    this.dialogueModalEl.append(
-      dialogueHeader,
-      this.dialogueTextEl,
-      playerPromptLabel,
-      this.dialogueOptionsEl
-    );
+    this.dialogueModalEl.append(speechCard, this.dialogueOptionsEl);
 
-    header.append(this.dialogueModalEl);
     container.append(
       header,
       this.activePathBadgeEl,
       this.perfBadgeEl,
       this.perfModalEl,
       this.musicControlWrapEl,
-      this.toastEl
+      this.toastEl,
+      this.dialogueModalEl
     );
   }
 
@@ -440,13 +440,28 @@ export class HudOverlay {
     this.dialogueTextEl.textContent = `„${node.text}“`;
 
     this.dialogueOptionsEl.innerHTML = '';
+    if (node.options.length <= 2) {
+      this.dialogueOptionsEl.classList.add('is-two-options');
+    } else {
+      this.dialogueOptionsEl.classList.remove('is-two-options');
+    }
+
     node.options.forEach((opt, idx) => {
-      const optBtn = document.createElement('button');
-      optBtn.type = 'button';
-      optBtn.className = 'dialogue-option-btn';
-      optBtn.textContent = `${idx + 1}. ${opt.playerText}`;
-      optBtn.addEventListener('click', () => this.callbacks.onSelectDialogueOption(idx));
-      this.dialogueOptionsEl.appendChild(optBtn);
+      const chipBtn = document.createElement('button');
+      chipBtn.type = 'button';
+      chipBtn.className = 'dialogue-chip-btn';
+
+      const badge = document.createElement('span');
+      badge.className = 'chip-badge';
+      badge.textContent = String(idx + 1);
+
+      const label = document.createElement('span');
+      label.className = 'chip-label';
+      label.textContent = opt.playerText;
+
+      chipBtn.append(badge, label);
+      chipBtn.addEventListener('click', () => this.callbacks.onSelectDialogueOption(idx));
+      this.dialogueOptionsEl.appendChild(chipBtn);
     });
   }
 }
