@@ -32,28 +32,41 @@ export class DialogueSystem {
 
   /**
    * Prüft, ob ein Dialog (z. B. ein Standarddialog) bereits durch eine Antwortauswahl abgeschlossen wurde.
+   * Wiederholbare Dialoge (repeatable) gelten niemals als abgeschlossen.
    */
   public isDialogueCompleted(dialogueId: string): boolean {
+    const node = this.nodes[dialogueId];
+    if (node?.repeatable) {
+      return false;
+    }
     return this.completedDialogues.has(dialogueId);
   }
 
   /**
-   * Prüft, ob ein Dialog gestartet werden kann (existiert und ist noch nicht abgeschlossen).
+   * Prüft, ob ein Dialog gestartet werden kann (existiert und ist noch nicht abgeschlossen bzw. wiederholbar).
    */
   public canStartDialogue(startNodeId: string): boolean {
-    return !this.isDialogueCompleted(startNodeId) && !!this.nodes[startNodeId];
+    const node = this.nodes[startNodeId];
+    if (!node) {
+      return false;
+    }
+    if (node.repeatable) {
+      return true;
+    }
+    return !this.isDialogueCompleted(startNodeId);
   }
 
   /**
    * Startet oder öffnet ein Gespräch beim angegebenen Einstiegsknoten.
    * Gibt `null` zurück, wenn der Knoten nicht existiert oder dieser Dialog
-   * bereits durch die Auswahl einer Antwort abgeschlossen wurde.
+   * bereits durch die Auswahl einer Antwort abgeschlossen wurde (außer bei wiederholbaren Dialogen).
    */
   public startDialogue(startNodeId = 'root'): DialogueNode | null {
-    if (this.isDialogueCompleted(startNodeId)) {
+    const node = this.nodes[startNodeId];
+    if (!node) {
       return null;
     }
-    if (!this.nodes[startNodeId]) {
+    if (!node.repeatable && this.isDialogueCompleted(startNodeId)) {
       return null;
     }
     this.currentRootNodeId = startNodeId;
@@ -100,11 +113,17 @@ export class DialogueSystem {
       return { node: current, action: null };
     }
 
-    // Sobald eine Antwort gewählt wird, wird der Dialog als abgeschlossen markiert
-    if (this.currentRootNodeId) {
-      this.completedDialogues.add(this.currentRootNodeId);
+    const rootNode = this.currentRootNodeId ? this.nodes[this.currentRootNodeId] : null;
+    const isRepeatableTree = Boolean(rootNode?.repeatable || current.repeatable);
+
+    // Sobald eine Antwort gewählt wird, wird der Dialog als abgeschlossen markiert,
+    // es sei denn, es handelt sich um einen explizit wiederholbaren Dialog (z. B. Idle-Dialog).
+    if (!isRepeatableTree) {
+      if (this.currentRootNodeId) {
+        this.completedDialogues.add(this.currentRootNodeId);
+      }
+      this.completedDialogues.add(current.id);
     }
-    this.completedDialogues.add(current.id);
 
     const action = option.action ?? null;
     if (option.nextNodeId && this.nodes[option.nextNodeId]) {

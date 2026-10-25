@@ -175,11 +175,13 @@ Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../s
 
 ---
 
-### 4. Standard / Idle-Dialog (Wiederholtes Ansprechen)
+### 4. Standard / Idle-Dialog (Wiederholtes Ansprechen – unendlich oft wiederholbar)
 
 #### Knoten: `arvid_idle`
 
 > **Waldhüter Arvid:** „Was lungerst du hier noch rum? Geh die Pfade erkunden!“
+
+*(Wiederholbar: Bleibt dauerhaft aktiv, wenn kein neues Event anliegt)*
 
 **Antwort-Optionen (Ich):**
 - **1.** „Welchen Weg empfiehlst du mir?“ `-> arvid_idle_tipp`
@@ -187,7 +189,7 @@ Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../s
 
 #### Knoten: `arvid_idle_tipp`
 
-> **Waldhüter Arvid:** „Fang mit Weg 1 im Norden an. Der Silberstollen ist ein guter Anfang. Oder geh zum Riesen am Wehr, wenn du Mumm hast.“
+> **Waldhüter Arvid:** „Schau in dein Tagebuch. Ich bin nicht deine Sekretärin.“
 
 **Antwort-Optionen (Ich):**
 - **1.** „Ich sehe mich um.“ `(Aktion: close)`

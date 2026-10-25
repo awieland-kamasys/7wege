@@ -28,6 +28,7 @@ export interface DialogueNode {
   autoNextNodeId?: string | null;
   autoAdvanceDelayMs?: number;
   autoAction?: DialogueAction;
+  repeatable?: boolean;
 }
 
 export const GUIDE_NPC_NAME = 'Waldhüter Arvid';
@@ -1175,12 +1176,13 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       ],
     },
 
-    // 4. Standard / Idle-Dialog: Wiederholtes Ansprechen ohne aktives Event
+    // 4. Standard / Idle-Dialog: Wiederholtes Ansprechen ohne aktives Event (unendlich oft wiederholbar)
     arvid_idle: {
       id: 'arvid_idle',
       speaker: GUIDE_NPC_NAME,
       speakerRole: GUIDE_NPC_ROLE,
       text: 'Was lungerst du hier noch rum? Geh die Pfade erkunden!',
+      repeatable: true,
       options: [
         {
           id: 'opt_idle_tipp',
@@ -1199,7 +1201,8 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       id: 'arvid_idle_tipp',
       speaker: GUIDE_NPC_NAME,
       speakerRole: GUIDE_NPC_ROLE,
-      text: 'Fang mit Weg 1 im Norden an. Der Silberstollen ist ein guter Anfang. Oder geh zum Riesen am Wehr, wenn du Mumm hast.',
+      text: 'Schau in dein Tagebuch. Ich bin nicht deine Sekretärin.',
+      repeatable: true,
       options: [
         {
           id: 'opt_idle_tipp_close',
@@ -1215,6 +1218,7 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       speaker: GUIDE_NPC_NAME,
       speakerRole: GUIDE_NPC_ROLE,
       text: 'Na also. Bewegung schadet dir nicht.',
+      repeatable: true,
       options: [],
       autoAction: { type: 'close' },
       autoAdvanceDelayMs: 2000,

@@ -469,9 +469,34 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(chestDialog?.text).toContain('Truhe aufbekommen');
     expect(chestDialog?.options).toHaveLength(2);
 
-    // 5. Idle-Dialog steht als Fallback zur Verfügung
-    const idleDialog = dialogue.startDialogue('arvid_idle');
-    expect(idleDialog?.text).toContain('Was lungerst du hier noch rum');
+    // 5. Idle-Dialog steht als Fallback zur Verfügung und ist unendlich oft wiederholbar
+    expect(dialogue.canStartDialogue('arvid_idle')).toBe(true);
+    const idle1 = dialogue.startDialogue('arvid_idle');
+    expect(idle1?.text).toContain('Was lungerst du hier noch rum');
+    expect(idle1?.options).toHaveLength(2);
+
+    // Erster Durchlauf: Option 0 (Tipp) wählen
+    const idleStep1 = dialogue.selectOption(0);
+    expect(idleStep1.node?.id).toBe('arvid_idle_tipp');
+    expect(idleStep1.node?.text).toBe('Schau in dein Tagebuch. Ich bin nicht deine Sekretärin.');
+    dialogue.closeDialogue();
+
+    // Idle-Dialog gilt trotz getroffener Auswahl NICHT als abgeschlossen
+    expect(dialogue.isDialogueCompleted('arvid_idle')).toBe(false);
+    expect(dialogue.canStartDialogue('arvid_idle')).toBe(true);
+
+    // Zweiter Durchlauf: Erneut starten und Option 1 (Aufbruch) wählen
+    const idle2 = dialogue.startDialogue('arvid_idle');
+    expect(idle2).not.toBeNull();
+    const idleStep2 = dialogue.selectOption(1);
+    expect(idleStep2.node?.id).toBe('arvid_idle_bye');
+    expect(idleStep2.node?.text).toContain('Bewegung schadet dir nicht');
+    expect(idleStep2.node?.autoAction).toEqual({ type: 'close' });
+
+    // Auch nach dem zweiten Durchlauf weiterhin beliebig oft wiederholbar
+    expect(dialogue.isDialogueCompleted('arvid_idle')).toBe(false);
+    expect(dialogue.canStartDialogue('arvid_idle')).toBe(true);
+    expect(dialogue.startDialogue('arvid_idle')).not.toBeNull();
   });
 
   it('führt das Gespräch mit dem Graumännchen über Silberader, Licht und Verbot/Versprechen', () => {
