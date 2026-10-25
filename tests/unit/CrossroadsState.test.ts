@@ -407,7 +407,7 @@ describe('CrossroadsState & 7 Wege', () => {
 });
 
 describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, Nixe, Riese & Holzweibchen)', () => {
-  it('öffnet den reduzierten Standarddialog 1 mit Waldhüter Arvid mit seinen 3 Antworten', () => {
+  it('führt den vollständigen Einstiegsdialog mit Waldhüter Arvid über alle Stationen bis zum Abschied', () => {
     const dialogue = new DialogueSystem();
     expect(dialogue.isOpen()).toBe(false);
 
@@ -417,23 +417,23 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(root?.speaker).toBe('Waldhüter Arvid');
     expect(root?.text).toBe('Ach du Scheiße, was willst du denn hier?');
     expect(root?.options).toHaveLength(3);
-    expect(root?.options[0].playerText).toBe('Ich will ins Zinsbachtal.');
-    expect(root?.options[1].playerText).toBe('Ein Bier.');
-    expect(root?.options[2].playerText).toBe('Geht dich gar nichts an, Penner!');
 
-    // Auswahl von Antwort 1 schließt den Dialog
-    const step = dialogue.selectOption(0);
-    expect(step.node?.id).toBe('arvid_zinsbachtal');
-    expect(step.node?.text).toContain('Zinsbachtal, Ja, ich erinnere mich.');
-    expect(step.node?.options).toHaveLength(2);
-    expect(step.node?.options[0].playerText).toContain('Katzensprung');
-    const subStep = dialogue.selectOption(0);
-    expect(subStep.node).toBeNull();
-    expect(subStep.action).toEqual({ type: 'close' });
-    expect(dialogue.isOpen()).toBe(false);
+    // Pfad 1: Zinsbachtal -> Katzensprung -> Abschied
+    const step1 = dialogue.selectOption(0); // Ich will ins Zinsbachtal.
+    expect(step1.node?.id).toBe('arvid_zinsbachtal');
+    expect(step1.node?.options).toHaveLength(2);
+
+    const step2 = dialogue.selectOption(0); // Wie, damals? Katzensprung...
+    expect(step2.node?.id).toBe('arvid_katzensprung');
+    expect(step2.node?.text).toContain('tolle Katze');
+
+    const step3 = dialogue.selectOption(0); // OK, ich geh dann mal lieber weiter...
+    expect(step3.node?.id).toBe('arvid_bye');
+    expect(step3.node?.text).toBe('Wie du meinst. Viel Glück.');
+    expect(step3.node?.autoAction).toEqual({ type: 'close' });
   });
 
-  it('erzwingt den Grundsatz: Standarddialoge werden nur einmal angezeigt und nach Auswahl einer Antwort ist kein Aufruf mehr möglich', () => {
+  it('erzwingt den Grundsatz für Arvids Dialoge und unterstützt Event- und Idle-Knoten', () => {
     const dialogue = new DialogueSystem();
 
     // 1. Öffnen und ohne Auswahl schließen erlaubt erneuten Aufruf
@@ -443,23 +443,35 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(dialogue.isOpen()).toBe(false);
     expect(dialogue.canStartDialogue('root')).toBe(true);
 
-    // 2. Erneut öffnen und Antwort auswählen (z. B. Option 2 "Ein Bier.")
-    const root = dialogue.startDialogue('root');
-    expect(root).not.toBeNull();
-    const result = dialogue.selectOption(1);
-    expect(result.node?.id).toBe('arvid_bier');
-    expect(result.node?.text).toBe('Macht ein Euro!');
-    expect(result.node?.options).toHaveLength(2);
-    expect(result.node?.options[0].playerText).toBe('Ein Schnäppchen, her damit!');
-    const subResult = dialogue.selectOption(0);
-    expect(subResult.action).toEqual({ type: 'close' });
-    expect(dialogue.isOpen()).toBe(false);
+    // 2. Erneut öffnen und Bier-Zweig durchspielen
+    dialogue.startDialogue('root');
+    const b1 = dialogue.selectOption(1); // Ein Bier.
+    expect(b1.node?.id).toBe('arvid_bier');
+    const b2 = dialogue.selectOption(0); // Ein Schnäppchen, her damit!
+    expect(b2.node?.id).toBe('arvid_bier_leer');
+    expect(b2.node?.text).toContain('Hab gerade das letzte leer gemacht');
 
-    // 3. Nach Auswahl einer Antwort ist kein Aufruf des gleichen Dialoges mehr möglich
+    const b3 = dialogue.selectOption(0); // Ich habe noch zwei Flaschen im Rucksack...
+    expect(b3.node?.id).toBe('arvid_bier_ausgeben');
+    expect(b3.node?.text).toContain('Behalte sie lieber');
+
+    const b4 = dialogue.selectOption(0); // OK, ich geh dann mal lieber weiter...
+    expect(b4.node?.id).toBe('arvid_bye');
+    expect(b4.node?.autoAction).toEqual({ type: 'close' });
+
+    // 3. Nach Durchspielen ist der Einstiegsdialog 'root' abgeschlossen
     expect(dialogue.isDialogueCompleted('root')).toBe(true);
     expect(dialogue.canStartDialogue('root')).toBe(false);
-    const retry = dialogue.startDialogue('root');
-    expect(retry).toBeNull();
+
+    // 4. Event-Dialog nach Schatztruhe steht zur Verfügung
+    expect(dialogue.canStartDialogue('arvid_after_chest')).toBe(true);
+    const chestDialog = dialogue.startDialogue('arvid_after_chest');
+    expect(chestDialog?.text).toContain('Truhe aufbekommen');
+    expect(chestDialog?.options).toHaveLength(2);
+
+    // 5. Idle-Dialog steht als Fallback zur Verfügung
+    const idleDialog = dialogue.startDialogue('arvid_idle');
+    expect(idleDialog?.text).toContain('Was lungerst du hier noch rum');
   });
 
   it('führt das Gespräch mit dem Graumännchen über Silberader, Licht und Verbot/Versprechen', () => {

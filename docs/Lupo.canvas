@@ -1,176 +1,24 @@
 {
-	"nodes": [
-		{
-			"id": "creature_root",
-			"x": 220,
-			"y": 0,
-			"width": 360,
-			"height": 140,
-			"type": "text",
-			"text": "### 🦊 Lupo (Start)\n\n> „Oh je. Er wird dich fressen!“\n\n*Hüterling auf Weg 7*",
-			"color": "3"
-		},
-		{
-			"id": "creature_node_1",
-			"x": -160,
-			"y": 260,
-			"width": 320,
-			"height": 130,
-			"type": "text",
-			"text": "### 🦊 Lupo\n\n> „Na ER!“",
-			"color": "5"
-		},
-		{
-			"id": "creature_node_2",
-			"x": 600,
-			"y": 260,
-			"width": 320,
-			"height": 130,
-			"type": "text",
-			"text": "### 🦊 Lupo\n\n> „Lupo.“",
-			"color": "5"
-		},
-		{
-			"id": "creature_node_1_1",
-			"x": -380,
-			"y": 520,
-			"width": 300,
-			"height": 140,
-			"type": "text",
-			"text": "### 🦊 Lupo\n\n> „Das ist ein Problem.“\n\n*(schaltet automatisch weiter)*",
-			"color": "6"
-		},
-		{
-			"id": "creature_node_1_2",
-			"x": 40,
-			"y": 520,
-			"width": 300,
-			"height": 140,
-			"type": "text",
-			"text": "### 🦊 Lupo\n\n> „Lieber nicht.“\n\n*(schaltet automatisch weiter)*",
-			"color": "6"
-		},
-		{
-			"id": "creature_node_2_1",
-			"x": 460,
-			"y": 520,
-			"width": 300,
-			"height": 140,
-			"type": "text",
-			"text": "### 🦊 Lupo\n\n> „Deine Mutter du Nullchecker.“\n\n*(schaltet automatisch weiter)*",
-			"color": "6"
-		},
-		{
-			"id": "creature_node_2_2",
-			"x": 880,
-			"y": 520,
-			"width": 300,
-			"height": 140,
-			"type": "text",
-			"text": "### 🦊 Lupo\n\n> „Ja, du mich auch du Komiker.“\n\n*(schaltet automatisch weiter)*",
-			"color": "6"
-		},
-		{
-			"id": "creature_final",
-			"x": 220,
-			"y": 790,
-			"width": 360,
-			"height": 150,
-			"type": "text",
-			"text": "### 🦊 Lupo (Finale)\n\n> „Viel Spaß noch hier, du Opfer!“\n\n*(automatischer Abgang in den Wald)*",
-			"color": "1"
-		}
+	"nodes":[
+		{"id":"creature_root","x":220,"y":0,"width":360,"height":140,"type":"text","text":"### 🦊 Lupo (Start)\n\n> „Oh je. Er wird dich fressen!“\n\n*Hüterling auf Weg 7*","color":"3"},
+		{"id":"creature_node_1","x":-160,"y":260,"width":320,"height":130,"type":"text","text":"### 🦊 Lupo\n\n> „Na ER!“","color":"5"},
+		{"id":"creature_node_2","x":600,"y":260,"width":320,"height":130,"type":"text","text":"### 🦊 Lupo\n\n> „Lupo.“","color":"5"},
+		{"id":"creature_node_1_1","x":-380,"y":520,"width":300,"height":140,"type":"text","text":"### 🦊 Lupo\n\n> „Das ist ein Problem.“\n\n*(schaltet automatisch weiter)*","color":"6"},
+		{"id":"creature_node_1_2","x":40,"y":520,"width":300,"height":140,"type":"text","text":"### 🦊 Lupo\n\n> „Lieber nicht.“\n\n*(schaltet automatisch weiter)*","color":"6"},
+		{"id":"creature_node_2_1","x":460,"y":520,"width":300,"height":140,"type":"text","text":"### 🦊 Lupo\n\n> „Deine Mutter du Nullchecker.“\n\n*(schaltet automatisch weiter)*","color":"6"},
+		{"id":"creature_node_2_2","x":880,"y":520,"width":300,"height":140,"type":"text","text":"### 🦊 Lupo\n\n> „Ja, du mich auch du Komiker.“\n\n*(schaltet automatisch weiter)*","color":"6"},
+		{"id":"creature_final","x":220,"y":790,"width":360,"height":150,"type":"text","text":"### 🦊 Lupo (Finale)\n\n> „Viel Spaß noch hier, du Opfer!“\n\n*(automatischer Abgang in den Wald)*","color":"1"}
 	],
-	"edges": [
-		{
-			"id": "edge_root_to_1",
-			"fromNode": "creature_root",
-			"fromSide": "bottom",
-			"toNode": "creature_node_1",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "1. Wer?"
-		},
-		{
-			"id": "edge_root_to_2",
-			"fromNode": "creature_root",
-			"fromSide": "bottom",
-			"toNode": "creature_node_2",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "2. Wer bist du denn?"
-		},
-		{
-			"id": "edge_1_to_1_1",
-			"fromNode": "creature_node_1",
-			"fromSide": "bottom",
-			"toNode": "creature_node_1_1",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "1.1 Kenn ich nicht"
-		},
-		{
-			"id": "edge_1_to_1_2",
-			"fromNode": "creature_node_1",
-			"fromSide": "bottom",
-			"toNode": "creature_node_1_2",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "1.2 Gehts genauer?"
-		},
-		{
-			"id": "edge_2_to_2_1",
-			"fromNode": "creature_node_2",
-			"fromSide": "bottom",
-			"toNode": "creature_node_2_1",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "2.1 Ich meine, was bist du?"
-		},
-		{
-			"id": "edge_2_to_2_2",
-			"fromNode": "creature_node_2",
-			"fromSide": "bottom",
-			"toNode": "creature_node_2_2",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "2.2 Wie der VW?"
-		},
-		{
-			"id": "edge_1_1_to_final",
-			"fromNode": "creature_node_1_1",
-			"fromSide": "bottom",
-			"toNode": "creature_final",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "(automatisch)"
-		},
-		{
-			"id": "edge_1_2_to_final",
-			"fromNode": "creature_node_1_2",
-			"fromSide": "bottom",
-			"toNode": "creature_final",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "(automatisch)"
-		},
-		{
-			"id": "edge_2_1_to_final",
-			"fromNode": "creature_node_2_1",
-			"fromSide": "bottom",
-			"toNode": "creature_final",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "(automatisch)"
-		},
-		{
-			"id": "edge_2_2_to_final",
-			"fromNode": "creature_node_2_2",
-			"fromSide": "bottom",
-			"toNode": "creature_final",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "(automatisch)"
-		}
+	"edges":[
+		{"id":"edge_root_to_1","fromNode":"creature_root","fromSide":"bottom","toNode":"creature_node_1","toSide":"top","toEnd":"arrow","label":"1. Wer?"},
+		{"id":"edge_root_to_2","fromNode":"creature_root","fromSide":"bottom","toNode":"creature_node_2","toSide":"top","toEnd":"arrow","label":"2. Wer bist du denn?"},
+		{"id":"edge_1_to_1_1","fromNode":"creature_node_1","fromSide":"bottom","toNode":"creature_node_1_1","toSide":"top","toEnd":"arrow","label":"1.1 Kenn ich nicht"},
+		{"id":"edge_1_to_1_2","fromNode":"creature_node_1","fromSide":"bottom","toNode":"creature_node_1_2","toSide":"top","toEnd":"arrow","label":"1.2 Gehts genauer?"},
+		{"id":"edge_2_to_2_1","fromNode":"creature_node_2","fromSide":"bottom","toNode":"creature_node_2_1","toSide":"top","toEnd":"arrow","label":"2.1 Ich meine, was bist du?"},
+		{"id":"edge_2_to_2_2","fromNode":"creature_node_2","fromSide":"bottom","toNode":"creature_node_2_2","toSide":"top","toEnd":"arrow","label":"2.2 Wie der VW?"},
+		{"id":"edge_1_1_to_final","fromNode":"creature_node_1_1","fromSide":"bottom","toNode":"creature_final","toSide":"top","toEnd":"arrow","label":"(automatisch)"},
+		{"id":"edge_1_2_to_final","fromNode":"creature_node_1_2","fromSide":"bottom","toNode":"creature_final","toSide":"top","toEnd":"arrow","label":"(automatisch)"},
+		{"id":"edge_2_1_to_final","fromNode":"creature_node_2_1","fromSide":"bottom","toNode":"creature_final","toSide":"top","toEnd":"arrow","label":"(automatisch)"},
+		{"id":"edge_2_2_to_final","fromNode":"creature_node_2_2","fromSide":"bottom","toNode":"creature_final","toSide":"top","toEnd":"arrow","label":"(automatisch)"}
 	]
 }

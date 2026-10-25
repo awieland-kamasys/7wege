@@ -899,6 +899,7 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
   const nodes: Record<string, DialogueNode> = {
 
     // === WALDHÜTER ARVID (an der Schutzhütte) ===
+    // 1. Haupt-Einstiegsdialog (Phase 0: Erstkontakt)
     root: {
       id: 'root',
       speaker: GUIDE_NPC_NAME,
@@ -931,15 +932,41 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       options: [
         {
           id: 'opt_zinsbachtal_katzensprung',
-          playerText: 'Wie, damals? Nach meiner Karte ist es nur noch ein Katzensprung',
-          nextNodeId: null,
-          action: { type: 'close' },
+          playerText: 'Wie, damals? Nach meiner Karte ist es nur noch ein Katzensprung.',
+          nextNodeId: 'arvid_katzensprung',
         },
         {
           id: 'opt_zinsbachtal_frueher',
           playerText: 'Ja ja, früher war alles besser. Ich weiß.',
-          nextNodeId: null,
-          action: { type: 'close' },
+          nextNodeId: 'arvid_frueher',
+        },
+      ],
+    },
+
+    arvid_katzensprung: {
+      id: 'arvid_katzensprung',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Katzensprung? Na das muss ja ne tolle Katze sein.',
+      options: [
+        {
+          id: 'opt_katzensprung_bye',
+          playerText: 'OK, ich geh dann mal lieber weiter. Schönen Tag noch.',
+          nextNodeId: 'arvid_bye',
+        },
+      ],
+    },
+
+    arvid_frueher: {
+      id: 'arvid_frueher',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Das weißt du also? Mal sehen was du noch so weißt.',
+      options: [
+        {
+          id: 'opt_frueher_bye',
+          playerText: 'OK, ich geh dann mal lieber weiter. Schönen Tag noch.',
+          nextNodeId: 'arvid_bye',
         },
       ],
     },
@@ -953,14 +980,40 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
         {
           id: 'opt_bier_schnaeppchen',
           playerText: 'Ein Schnäppchen, her damit!',
-          nextNodeId: null,
-          action: { type: 'close' },
+          nextNodeId: 'arvid_bier_leer',
         },
         {
           id: 'opt_bier_sorte',
           playerText: 'Was gibts denn für ne Sorte?',
-          nextNodeId: null,
-          action: { type: 'close' },
+          nextNodeId: 'arvid_bier_leer',
+        },
+      ],
+    },
+
+    arvid_bier_leer: {
+      id: 'arvid_bier_leer',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Sorry ist keins mehr da. Hab gerade das letzte leer gemacht.',
+      options: [
+        {
+          id: 'opt_bier_ausgeben',
+          playerText: 'Ich habe noch zwei Flaschen im Rucksack. Ich gebe eine aus.',
+          nextNodeId: 'arvid_bier_ausgeben',
+        },
+      ],
+    },
+
+    arvid_bier_ausgeben: {
+      id: 'arvid_bier_ausgeben',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Danke, sehr nett. Aber nein. Behalte sie lieber, du wirst sie brauchen. Glaubs mir.',
+      options: [
+        {
+          id: 'opt_ausgeben_bye',
+          playerText: 'OK, ich geh dann mal lieber weiter. Schönen Tag noch.',
+          nextNodeId: 'arvid_bye',
         },
       ],
     },
@@ -972,18 +1025,199 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       text: 'Ein Satz heiße Ohren gefällig?',
       options: [
         {
-          id: 'opt_penner_gammelfleisch',
-          playerText: 'Große Worte für ein Stück Gammelfleisch.',
-          nextNodeId: null,
-          action: { type: 'close' },
-        },
-        {
           id: 'opt_penner_bier',
           playerText: 'War nicht so gemeint. Hast du ein Bier über?',
+          nextNodeId: 'arvid_bier_leer',
+        },
+        {
+          id: 'opt_penner_gammelfleisch',
+          playerText: 'Große Worte für ein Stück Gammelfleisch.',
+          nextNodeId: 'arvid_gammelfleisch',
+        },
+      ],
+    },
+
+    arvid_gammelfleisch: {
+      id: 'arvid_gammelfleisch',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Tja so wird das hier nichts. Du reitest dich gerade tief in die Scheiße Kleiner.',
+      options: [
+        {
+          id: 'opt_gammelfleisch_wieder',
+          playerText: 'Wäre nicht das erste mal.',
+          nextNodeId: 'arvid_weiterbringt',
+        },
+      ],
+    },
+
+    arvid_weiterbringt: {
+      id: 'arvid_weiterbringt',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Wenn du glaubst, dass dich das weiterbringt. Dann nur zu.',
+      options: [
+        {
+          id: 'opt_weiterbringt_bye',
+          playerText: 'OK, ich geh dann mal lieber weiter. Schönen Tag noch.',
+          nextNodeId: 'arvid_bye',
+        },
+      ],
+    },
+
+    arvid_bye: {
+      id: 'arvid_bye',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Wie du meinst. Viel Glück.',
+      options: [],
+      autoAction: { type: 'close' },
+      autoAdvanceDelayMs: 2200,
+    },
+
+    // 2. Event-Dialog: Nach Öffnen der Schatztruhe vor der Schutzhütte
+    arvid_after_chest: {
+      id: 'arvid_after_chest',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Sieh an, du hast die alte Truhe aufbekommen. Dann hast du jetzt das Licht.',
+      options: [
+        {
+          id: 'opt_chest_usage',
+          playerText: 'Was fange ich mit dem Licht an?',
+          nextNodeId: 'arvid_chest_usage',
+        },
+        {
+          id: 'opt_chest_mine',
+          playerText: 'Gehörte der Kristall dir?',
+          nextNodeId: 'arvid_chest_mine',
+        },
+      ],
+    },
+
+    arvid_chest_usage: {
+      id: 'arvid_chest_usage',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Es leuchtet dir den Weg durch den tiefen Silberstollen im Norden. Aber pass auf das Graumännchen auf.',
+      options: [
+        {
+          id: 'opt_chest_usage_close',
+          playerText: 'Verstanden, danke.',
           nextNodeId: null,
           action: { type: 'close' },
         },
       ],
+    },
+
+    arvid_chest_mine: {
+      id: 'arvid_chest_mine',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Nein, das hat der alte Hüter vor mir dagelassen. Nimm es mit – auf den finsteren Pfaden wirst du es brauchen.',
+      options: [
+        {
+          id: 'opt_chest_mine_close',
+          playerText: 'Danke für den Hinweis.',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    // 3. Event-Dialog: Nach Besuch des Riesen am Wehr auf Weg 3
+    arvid_after_giant: {
+      id: 'arvid_after_giant',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Du warst drüben am Wehr, stimmt\'s? Der alte Dickschädel hockt immer noch da.',
+      options: [
+        {
+          id: 'opt_giant_wehr',
+          playerText: 'Er will das Wehr für das dürre Tal nicht öffnen.',
+          nextNodeId: 'arvid_giant_wehr',
+        },
+        {
+          id: 'opt_giant_imposant',
+          playerText: 'Ein imposanter Kerl.',
+          nextNodeId: 'arvid_giant_imposant',
+        },
+      ],
+    },
+
+    arvid_giant_wehr: {
+      id: 'arvid_giant_wehr',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Verständlich. Wenn er die Schleusen öffnet, wird seine Quelle fortgespült. Keine leichte Wahl.',
+      options: [
+        {
+          id: 'opt_giant_wehr_close',
+          playerText: 'Ich denke darüber nach.',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    arvid_giant_imposant: {
+      id: 'arvid_giant_imposant',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Und stur wie die Felsen des Schwarzwaldes. Lass dich von ihm nicht einschüchtern.',
+      options: [
+        {
+          id: 'opt_giant_imposant_close',
+          playerText: 'Mach ich nicht.',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    // 4. Standard / Idle-Dialog: Wiederholtes Ansprechen ohne aktives Event
+    arvid_idle: {
+      id: 'arvid_idle',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Was lungerst du hier noch rum? Geh die Pfade erkunden!',
+      options: [
+        {
+          id: 'opt_idle_tipp',
+          playerText: 'Welchen Weg empfiehlst du mir?',
+          nextNodeId: 'arvid_idle_tipp',
+        },
+        {
+          id: 'opt_idle_bye',
+          playerText: 'Ich gehe ja schon.',
+          nextNodeId: 'arvid_idle_bye',
+        },
+      ],
+    },
+
+    arvid_idle_tipp: {
+      id: 'arvid_idle_tipp',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Fang mit Weg 1 im Norden an. Der Silberstollen ist ein guter Anfang. Oder geh zum Riesen am Wehr, wenn du Mumm hast.',
+      options: [
+        {
+          id: 'opt_idle_tipp_close',
+          playerText: 'Ich sehe mich um.',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+
+    arvid_idle_bye: {
+      id: 'arvid_idle_bye',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Na also. Bewegung schadet dir nicht.',
+      options: [],
+      autoAction: { type: 'close' },
+      autoAdvanceDelayMs: 2000,
     },
 
     // === FABELWESEN LUPO (auf Weg 7) ===

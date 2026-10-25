@@ -281,12 +281,28 @@ export class GameApp {
     this.hud.setTerrainPreset(presetKey);
   }
 
+  /**
+   * Ermittelt anhand des Spielfortschritts den passenden Startknoten für Waldhüter Arvid.
+   */
+  private resolveArvidDialogueNode(): string {
+    if (this.state.isChestOpen() && this.dialogue.canStartDialogue('arvid_after_chest')) {
+      return 'arvid_after_chest';
+    }
+    if (this.dialogue.isDialogueCompleted('giant_root') && this.dialogue.canStartDialogue('arvid_after_giant')) {
+      return 'arvid_after_giant';
+    }
+    if (this.dialogue.canStartDialogue('root')) {
+      return 'root';
+    }
+    return 'arvid_idle';
+  }
+
   private initiateTalkToNpc(): void {
     this.clearPendingActions();
     this.scene.triggerGuideCheers();
     if (this.state.isNearNpc()) {
       this.state.clearTargetPosition();
-      this.openDialogueNode('root');
+      this.openDialogueNode(this.resolveArvidDialogueNode());
     } else {
       this.pendingTalkToNpc = true;
       this.state.setTargetToNpc();
@@ -1060,7 +1076,7 @@ export class GameApp {
         this.pendingTalkToNpc = false;
         this.state.clearTargetPosition();
         this.scene.triggerGuideCheers();
-        this.openDialogueNode('root');
+        this.openDialogueNode(this.resolveArvidDialogueNode());
       }
       if (this.pendingTalkToGreyMan && this.state.isNearGreyMan()) {
         this.pendingTalkToGreyMan = false;

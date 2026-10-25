@@ -38,7 +38,9 @@ Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../s
 ## Waldhüter Arvid
 **Rolle / Ort:** Hüter der Schutzhütte & Wächter der Sieben Wege
 
-### Knoten: `root`
+### 1. Haupt-Einstiegsdialog (Phase 0: Erstkontakt)
+
+#### Knoten: `root`
 
 > **Waldhüter Arvid:** „Ach du Scheiße, was willst du denn hier?“
 
@@ -47,29 +49,154 @@ Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../s
 - **2.** „Ein Bier.“ `-> arvid_bier`
 - **3.** „Geht dich gar nichts an, Penner!“ `-> arvid_penner`
 
-### Knoten: `arvid_zinsbachtal`
+#### Knoten: `arvid_zinsbachtal`
 
 > **Waldhüter Arvid:** „Zinsbachtal, Ja, ich erinnere mich. Da war es schön. Damals.“
 
 **Antwort-Optionen (Ich):**
-- **1.** „Wie, damals? Nach meiner Karte ist es nur noch ein Katzensprung“ `(Aktion: close)`
-- **2.** „Ja ja, früher war alles besser. Ich weiß.“ `(Aktion: close)`
+- **1.** „Wie, damals? Nach meiner Karte ist es nur noch ein Katzensprung.“ `-> arvid_katzensprung`
+- **2.** „Ja ja, früher war alles besser. Ich weiß.“ `-> arvid_frueher`
 
-### Knoten: `arvid_bier`
+#### Knoten: `arvid_katzensprung`
+
+> **Waldhüter Arvid:** „Katzensprung? Na das muss ja ne tolle Katze sein.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „OK, ich geh dann mal lieber weiter. Schönen Tag noch.“ `-> arvid_bye`
+
+#### Knoten: `arvid_frueher`
+
+> **Waldhüter Arvid:** „Das weißt du also? Mal sehen was du noch so weißt.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „OK, ich geh dann mal lieber weiter. Schönen Tag noch.“ `-> arvid_bye`
+
+#### Knoten: `arvid_bier`
 
 > **Waldhüter Arvid:** „Macht ein Euro!“
 
 **Antwort-Optionen (Ich):**
-- **1.** „Ein Schnäppchen, her damit!“ `(Aktion: close)`
-- **2.** „Was gibts denn für ne Sorte?“ `(Aktion: close)`
+- **1.** „Ein Schnäppchen, her damit!“ `-> arvid_bier_leer`
+- **2.** „Was gibts denn für ne Sorte?“ `-> arvid_bier_leer`
 
-### Knoten: `arvid_penner`
+#### Knoten: `arvid_bier_leer`
+
+> **Waldhüter Arvid:** „Sorry ist keins mehr da. Hab gerade das letzte leer gemacht.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „Ich habe noch zwei Flaschen im Rucksack. Ich gebe eine aus.“ `-> arvid_bier_ausgeben`
+
+#### Knoten: `arvid_bier_ausgeben`
+
+> **Waldhüter Arvid:** „Danke, sehr nett. Aber nein. Behalte sie lieber, du wirst sie brauchen. Glaubs mir.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „OK, ich geh dann mal lieber weiter. Schönen Tag noch.“ `-> arvid_bye`
+
+#### Knoten: `arvid_penner`
 
 > **Waldhüter Arvid:** „Ein Satz heiße Ohren gefällig?“
 
 **Antwort-Optionen (Ich):**
-- **1.** „Große Worte für ein Stück Gammelfleisch.“ `(Aktion: close)`
-- **2.** „War nicht so gemeint. Hast du ein Bier über?“ `(Aktion: close)`
+- **1.** „War nicht so gemeint. Hast du ein Bier über?“ `-> arvid_bier_leer`
+- **2.** „Große Worte für ein Stück Gammelfleisch.“ `-> arvid_gammelfleisch`
+
+#### Knoten: `arvid_gammelfleisch`
+
+> **Waldhüter Arvid:** „Tja so wird das hier nichts. Du reitest dich gerade tief in die Scheiße Kleiner.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „Wäre nicht das erste mal.“ `-> arvid_weiterbringt`
+
+#### Knoten: `arvid_weiterbringt`
+
+> **Waldhüter Arvid:** „Wenn du glaubst, dass dich das weiterbringt. Dann nur zu.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „OK, ich geh dann mal lieber weiter. Schönen Tag noch.“ `-> arvid_bye`
+
+#### Knoten: `arvid_bye`
+
+> **Waldhüter Arvid:** „Wie du meinst. Viel Glück.“
+
+*(Keine Buttons: Schließt nach ca. 2,2 s automatisch)*
+
+---
+
+### 2. Event: Nach Öffnen der Schatztruhe
+
+#### Knoten: `arvid_after_chest`
+
+> **Waldhüter Arvid:** „Sieh an, du hast die alte Truhe aufbekommen. Dann hast du jetzt das Licht.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „Was fange ich mit dem Licht an?“ `-> arvid_chest_usage`
+- **2.** „Gehörte der Kristall dir?“ `-> arvid_chest_mine`
+
+#### Knoten: `arvid_chest_usage`
+
+> **Waldhüter Arvid:** „Es leuchtet dir den Weg durch den tiefen Silberstollen im Norden. Aber pass auf das Graumännchen auf.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „Verstanden, danke.“ `(Aktion: close)`
+
+#### Knoten: `arvid_chest_mine`
+
+> **Waldhüter Arvid:** „Nein, das hat der alte Hüter vor mir dagelassen. Nimm es mit – auf den finsteren Pfaden wirst du es brauchen.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „Danke für den Hinweis.“ `(Aktion: close)`
+
+---
+
+### 3. Event: Nach Besuch des Riesen am Wehr (Weg 3)
+
+#### Knoten: `arvid_after_giant`
+
+> **Waldhüter Arvid:** „Du warst drüben am Wehr, stimmt's? Der alte Dickschädel hockt immer noch da.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „Er will das Wehr für das dürre Tal nicht öffnen.“ `-> arvid_giant_wehr`
+- **2.** „Ein imposanter Kerl.“ `-> arvid_giant_imposant`
+
+#### Knoten: `arvid_giant_wehr`
+
+> **Waldhüter Arvid:** „Verständlich. Wenn er die Schleusen öffnet, wird seine Quelle fortgespült. Keine leichte Wahl.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „Ich denke darüber nach.“ `(Aktion: close)`
+
+#### Knoten: `arvid_giant_imposant`
+
+> **Waldhüter Arvid:** „Und stur wie die Felsen des Schwarzwaldes. Lass dich von ihm nicht einschüchtern.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „Mach ich nicht.“ `(Aktion: close)`
+
+---
+
+### 4. Standard / Idle-Dialog (Wiederholtes Ansprechen)
+
+#### Knoten: `arvid_idle`
+
+> **Waldhüter Arvid:** „Was lungerst du hier noch rum? Geh die Pfade erkunden!“
+
+**Antwort-Optionen (Ich):**
+- **1.** „Welchen Weg empfiehlst du mir?“ `-> arvid_idle_tipp`
+- **2.** „Ich gehe ja schon.“ `-> arvid_idle_bye`
+
+#### Knoten: `arvid_idle_tipp`
+
+> **Waldhüter Arvid:** „Fang mit Weg 1 im Norden an. Der Silberstollen ist ein guter Anfang. Oder geh zum Riesen am Wehr, wenn du Mumm hast.“
+
+**Antwort-Optionen (Ich):**
+- **1.** „Ich sehe mich um.“ `(Aktion: close)`
+
+#### Knoten: `arvid_idle_bye`
+
+> **Waldhüter Arvid:** „Na also. Bewegung schadet dir nicht.“
+
+*(Keine Buttons: Schließt nach ca. 2,0 s automatisch)*
 
 ---
 

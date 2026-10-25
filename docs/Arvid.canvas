@@ -1,25 +1,617 @@
 {
-	"nodes":[
-		{"id":"root","type":"text","text":"### 🌲 Waldhüter Arvid (Start)\n\n> „Ach du Scheiße, was willst du denn hier?“\n\n*Hüter der Schutzhütte*","x":220,"y":0,"width":360,"height":140,"color":"3"},
-		{"id":"arvid_zinsbachtal","type":"text","text":"### 🌲 Waldhüter Arvid\n\n> „Zinsbachtal, Ja, ich erinnere mich. Da war es schön. Damals.“","x":-200,"y":280,"width":320,"height":140,"color":"5"},
-		{"id":"arvid_penner","type":"text","text":"### 🌲 Waldhüter Arvid\n\n> „Ein Satz heiße Ohren gefällig?“","x":680,"y":280,"width":320,"height":140,"color":"5"},
-		{"id":"arvid_bier","type":"text","text":"### 🌲 Waldhüter Arvid\n\n> „Macht ein Euro!“","x":240,"y":280,"width":320,"height":140,"color":"5"},
-		{"id":"6ddf53f938027555","x":-380,"y":480,"width":283,"height":94,"color":"1","type":"text","text":"Wie, damals? Nach meiner Karte ist es nur noch ein Katzensprung"},
-		{"id":"fbde544d83d5985a","x":-81,"y":484,"width":250,"height":60,"color":"1","type":"text","text":"Ja ja, früher war alles besser. Ich weiß."},
-		{"id":"30be59c1316ff318","x":220,"y":484,"width":250,"height":60,"color":"1","type":"text","text":"Ein Schnäppchen, her damit!"},
-		{"id":"bf8c284075e01e32","x":396,"y":498,"width":250,"height":60,"color":"1","type":"text","text":"Was gibts denn für ne Sorte?"},
-		{"id":"66c32247c37edb3d","x":628,"y":486,"width":250,"height":60,"color":"1","type":"text","text":"Große Worte für ein Stück Gammelfleisch."},
-		{"id":"dc86ada276dc07bb","x":848,"y":499,"width":250,"height":60,"color":"1","type":"text","text":"War nicht so gemeint. Hast du ein Bier über?"}
+	"nodes": [
+		{
+			"id": "root",
+			"type": "text",
+			"text": "### 🌲 Waldhüter Arvid (Start)\n\n> „Ach du Scheiße, was willst du denn hier?“\n\n*Hüter der Schutzhütte*",
+			"x": 220,
+			"y": 0,
+			"width": 360,
+			"height": 140,
+			"color": "3"
+		},
+		{
+			"id": "arvid_zinsbachtal",
+			"type": "text",
+			"text": "### 🌲 Waldhüter Arvid\n\n> „Zinsbachtal, Ja, ich erinnere mich. Da war es schön. Damals.“",
+			"x": -200,
+			"y": 280,
+			"width": 320,
+			"height": 140,
+			"color": "5"
+		},
+		{
+			"id": "arvid_bier",
+			"type": "text",
+			"text": "### 🌲 Waldhüter Arvid\n\n> „Macht ein Euro!“",
+			"x": 240,
+			"y": 280,
+			"width": 320,
+			"height": 140,
+			"color": "5"
+		},
+		{
+			"id": "6ddf53f938027555",
+			"type": "text",
+			"text": "Wie, damals? Nach meiner Karte ist es nur noch ein Katzensprung.",
+			"x": -380,
+			"y": 480,
+			"width": 240,
+			"height": 94,
+			"color": "1"
+		},
+		{
+			"id": "fbde544d83d5985a",
+			"type": "text",
+			"text": "Ja ja, früher war alles besser. Ich weiß.",
+			"x": -100,
+			"y": 484,
+			"width": 250,
+			"height": 90,
+			"color": "1"
+		},
+		{
+			"id": "30be59c1316ff318",
+			"type": "text",
+			"text": "Ein Schnäppchen, her damit!",
+			"x": 180,
+			"y": 484,
+			"width": 250,
+			"height": 90,
+			"color": "1"
+		},
+		{
+			"id": "bf8c284075e01e32",
+			"type": "text",
+			"text": "Was gibts denn für ne Sorte?",
+			"x": 440,
+			"y": 484,
+			"width": 210,
+			"height": 90,
+			"color": "1"
+		},
+		{
+			"id": "dc86ada276dc07bb",
+			"type": "text",
+			"text": "War nicht so gemeint. Hast du ein Bier über?",
+			"x": 670,
+			"y": 484,
+			"width": 250,
+			"height": 90,
+			"color": "1"
+		},
+		{
+			"id": "66c32247c37edb3d",
+			"type": "text",
+			"text": "Große Worte für ein Stück Gammelfleisch.",
+			"x": 940,
+			"y": 480,
+			"width": 250,
+			"height": 94,
+			"color": "1"
+		},
+		{
+			"id": "48807567a46ef905",
+			"x": -380,
+			"y": 627,
+			"width": 250,
+			"height": 87,
+			"color": "5",
+			"type": "text",
+			"text": "Katzensprung? Na das muss ja ne tolle Katze sein."
+		},
+		{
+			"id": "87db4b492c156d3b",
+			"x": -99,
+			"y": 629,
+			"width": 250,
+			"height": 85,
+			"color": "5",
+			"type": "text",
+			"text": "Das weißt du also? Mal sehen was du noch so weißt."
+		},
+		{
+			"id": "arvid_penner",
+			"type": "text",
+			"text": "### 🌲 Waldhüter Arvid\n\n> „Ein Satz heiße Ohren gefällig?“",
+			"x": 760,
+			"y": 280,
+			"width": 320,
+			"height": 140,
+			"color": "5"
+		},
+		{
+			"id": "01ad16df7fac9851",
+			"x": 387,
+			"y": 781,
+			"width": 317,
+			"height": 66,
+			"color": "1",
+			"type": "text",
+			"text": "Ich habe noch zwei Flaschen im Rucksack. Ich gebe eine aus. "
+		},
+		{
+			"id": "26e0127349dbad1d",
+			"x": 387,
+			"y": 671,
+			"width": 317,
+			"height": 87,
+			"color": "5",
+			"type": "text",
+			"text": "Sorry ist keins mehr da. Hab gerade das letzte leer gemacht."
+		},
+		{
+			"id": "b286cc1e4bccbdda",
+			"x": 862,
+			"y": 671,
+			"width": 328,
+			"height": 85,
+			"color": "5",
+			"type": "text",
+			"text": "Tja so wird das hier nichts. Du reitest dich gerade tief in die Scheiße Kleiner. "
+		},
+		{
+			"id": "fe3aa28da4e1b3c2",
+			"x": 901,
+			"y": 784,
+			"width": 250,
+			"height": 60,
+			"color": "1",
+			"type": "text",
+			"text": "Wäre nicht das erste mal."
+		},
+		{
+			"id": "5817a4cdfaa5b3cd",
+			"x": 387,
+			"y": 883,
+			"width": 317,
+			"height": 77,
+			"color": "5",
+			"type": "text",
+			"text": "Danke, sehr nett. Aber nein. Behalte sie lieber, du wirst sie brauchen. Glaubs mir."
+		},
+		{
+			"id": "2fc7c12a7c669246",
+			"x": 901,
+			"y": 889,
+			"width": 259,
+			"height": 71,
+			"color": "5",
+			"type": "text",
+			"text": "Wenn du glaubst, dass dich das weiterbringt. Dann nur zu."
+		},
+		{
+			"id": "f84bca563c7eaeeb",
+			"x": 262,
+			"y": 1020,
+			"width": 250,
+			"height": 79,
+			"color": "1",
+			"type": "text",
+			"text": "OK, ich geh dann mal lieber weiter. Schönen Tag noch."
+		},
+		{
+			"id": "c9b4364dfe29982f",
+			"x": 262,
+			"y": 1140,
+			"width": 250,
+			"height": 60,
+			"color": "5",
+			"type": "text",
+			"text": "Wie du meinst. Viel Glück."
+		},
+		{
+			"id": "arvid_after_chest",
+			"type": "text",
+			"text": "### 🌲 Waldhüter Arvid (Event: Truhe)\n\n> „Sieh an, du hast die alte Truhe aufbekommen. Dann hast du jetzt das Licht.“\n\n*(Trigger: Nach Öffnen der Truhe)*",
+			"x": 1400,
+			"y": 0,
+			"width": 360,
+			"height": 140,
+			"color": "4"
+		},
+		{
+			"id": "arvid_opt_chest_1",
+			"type": "text",
+			"text": "Was fange ich mit dem Licht an?",
+			"x": 1300,
+			"y": 200,
+			"width": 250,
+			"height": 75,
+			"color": "1"
+		},
+		{
+			"id": "arvid_opt_chest_2",
+			"type": "text",
+			"text": "Gehörte der Kristall dir?",
+			"x": 1600,
+			"y": 200,
+			"width": 250,
+			"height": 75,
+			"color": "1"
+		},
+		{
+			"id": "arvid_chest_usage",
+			"type": "text",
+			"text": "### 🌲 Arvid\n\n> „Es leuchtet dir den Weg durch den tiefen Silberstollen im Norden. Aber pass auf das Graumännchen auf.“",
+			"x": 1300,
+			"y": 330,
+			"width": 260,
+			"height": 105,
+			"color": "5"
+		},
+		{
+			"id": "arvid_chest_mine",
+			"type": "text",
+			"text": "### 🌲 Arvid\n\n> „Nein, das hat der alte Hüter vor mir dagelassen. Nimm es mit – auf den finsteren Pfaden wirst du es brauchen.“",
+			"x": 1600,
+			"y": 330,
+			"width": 260,
+			"height": 105,
+			"color": "5"
+		},
+		{
+			"id": "arvid_idle",
+			"type": "text",
+			"text": "### 🌲 Waldhüter Arvid (Standard / Idle)\n\n> „Was lungerst du hier noch rum? Geh die Pfade erkunden!“\n\n*(Trigger: Kein neues Event)*",
+			"x": 1950,
+			"y": 0,
+			"width": 360,
+			"height": 140,
+			"color": "2"
+		},
+		{
+			"id": "arvid_opt_idle_1",
+			"type": "text",
+			"text": "Welchen Weg empfiehlst du mir?",
+			"x": 1880,
+			"y": 200,
+			"width": 240,
+			"height": 75,
+			"color": "1"
+		},
+		{
+			"id": "arvid_opt_idle_2",
+			"type": "text",
+			"text": "Ich gehe ja schon.",
+			"x": 2160,
+			"y": 200,
+			"width": 220,
+			"height": 75,
+			"color": "1"
+		},
+		{
+			"id": "arvid_idle_tipp",
+			"type": "text",
+			"text": "### 🌲 Arvid\n\n> „Fang mit Weg 1 im Norden an. Der Silberstollen ist ein guter Anfang. Oder geh zum Riesen am Wehr, wenn du Mumm hast.“",
+			"x": 1880,
+			"y": 330,
+			"width": 250,
+			"height": 110,
+			"color": "5"
+		},
+		{
+			"id": "arvid_idle_bye",
+			"type": "text",
+			"text": "### 🌲 Arvid\n\n> „Na also. Bewegung schadet dir nicht.“\n\n*(schließt)*",
+			"x": 2160,
+			"y": 330,
+			"width": 220,
+			"height": 90,
+			"color": "5"
+		},
+		{
+			"id": "arvid_after_giant",
+			"type": "text",
+			"text": "### 🌲 Waldhüter Arvid (Event: Riese)\n\n> „Du warst drüben am Wehr, stimmt's? Der alte Dickschädel hockt immer noch da.“\n\n*(Trigger: Nach Besuch von Weg 3)*",
+			"x": 1400,
+			"y": 520,
+			"width": 360,
+			"height": 140,
+			"color": "6"
+		},
+		{
+			"id": "arvid_opt_giant_1",
+			"type": "text",
+			"text": "Er will das Wehr nicht öffnen.",
+			"x": 1300,
+			"y": 720,
+			"width": 250,
+			"height": 75,
+			"color": "1"
+		},
+		{
+			"id": "arvid_opt_giant_2",
+			"type": "text",
+			"text": "Ein imposanter Kerl.",
+			"x": 1600,
+			"y": 720,
+			"width": 250,
+			"height": 75,
+			"color": "1"
+		},
+		{
+			"id": "arvid_giant_wehr",
+			"type": "text",
+			"text": "### 🌲 Arvid\n\n> „Verständlich. Wenn er die Schleusen öffnet, wird seine Quelle fortgespült. Keine leichte Wahl.“",
+			"x": 1300,
+			"y": 850,
+			"width": 260,
+			"height": 105,
+			"color": "5"
+		},
+		{
+			"id": "arvid_giant_imposant",
+			"type": "text",
+			"text": "### 🌲 Arvid\n\n> „Und stur wie die Felsen des Schwarzwaldes. Lass dich von ihm nicht einschüchtern.“",
+			"x": 1600,
+			"y": 850,
+			"width": 260,
+			"height": 105,
+			"color": "5"
+		}
 	],
-	"edges":[
-		{"id":"edge_arvid_root_to_zinsbachtal","fromNode":"root","fromSide":"bottom","toNode":"arvid_zinsbachtal","toSide":"top","label":"1. Ich will ins Zinsbachtal."},
-		{"id":"edge_arvid_root_to_bier","fromNode":"root","fromSide":"bottom","toNode":"arvid_bier","toSide":"top","label":"2. Ein Bier."},
-		{"id":"edge_arvid_root_to_penner","fromNode":"root","fromSide":"bottom","toNode":"arvid_penner","toSide":"top","label":"3. Geht dich gar nichts an, Penner!"},
-		{"id":"7b3c028642804155","fromNode":"arvid_zinsbachtal","fromSide":"bottom","toNode":"6ddf53f938027555","toSide":"top"},
-		{"id":"b74720bc554ecd16","fromNode":"arvid_zinsbachtal","fromSide":"bottom","toNode":"fbde544d83d5985a","toSide":"top"},
-		{"id":"f328296a1e1d887b","fromNode":"arvid_bier","fromSide":"bottom","toNode":"30be59c1316ff318","toSide":"top"},
-		{"id":"855ac5810b1821fe","fromNode":"arvid_bier","fromSide":"bottom","toNode":"bf8c284075e01e32","toSide":"top"},
-		{"id":"f56162765e6c6294","fromNode":"arvid_penner","fromSide":"bottom","toNode":"66c32247c37edb3d","toSide":"top"},
-		{"id":"97f983ab61766988","fromNode":"arvid_penner","fromSide":"bottom","toNode":"dc86ada276dc07bb","toSide":"top"}
+	"edges": [
+		{
+			"id": "edge_arvid_root_to_zinsbachtal",
+			"fromNode": "root",
+			"fromSide": "bottom",
+			"toNode": "arvid_zinsbachtal",
+			"toSide": "top",
+			"label": "1. Ich will ins Zinsbachtal."
+		},
+		{
+			"id": "edge_arvid_root_to_bier",
+			"fromNode": "root",
+			"fromSide": "bottom",
+			"toNode": "arvid_bier",
+			"toSide": "top",
+			"label": "2. Ein Bier."
+		},
+		{
+			"id": "edge_arvid_root_to_penner",
+			"fromNode": "root",
+			"fromSide": "bottom",
+			"toNode": "arvid_penner",
+			"toSide": "top",
+			"label": "3. Geht dich gar nichts an, Penner!"
+		},
+		{
+			"id": "7b3c028642804155",
+			"fromNode": "arvid_zinsbachtal",
+			"fromSide": "bottom",
+			"toNode": "6ddf53f938027555",
+			"toSide": "top"
+		},
+		{
+			"id": "b74720bc554ecd16",
+			"fromNode": "arvid_zinsbachtal",
+			"fromSide": "bottom",
+			"toNode": "fbde544d83d5985a",
+			"toSide": "top"
+		},
+		{
+			"id": "f328296a1e1d887b",
+			"fromNode": "arvid_bier",
+			"fromSide": "bottom",
+			"toNode": "30be59c1316ff318",
+			"toSide": "top"
+		},
+		{
+			"id": "855ac5810b1821fe",
+			"fromNode": "arvid_bier",
+			"fromSide": "bottom",
+			"toNode": "bf8c284075e01e32",
+			"toSide": "top"
+		},
+		{
+			"id": "f56162765e6c6294",
+			"fromNode": "arvid_penner",
+			"fromSide": "bottom",
+			"toNode": "66c32247c37edb3d",
+			"toSide": "top"
+		},
+		{
+			"id": "97f983ab61766988",
+			"fromNode": "arvid_penner",
+			"fromSide": "bottom",
+			"toNode": "dc86ada276dc07bb",
+			"toSide": "top"
+		},
+		{
+			"id": "2d33a63228479437",
+			"fromNode": "6ddf53f938027555",
+			"fromSide": "bottom",
+			"toNode": "48807567a46ef905",
+			"toSide": "top"
+		},
+		{
+			"id": "faf9a64a9a5d600c",
+			"fromNode": "30be59c1316ff318",
+			"fromSide": "bottom",
+			"toNode": "26e0127349dbad1d",
+			"toSide": "top"
+		},
+		{
+			"id": "56adcb4e48fe01ae",
+			"fromNode": "bf8c284075e01e32",
+			"fromSide": "bottom",
+			"toNode": "26e0127349dbad1d",
+			"toSide": "top"
+		},
+		{
+			"id": "1b0b5ee9c8e2b248",
+			"fromNode": "dc86ada276dc07bb",
+			"fromSide": "bottom",
+			"toNode": "26e0127349dbad1d",
+			"toSide": "top"
+		},
+		{
+			"id": "30ab628c0807cf93",
+			"fromNode": "66c32247c37edb3d",
+			"fromSide": "bottom",
+			"toNode": "b286cc1e4bccbdda",
+			"toSide": "top"
+		},
+		{
+			"id": "7bab0b3dea984dff",
+			"fromNode": "fbde544d83d5985a",
+			"fromSide": "bottom",
+			"toNode": "87db4b492c156d3b",
+			"toSide": "top"
+		},
+		{
+			"id": "7430191ea24bdaa5",
+			"fromNode": "48807567a46ef905",
+			"fromSide": "bottom",
+			"toNode": "f84bca563c7eaeeb",
+			"toSide": "top"
+		},
+		{
+			"id": "5af51ef0decd15d2",
+			"fromNode": "87db4b492c156d3b",
+			"fromSide": "bottom",
+			"toNode": "f84bca563c7eaeeb",
+			"toSide": "top"
+		},
+		{
+			"id": "2e67256fc11fecd6",
+			"fromNode": "26e0127349dbad1d",
+			"fromSide": "bottom",
+			"toNode": "01ad16df7fac9851",
+			"toSide": "top"
+		},
+		{
+			"id": "c771f212e741b45d",
+			"fromNode": "b286cc1e4bccbdda",
+			"fromSide": "bottom",
+			"toNode": "fe3aa28da4e1b3c2",
+			"toSide": "top"
+		},
+		{
+			"id": "4439f20b82f73b1c",
+			"fromNode": "01ad16df7fac9851",
+			"fromSide": "bottom",
+			"toNode": "5817a4cdfaa5b3cd",
+			"toSide": "top"
+		},
+		{
+			"id": "f2f4a9f5476bc681",
+			"fromNode": "f84bca563c7eaeeb",
+			"fromSide": "bottom",
+			"toNode": "c9b4364dfe29982f",
+			"toSide": "top"
+		},
+		{
+			"id": "c54cc2909a2e845e",
+			"fromNode": "fe3aa28da4e1b3c2",
+			"fromSide": "bottom",
+			"toNode": "2fc7c12a7c669246",
+			"toSide": "top"
+		},
+		{
+			"id": "2ba3be554f9eae96",
+			"fromNode": "5817a4cdfaa5b3cd",
+			"fromSide": "bottom",
+			"toNode": "f84bca563c7eaeeb",
+			"toSide": "top"
+		},
+		{
+			"id": "ce87ffe54632a2ed",
+			"fromNode": "2fc7c12a7c669246",
+			"fromSide": "bottom",
+			"toNode": "f84bca563c7eaeeb",
+			"toSide": "top"
+		},
+		{
+			"id": "edge_chest_to_opt1",
+			"fromNode": "arvid_after_chest",
+			"fromSide": "bottom",
+			"toNode": "arvid_opt_chest_1",
+			"toSide": "top",
+			"label": "1. Was fange ich an?"
+		},
+		{
+			"id": "edge_chest_to_opt2",
+			"fromNode": "arvid_after_chest",
+			"fromSide": "bottom",
+			"toNode": "arvid_opt_chest_2",
+			"toSide": "top",
+			"label": "2. Gehörte der dir?"
+		},
+		{
+			"id": "edge_opt_chest_1_to_ans",
+			"fromNode": "arvid_opt_chest_1",
+			"fromSide": "bottom",
+			"toNode": "arvid_chest_usage",
+			"toSide": "top"
+		},
+		{
+			"id": "edge_opt_chest_2_to_ans",
+			"fromNode": "arvid_opt_chest_2",
+			"fromSide": "bottom",
+			"toNode": "arvid_chest_mine",
+			"toSide": "top"
+		},
+		{
+			"id": "edge_idle_to_opt1",
+			"fromNode": "arvid_idle",
+			"fromSide": "bottom",
+			"toNode": "arvid_opt_idle_1",
+			"toSide": "top",
+			"label": "1. Welchen Weg?"
+		},
+		{
+			"id": "edge_idle_to_opt2",
+			"fromNode": "arvid_idle",
+			"fromSide": "bottom",
+			"toNode": "arvid_opt_idle_2",
+			"toSide": "top",
+			"label": "2. Ich gehe ja."
+		},
+		{
+			"id": "edge_opt_idle_1_to_ans",
+			"fromNode": "arvid_opt_idle_1",
+			"fromSide": "bottom",
+			"toNode": "arvid_idle_tipp",
+			"toSide": "top"
+		},
+		{
+			"id": "edge_opt_idle_2_to_ans",
+			"fromNode": "arvid_opt_idle_2",
+			"fromSide": "bottom",
+			"toNode": "arvid_idle_bye",
+			"toSide": "top"
+		},
+		{
+			"id": "edge_giant_to_opt1",
+			"fromNode": "arvid_after_giant",
+			"fromSide": "bottom",
+			"toNode": "arvid_opt_giant_1",
+			"toSide": "top",
+			"label": "1. Wehr nicht öffnen"
+		},
+		{
+			"id": "edge_giant_to_opt2",
+			"fromNode": "arvid_after_giant",
+			"fromSide": "bottom",
+			"toNode": "arvid_opt_giant_2",
+			"toSide": "top",
+			"label": "2. Imposanter Kerl"
+		},
+		{
+			"id": "edge_opt_giant_1_to_ans",
+			"fromNode": "arvid_opt_giant_1",
+			"fromSide": "bottom",
+			"toNode": "arvid_giant_wehr",
+			"toSide": "top"
+		},
+		{
+			"id": "edge_opt_giant_2_to_ans",
+			"fromNode": "arvid_opt_giant_2",
+			"fromSide": "bottom",
+			"toNode": "arvid_giant_imposant",
+			"toSide": "top"
+		}
 	]
 }
