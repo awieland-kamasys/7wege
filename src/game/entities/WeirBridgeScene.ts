@@ -87,36 +87,6 @@ export function createWeirBridgeScene(
   wellWater.userData = { interactableType: 'weir' };
   group.add(wellWater);
 
-  // Sprudelnde Bergquell-Ringe im Zentrum des Brunnens
-  const springRipple = new THREE.Mesh(
-    new THREE.RingGeometry(0.45, 0.75, 24),
-    new THREE.MeshBasicMaterial({
-      color: 0xb5f4ff,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.55,
-    })
-  );
-  springRipple.rotation.x = -Math.PI / 2;
-  springRipple.position.set(-5.4, 1.91, 0);
-  group.add(springRipple);
-
-  // Kleiner Quellsprudel in der Mitte des Brunnens
-  const springBubblerMat = new THREE.MeshStandardMaterial({
-    color: 0xaef0ff,
-    emissive: 0x24788c,
-    emissiveIntensity: 0.55,
-    roughness: 0.2,
-    transparent: true,
-    opacity: 0.75,
-  });
-  const springBubbler = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.18, 0.38, 0.38, 16),
-    springBubblerMat
-  );
-  springBubbler.position.set(-5.4, 1.93, 0);
-  group.add(springBubbler);
-
   // ============================================================================
   // 3. DER GEBIRGSBACH UNTER DEM WEHR & DER BRÜCKE INS TAL
   // Tiefe Schlucht mit über 1,07m lichter Höhe unter der Brücke für das durchströmende Wasser.
@@ -349,11 +319,6 @@ export function createWeirBridgeScene(
   }
 
   const update = (timeSeconds: number) => {
-    // Sanftes Pulsieren der Bergquelle im Rundbrunnen
-    const wave = 0.5 + 0.5 * Math.sin(timeSeconds * 2.6);
-    springRipple.scale.setScalar(0.92 + wave * 0.22);
-    springBubbler.scale.set(0.95 + wave * 0.1, 0.9 + wave * 0.2, 0.95 + wave * 0.1);
-
     // Lebendiges Fließen des Wehrüberlaufs
     const spillFlow = 0.5 + 0.5 * Math.sin(timeSeconds * 4.8);
     weirCascade.scale.y = 0.94 + spillFlow * 0.12;
