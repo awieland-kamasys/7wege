@@ -26,6 +26,63 @@ function worldToPx(wx: number, wz: number, size: number): { x: number; y: number
   return { x, y };
 }
 
+interface SoftPolylineOptions {
+  maxWidthMeters: number;
+  coreWidthMeters: number;
+  steps?: number;
+  startColor: { r: number; g: number; b: number };
+  endColor: { r: number; g: number; b: number };
+}
+
+/**
+ * Zeichnet einen kurvigen Pfad mit samtweichem, fließendem Auslauf zur Waldwiese hin.
+ * Ersetzt harte Linienkanten durch 20 feinst abgestufte Schichten nach einer glatten
+ * S-Kurve (Smoothstep) von 2% Minimal-Alpha am Saum bis 100% im festen Gehbereich.
+ */
+function drawSoftPolyline(
+  ctx: CanvasRenderingContext2D,
+  pxPts: Array<{ x: number; y: number }>,
+  size: number,
+  options: SoftPolylineOptions
+): void {
+  if (pxPts.length < 2) return;
+
+  const steps = options.steps ?? 20;
+  const maxW = (options.maxWidthMeters / 240) * size;
+  const coreW = (options.coreWidthMeters / 240) * size;
+
+  let prevTargetAlpha = 0;
+
+  for (let i = 0; i < steps; i++) {
+    const t = i / (steps - 1); // 0.0 = äußerster Saum, 1.0 = Geh-Kern
+    const width = maxW - t * (maxW - coreW);
+
+    // Sanfte S-Kurve für fließenden, stufenlosen Dichteübergang ohne Kanten
+    const smoothT = t * t * (3 - 2 * t);
+    const targetAlpha = 0.02 + 0.98 * smoothT;
+
+    // Erforderliches inkrementelles Alpha für source-over Blending
+    const stepAlpha = Math.min(
+      1.0,
+      Math.max(0.008, (targetAlpha - prevTargetAlpha) / Math.max(0.0001, 1.0 - prevTargetAlpha))
+    );
+    prevTargetAlpha = targetAlpha;
+
+    const curR = Math.round(options.startColor.r + t * (options.endColor.r - options.startColor.r));
+    const curG = Math.round(options.startColor.g + t * (options.endColor.g - options.startColor.g));
+    const curB = Math.round(options.startColor.b + t * (options.endColor.b - options.startColor.b));
+
+    ctx.strokeStyle = `rgba(${curR}, ${curG}, ${curB}, ${stepAlpha.toFixed(4)})`;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(pxPts[0].x, pxPts[0].y);
+    for (let j = 1; j < pxPts.length; j++) {
+      ctx.lineTo(pxPts[j].x, pxPts[j].y);
+    }
+    ctx.stroke();
+  }
+}
+
 /**
  * Erzeugt eine hochpräzise 2048x2048 Kontroll-Textur (Splatmap) zur perfekten Trennung
  * von gekachelter Waldwiese, Pfaden und Lavaboden:
@@ -158,62 +215,39 @@ export function createTerrainSplatMap(): THREE.CanvasTexture | null {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
+  // Sanfter Gauß-Filter aktivieren, falls vom Browser unterstützt (verfeinert die 20 Stufen zu einem nahtlosen Gradienten)
+  const canUseFilter = typeof (ctx as unknown as { filter?: unknown }).filter === 'string';
+  if (canUseFilter) {
+    const blurPx = Math.max(2, Math.round((0.45 / 240) * size));
+    ctx.filter = `blur(${blurPx}px)`;
+  }
+
   // 1. Normale Waldwege (reiner Rotkanal = Wiese zu Lehmkieselweg, 0% Lava)
   for (const wps of normalPaths) {
     const pxPts = wps.map((pt) => worldToPx(pt.x, pt.z, size));
-    if (pxPts.length < 2) continue;
-
-    // Weicher Außensaum
-    ctx.strokeStyle = 'rgba(255, 0, 0, 0.45)';
-    ctx.lineWidth = ((2.7 / 240) * size);
-    ctx.beginPath();
-    ctx.moveTo(pxPts[0].x, pxPts[0].y);
-    for (let i = 1; i < pxPts.length; i++) ctx.lineTo(pxPts[i].x, pxPts[i].y);
-    ctx.stroke();
-
-    // Haupt-Gehfläche
-    ctx.strokeStyle = 'rgba(255, 0, 0, 0.85)';
-    ctx.lineWidth = ((1.85 / 240) * size);
-    ctx.beginPath();
-    ctx.moveTo(pxPts[0].x, pxPts[0].y);
-    for (let i = 1; i < pxPts.length; i++) ctx.lineTo(pxPts[i].x, pxPts[i].y);
-    ctx.stroke();
-
-    // Kern-Linie
-    ctx.strokeStyle = 'rgba(255, 0, 0, 1.0)';
-    ctx.lineWidth = ((1.1 / 240) * size);
-    ctx.beginPath();
-    ctx.moveTo(pxPts[0].x, pxPts[0].y);
-    for (let i = 1; i < pxPts.length; i++) ctx.lineTo(pxPts[i].x, pxPts[i].y);
-    ctx.stroke();
+    drawSoftPolyline(ctx, pxPts, size, {
+      maxWidthMeters: 3.3,
+      coreWidthMeters: 1.1,
+      steps: 20,
+      startColor: { r: 255, g: 0, b: 0 },
+      endColor: { r: 255, g: 0, b: 0 },
+    });
   }
 
   // 2. Teufelsweg ab dem Feuerhindernis bis zum Höllenschlund (mit Grünkanal = dunkler Obsidianpfad & Magma-Adern)
   const darkPxPts = path5AfterFire.map((pt) => worldToPx(pt.x, pt.z, size));
   if (darkPxPts.length >= 2) {
-    // Außensaum
-    ctx.strokeStyle = 'rgba(255, 160, 0, 0.45)';
-    ctx.lineWidth = ((2.8 / 240) * size);
-    ctx.beginPath();
-    ctx.moveTo(darkPxPts[0].x, darkPxPts[0].y);
-    for (let i = 1; i < darkPxPts.length; i++) ctx.lineTo(darkPxPts[i].x, darkPxPts[i].y);
-    ctx.stroke();
+    drawSoftPolyline(ctx, darkPxPts, size, {
+      maxWidthMeters: 3.4,
+      coreWidthMeters: 1.15,
+      steps: 20,
+      startColor: { r: 255, g: 150, b: 0 },
+      endColor: { r: 255, g: 255, b: 0 },
+    });
+  }
 
-    // Hauptgehfläche
-    ctx.strokeStyle = 'rgba(255, 200, 0, 0.85)';
-    ctx.lineWidth = ((1.9 / 240) * size);
-    ctx.beginPath();
-    ctx.moveTo(darkPxPts[0].x, darkPxPts[0].y);
-    for (let i = 1; i < darkPxPts.length; i++) ctx.lineTo(darkPxPts[i].x, darkPxPts[i].y);
-    ctx.stroke();
-
-    // Kernlinie
-    ctx.strokeStyle = 'rgba(255, 255, 0, 1.0)';
-    ctx.lineWidth = ((1.15 / 240) * size);
-    ctx.beginPath();
-    ctx.moveTo(darkPxPts[0].x, darkPxPts[0].y);
-    for (let i = 1; i < darkPxPts.length; i++) ctx.lineTo(darkPxPts[i].x, darkPxPts[i].y);
-    ctx.stroke();
+  if (canUseFilter) {
+    ctx.filter = 'none';
   }
 
   // 3. ALPINE SCHNEEZONE AN DER BERGMINE & OBERER PFADABSCHNITT VON WEG 1 (BLAU-KANAL)
@@ -257,20 +291,19 @@ export function createTerrainSplatMap(): THREE.CanvasTexture | null {
       const progress = Math.min(1.0, Math.max(0.15, (-wpZ - 27.5) / 16.0));
       const alpha = progress * 0.92;
 
-      ctx.strokeStyle = `rgba(0, 0, 255, ${alpha.toFixed(3)})`;
-      ctx.lineWidth = ((11.5 / 240) * size);
-      ctx.beginPath();
-      ctx.moveTo(p0.x, p0.y);
-      ctx.lineTo(p1.x, p1.y);
-      ctx.stroke();
-
-      // Kernbereich
-      ctx.strokeStyle = `rgba(0, 0, 255, ${Math.min(1.0, alpha * 1.15).toFixed(3)})`;
-      ctx.lineWidth = ((6.5 / 240) * size);
-      ctx.beginPath();
-      ctx.moveTo(p0.x, p0.y);
-      ctx.lineTo(p1.x, p1.y);
-      ctx.stroke();
+      // 6-stufiger weicher Auslauf für die Schneedecke
+      const snowLayers = 6;
+      for (let s = 0; s < snowLayers; s++) {
+        const st = s / (snowLayers - 1);
+        const w = ((12.5 - st * 6.5) / 240) * size;
+        const layerAlpha = alpha * (0.12 + 0.88 * (st * st));
+        ctx.strokeStyle = `rgba(0, 0, 255, ${(layerAlpha / snowLayers).toFixed(3)})`;
+        ctx.lineWidth = w;
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+      }
     }
   }
 
