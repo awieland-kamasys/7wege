@@ -59,12 +59,12 @@ export function createWeirBridgeScene(
   wellContainer.name = 'AncientWellContainer';
   group.add(wellContainer);
 
-  // Fallback-Steinring während des Modell-Ladens (in der Höhe verdoppelt auf 3.08m)
+  // Fallback-Steinring während des Modell-Ladens (in der Höhe verdoppelt auf 3.08m, nahtlos im Boden versenkt)
   const fallbackWell = new THREE.Mesh(
     new THREE.CylinderGeometry(4.2, 4.3, 3.08, 32, 1, true),
     stoneMat
   );
-  fallbackWell.position.set(-5.4, 1.54, 0.0);
+  fallbackWell.position.set(-5.4, 1.12, 0.0);
   wellContainer.add(fallbackWell);
 
   // ============================================================================
@@ -182,13 +182,13 @@ export function createWeirBridgeScene(
       }
     );
 
-    // 2. Lade antiken Rundbrunnen (ancient circular well 3d model.glb) - Höhe verdoppelt (scale.y: 8.8)
+    // 2. Lade antiken Rundbrunnen (ancient circular well 3d model.glb) - Höhe verdoppelt (scale.y: 8.8, 42cm im Boden versenkt für nahtlosen Bodenanschluss)
     loader.load(
       '/assets/models/ancient circular well 3d model.glb',
       (gltf) => {
         const wellModel = gltf.scene;
         wellModel.scale.set(8.4, 8.8, 8.4);
-        wellModel.position.set(-5.4, 0.0, 0.0);
+        wellModel.position.set(-5.4, -0.42, 0.0);
         wellModel.traverse((child) => {
           const mesh = child as THREE.Mesh;
           if (mesh.isMesh) {
@@ -226,7 +226,7 @@ export function createWeirBridgeScene(
         for (const spot of prominentSpots) {
           const boulder = baseBoulder.clone(true);
           boulder.scale.setScalar(spot.scale);
-          boulder.position.set(spot.x, 0.02, spot.z);
+          boulder.position.set(spot.x, -0.12, spot.z);
           boulder.rotation.y = spot.rotY;
           boulder.traverse((child) => {
             const m = child as THREE.Mesh;
