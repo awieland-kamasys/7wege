@@ -203,12 +203,44 @@ export class GameApp {
   }
 
   private speakDialogueNode(node: DialogueNode): void {
-    const isLupo = node.speaker.toLowerCase().includes('lupo') || node.id.startsWith('creature_');
+    const speakerLower = node.speaker.toLowerCase();
+    const isLupo = speakerLower.includes('lupo') || node.id.startsWith('creature_');
+    const isArvid = speakerLower.includes('arvid') || node.id.startsWith('arvid_');
+    const isGiant = speakerLower.includes('riese') || node.id.startsWith('giant_');
+    const isDevil = speakerLower.includes('teufel') || node.id.startsWith('devil_');
+    const isGraumaennchen = speakerLower.includes('graumännchen') || node.id.startsWith('miner_');
+    const isHunter = speakerLower.includes('jäger') || node.id.startsWith('hunter_');
+    const isNixie = speakerLower.includes('nixe') || node.id.startsWith('nixie_');
+    const isWoodWoman = speakerLower.includes('weibchen') || node.id.startsWith('wood_');
+    const isMushroom = speakerLower.includes('pilzling') || node.id.startsWith('mushroom_');
+
     if (isLupo) {
-      // Stimme Lupo schnell und hoch
-      this.speech.speak(node.text, { rate: 1.28, pitch: 1.45 });
+      // Lupo: flink und hoch
+      this.speech.speak(node.text, { rate: 1.28, pitch: 1.45, gender: 'male' });
+    } else if (isArvid) {
+      // Waldhüter Arvid: markante, ruhige und tiefe männliche Stimme
+      this.speech.speak(node.text, { rate: 0.93, pitch: 0.82, gender: 'male' });
+    } else if (isGiant) {
+      // Riese am Wehr: sehr tief und gemächlich
+      this.speech.speak(node.text, { rate: 0.85, pitch: 0.65, gender: 'male' });
+    } else if (isDevil) {
+      // Der Teufel: dunkel und lauernd
+      this.speech.speak(node.text, { rate: 0.90, pitch: 0.72, gender: 'male' });
+    } else if (isHunter || isGraumaennchen) {
+      // Wilder Jäger & Graumännchen: kernig männlich
+      this.speech.speak(node.text, { rate: 0.95, pitch: 0.84, gender: 'male' });
+    } else if (isNixie) {
+      // Nixe vom Spiegelteich: sanft, melodisch weiblich
+      this.speech.speak(node.text, { rate: 0.92, pitch: 1.08, gender: 'female' });
+    } else if (isWoodWoman) {
+      // Holzweibchen: warm und mütterlich
+      this.speech.speak(node.text, { rate: 0.94, pitch: 0.98, gender: 'female' });
+    } else if (isMushroom) {
+      // Quirlige Pilzlinge
+      this.speech.speak(node.text, { rate: 1.15, pitch: 1.25 });
     } else {
-      this.speech.speak(node.text);
+      // Neutrale Erzählerstimme (Tore, Schilder, Felsblöcke)
+      this.speech.speak(node.text, { rate: 0.96, pitch: 0.92 });
     }
   }
 
