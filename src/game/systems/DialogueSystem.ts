@@ -62,6 +62,17 @@ export class DialogueSystem {
   }
 
   /**
+   * Wechselt innerhalb eines aktiven Gesprächs direkt zu einem Zielknoten (z. B. für automatische Übergänge).
+   */
+  public goToNode(nodeId: string): DialogueNode | null {
+    if (!this.nodes[nodeId]) {
+      return null;
+    }
+    this.currentNodeId = nodeId;
+    return this.getCurrentNode();
+  }
+
+  /**
    * Beendet das aktuelle Gespräch (z. B. durch Abbruch/ESC vor einer Auswahl).
    * Wenn noch keine Antwort gewählt wurde, gilt der Dialog noch nicht als abgeschlossen.
    */

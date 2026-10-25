@@ -25,6 +25,9 @@ export interface DialogueNode {
   speakerRole: string;
   text: string;
   options: readonly DialogueOption[];
+  autoNextNodeId?: string | null;
+  autoAdvanceDelayMs?: number;
+  autoAction?: DialogueAction;
 }
 
 export const GUIDE_NPC_NAME = 'Waldhüter Arvid';
@@ -923,218 +926,6 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       ],
     },
 
-    about_arvid: {
-      id: 'about_arvid',
-      speaker: GUIDE_NPC_NAME,
-      speakerRole: GUIDE_NPC_ROLE,
-      text: 'Einst zog ich selbst als ruheloser Sucher durchs Wanderland. Ich bin jeden dieser sieben Pfade bis zu seinem Ende gegangen – durch Nebel, Felsstürze und lockende Spiegelungen. Als mein Vorgänger, der alte Hüter, seine Laterne niederlegte, erkannte ich: Das Größte ist nicht das endlose Weiterlaufen, sondern das Da-Sein für jene, die an der Weggabelung zögern. So gelobte ich, diese Kreuzung zu hüten.',
-      options: [
-        {
-          id: 'to-lantern',
-          playerText: 'Welche Bewandtnis hat die Messinglaterne an deinem Wanderstab?',
-          nextNodeId: 'arvid_lantern',
-        },
-        {
-          id: 'to-beings-from-arvid',
-          playerText: 'Du kennst also alle Wesen an den Pfaden persönlich?',
-          nextNodeId: 'arvid_beings',
-        },
-        {
-          id: 'to-philosophy-from-arvid',
-          playerText: 'Welche Lehre zogst du aus all deinen Wanderungen?',
-          nextNodeId: 'arvid_philosophy',
-        },
-        {
-          id: 'back-root-from-arvid',
-          playerText: 'Zurück zur Übersicht unserer Fragen.',
-          nextNodeId: 'root',
-        },
-        {
-          id: 'bye-arvid',
-          playerText: 'Danke für deine Geschichte, Arvid. (Gespräch beenden)',
-          nextNodeId: null,
-          action: { type: 'close' },
-        },
-      ],
-    },
-
-    arvid_lantern: {
-      id: 'arvid_lantern',
-      speaker: GUIDE_NPC_NAME,
-      speakerRole: GUIDE_NPC_ROLE,
-      text: 'Diese Laterne wurde von den Bergleuten der alten Zechen aus Bergmessing geschmiedet und trägt ein Licht, das aus der stillen Herdglut der Schutzhütte stammt. Selbst wenn dichter weißer Waldnebel die Pfade verschluckt, dringt ihr warmer Bernsteinschein durchs Geäst. Sie erinnert jeden Wandernden daran: Es gibt immer einen sicheren Rückweg zur Zuflucht, ganz gleich, wie weit man sich hinausgewagt hat.',
-      options: [
-        {
-          id: 'lantern-to-arvid',
-          playerText: 'Erzähle mir mehr über deine eigene Wanderschaft.',
-          nextNodeId: 'about_arvid',
-        },
-        {
-          id: 'lantern-to-beings',
-          playerText: 'Welche Wesen hast du auf deinen Reisen getroffen?',
-          nextNodeId: 'arvid_beings',
-        },
-        {
-          id: 'back-root-lantern',
-          playerText: 'Verstanden, zurück zum Anfang.',
-          nextNodeId: 'root',
-        },
-      ],
-    },
-
-    arvid_philosophy: {
-      id: 'arvid_philosophy',
-      speaker: GUIDE_NPC_NAME,
-      speakerRole: GUIDE_NPC_ROLE,
-      text: 'Wisse dies: Kein Pfad im Wanderland ist rein leicht oder gänzlich dunkel. Ein Weg verlangt, dass du ein geheiligtes Verbot gegen blanke Menschennot abwägst; ein anderer lockt mit Reichtum, der eine Seele verfluchen kann; ein dritter fordert ein bitteres Opfer zwischen Durst im Tal und der Heimat eines Riesen. Wer nur den leichtesten Schritt sucht, strauchelt am tiefsten. Höre beiden Seiten zu, wenn Wesen streiten – und vertraue deinem eigenen Gewissen mehr als fremdem Drängen.',
-      options: [
-        {
-          id: 'philosophy-to-paths',
-          playerText: 'Zeige mir die sieben Wege, damit ich die Prüfungen abwägen kann.',
-          nextNodeId: 'paths_overview',
-        },
-        {
-          id: 'philosophy-to-beings',
-          playerText: 'Welche Gesichter und Wesen erwarten mich?',
-          nextNodeId: 'arvid_beings',
-        },
-        {
-          id: 'back-root-philosophy',
-          playerText: 'Danke für diese weisen Worte. Zurück zur Übersicht.',
-          nextNodeId: 'root',
-        },
-      ],
-    },
-
-    arvid_beings: {
-      id: 'arvid_beings',
-      speaker: GUIDE_NPC_NAME,
-      speakerRole: GUIDE_NPC_ROLE,
-      text: 'Im Norden hütet das treue Graumännchen den Silberstollen – ein ehrlicher Geist, doch gebunden an ein ehernes Versprechen. Im Nordosten sitzt die Nixe auf ihrem Stein im Spiegelteich; ihre Schönheit und ihr funkelndes Gold haben schon manchen ins Verderben gezogen. Im Südosten hadert der Riese am Wehr mit der Dürre des Tals, während im Süden das uralte Holzweibchen für den Atem des Forstes kämpft. Und am Jägerpfad pocht der Wilde Jäger stolz auf sein Revierrecht. Doch am 7. Weg im Nordwesten ragt das uralte, verschlossene Tor auf – stumm wartend auf jene, die alle Prüfungen verstanden haben.',
-      options: [
-        {
-          id: 'beings-to-paths',
-          playerText: 'Lass mich die Wege im Detail durchgehen.',
-          nextNodeId: 'paths_overview',
-        },
-        {
-          id: 'beings-to-rec',
-          playerText: 'Mit welchem Wesen sollte ich das Gespräch beginnen?',
-          nextNodeId: 'recommendation',
-        },
-        {
-          id: 'back-root-beings',
-          playerText: 'Zurück zum Hauptgespräch.',
-          nextNodeId: 'root',
-        },
-        {
-          id: 'beings-to-gate',
-          playerText: 'Was hat es mit jenem verschlossenen Tor auf sich?',
-          nextNodeId: 'arvid_gate',
-        },
-      ],
-    },
-
-    arvid_gate: {
-      id: 'arvid_gate',
-      speaker: GUIDE_NPC_NAME,
-      speakerRole: GUIDE_NPC_ROLE,
-      text: 'Seit undenklichen Wintern steht jenes Tor am Nordwestrand des Wanderlandes im Fels verankert. Niemand vermag es mit roher Gewalt aufzubrechen. Es hütet die Schwelle zu dem, was hinter all unseren Pfaden liegt. Erst wer die Konflikte und Prüfungen an den anderen Wegen verstanden hat und sein Gewissen rein hält, wird das Geheimnis seines Siegels lüften können. Bis dahin bleibt es fest verriegelt – als stiller Mahner, dass manche Pforten erst dann aufgehen, wenn die Zeit und der Geist reif sind.',
-      options: [
-        {
-          id: 'gate-to-walk',
-          playerText: 'Ich möchte den gesamten 7. Weg bis zum geschlossenen Tor wandern.',
-          nextNodeId: null,
-          action: { type: 'walk_to_gate' },
-        },
-        {
-          id: 'gate-to-paths',
-          playerText: 'Erzähle mir von den anderen Wegen.',
-          nextNodeId: 'paths_overview',
-        },
-        {
-          id: 'back-root-gate',
-          playerText: 'Danke für diesen weisen Rat, Arvid. Zurück zum Anfang.',
-          nextNodeId: 'root',
-        },
-      ],
-    },
-
-    about_crossroads: {
-      id: 'about_crossroads',
-      speaker: GUIDE_NPC_NAME,
-      speakerRole: GUIDE_NPC_ROLE,
-      text: 'Alle sieben Pfade des Wanderlandes treffen an dieser Lichtung zusammen. Die Schutzhütte in der Mitte ist dein sicherer Ankerpunkt, und in der Schatztruhe davor ruht ein altes Licht-Artefakt für dunkle Wege.',
-      options: [
-        {
-          id: 'to-paths',
-          playerText: 'Erzähl mir mehr über die einzelnen sieben Wege.',
-          nextNodeId: 'paths_overview',
-        },
-        {
-          id: 'back-root',
-          playerText: 'Verstanden, zurück zu meiner vorigen Frage.',
-          nextNodeId: 'root',
-        },
-        {
-          id: 'bye',
-          playerText: 'Danke für die Erklärung! (Gespräch beenden)',
-          nextNodeId: null,
-          action: { type: 'close' },
-        },
-      ],
-    },
-
-    recommendation: {
-      id: 'recommendation',
-      speaker: GUIDE_NPC_NAME,
-      speakerRole: GUIDE_NPC_ROLE,
-      text: 'Folge zuerst dem 1. Silberstollen-Pfad nach Norden! Er biegt im Nebel nach Nordosten ab und führt direkt zu einem Berg mit Höhleneingang. Dort wartet das Graumännchen mit einer dringenden Angelegenheit um eine neue Silberader.',
-      options: [
-        {
-          id: 'pick-1',
-          playerText: 'Erzähl mir genauer vom 1. Silberstollen-Pfad und dem Graumännchen.',
-          nextNodeId: 'path_1',
-        },
-        {
-          id: 'walk-grey-man',
-          playerText: 'Direkt auf dem 1. Weg bis zum Berg und dem Graumännchen wandern',
-          nextNodeId: null,
-          action: { type: 'walk_to_grey_man' },
-        },
-        {
-          id: 'all-paths',
-          playerText: 'Lass mich aus allen sieben Wegen wählen.',
-          nextNodeId: 'paths_overview',
-        },
-        {
-          id: 'bye',
-          playerText: 'Danke, ich mache mich auf den Weg! (Gespräch beenden)',
-          nextNodeId: null,
-          action: { type: 'close' },
-        },
-      ],
-    },
-
-    paths_overview: {
-      id: 'paths_overview',
-      speaker: GUIDE_NPC_NAME,
-      speakerRole: GUIDE_NPC_ROLE,
-      text: 'Jeder der sieben Wege trägt einen eigenen Charakter. Über welchen Pfad möchtest du einen Hinweis hören?',
-      options: [
-        ...SEVEN_PATHS.map((path) => ({
-          id: `ask-path-${path.id}`,
-          playerText: `${path.name} (${path.directionLabel})`,
-          nextNodeId: `path_${path.id}`,
-        })),
-        {
-          id: 'back-root',
-          playerText: 'Zurück zum Hauptgespräch',
-          nextNodeId: 'root',
-        },
-      ],
-    },
-
     // === FABELWESEN LUPO (auf Weg 7) ===
     creature_root: {
       id: 'creature_root',
@@ -1198,13 +989,9 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       speaker: CREATURE_NPC_NAME,
       speakerRole: CREATURE_NPC_ROLE,
       text: 'Das ist ein Problem.',
-      options: [
-        {
-          id: 'creature-continue-1-1',
-          playerText: 'Weiter',
-          nextNodeId: 'creature_final',
-        },
-      ],
+      options: [],
+      autoNextNodeId: 'creature_final',
+      autoAdvanceDelayMs: 2000,
     },
 
     creature_node_1_2: {
@@ -1212,13 +999,9 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       speaker: CREATURE_NPC_NAME,
       speakerRole: CREATURE_NPC_ROLE,
       text: 'Lieber nicht.',
-      options: [
-        {
-          id: 'creature-continue-1-2',
-          playerText: 'Weiter',
-          nextNodeId: 'creature_final',
-        },
-      ],
+      options: [],
+      autoNextNodeId: 'creature_final',
+      autoAdvanceDelayMs: 2000,
     },
 
     creature_node_2_1: {
@@ -1226,13 +1009,9 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       speaker: CREATURE_NPC_NAME,
       speakerRole: CREATURE_NPC_ROLE,
       text: 'Deine Mutter du Nullchecker.',
-      options: [
-        {
-          id: 'creature-continue-2-1',
-          playerText: 'Weiter',
-          nextNodeId: 'creature_final',
-        },
-      ],
+      options: [],
+      autoNextNodeId: 'creature_final',
+      autoAdvanceDelayMs: 2000,
     },
 
     creature_node_2_2: {
@@ -1240,13 +1019,9 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       speaker: CREATURE_NPC_NAME,
       speakerRole: CREATURE_NPC_ROLE,
       text: 'Ja, du mich auch du Komiker.',
-      options: [
-        {
-          id: 'creature-continue-2-2',
-          playerText: 'Weiter',
-          nextNodeId: 'creature_final',
-        },
-      ],
+      options: [],
+      autoNextNodeId: 'creature_final',
+      autoAdvanceDelayMs: 2000,
     },
 
     creature_final: {
@@ -1254,14 +1029,9 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       speaker: CREATURE_NPC_NAME,
       speakerRole: CREATURE_NPC_ROLE,
       text: 'Viel Spaß noch hier, du Opfer!',
-      options: [
-        {
-          id: 'creature-bye',
-          playerText: 'Abgang Lupo',
-          nextNodeId: null,
-          action: { type: 'creature_flee' },
-        },
-      ],
+      options: [],
+      autoAction: { type: 'creature_flee' },
+      autoAdvanceDelayMs: 2400,
     },
 
     // === DAS GRAUMÄNNCHEN (vor dem Höhleneingang am Ende von Weg 1) ===

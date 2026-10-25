@@ -17,6 +17,7 @@ export class GameApp {
   private readonly dialogue: DialogueSystem;
   private readonly speech: SpeechService;
   private readonly sound: SoundService;
+  private dialogueAutoTimer: number | null = null;
   private readonly scene: CrossroadsScene;
   private readonly hud: HudOverlay;
   private readonly debugPanel: DebugPanel;
@@ -194,14 +195,51 @@ export class GameApp {
     }
   }
 
+  private clearDialogueAutoTimer(): void {
+    if (this.dialogueAutoTimer !== null) {
+      window.clearTimeout(this.dialogueAutoTimer);
+      this.dialogueAutoTimer = null;
+    }
+  }
+
+  private checkDialogueAutoAdvance(node: DialogueNode | null): void {
+    this.clearDialogueAutoTimer();
+    if (!node) {
+      return;
+    }
+
+    if (node.autoNextNodeId) {
+      const delay = node.autoAdvanceDelayMs ?? 2000;
+      this.dialogueAutoTimer = window.setTimeout(() => {
+        this.dialogueAutoTimer = null;
+        const next = this.dialogue.goToNode(node.autoNextNodeId!);
+        if (next) {
+          this.speakDialogueNode(next);
+          this.checkDialogueAutoAdvance(next);
+        }
+      }, delay);
+    } else if (node.autoAction) {
+      const delay = node.autoAdvanceDelayMs ?? 2400;
+      this.dialogueAutoTimer = window.setTimeout(() => {
+        this.dialogueAutoTimer = null;
+        if (node.autoAction?.type === 'creature_flee') {
+          this.triggerCreatureFlee();
+        }
+        this.closeDialogueAndSpeech();
+      }, delay);
+    }
+  }
+
   private openDialogueNode(startNodeId: string): void {
     const node = this.dialogue.startDialogue(startNodeId);
     if (node) {
       this.speakDialogueNode(node);
+      this.checkDialogueAutoAdvance(node);
     }
   }
 
   private closeDialogueAndSpeech(): void {
+    this.clearDialogueAutoTimer();
     const currentNode = this.dialogue.getCurrentNode();
     const isCreatureDialogue = currentNode?.id.startsWith('creature_') ?? false;
     this.dialogue.closeDialogue();
@@ -405,7 +443,9 @@ export class GameApp {
     const { node, action } = this.dialogue.selectOption(optionIndex);
     if (node) {
       this.speakDialogueNode(node);
+      this.checkDialogueAutoAdvance(node);
     } else {
+      this.clearDialogueAutoTimer();
       this.speech.stop();
       if (isCreatureDialogue || action?.type === 'creature_flee') {
         this.triggerCreatureFlee();

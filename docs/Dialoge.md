@@ -5,8 +5,8 @@ Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../s
 
 > [!TIP] Diese Datei ist per Junction direkt in Obsidian unter `WANDERLAND_OBS/7WEGE/Dialoge.md` eingebunden.
 > **Visuelle Graphen in Obsidian:** Du kannst die Dialoge direkt als interaktiven, visuellen Canvas öffnen und editieren:
-> - [[Lupo.canvas]] – Der pointierte Kurz-Dialogbaum von Lupo (8 Knoten)
-> - [[Arvid.canvas]] – Der vollständige Dialogbaum von Waldhüter Arvid (16 Knoten)
+> - [[Lupo.canvas]] – Der pointierte Kurz-Dialogbaum von Lupo (automatische Übergänge & Abgang)
+> - [[Arvid.canvas]] – Der kompakte Dialog von Waldhüter Arvid (1 Sprechknoten, 3 Antwort-Karten)
 
 ## Inhaltsverzeichnis
 
@@ -47,157 +47,6 @@ Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../s
 - **2.** „Ein Bier.“ `(Aktion: close)`
 - **3.** „Geht dich gar nichts an, Penner!“ `(Aktion: close)`
 
-### Knoten: `about_arvid`
-
-> **Waldhüter Arvid:** „Einst zog ich selbst als ruheloser Sucher durchs Wanderland. Ich bin jeden dieser sieben Pfade bis zu seinem Ende gegangen – durch Nebel, Felsstürze und lockende Spiegelungen. Als mein Vorgänger, der alte Hüter, seine Laterne niederlegte, erkannte ich: Das Größte ist nicht das endlose Weiterlaufen, sondern das Da-Sein für jene, die an der Weggabelung zögern. So gelobte ich, diese Kreuzung zu hüten.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Welche Bewandtnis hat die Messinglaterne an deinem Wanderstab?“ `-> arvid_lantern`
-- **2.** „Du kennst also alle Wesen an den Pfaden persönlich?“ `-> arvid_beings`
-- **3.** „Welche Lehre zogst du aus all deinen Wanderungen?“ `-> arvid_philosophy`
-- **4.** „Zurück zur Übersicht unserer Fragen.“ `-> root`
-- **5.** „Danke für deine Geschichte, Arvid. (Gespräch beenden)“ `(Aktion: close)`
-
-### Knoten: `arvid_lantern`
-
-> **Waldhüter Arvid:** „Diese Laterne wurde von den Bergleuten der alten Zechen aus Bergmessing geschmiedet und trägt ein Licht, das aus der stillen Herdglut der Schutzhütte stammt. Selbst wenn dichter weißer Waldnebel die Pfade verschluckt, dringt ihr warmer Bernsteinschein durchs Geäst. Sie erinnert jeden Wandernden daran: Es gibt immer einen sicheren Rückweg zur Zuflucht, ganz gleich, wie weit man sich hinausgewagt hat.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Erzähle mir mehr über deine eigene Wanderschaft.“ `-> about_arvid`
-- **2.** „Welche Wesen hast du auf deinen Reisen getroffen?“ `-> arvid_beings`
-- **3.** „Verstanden, zurück zum Anfang.“ `-> root`
-
-### Knoten: `arvid_philosophy`
-
-> **Waldhüter Arvid:** „Wisse dies: Kein Pfad im Wanderland ist rein leicht oder gänzlich dunkel. Ein Weg verlangt, dass du ein geheiligtes Verbot gegen blanke Menschennot abwägst; ein anderer lockt mit Reichtum, der eine Seele verfluchen kann; ein dritter fordert ein bitteres Opfer zwischen Durst im Tal und der Heimat eines Riesen. Wer nur den leichtesten Schritt sucht, strauchelt am tiefsten. Höre beiden Seiten zu, wenn Wesen streiten – und vertraue deinem eigenen Gewissen mehr als fremdem Drängen.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Zeige mir die sieben Wege, damit ich die Prüfungen abwägen kann.“ `-> paths_overview`
-- **2.** „Welche Gesichter und Wesen erwarten mich?“ `-> arvid_beings`
-- **3.** „Danke für diese weisen Worte. Zurück zur Übersicht.“ `-> root`
-
-### Knoten: `arvid_beings`
-
-> **Waldhüter Arvid:** „Im Norden hütet das treue Graumännchen den Silberstollen – ein ehrlicher Geist, doch gebunden an ein ehernes Versprechen. Im Nordosten sitzt die Nixe auf ihrem Stein im Spiegelteich; ihre Schönheit und ihr funkelndes Gold haben schon manchen ins Verderben gezogen. Im Südosten hadert der Riese am Wehr mit der Dürre des Tals, während im Süden das uralte Holzweibchen für den Atem des Forstes kämpft. Und am Jägerpfad pocht der Wilde Jäger stolz auf sein Revierrecht. Doch am 7. Weg im Nordwesten ragt das uralte, verschlossene Tor auf – stumm wartend auf jene, die alle Prüfungen verstanden haben.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Lass mich die Wege im Detail durchgehen.“ `-> paths_overview`
-- **2.** „Mit welchem Wesen sollte ich das Gespräch beginnen?“ `-> recommendation`
-- **3.** „Zurück zum Hauptgespräch.“ `-> root`
-- **4.** „Was hat es mit jenem verschlossenen Tor auf sich?“ `-> arvid_gate`
-
-### Knoten: `arvid_gate`
-
-> **Waldhüter Arvid:** „Seit undenklichen Wintern steht jenes Tor am Nordwestrand des Wanderlandes im Fels verankert. Niemand vermag es mit roher Gewalt aufzubrechen. Es hütet die Schwelle zu dem, was hinter all unseren Pfaden liegt. Erst wer die Konflikte und Prüfungen an den anderen Wegen verstanden hat und sein Gewissen rein hält, wird das Geheimnis seines Siegels lüften können. Bis dahin bleibt es fest verriegelt – als stiller Mahner, dass manche Pforten erst dann aufgehen, wenn die Zeit und der Geist reif sind.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Ich möchte den gesamten 7. Weg bis zum geschlossenen Tor wandern.“ `(Aktion: walk_to_gate)`
-- **2.** „Erzähle mir von den anderen Wegen.“ `-> paths_overview`
-- **3.** „Danke für diesen weisen Rat, Arvid. Zurück zum Anfang.“ `-> root`
-
-### Knoten: `about_crossroads`
-
-> **Waldhüter Arvid:** „Alle sieben Pfade des Wanderlandes treffen an dieser Lichtung zusammen. Die Schutzhütte in der Mitte ist dein sicherer Ankerpunkt, und in der Schatztruhe davor ruht ein altes Licht-Artefakt für dunkle Wege.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Erzähl mir mehr über die einzelnen sieben Wege.“ `-> paths_overview`
-- **2.** „Verstanden, zurück zu meiner vorigen Frage.“ `-> root`
-- **3.** „Danke für die Erklärung! (Gespräch beenden)“ `(Aktion: close)`
-
-### Knoten: `recommendation`
-
-> **Waldhüter Arvid:** „Folge zuerst dem 1. Silberstollen-Pfad nach Norden! Er biegt im Nebel nach Nordosten ab und führt direkt zu einem Berg mit Höhleneingang. Dort wartet das Graumännchen mit einer dringenden Angelegenheit um eine neue Silberader.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Erzähl mir genauer vom 1. Silberstollen-Pfad und dem Graumännchen.“ `-> path_1`
-- **2.** „Direkt auf dem 1. Weg bis zum Berg und dem Graumännchen wandern“ `(Aktion: walk_to_grey_man)`
-- **3.** „Lass mich aus allen sieben Wegen wählen.“ `-> paths_overview`
-- **4.** „Danke, ich mache mich auf den Weg! (Gespräch beenden)“ `(Aktion: close)`
-
-### Knoten: `paths_overview`
-
-> **Waldhüter Arvid:** „Jeder der sieben Wege trägt einen eigenen Charakter. Über welchen Pfad möchtest du einen Hinweis hören?“
-
-**Antwort-Optionen (Ich):**
-- **1.** „1. Silberstollen-Pfad (Norden)“ `-> path_1`
-- **2.** „2. Nixenteich-Pfad (Nordost)“ `-> path_2`
-- **3.** „3. Quellenweg (Südost)“ `-> path_3`
-- **4.** „4. Holzfäller-Pfad (Südsüdost)“ `-> path_4`
-- **5.** „5. Höllenschlund-Pfad (Südsüdwest)“ `-> path_5`
-- **6.** „6. Jägerpfad (Südwest)“ `-> path_6`
-- **7.** „7. Torweg (Nordwest)“ `-> path_7`
-- **8.** „Zurück zum Hauptgespräch“ `-> root`
-
-### Knoten: `path_1`
-
-> **Waldhüter Arvid:** „Der 1. Silberstollen-Pfad windet sich in einer langen Kurve hinauf zum alten Bergmassiv. Vor dem Höhleneingang wartet das Graumännchen: Eine neue Silberader könnte dort Mine und Arbeiter retten – doch ihr Auffinden verlangt Licht in einem Stollen, für den ein altes Verbot und Versprechen gilt.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Den gesamten 1. Weg durch die Kurve bis zum Berg & Graumännchen wandern“ `(Aktion: walk_to_grey_man)`
-- **2.** „Zum Wegeingang von „1. Silberstollen-Pfad“ gehen“ `(Aktion: select_path)`
-- **3.** „Nach einem anderen der sieben Wege fragen“ `-> paths_overview`
-- **4.** „Danke für den Hinweis! (Gespräch beenden)“ `(Aktion: close)`
-
-### Knoten: `path_2`
-
-> **Waldhüter Arvid:** „Der 2. Nixenteich-Pfad im Nordosten führt durch den Nebel zu einem stillen Waldteich. Auf einem Felsen im Wasser sitzt die Nixe. Auf dem Grund ihres Teichs funkelt ein verlockender Schatz – doch sei gewarnt: Er ist mit einem dunklen Fluch und drohendem Unglück verbunden.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Den gesamten 2. Weg bis zum Waldteich und der Nixe wandern“ `(Aktion: walk_to_nixie)`
-- **2.** „Zum Wegeingang von „2. Nixenteich-Pfad“ gehen“ `(Aktion: select_path)`
-- **3.** „Nach einem anderen der sieben Wege fragen“ `-> paths_overview`
-- **4.** „Danke für den Hinweis! (Gespräch beenden)“ `(Aktion: close)`
-
-### Knoten: `path_3`
-
-> **Waldhüter Arvid:** „Der 3. Quellenweg im Südosten führt über eine Brücke, unter der ein Bach hindurchfließt. Ein geschlossenes Wehr an der Brücke staut den Bach zu einem kleinen Stausee zurück. Dort wacht der Riese: Die Quelle versorgt eigentlich das Tal – ihre Freigabe könnte dort eine Dürre lindern, zerstört jedoch die Heimat des Riesen.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Den gesamten 3. Weg über die Brücke bis zum Wehr und dem Riesen wandern“ `(Aktion: walk_to_giant)`
-- **2.** „Zum Wegeingang von „3. Quellenweg“ gehen“ `(Aktion: select_path)`
-- **3.** „Nach einem anderen der sieben Wege fragen“ `-> paths_overview`
-- **4.** „Danke für den Hinweis! (Gespräch beenden)“ `(Aktion: close)`
-
-### Knoten: `path_4`
-
-> **Waldhüter Arvid:** „Der 4. Holzfäller-Pfad im Südsüdosten führt auf eine gerodete Waldlichtung zu einem Holzfällerlager. Dort triffst du das Holzweibchen zwischen Baumstümpfen und Holzstapeln: Das geschlagene Brennholz rettet die Dorfbewohner vor der bitteren Kälte – doch zu starke Fällungen gefährden den Wald und seine gesamte Umgebung.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Den gesamten 4. Weg bis zum Holzfällerlager und dem Holzweibchen wandern“ `(Aktion: walk_to_wood_woman)`
-- **2.** „Zum Wegeingang von „4. Holzfäller-Pfad“ gehen“ `(Aktion: select_path)`
-- **3.** „Nach einem anderen der sieben Wege fragen“ `-> paths_overview`
-- **4.** „Danke für den Hinweis! (Gespräch beenden)“ `(Aktion: close)`
-
-### Knoten: `path_5`
-
-> **Waldhüter Arvid:** „Der 5. Höllenschlund-Pfad im Südsüdwesten führt an den Rand eines tiefen, glühenden Abgrunds. Inmitten des Feuermeeres und der emporsteigenden Flammen erwartet dich der Teufel auf seinem Obsidianfelsen.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Den gesamten 5. Weg bis zum Höllenschlund und dem Teufel wandern“ `(Aktion: walk_to_devil)`
-- **2.** „Zum Wegeingang von „5. Höllenschlund-Pfad“ gehen“ `(Aktion: select_path)`
-- **3.** „Nach einem anderen der sieben Wege fragen“ `-> paths_overview`
-- **4.** „Danke für den Hinweis! (Gespräch beenden)“ `(Aktion: close)`
-
-### Knoten: `path_6`
-
-> **Waldhüter Arvid:** „Der 6. Jägerpfad im Südwesten führt durch eine Waldschneise zu einer Jagdhütte mit prachtvollem Kräutergarten. Dort steht der Wilde Jäger und streitet erbittert mit einem Holzweibchen: Er wirft ihr Diebstahl kostbarer Kräuter vor, während sie beteuert, damit leidenden Waldtieren in höchster Not das Leben gerettet zu haben.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Den gesamten 6. Weg bis zur Jagdhütte und dem Streit wandern“ `(Aktion: walk_to_wild_hunter)`
-- **2.** „Zum Wegeingang von „6. Jägerpfad“ gehen“ `(Aktion: select_path)`
-- **3.** „Nach einem anderen der sieben Wege fragen“ `-> paths_overview`
-- **4.** „Danke für den Hinweis! (Gespräch beenden)“ `(Aktion: close)`
-
-### Knoten: `path_7`
-
-> **Waldhüter Arvid:** „Der 7. Torweg im Nordwesten führt durch uralten Bergwald zu einem mächtigen, fest verschlossenen Tor. Schwere Eisenbeschläge, ein massiver Riegelbalken und dicke Ketten mit einem gewaltigen Schloss versperren das Weiterkommen – ein Portal, das sich nur wahrer Einsicht und Erkenntnis öffnen wird.“
-
-**Antwort-Optionen (Ich):**
-- **1.** „Den gesamten 7. Weg bis zum geschlossenen Tor wandern“ `(Aktion: walk_to_gate)`
-- **2.** „Zum Wegeingang von „7. Torweg“ gehen“ `(Aktion: select_path)`
-- **3.** „Nach einem anderen der sieben Wege fragen“ `-> paths_overview`
-- **4.** „Danke für den Hinweis! (Gespräch beenden)“ `(Aktion: close)`
-
 ---
 
 ## Lupo
@@ -231,36 +80,31 @@ Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../s
 
 > **Lupo:** „Das ist ein Problem.“
 
-**Antwort-Optionen (Ich):**
-- **1.** „Weiter“ `-> creature_final`
+*(Keine Buttons: Schaltet nach ca. 2,0 s automatisch weiter zu `creature_final`)*
 
 ### Knoten: `creature_node_1_2`
 
 > **Lupo:** „Lieber nicht.“
 
-**Antwort-Optionen (Ich):**
-- **1.** „Weiter“ `-> creature_final`
+*(Keine Buttons: Schaltet nach ca. 2,0 s automatisch weiter zu `creature_final`)*
 
 ### Knoten: `creature_node_2_1`
 
 > **Lupo:** „Deine Mutter du Nullchecker.“
 
-**Antwort-Optionen (Ich):**
-- **1.** „Weiter“ `-> creature_final`
+*(Keine Buttons: Schaltet nach ca. 2,0 s automatisch weiter zu `creature_final`)*
 
 ### Knoten: `creature_node_2_2`
 
 > **Lupo:** „Ja, du mich auch du Komiker.“
 
-**Antwort-Optionen (Ich):**
-- **1.** „Weiter“ `-> creature_final`
+*(Keine Buttons: Schaltet nach ca. 2,0 s automatisch weiter zu `creature_final`)*
 
 ### Knoten: `creature_final`
 
 > **Lupo:** „Viel Spaß noch hier, du Opfer!“
 
-**Antwort-Optionen (Ich):**
-- **1.** „Abgang Lupo“ `(Aktion: creature_flee)`
+*(Keine Buttons: Nach ca. 2,4 s schließt das Gespräch automatisch und Lupo flieht in den Wald – `creature_flee`)*
 
 ---
 

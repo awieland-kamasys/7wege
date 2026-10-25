@@ -1089,7 +1089,7 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(state.isWalkable(creaturePos.x, creaturePos.z)).toBe(true);
   });
 
-    it('führt den eingekürzten Dialog mit Lupo und schließt mit creature_flee ab', () => {
+    it('führt den eingekürzten Dialog mit Lupo mit automatischem Finale und creature_flee aus', () => {
     const dialogue = new DialogueSystem();
     const rootNode = dialogue.startDialogue('creature_root');
     expect(rootNode).not.toBeNull();
@@ -1105,17 +1105,17 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     const step2 = dialogue.selectOption(0);
     expect(step2.node?.id).toBe('creature_node_1_1');
     expect(step2.node?.text).toBe('Das ist ein Problem.');
+    // Automatisch ohne Zwischenklick: Optionen sind leer, autoNextNodeId führt direkt zum Finale
+    expect(step2.node?.options).toHaveLength(0);
+    expect(step2.node?.autoNextNodeId).toBe('creature_final');
 
-    // Weiter zu Lupos Verabschiedung
-    const step3 = dialogue.selectOption(0);
-    expect(step3.node?.id).toBe('creature_final');
-    expect(step3.node?.text).toBe('Viel Spaß noch hier, du Opfer!');
-
-    // Abgang Lupo -> creature_flee Action
-    const finalStep = dialogue.selectOption(0);
-    expect(finalStep.action?.type).toBe('creature_flee');
-    expect(finalStep.node).toBeNull();
-    expect(dialogue.isOpen()).toBe(false);
+    // Automatischer Übergang zu Lupos Verabschiedung via goToNode
+    const step3 = dialogue.goToNode(step2.node!.autoNextNodeId!);
+    expect(step3?.id).toBe('creature_final');
+    expect(step3?.text).toBe('Viel Spaß noch hier, du Opfer!');
+    // Automatisch ohne Klick: Optionen leer, autoAction führt Flucht aus
+    expect(step3?.options).toHaveLength(0);
+    expect(step3?.autoAction?.type).toBe('creature_flee');
 
     // Zweiter Pfad: Wer bist du denn? -> Lupo. -> Wie der VW? -> Ja, du mich auch du Komiker.
     const dialogue2 = new DialogueSystem();
@@ -1124,10 +1124,12 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(stepB1.node?.text).toBe('Lupo.');
     const stepB2 = dialogue2.selectOption(1); // Wie der VW?
     expect(stepB2.node?.text).toBe('Ja, du mich auch du Komiker.');
-    const stepB3 = dialogue2.selectOption(0); // Weiter
-    expect(stepB3.node?.text).toBe('Viel Spaß noch hier, du Opfer!');
-    const finalStepB = dialogue2.selectOption(0);
-    expect(finalStepB.action?.type).toBe('creature_flee');
+    expect(stepB2.node?.options).toHaveLength(0);
+    expect(stepB2.node?.autoNextNodeId).toBe('creature_final');
+
+    const stepB3 = dialogue2.goToNode(stepB2.node!.autoNextNodeId!);
+    expect(stepB3?.text).toBe('Viel Spaß noch hier, du Opfer!');
+    expect(stepB3?.autoAction?.type).toBe('creature_flee');
   });
 
   it('verwaltet den riesigen Weltenbaum zwischen Nixe und Riese mit solider Stammkollision', () => {
