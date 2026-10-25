@@ -1,15 +1,73 @@
 {
-	"nodes":[
-		{"id":"root","type":"text","text":"### 🌲 Waldhüter Arvid\n*(an der Schutzhütte)*\n\n> „Ach du Scheiße, was willst du denn hier?“","x":60,"y":-120,"width":380,"height":160,"color":"3"},
-		{"id":"opt_zinsbachtal","type":"text","text":"### 🧭 Antwort 1\n\n> „Ich will ins Zinsbachtal.“\n\n*(Gespräch schließt)*","x":-320,"y":180,"width":260,"height":130,"color":"6"},
-		{"id":"opt_bier","type":"text","text":"### 🍺 Antwort 2\n\n> „Ein Bier.“\n\n*(Gespräch schließt)*","x":120,"y":180,"width":260,"height":130,"color":"6"},
-		{"id":"opt_penner","type":"text","text":"### 🗣️ Antwort 3\n\n> „Geht dich gar nichts an, Penner!“\n\n*(Gespräch schließt)*","x":560,"y":180,"width":260,"height":130,"color":"6"},
-		{"id":"4a4224c560f91940","x":-308,"y":516,"width":328,"height":104,"type":"text","text":"Zinsbachtal, Ja, ich erinnere mich. Da war es schön. Damals."}
+	"nodes": [
+		{
+			"id": "root",
+			"x": 220,
+			"y": 0,
+			"width": 360,
+			"height": 140,
+			"type": "text",
+			"text": "### 🌲 Waldhüter Arvid (Start)\n\n> „Ach du Scheiße, was willst du denn hier?“\n\n*Hüter der Schutzhütte*",
+			"color": "3"
+		},
+		{
+			"id": "arvid_zinsbachtal",
+			"x": -200,
+			"y": 280,
+			"width": 320,
+			"height": 140,
+			"type": "text",
+			"text": "### 🌲 Waldhüter Arvid\n\n> „Zinsbachtal, Ja, ich erinnere mich. Da war es schön. Damals.“\n\n*(schließt automatisch)*",
+			"color": "5"
+		},
+		{
+			"id": "arvid_bier",
+			"x": 240,
+			"y": 280,
+			"width": 320,
+			"height": 140,
+			"type": "text",
+			"text": "### 🌲 Waldhüter Arvid\n\n> „Macht ein Euro!“\n\n*(schließt automatisch)*",
+			"color": "5"
+		},
+		{
+			"id": "arvid_penner",
+			"x": 680,
+			"y": 280,
+			"width": 320,
+			"height": 140,
+			"type": "text",
+			"text": "### 🌲 Waldhüter Arvid\n\n> „Ein Satz heiße Ohren gefällig?“\n\n*(schließt automatisch)*",
+			"color": "5"
+		}
 	],
-	"edges":[
-		{"id":"edge_arvid_opt1","fromNode":"root","fromSide":"bottom","toNode":"opt_zinsbachtal","toSide":"top","label":"1. Ich will ins Zinsbachtal."},
-		{"id":"edge_arvid_opt2","fromNode":"root","fromSide":"bottom","toNode":"opt_bier","toSide":"top","label":"2. Ein Bier."},
-		{"id":"edge_arvid_opt3","fromNode":"root","fromSide":"bottom","toNode":"opt_penner","toSide":"top","label":"3. Geht dich gar nichts an, Penner!"},
-		{"id":"758cf1d20c140344","fromNode":"opt_zinsbachtal","fromSide":"bottom","toNode":"4a4224c560f91940","toSide":"top"}
+	"edges": [
+		{
+			"id": "edge_arvid_root_to_zinsbachtal",
+			"fromNode": "root",
+			"fromSide": "bottom",
+			"toNode": "arvid_zinsbachtal",
+			"toSide": "top",
+			"toEnd": "arrow",
+			"label": "1. Ich will ins Zinsbachtal."
+		},
+		{
+			"id": "edge_arvid_root_to_bier",
+			"fromNode": "root",
+			"fromSide": "bottom",
+			"toNode": "arvid_bier",
+			"toSide": "top",
+			"toEnd": "arrow",
+			"label": "2. Ein Bier."
+		},
+		{
+			"id": "edge_arvid_root_to_penner",
+			"fromNode": "root",
+			"fromSide": "bottom",
+			"toNode": "arvid_penner",
+			"toSide": "top",
+			"toEnd": "arrow",
+			"label": "3. Geht dich gar nichts an, Penner!"
+		}
 	]
 }

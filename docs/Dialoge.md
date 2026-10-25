@@ -43,9 +43,27 @@ Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../s
 > **Waldhüter Arvid:** „Ach du Scheiße, was willst du denn hier?“
 
 **Antwort-Optionen (Ich):**
-- **1.** „Ich will ins Zinsbachtal.“ `(Aktion: close)`
-- **2.** „Ein Bier.“ `(Aktion: close)`
-- **3.** „Geht dich gar nichts an, Penner!“ `(Aktion: close)`
+- **1.** „Ich will ins Zinsbachtal.“ `-> arvid_zinsbachtal`
+- **2.** „Ein Bier.“ `-> arvid_bier`
+- **3.** „Geht dich gar nichts an, Penner!“ `-> arvid_penner`
+
+### Knoten: `arvid_zinsbachtal`
+
+> **Waldhüter Arvid:** „Zinsbachtal, Ja, ich erinnere mich. Da war es schön. Damals.“
+
+*(Keine Buttons: Schließt nach ca. 2,5 s automatisch)*
+
+### Knoten: `arvid_bier`
+
+> **Waldhüter Arvid:** „Macht ein Euro!“
+
+*(Keine Buttons: Schließt nach ca. 2,0 s automatisch)*
+
+### Knoten: `arvid_penner`
+
+> **Waldhüter Arvid:** „Ein Satz heiße Ohren gefällig?“
+
+*(Keine Buttons: Schließt nach ca. 2,2 s automatisch)*
 
 ---
 

@@ -423,9 +423,9 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
 
     // Auswahl von Antwort 1 schließt den Dialog
     const step = dialogue.selectOption(0);
-    expect(step.node).toBeNull();
-    expect(dialogue.isOpen()).toBe(false);
-    expect(step.action).toEqual({ type: 'close' });
+    expect(step.node?.id).toBe('arvid_zinsbachtal');
+    expect(step.node?.text).toContain('Zinsbachtal, Ja, ich erinnere mich.');
+    expect(step.node?.autoAction).toEqual({ type: 'close' });
   });
 
   it('erzwingt den Grundsatz: Standarddialoge werden nur einmal angezeigt und nach Auswahl einer Antwort ist kein Aufruf mehr möglich', () => {
@@ -442,7 +442,10 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     const root = dialogue.startDialogue('root');
     expect(root).not.toBeNull();
     const result = dialogue.selectOption(1);
-    expect(result.action).toEqual({ type: 'close' });
+    expect(result.node?.id).toBe('arvid_bier');
+    expect(result.node?.text).toBe('Macht ein Euro!');
+    expect(result.node?.autoAction).toEqual({ type: 'close' });
+    dialogue.closeDialogue();
     expect(dialogue.isOpen()).toBe(false);
 
     // 3. Nach Auswahl einer Antwort ist kein Aufruf des gleichen Dialoges mehr möglich

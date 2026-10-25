@@ -908,22 +908,49 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
         {
           id: 'opt_zinsbachtal',
           playerText: 'Ich will ins Zinsbachtal.',
-          nextNodeId: null,
-          action: { type: 'close' },
+          nextNodeId: 'arvid_zinsbachtal',
         },
         {
           id: 'opt_bier',
           playerText: 'Ein Bier.',
-          nextNodeId: null,
-          action: { type: 'close' },
+          nextNodeId: 'arvid_bier',
         },
         {
           id: 'opt_penner',
           playerText: 'Geht dich gar nichts an, Penner!',
-          nextNodeId: null,
-          action: { type: 'close' },
+          nextNodeId: 'arvid_penner',
         },
       ],
+    },
+
+    arvid_zinsbachtal: {
+      id: 'arvid_zinsbachtal',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Zinsbachtal, Ja, ich erinnere mich. Da war es schön. Damals.',
+      options: [],
+      autoAction: { type: 'close' },
+      autoAdvanceDelayMs: 2500,
+    },
+
+    arvid_bier: {
+      id: 'arvid_bier',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Macht ein Euro!',
+      options: [],
+      autoAction: { type: 'close' },
+      autoAdvanceDelayMs: 2000,
+    },
+
+    arvid_penner: {
+      id: 'arvid_penner',
+      speaker: GUIDE_NPC_NAME,
+      speakerRole: GUIDE_NPC_ROLE,
+      text: 'Ein Satz heiße Ohren gefällig?',
+      options: [],
+      autoAction: { type: 'close' },
+      autoAdvanceDelayMs: 2200,
     },
 
     // === FABELWESEN LUPO (auf Weg 7) ===
