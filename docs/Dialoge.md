@@ -3,7 +3,10 @@
 Dieses Dokument bietet einen vollständigen Überblick über alle aktiven Dialogbäume, Sprechtexte und Antwortoptionen im Spiel.
 Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../src/game/data/npcDialogues.ts).
 
-> [!TIP] Diese Datei ist per Junction direkt in Obsidian unter `WANDERLAND_OBS/7WEGE/Dialoge.md` eingebunden und dient als Vorlage für das geplante Einkürzen der Texte.
+> [!TIP] Diese Datei ist per Junction direkt in Obsidian unter `WANDERLAND_OBS/7WEGE/Dialoge.md` eingebunden.
+> **Visuelle Graphen in Obsidian:** Du kannst die Dialoge direkt als interaktiven, visuellen Canvas öffnen und editieren:
+> - [[Lupo.canvas]] – Der pointierte Kurz-Dialogbaum von Lupo (8 Knoten)
+> - [[Arvid.canvas]] – Der vollständige Dialogbaum von Waldhüter Arvid (16 Knoten)
 
 ## Inhaltsverzeichnis
 

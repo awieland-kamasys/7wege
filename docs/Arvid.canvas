@@ -1,0 +1,481 @@
+{
+  "nodes": [
+    {
+      "id": "root",
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `root`\n\n> „Ach du Scheiße, was willst du denn hier?“",
+      "color": "3"
+    },
+    {
+      "id": "about_arvid",
+      "x": -600,
+      "y": 300,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `about_arvid`\n\n> „Einst zog ich selbst als ruheloser Sucher durchs Wanderland. Ich bin jeden dieser sieben Pfade bis zu seinem Ende gegangen – durch Nebel, Felsstürze und lockende Spiegelungen. Als mein Vorgänger, der alte Hüter, seine Laterne niederlegte, erkannte ich: Das Größte ist nicht das endlose Weiterlaufen, sondern das Da-Sein für jene, die an der Weggabelung zögern. So gelobte ich, diese Kreuzung zu hüten.“",
+      "color": "5"
+    },
+    {
+      "id": "arvid_lantern",
+      "x": -900,
+      "y": 600,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `arvid_lantern`\n\n> „Diese Laterne wurde von den Bergleuten der alten Zechen aus Bergmessing geschmiedet und trägt ein Licht, das aus der stillen Herdglut der Schutzhütte stammt. Selbst wenn dichter weißer Waldnebel die Pfade verschluckt, dringt ihr warmer Bernsteinschein durchs Geäst. Sie erinnert jeden Wandernden daran: Es gibt immer einen sicheren Rückweg zur Zuflucht, ganz gleich, wie weit man sich hinausgewagt hat.“",
+      "color": "6"
+    },
+    {
+      "id": "arvid_philosophy",
+      "x": -600,
+      "y": 600,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `arvid_philosophy`\n\n> „Wisse dies: Kein Pfad im Wanderland ist rein leicht oder gänzlich dunkel. Ein Weg verlangt, dass du ein geheiligtes Verbot gegen blanke Menschennot abwägst; ein anderer lockt mit Reichtum, der eine Seele verfluchen kann; ein dritter fordert ein bitteres Opfer zwischen Durst im Tal und der Heimat eines Riesen. Wer nur den leichtesten Schritt sucht, strauchelt am tiefsten. Höre beiden Seiten zu, wenn Wesen streiten – und vertraue deinem eigenen Gewissen mehr als fremdem Drängen.“",
+      "color": "6"
+    },
+    {
+      "id": "arvid_beings",
+      "x": -300,
+      "y": 600,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `arvid_beings`\n\n> „Im Norden hütet das treue Graumännchen den Silberstollen – ein ehrlicher Geist, doch gebunden an ein ehernes Versprechen. Im Nordosten sitzt die Nixe auf ihrem Stein im Spiegelteich; ihre Schönheit und ihr funkelndes Gold haben schon manchen ins Verderben gezogen. Im Südosten hadert der Riese am Wehr mit der Dürre des Tals, während im Süden das uralte Holzweibchen für den Atem des Forstes kämpft. Und am Jägerpfad pocht der Wilde Jäger stolz auf sein Revierrecht. Doch am 7. Weg im Nordwesten ragt das uralte, verschlossene Tor auf – stumm wartend auf jene, die alle Prüfungen verstanden haben.“",
+      "color": "6"
+    },
+    {
+      "id": "arvid_gate",
+      "x": 0,
+      "y": 600,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `arvid_gate`\n\n> „Seit undenklichen Wintern steht jenes Tor am Nordwestrand des Wanderlandes im Fels verankert. Niemand vermag es mit roher Gewalt aufzubrechen. Es hütet die Schwelle zu dem, was hinter all unseren Pfaden liegt. Erst wer die Konflikte und Prüfungen an den anderen Wegen verstanden hat und sein Gewissen rein hält, wird das Geheimnis seines Siegels lüften können. Bis dahin bleibt es fest verriegelt – als stiller Mahner, dass manche Pforten erst dann aufgehen, wenn die Zeit und der Geist reif sind.“",
+      "color": "6"
+    },
+    {
+      "id": "about_crossroads",
+      "x": -100,
+      "y": 300,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `about_crossroads`\n\n> „Alle sieben Pfade des Wanderlandes treffen an dieser Lichtung zusammen. Die Schutzhütte in der Mitte ist dein sicherer Ankerpunkt, und in der Schatztruhe davor ruht ein altes Licht-Artefakt für dunkle Wege.“",
+      "color": "5"
+    },
+    {
+      "id": "recommendation",
+      "x": 400,
+      "y": 300,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `recommendation`\n\n> „Folge zuerst dem 1. Silberstollen-Pfad nach Norden! Er biegt im Nebel nach Nordosten ab und führt direkt zu einem Berg mit Höhleneingang. Dort wartet das Graumännchen mit einer dringenden Angelegenheit um eine neue Silberader.“",
+      "color": "5"
+    },
+    {
+      "id": "paths_overview",
+      "x": 900,
+      "y": 300,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `paths_overview`\n\n> „Jeder der sieben Wege trägt einen eigenen Charakter. Über welchen Pfad möchtest du einen Hinweis hören?“",
+      "color": "4"
+    },
+    {
+      "id": "path_1",
+      "x": 300,
+      "y": 650,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `path_1`\n\n> „Der 1. Silberstollen-Pfad windet sich in einer langen Kurve hinauf zum alten Bergmassiv. Vor dem Höhleneingang wartet das Graumännchen: Eine neue Silberader könnte dort Mine und Arbeiter retten – doch ihr Auffinden verlangt Licht in einem Stollen, für den ein altes Verbot und Versprechen gilt.“",
+      "color": "2"
+    },
+    {
+      "id": "path_2",
+      "x": 650,
+      "y": 650,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `path_2`\n\n> „Der 2. Nixenteich-Pfad im Nordosten führt durch den Nebel zu einem stillen Waldteich. Auf einem Felsen im Wasser sitzt die Nixe. Auf dem Grund ihres Teichs funkelt ein verlockender Schatz – doch sei gewarnt: Er ist mit einem dunklen Fluch und drohendem Unglück verbunden.“",
+      "color": "2"
+    },
+    {
+      "id": "path_3",
+      "x": 1000,
+      "y": 650,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `path_3`\n\n> „Der 3. Quellenweg im Südosten führt über eine Brücke, unter der ein Bach hindurchfließt. Ein geschlossenes Wehr an der Brücke staut den Bach zu einem kleinen Stausee zurück. Dort wacht der Riese: Die Quelle versorgt eigentlich das Tal – ihre Freigabe könnte dort eine Dürre lindern, zerstört jedoch die Heimat des Riesen.“",
+      "color": "2"
+    },
+    {
+      "id": "path_4",
+      "x": 1350,
+      "y": 650,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `path_4`\n\n> „Der 4. Holzfäller-Pfad im Südsüdosten führt auf eine gerodete Waldlichtung zu einem Holzfällerlager. Dort triffst du das Holzweibchen zwischen Baumstümpfen und Holzstapeln: Das geschlagene Brennholz rettet die Dorfbewohner vor der bitteren Kälte – doch zu starke Fällungen gefährden den Wald und seine gesamte Umgebung.“",
+      "color": "2"
+    },
+    {
+      "id": "path_5",
+      "x": 500,
+      "y": 950,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `path_5`\n\n> „Der 5. Höllenschlund-Pfad im Südsüdwesten führt an den Rand eines tiefen, glühenden Abgrunds. Inmitten des Feuermeeres und der emporsteigenden Flammen erwartet dich der Teufel auf seinem Obsidianfelsen.“",
+      "color": "1"
+    },
+    {
+      "id": "path_6",
+      "x": 850,
+      "y": 950,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `path_6`\n\n> „Der 6. Jägerpfad im Südwesten führt durch eine Waldschneise zu einer Jagdhütte mit prachtvollem Kräutergarten. Dort steht der Wilde Jäger und streitet erbittert mit einem Holzweibchen: Er wirft ihr Diebstahl kostbarer Kräuter vor, während sie beteuert, damit leidenden Waldtieren in höchster Not das Leben gerettet zu haben.“",
+      "color": "2"
+    },
+    {
+      "id": "path_7",
+      "x": 1200,
+      "y": 950,
+      "width": 320,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌲 Arvid: `path_7`\n\n> „Der 7. Torweg im Nordwesten führt durch uralten Bergwald zu einem mächtigen, fest verschlossenen Tor. Schwere Eisenbeschläge, ein massiver Riegelbalken und dicke Ketten mit einem gewaltigen Schloss versperren das Weiterkommen – ein Portal, das sich nur wahrer Einsicht und Erkenntnis öffnen wird.“",
+      "color": "2"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_arvid_1",
+      "fromNode": "about_arvid",
+      "fromSide": "bottom",
+      "toNode": "arvid_lantern",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Welche Bewandtnis hat die Messin..."
+    },
+    {
+      "id": "edge_arvid_2",
+      "fromNode": "about_arvid",
+      "fromSide": "bottom",
+      "toNode": "arvid_beings",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Du kennst also alle Wesen an den..."
+    },
+    {
+      "id": "edge_arvid_3",
+      "fromNode": "about_arvid",
+      "fromSide": "bottom",
+      "toNode": "arvid_philosophy",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Welche Lehre zogst du aus all de..."
+    },
+    {
+      "id": "edge_arvid_4",
+      "fromNode": "about_arvid",
+      "fromSide": "bottom",
+      "toNode": "root",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "4. Zurück zur Übersicht unserer Fra..."
+    },
+    {
+      "id": "edge_arvid_5",
+      "fromNode": "arvid_lantern",
+      "fromSide": "bottom",
+      "toNode": "about_arvid",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Erzähle mir mehr über deine eige..."
+    },
+    {
+      "id": "edge_arvid_6",
+      "fromNode": "arvid_lantern",
+      "fromSide": "bottom",
+      "toNode": "arvid_beings",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Welche Wesen hast du auf deinen ..."
+    },
+    {
+      "id": "edge_arvid_7",
+      "fromNode": "arvid_lantern",
+      "fromSide": "bottom",
+      "toNode": "root",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Verstanden, zurück zum Anfang."
+    },
+    {
+      "id": "edge_arvid_8",
+      "fromNode": "arvid_philosophy",
+      "fromSide": "bottom",
+      "toNode": "paths_overview",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Zeige mir die sieben Wege, damit..."
+    },
+    {
+      "id": "edge_arvid_9",
+      "fromNode": "arvid_philosophy",
+      "fromSide": "bottom",
+      "toNode": "arvid_beings",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Welche Gesichter und Wesen erwar..."
+    },
+    {
+      "id": "edge_arvid_10",
+      "fromNode": "arvid_philosophy",
+      "fromSide": "bottom",
+      "toNode": "root",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Danke für diese weisen Worte. Zu..."
+    },
+    {
+      "id": "edge_arvid_11",
+      "fromNode": "arvid_beings",
+      "fromSide": "bottom",
+      "toNode": "paths_overview",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Lass mich die Wege im Detail dur..."
+    },
+    {
+      "id": "edge_arvid_12",
+      "fromNode": "arvid_beings",
+      "fromSide": "bottom",
+      "toNode": "recommendation",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Mit welchem Wesen sollte ich das..."
+    },
+    {
+      "id": "edge_arvid_13",
+      "fromNode": "arvid_beings",
+      "fromSide": "bottom",
+      "toNode": "root",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Zurück zum Hauptgespräch."
+    },
+    {
+      "id": "edge_arvid_14",
+      "fromNode": "arvid_beings",
+      "fromSide": "bottom",
+      "toNode": "arvid_gate",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "4. Was hat es mit jenem verschlosse..."
+    },
+    {
+      "id": "edge_arvid_15",
+      "fromNode": "arvid_gate",
+      "fromSide": "bottom",
+      "toNode": "paths_overview",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Erzähle mir von den anderen Wege..."
+    },
+    {
+      "id": "edge_arvid_16",
+      "fromNode": "arvid_gate",
+      "fromSide": "bottom",
+      "toNode": "root",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Danke für diesen weisen Rat, Arv..."
+    },
+    {
+      "id": "edge_arvid_17",
+      "fromNode": "about_crossroads",
+      "fromSide": "bottom",
+      "toNode": "paths_overview",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Erzähl mir mehr über die einzeln..."
+    },
+    {
+      "id": "edge_arvid_18",
+      "fromNode": "about_crossroads",
+      "fromSide": "bottom",
+      "toNode": "root",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Verstanden, zurück zu meiner vor..."
+    },
+    {
+      "id": "edge_arvid_19",
+      "fromNode": "recommendation",
+      "fromSide": "bottom",
+      "toNode": "path_1",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Erzähl mir genauer vom 1. Silber..."
+    },
+    {
+      "id": "edge_arvid_20",
+      "fromNode": "recommendation",
+      "fromSide": "bottom",
+      "toNode": "paths_overview",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Lass mich aus allen sieben Wegen..."
+    },
+    {
+      "id": "edge_arvid_21",
+      "fromNode": "paths_overview",
+      "fromSide": "bottom",
+      "toNode": "path_1",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. 1. Silberstollen-Pfad (Norden)"
+    },
+    {
+      "id": "edge_arvid_22",
+      "fromNode": "paths_overview",
+      "fromSide": "bottom",
+      "toNode": "path_2",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. 2. Nixenteich-Pfad (Nordost)"
+    },
+    {
+      "id": "edge_arvid_23",
+      "fromNode": "paths_overview",
+      "fromSide": "bottom",
+      "toNode": "path_3",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. 3. Quellenweg (Südost)"
+    },
+    {
+      "id": "edge_arvid_24",
+      "fromNode": "paths_overview",
+      "fromSide": "bottom",
+      "toNode": "path_4",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "4. 4. Holzfäller-Pfad (Südsüdost)"
+    },
+    {
+      "id": "edge_arvid_25",
+      "fromNode": "paths_overview",
+      "fromSide": "bottom",
+      "toNode": "path_5",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "5. 5. Höllenschlund-Pfad (Südsüdwes..."
+    },
+    {
+      "id": "edge_arvid_26",
+      "fromNode": "paths_overview",
+      "fromSide": "bottom",
+      "toNode": "path_6",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "6. 6. Jägerpfad (Südwest)"
+    },
+    {
+      "id": "edge_arvid_27",
+      "fromNode": "paths_overview",
+      "fromSide": "bottom",
+      "toNode": "path_7",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "7. 7. Torweg (Nordwest)"
+    },
+    {
+      "id": "edge_arvid_28",
+      "fromNode": "paths_overview",
+      "fromSide": "bottom",
+      "toNode": "root",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "8. Zurück zum Hauptgespräch"
+    },
+    {
+      "id": "edge_arvid_29",
+      "fromNode": "path_1",
+      "fromSide": "bottom",
+      "toNode": "paths_overview",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Nach einem anderen der sieben We..."
+    },
+    {
+      "id": "edge_arvid_30",
+      "fromNode": "path_2",
+      "fromSide": "bottom",
+      "toNode": "paths_overview",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Nach einem anderen der sieben We..."
+    },
+    {
+      "id": "edge_arvid_31",
+      "fromNode": "path_3",
+      "fromSide": "bottom",
+      "toNode": "paths_overview",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Nach einem anderen der sieben We..."
+    },
+    {
+      "id": "edge_arvid_32",
+      "fromNode": "path_4",
+      "fromSide": "bottom",
+      "toNode": "paths_overview",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Nach einem anderen der sieben We..."
+    },
+    {
+      "id": "edge_arvid_33",
+      "fromNode": "path_5",
+      "fromSide": "bottom",
+      "toNode": "paths_overview",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Nach einem anderen der sieben We..."
+    },
+    {
+      "id": "edge_arvid_34",
+      "fromNode": "path_6",
+      "fromSide": "bottom",
+      "toNode": "paths_overview",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Nach einem anderen der sieben We..."
+    },
+    {
+      "id": "edge_arvid_35",
+      "fromNode": "path_7",
+      "fromSide": "bottom",
+      "toNode": "paths_overview",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Nach einem anderen der sieben We..."
+    }
+  ]
+}
