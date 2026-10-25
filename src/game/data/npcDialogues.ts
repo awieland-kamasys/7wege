@@ -78,7 +78,7 @@ export function createGateDialogueTree(): Record<string, DialogueNode> {
       id: 'gate_root',
       speaker: GATE_NAME,
       speakerRole: GATE_ROLE,
-      text: 'Vor dir ragt ein gewaltiges, zweiflügeliges Holztor empor, eingefasst in uralte, moosüberwachsene Steinpfeiler. Schwere Eisenbeschläge und verrostete Ketten halten die Flügel unnachgiebig zusammen. Ein kunstvoll geschmiedetes Vorhängeschloss mit verblichenen Siegelzeichen sichert den massiven Riegelbalken. Auf dem Torbogen steht in verwitterten Lettern gemeißelt: „Nur wer die Pfade erkannte und das Maß wahrte, tritt ein.“',
+      text: '„Nur wer die Pfade erkannte und das Maß wahrte, tritt ein.“',
       options: [
         {
           id: 'inspect-lock',
@@ -830,26 +830,50 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       ],
     },
 
-    // === WEG 7: PILZLING GLIMMLING (Torweg, tief im Nebelwald) ===
+    // === WEG 7: PILZLING GLIMMLING (Torweg, direkt am Tor) ===
     mushroom_7_root: {
       id: 'mushroom_7_root',
       speaker: 'Pilzling Glimmling',
       speakerRole: 'Hüter der Tor-Aura auf Weg 7',
-      text: '*Psst... Wanderer!* Ich bin Glimmling, tief im Schatten des Nebelwaldes. Du hast den halben Pfad und Lupo weit hinter dir gelassen! Siehst du den steinernen Vorplatz dort vorn? Dort thront das Große Tor des Wanderlandes!',
+      text: '*Psst...!* Wo willst du hin!',
       options: [
         {
+          id: 'm7-diskurs',
+          playerText: 'Ein sprechender Pilz? Wirklich?',
+          nextNodeId: 'mushroom_7_diskurs',
+        },
+        {
           id: 'm7-tor',
-          playerText: 'Was hat es mit dem Großen Tor auf sich?',
+          playerText: 'Dorthin zurück, woher ich gekommen bin.',
           nextNodeId: 'mushroom_7_tor',
         },
         {
-          id: 'm7-hint',
-          playerText: 'Wie kann dieses mächtige Portal geöffnet werden?',
+          id: 'm7-gate-new',
+          playerText: 'Dieses Tor war vorhin aber noch nicht da',
           nextNodeId: 'mushroom_7_pruefungen',
         },
         {
           id: 'm7-close',
-          playerText: 'Danke für deine Weisheit, Glimmling! (Gespräch beenden)',
+          playerText: 'Jetzt nicht, ich muss nachdenken! (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+    },
+    mushroom_7_diskurs: {
+      id: 'mushroom_7_diskurs',
+      speaker: 'Pilzling Glimmling',
+      speakerRole: 'Hüter der Tor-Aura auf Weg 7',
+      text: 'Ich seh also aus wie ein Pilz! Das ist ja entzückend',
+      options: [
+        {
+          id: 'm7-diskurs-mirror',
+          playerText: 'Schon mal in den Spiegel geschaut? Ja du bist definitiv ein Pilz!',
+          nextNodeId: 'mushroom_7_root',
+        },
+        {
+          id: 'm7-diskurs-close',
+          playerText: 'Ich werde mir das Tor ansehen. (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
@@ -859,11 +883,11 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_7_tor',
       speaker: 'Pilzling Glimmling',
       speakerRole: 'Hüter der Tor-Aura auf Weg 7',
-      text: 'Das Tor ist uralt, geschmiedet aus Eisenholz und gebunden mit schweren Ketten. Es trennt die Welt der sieben Prüfungen von den verborgenen Wundern dahinter. Kein Schlüssel aus Eisen wird dieses Schloss je bezwingen!',
+      text: 'Ach, bist du da sicher? Ich glaube es war schon immer da!',
       options: [
         {
           id: 'm7-to-pruef',
-          playerText: 'Wie kann ich das Schloss überwinden?',
+          playerText: 'Von mir aus. Aber wie bekomme ich das Teil auf?',
           nextNodeId: 'mushroom_7_pruefungen',
         },
         {
@@ -878,20 +902,33 @@ export function createMushroomCreaturesDialogueTree(): Record<string, DialogueNo
       id: 'mushroom_7_pruefungen',
       speaker: 'Pilzling Glimmling',
       speakerRole: 'Hüter der Tor-Aura auf Weg 7',
-      text: 'Nur wahre Erkenntnis sprengt diese Ketten! Erkunde die Pfade, höre den Wächtern zu und meistere ihre Prüfungen. Wenn du bereit bist, wird das Tor vor deinen Augen aufspringen!',
+      text: 'Frag den Typen der an der Hütte rumhängt! Ach ja noch eins, es ist besser ihn nicht zu verärgern. Wenn du verstehst, was ich meine.',
       options: [
         {
-          id: 'm7-to-tor',
-          playerText: 'Erzähl mir noch einmal vom Tor selbst.',
-          nextNodeId: 'mushroom_7_tor',
-        },
-        {
           id: 'm7-close-pruef',
-          playerText: 'Ich danke dir von Herzen, kleiner Glimmling! (Gespräch beenden)',
+          playerText: 'OK, ich rede noch mal mit ihm. (Gespräch beenden)',
           nextNodeId: null,
           action: { type: 'close' },
         },
       ],
+    },
+    // Wenn der Pilzdialog abgearbeitet ist: unendlich oft wiederholbarer Idle-Spruch
+    mushroom_7_idle: {
+      id: 'mushroom_7_idle',
+      speaker: 'Pilzling Glimmling',
+      speakerRole: 'Hüter der Tor-Aura auf Weg 7',
+      text: 'Kümmer dich um deinen Scheiß!',
+      repeatable: true,
+      options: [
+        {
+          id: 'm7-idle-close',
+          playerText: 'Bin schon weg. (Gespräch beenden)',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
+      autoAction: { type: 'close' },
+      autoAdvanceDelayMs: 2500,
     },
   };
 }

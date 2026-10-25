@@ -416,7 +416,7 @@ export const PATH_7_WAYPOINTS: readonly PathPoint2D[] = [
 export const PATH_7_END_CLEARING = {
   x: -40.5,
   z: -38.5,
-  radius: 4.8,
+  radius: 5.5,
 } as const;
 
 /**
@@ -557,8 +557,8 @@ export const MUSHROOM_CREATURES_DATA: readonly MushroomCreatureData[] = [
     pathId: 7,
     name: 'Pilzling Glimmling',
     role: 'Hüter der Tor-Aura auf Weg 7',
-    pos: { x: -34.8, z: -30.8 }, // Distanz: 46.5m (tief im Nebelwald vor dem großen Torvorplatz)
-    rotationY: 0.87,
+    pos: { x: -45.3, z: -37.5 }, // Distanz: 58.8m (direkt 1m neben dem geschlossenen Tor)
+    rotationY: 2.1,
     collisionRadius: 0.34,
   },
 ];

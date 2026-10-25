@@ -636,9 +636,8 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     const gateRoot = dialogue.startDialogue('gate_root');
     expect(gateRoot?.speaker).toBe('Das geschlossene Tor');
     expect(gateRoot?.speakerRole).toContain('Uraltes Portal');
-    expect(gateRoot?.text).toContain('Holztor');
-    expect(gateRoot?.text).toContain('Eisenbeschläge');
-    expect(gateRoot?.text).toContain('Vorhängeschloss');
+    expect(gateRoot?.text).toContain('Pfade erkannte');
+    expect(gateRoot?.text).toContain('Maß wahrte');
 
     // Option 0: Schloss und Siegelzeichen untersuchen
     const stepLock = dialogue.selectOption(0);
@@ -1273,5 +1272,46 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     // Die Entfernungen zur Kreuzung variieren stark und sind unvorhersehbar gestaffelt (von ~20.8m bis ~46.5m)
     expect(Math.min(...distances)).toBeLessThan(22.0);
     expect(Math.max(...distances)).toBeGreaterThan(45.0);
+  });
+  it('unterstützt die neuen Torpilz-Dialoge und den wiederholbaren Idle-Knoten (mushroom_7_idle)', () => {
+    const dialogue = new DialogueSystem();
+
+    // 1. Initialer Dialog
+    const root = dialogue.startDialogue('mushroom_7_root');
+    expect(root?.speaker).toBe('Pilzling Glimmling');
+    expect(root?.text).toContain('Psst...!');
+    expect(root?.options.length).toBe(4);
+
+    // 2. Option 0: Diskurs über Pilzform
+    const diskursStep = dialogue.selectOption(0);
+    expect(diskursStep.node?.id).toBe('mushroom_7_diskurs');
+    expect(diskursStep.node?.text).toContain('Ich seh also aus wie ein Pilz!');
+
+    // 3. Tor-Frage
+    const rootAgain = dialogue.selectOption(0);
+    expect(rootAgain.node?.id).toBe('mushroom_7_root');
+    const torStep = dialogue.selectOption(1);
+    expect(torStep.node?.id).toBe('mushroom_7_tor');
+    expect(torStep.node?.text).toContain('schon immer da');
+
+    // 4. Frage zu Prüfungen / Typ an der Hütte
+    const pruefStep = dialogue.selectOption(0);
+    expect(pruefStep.node?.id).toBe('mushroom_7_pruefungen');
+    expect(pruefStep.node?.text).toContain('Frag den Typen der an der Hütte rumhängt');
+
+    // 5. Beenden
+    const closeStep = dialogue.selectOption(0);
+    expect(closeStep.action?.type).toBe('close');
+    expect(dialogue.isOpen()).toBe(false);
+
+    // 6. Idle-Knoten prüfen: unendlich oft wiederholbar
+    const idleNode = dialogue.startDialogue('mushroom_7_idle');
+    expect(idleNode?.text).toBe('Kümmer dich um deinen Scheiß!');
+    expect(idleNode?.repeatable).toBe(true);
+    dialogue.closeDialogue();
+
+    // Erneut startbar ohne Sperre
+    const idleNode2 = dialogue.startDialogue('mushroom_7_idle');
+    expect(idleNode2?.text).toBe('Kümmer dich um deinen Scheiß!');
   });
 });

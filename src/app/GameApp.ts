@@ -466,13 +466,28 @@ export class GameApp {
     );
   }
 
+  private resolveMushroomDialogueNode(pathId: number): string {
+    if (pathId === 7) {
+      if (
+        this.dialogue.isDialogueCompleted('mushroom_7_root') ||
+        this.dialogue.isDialogueCompleted('mushroom_7_pruefungen') ||
+        this.dialogue.isDialogueCompleted('mushroom_7_tor') ||
+        this.dialogue.isDialogueCompleted('mushroom_7_diskurs') ||
+        !this.dialogue.canStartDialogue('mushroom_7_root')
+      ) {
+        return 'mushroom_7_idle';
+      }
+    }
+    return `mushroom_${pathId}_root`;
+  }
+
   private initiateTalkToMushroom(pathId: number): void {
     this.clearPendingActions();
     this.closeDialogueAndSpeech();
     this.scene.triggerMushroomJump(pathId);
     if (this.state.isNearMushroom(pathId)) {
       this.state.clearTargetPosition();
-      this.openDialogueNode(`mushroom_${pathId}_root`);
+      this.openDialogueNode(this.resolveMushroomDialogueNode(pathId));
     } else {
       this.pendingTalkToMushroom = pathId;
       this.state.setTargetToMushroom(pathId);
@@ -1171,7 +1186,7 @@ export class GameApp {
         this.pendingTalkToMushroom = null;
         this.state.clearTargetPosition();
         this.scene.triggerMushroomJump(pathId);
-        this.openDialogueNode(`mushroom_${pathId}_root`);
+        this.openDialogueNode(this.resolveMushroomDialogueNode(pathId));
       }
       if (this.pendingInspectGate && this.state.isNearGate()) {
         this.pendingInspectGate = false;

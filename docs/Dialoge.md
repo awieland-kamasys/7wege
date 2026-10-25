@@ -975,25 +975,42 @@ Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../s
 > **Pilzling Glimmling:** „*Psst...!* Wo willst du hin!“
 
 **Antwort-Optionen (Ich):**
-- **1.** „Dorthin zurück, woher ich gekommen bin.“ `-> mushroom_7_tor`
-- **2.** „Wie kann dieses mächtige Portal geöffnet werden?“ `-> mushroom_7_pruefungen`
-- **3.** „Danke für deine Weisheit, Glimmling! (Gespräch beenden)“ `(Aktion: close)`
+- **1.** „Ein sprechender Pilz? Wirklich?“ `-> mushroom_7_diskurs`
+- **2.** „Dorthin zurück, woher ich gekommen bin.“ `-> mushroom_7_tor`
+- **3.** „Dieses Tor war vorhin aber noch nicht da“ `-> mushroom_7_pruefungen`
+- **4.** „Jetzt nicht, ich muss nachdenken! (Gespräch beenden)“ `(Aktion: close)`
+
+### Knoten: `mushroom_7_diskurs`
+
+> **Pilzling Glimmling:** „Ich seh also aus wie ein Pilz! Das ist ja entzückend“
+
+**Antwort-Optionen (Ich):**
+- **1.** „Schon mal in den Spiegel geschaut? Ja du bist definitiv ein Pilz!“ `-> mushroom_7_root`
+- **2.** „Ich werde mir das Tor ansehen. (Gespräch beenden)“ `(Aktion: close)`
 
 ### Knoten: `mushroom_7_tor`
 
-> **Pilzling Glimmling:** „Das Tor ist uralt, geschmiedet aus Eisenholz und gebunden mit schweren Ketten. Es trennt die Welt der sieben Prüfungen von den verborgenen Wundern dahinter. Kein Schlüssel aus Eisen wird dieses Schloss je bezwingen!“
+> **Pilzling Glimmling:** „Ach, bist du da sicher? Ich glaube es war schon immer da!“
 
 **Antwort-Optionen (Ich):**
-- **1.** „Wie kann ich das Schloss überwinden?“ `-> mushroom_7_pruefungen`
+- **1.** „Von mir aus. Aber wie bekomme ich das Teil auf?“ `-> mushroom_7_pruefungen`
 - **2.** „Ich werde mir das Tor ansehen. (Gespräch beenden)“ `(Aktion: close)`
 
 ### Knoten: `mushroom_7_pruefungen`
 
-> **Pilzling Glimmling:** „Nur wahre Erkenntnis sprengt diese Ketten! Erkunde die Pfade, höre den Wächtern zu und meistere ihre Prüfungen. Wenn du bereit bist, wird das Tor vor deinen Augen aufspringen!“
+> **Pilzling Glimmling:** „Frag den Typen der an der Hütte rumhängt! Ach ja noch eins, es ist besser ihn nicht zu verärgern. Wenn du verstehst, was ich meine.“
 
 **Antwort-Optionen (Ich):**
-- **1.** „Erzähl mir noch einmal vom Tor selbst.“ `-> mushroom_7_tor`
-- **2.** „Ich danke dir von Herzen, kleiner Glimmling! (Gespräch beenden)“ `(Aktion: close)`
+- **1.** „OK, ich rede noch mal mit ihm. (Gespräch beenden)“ `(Aktion: close)`
+
+### Knoten: `mushroom_7_idle` *(Nach Abschluss des Hauptdialogs, unendlich oft wiederholbar)*
+
+> **Pilzling Glimmling:** „Kümmer dich um deinen Scheiß!“
+
+**Antwort-Optionen (Ich):**
+- **1.** „Bin schon weg. (Gespräch beenden)“ `(Aktion: close)`
+
+*(Schließt nach ca. 2,5 s automatisch)*
 
 ---
 
