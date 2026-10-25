@@ -351,22 +351,7 @@ export class HudOverlay {
   }
 
   public renderJournalContent(): void {
-    let questText = 'erkunde die Gegend';
-
-    if (!this.currentIsOnClearing && this.currentActivePath) {
-      const pathId = this.currentActivePath.id;
-      if (this.callbacks.getQuestReport) {
-        const report = this.callbacks.getQuestReport();
-        const pathQuest = report.pathQuests.find((p) => p.pathId === pathId);
-        if (pathQuest) {
-          questText = pathQuest.objective;
-        } else {
-          questText = `Erkunde ${this.currentActivePath.name}`;
-        }
-      } else {
-        questText = `Erkunde ${this.currentActivePath.name}`;
-      }
-    }
+    const questText = 'Erkunde die Gegend';
 
     this.journalModalEl.innerHTML = `
       <div class="journal-header">

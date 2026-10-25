@@ -1088,10 +1088,10 @@ export class CrossroadsScene {
       if (!this.burnedCrownDarkMat || !this.burnedCrownLightMat) {
         const foliageTex = createPineFoliageTexture();
         if (foliageTex.map) {
-          foliageTex.map.repeat.set(2.5, 2.5);
+          foliageTex.map.repeat.set(1.0, 1.0);
           foliageTex.map.colorSpace = THREE.SRGBColorSpace;
         }
-        if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(2.5, 2.5);
+        if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(1.0, 1.0);
         this.burnedCrownDarkMat = new THREE.MeshStandardMaterial({
           color: 0x221e1a,
           map: foliageTex.map ?? undefined,
@@ -1116,10 +1116,10 @@ export class CrossroadsScene {
       if (!this.snowyCrownDarkMat || !this.snowyCrownLightMat) {
         const foliageTex = createSnowyPineFoliageTexture();
         if (foliageTex.map) {
-          foliageTex.map.repeat.set(3.2, 4.0);
+          foliageTex.map.repeat.set(1.0, 1.0);
           foliageTex.map.colorSpace = THREE.SRGBColorSpace;
         }
-        if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(3.2, 4.0);
+        if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(1.0, 1.0);
         this.snowyCrownDarkMat = new THREE.MeshStandardMaterial({
           color: 0xe4eff7, // Glänzendes Schneeweiß mit blauem Eisschimmer
           map: foliageTex.map ?? undefined,
@@ -1143,10 +1143,10 @@ export class CrossroadsScene {
     if (!this.defaultCrownDarkMat || !this.defaultCrownLightMat) {
       const foliageTex = createPineFoliageTexture();
       if (foliageTex.map) {
-        foliageTex.map.repeat.set(3.2, 4.0);
+        foliageTex.map.repeat.set(1.0, 1.0);
         foliageTex.map.colorSpace = THREE.SRGBColorSpace;
       }
-      if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(3.2, 4.0);
+      if (foliageTex.bumpMap) foliageTex.bumpMap.repeat.set(1.0, 1.0);
       this.defaultCrownDarkMat = new THREE.MeshStandardMaterial({
         color: 0x9bc2a0,
         map: foliageTex.map ?? undefined,
@@ -1296,6 +1296,21 @@ export class CrossroadsScene {
         colors[i * 3 + 1] = shade;
         colors[i * 3 + 2] = shade;
       }
+
+      // Metrisch gleichmäßige, unverzerrte UV-Koordinaten (exaktes 1:1 Seitenverhältnis im 3D-Raum)
+      const tileSize = 0.65;
+      const perimeter = 2 * Math.PI * radius;
+      const tilesU = Math.max(2, Math.round(perimeter / tileSize));
+      const slantHeight = Math.hypot(radius, height);
+      const tilesV = slantHeight / tileSize;
+
+      const uvs = geo.attributes.uv;
+      for (let i = 0; i < uvs.count; i++) {
+        const u0 = uvs.getX(i);
+        const v0 = uvs.getY(i);
+        uvs.setXY(i, u0 * tilesU, v0 * tilesV);
+      }
+      uvs.needsUpdate = true;
 
       geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
       geo.computeVertexNormals();

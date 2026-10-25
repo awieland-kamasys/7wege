@@ -972,10 +972,10 @@ Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../s
 
 ### Knoten: `mushroom_7_root`
 
-> **Pilzling Glimmling:** „*Psst... Wanderer!* Ich bin Glimmling, tief im Schatten des Nebelwaldes. Du hast den halben Pfad und Lupo weit hinter dir gelassen! Siehst du den steinernen Vorplatz dort vorn? Dort thront das Große Tor des Wanderlandes!“
+> **Pilzling Glimmling:** „*Psst...!* Wo willst du hin!“
 
 **Antwort-Optionen (Ich):**
-- **1.** „Was hat es mit dem Großen Tor auf sich?“ `-> mushroom_7_tor`
+- **1.** „Dorthin zurück, woher ich gekommen bin.“ `-> mushroom_7_tor`
 - **2.** „Wie kann dieses mächtige Portal geöffnet werden?“ `-> mushroom_7_pruefungen`
 - **3.** „Danke für deine Weisheit, Glimmling! (Gespräch beenden)“ `(Aktion: close)`
 

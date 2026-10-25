@@ -808,7 +808,7 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
     return { map: null, bumpMap: null };
   }
 
-  const size = 512;
+  const size = 256;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -865,38 +865,38 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
   // 3. Verholzte Astachsen in jeder Etage
   for (let t = 0; t < tierCount; t++) {
     const baseY = t * tierHeight + tierHeight * 0.35;
-    for (let b = 0; b < 5; b++) {
-      const startX = (b / 5) * size + random() * 40;
-      const branchLen = 45 + random() * 65;
+    for (let b = 0; b < 4; b++) {
+      const startX = (b / 4) * size + random() * 20;
+      const branchLen = 22 + random() * 32;
       const angle = (random() - 0.5) * 0.35;
 
       ctx.strokeStyle = 'rgba(72, 46, 28, 0.85)';
-      ctx.lineWidth = 2.4;
+      ctx.lineWidth = 1.6;
       ctx.beginPath();
       ctx.moveTo(startX, baseY);
-      ctx.lineTo(startX + Math.cos(angle) * branchLen, baseY + Math.sin(angle) * branchLen + 4);
+      ctx.lineTo(startX + Math.cos(angle) * branchLen, baseY + Math.sin(angle) * branchLen + 2);
       ctx.stroke();
 
       if (bumpCtx) {
         bumpCtx.strokeStyle = 'rgba(230, 230, 230, 0.7)';
-        bumpCtx.lineWidth = 2.4;
+        bumpCtx.lineWidth = 1.6;
         bumpCtx.beginPath();
         bumpCtx.moveTo(startX, baseY);
-        bumpCtx.lineTo(startX + Math.cos(angle) * branchLen, baseY + Math.sin(angle) * branchLen + 4);
+        bumpCtx.lineTo(startX + Math.cos(angle) * branchLen, baseY + Math.sin(angle) * branchLen + 2);
         bumpCtx.stroke();
       }
     }
   }
 
   // 4. Dichte fächerförmige Nadelkämme (kammartige Fichten- und Tannennadeln)
-  const needleGroupCount = 750;
+  const needleGroupCount = 220;
   for (let i = 0; i < needleGroupCount; i++) {
     const bx = random() * size;
     const by = random() * size;
     // Nadeln neigen sich nach außen und leicht nach unten
     const baseAngle = Math.PI * 0.5 + (random() - 0.5) * 1.35;
-    const needleCount = 6 + Math.floor(random() * 6);
-    const branchLen = 9 + random() * 16;
+    const needleCount = 5 + Math.floor(random() * 5);
+    const branchLen = 6 + random() * 10;
 
     for (let n = 0; n < needleCount; n++) {
       const spread = (n - needleCount / 2) * 0.16;
@@ -923,7 +923,7 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
       }
 
       ctx.strokeStyle = color;
-      ctx.lineWidth = 1.45;
+      ctx.lineWidth = 1.1;
       ctx.beginPath();
       ctx.moveTo(bx, by);
       ctx.lineTo(ex, ey);
@@ -931,7 +931,7 @@ export function createPineFoliageTexture(): { map: THREE.CanvasTexture | null; b
 
       if (bumpCtx) {
         bumpCtx.strokeStyle = bumpColor;
-        bumpCtx.lineWidth = 1.45;
+        bumpCtx.lineWidth = 1.1;
         bumpCtx.beginPath();
         bumpCtx.moveTo(bx, by);
         bumpCtx.lineTo(ex, ey);
@@ -2269,7 +2269,7 @@ export function createSnowyPineFoliageTexture(): { map: THREE.CanvasTexture | nu
     return { map: null, bumpMap: null };
   }
 
-  const size = 512;
+  const size = 256;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -2315,14 +2315,14 @@ export function createSnowyPineFoliageTexture(): { map: THREE.CanvasTexture | nu
     ctx.fillRect(0, tierY + tierHeight * 0.6, size, tierHeight * 0.4);
 
     // Tannennadeln, die unter dem Schnee hervorlugen
-    for (let n = 0; n < 80; n++) {
+    for (let n = 0; n < 28; n++) {
       const nx = random() * size;
       const ny = tierY + tierHeight * 0.55 + random() * (tierHeight * 0.4);
-      const nLen = 6 + random() * 10;
+      const nLen = 4 + random() * 8;
       const nAngle = Math.PI * 0.5 + (random() - 0.5) * 0.8;
 
       ctx.strokeStyle = random() > 0.5 ? '#244d32' : '#1a3c26';
-      ctx.lineWidth = 1.4;
+      ctx.lineWidth = 1.1;
       ctx.beginPath();
       ctx.moveTo(nx, ny);
       ctx.lineTo(nx + Math.cos(nAngle) * nLen, ny + Math.sin(nAngle) * nLen);
@@ -2347,8 +2347,8 @@ export function createSnowyPineFoliageTexture(): { map: THREE.CanvasTexture | nu
     ctx.moveTo(0, tierY);
 
     // Organischer, welliger Schneesaum
-    for (let x = 0; x <= size; x += 8) {
-      const dip = Math.sin(x * 0.12 + t) * 4 + Math.cos(x * 0.04) * 5;
+    for (let x = 0; x <= size; x += 6) {
+      const dip = Math.sin(x * 0.12 + t) * 3 + Math.cos(x * 0.04) * 4;
       ctx.lineTo(x, tierY + snowH + dip);
     }
     ctx.lineTo(size, tierY);
@@ -2366,7 +2366,7 @@ export function createSnowyPineFoliageTexture(): { map: THREE.CanvasTexture | nu
   }
 
   // 4. Glitzernde Schneekristalle & Reif auf den Nadeln
-  for (let c = 0; c < 900; c++) {
+  for (let c = 0; c < 240; c++) {
     const cx = random() * size;
     const cy = random() * size;
     const cr = 0.5 + random() * 1.2;
