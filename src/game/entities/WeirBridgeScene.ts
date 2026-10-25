@@ -59,12 +59,12 @@ export function createWeirBridgeScene(
   wellContainer.name = 'AncientWellContainer';
   group.add(wellContainer);
 
-  // Fallback-Steinring während des Modell-Ladens
+  // Fallback-Steinring während des Modell-Ladens (in der Höhe verdoppelt auf 3.08m)
   const fallbackWell = new THREE.Mesh(
-    new THREE.CylinderGeometry(4.2, 4.3, 1.54, 32, 1, true),
+    new THREE.CylinderGeometry(4.2, 4.3, 3.08, 32, 1, true),
     stoneMat
   );
-  fallbackWell.position.set(-5.4, 0.77, 0.0);
+  fallbackWell.position.set(-5.4, 1.54, 0.0);
   wellContainer.add(fallbackWell);
 
   const reservoirWaterMat = new THREE.MeshStandardMaterial({
@@ -77,12 +77,12 @@ export function createWeirBridgeScene(
     opacity: 0.88,
   });
 
-  // Im Brunneninneren: Glänzende Quellwasseroberfläche (Durchmesser ca. 4.9m, Y = 0.42)
+  // Im Brunneninneren: Glänzende Quellwasseroberfläche (Durchmesser ca. 4.9m, an verdoppelte Brunnenhöhe angepasst auf Y = 1.80)
   const wellWater = new THREE.Mesh(
     new THREE.CylinderGeometry(2.45, 2.45, 0.2, 32),
     reservoirWaterMat
   );
-  wellWater.position.set(-5.4, 0.42, 0);
+  wellWater.position.set(-5.4, 1.80, 0);
   wellWater.receiveShadow = true;
   wellWater.userData = { interactableType: 'weir' };
   group.add(wellWater);
@@ -98,7 +98,7 @@ export function createWeirBridgeScene(
     })
   );
   springRipple.rotation.x = -Math.PI / 2;
-  springRipple.position.set(-5.4, 0.525, 0);
+  springRipple.position.set(-5.4, 1.91, 0);
   group.add(springRipple);
 
   // Kleiner Quellsprudel in der Mitte des Brunnens
@@ -111,10 +111,10 @@ export function createWeirBridgeScene(
     opacity: 0.75,
   });
   const springBubbler = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.18, 0.38, 0.28, 16),
+    new THREE.CylinderGeometry(0.18, 0.38, 0.38, 16),
     springBubblerMat
   );
-  springBubbler.position.set(-5.4, 0.55, 0);
+  springBubbler.position.set(-5.4, 1.93, 0);
   group.add(springBubbler);
 
   // ============================================================================
@@ -178,9 +178,9 @@ export function createWeirBridgeScene(
     group.add(bridgePier);
   }
 
-  // Temporärer Platzhalter während des GLB-Ladens des Baches
+  // Temporärer Platzhalter während des GLB-Ladens des Baches (Höhe verdoppelt auf 0.16m)
   const fallbackBedMat = new THREE.MeshStandardMaterial({ color: 0x242d2a, roughness: 0.9 });
-  const fallbackStream = new THREE.Mesh(new THREE.BoxGeometry(32.4, 0.08, 2.8), fallbackBedMat);
+  const fallbackStream = new THREE.Mesh(new THREE.BoxGeometry(32.4, 0.16, 2.8), fallbackBedMat);
   fallbackStream.position.set(15.2, -1.62, 0);
   streamContainer.add(fallbackStream);
 
@@ -232,12 +232,12 @@ export function createWeirBridgeScene(
       }
     );
 
-    // 2. Lade antiken Rundbrunnen (ancient circular well 3d model.glb)
+    // 2. Lade antiken Rundbrunnen (ancient circular well 3d model.glb) - Höhe verdoppelt (scale.y: 8.8)
     loader.load(
       '/assets/models/ancient circular well 3d model.glb',
       (gltf) => {
         const wellModel = gltf.scene;
-        wellModel.scale.set(8.4, 4.4, 8.4);
+        wellModel.scale.set(8.4, 8.8, 8.4);
         wellModel.position.set(-5.4, 0.0, 0.0);
         wellModel.traverse((child) => {
           const mesh = child as THREE.Mesh;
@@ -308,7 +308,8 @@ export function createWeirBridgeScene(
 
         segmentXPositions.forEach((segX, idx) => {
           const segClone = baseStream.clone(true);
-          segClone.scale.set(6.4, 2.4, 12.8);
+          // Höhe des Flusslaufs verdoppelt (scale.y: 4.8) für markantere Felsen und tief eingeschnittenes Flussbett
+          segClone.scale.set(6.4, 4.8, 12.8);
           segClone.position.set(segX, -1.62, 0);
 
           if (idx % 2 === 1) {
