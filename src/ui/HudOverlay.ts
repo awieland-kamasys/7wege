@@ -87,6 +87,8 @@ export class HudOverlay {
   private isInventoryModalOpen = false;
   private currentPresetKey: TerrainPresetKey = DEFAULT_TERRAIN_PRESET;
   private toastTimeout: number | null = null;
+  private currentIsOnClearing = true;
+  private currentActivePath: ForestPathData | null = null;
 
   constructor(container: HTMLElement, private readonly callbacks: HudCallbacks) {
     container.innerHTML = '';
@@ -349,118 +351,35 @@ export class HudOverlay {
   }
 
   public renderJournalContent(): void {
-    if (!this.callbacks.getQuestReport) {
-      this.journalModalEl.innerHTML = `
-        <div class="journal-header">
-          <div class="journal-title-wrap">
-            <span class="journal-icon">📖</span>
-            <h2 class="journal-title">Tagebuch des Wanderers</h2>
-          </div>
-          <button type="button" class="journal-close-btn" title="Schließen (Taste Esc oder J)">✕</button>
-        </div>
-        <p style="padding: 1rem; color: var(--text-muted);">Keine Quest-Daten verfügbar.</p>
-      `;
-      this.journalModalEl.querySelector('.journal-close-btn')?.addEventListener('click', () => {
-        this.toggleJournalModal(false);
-      });
-      return;
-    }
+    let questText = 'erkunde die Gegend';
 
-    const report = this.callbacks.getQuestReport();
-
-    const questCardHtml = `
-      <div class="journal-quest-card">
-        <div class="quest-card-header">
-          <span class="quest-chapter">${report.currentQuest.chapter}</span>
-          <span class="quest-progress-badge">${report.currentQuest.progressText}</span>
-        </div>
-        <h3 class="quest-title">${report.currentQuest.title}</h3>
-        <p class="quest-objective">${report.currentQuest.objective}</p>
-
-        ${
-          report.currentQuest.hasChestReward
-            ? `
-          <div class="journal-chest-banner">
-            <span class="chest-banner-icon">🎁</span>
-            <div class="chest-banner-info">
-              <strong>Belohnung in der Schatztruhe!</strong>
-              <span>Öffne die alte Schatztruhe vor Arvids Hütte an der Waldkreuzung, um dein neues Charakter-Item zu erhalten.</span>
-            </div>
-          </div>
-        `
-            : ''
+    if (!this.currentIsOnClearing && this.currentActivePath) {
+      const pathId = this.currentActivePath.id;
+      if (this.callbacks.getQuestReport) {
+        const report = this.callbacks.getQuestReport();
+        const pathQuest = report.pathQuests.find((p) => p.pathId === pathId);
+        if (pathQuest) {
+          questText = pathQuest.objective;
+        } else {
+          questText = `Erkunde ${this.currentActivePath.name}`;
         }
-
-        <div class="journal-hint-box">
-          <span class="hint-icon">💡</span>
-          <div class="hint-text">
-            <strong>Rat des Waldhüters:</strong> ${report.currentQuest.hint}
-          </div>
-        </div>
-      </div>
-    `;
-
-    const pathsHtml = `
-      <div class="journal-section">
-        <h4 class="journal-section-title">🗺️ Die Sieben Waldwege</h4>
-        <div class="journal-paths-list">
-          ${report.pathQuests
-            .map((pq) => {
-              const statusClass = pq.isCompleted
-                ? 'status-completed'
-                : pq.isBlocked
-                ? 'status-blocked'
-                : 'status-open';
-              const statusIcon = pq.isCompleted ? '🟢' : pq.isBlocked ? '🔴' : '🟡';
-              return `
-              <div class="journal-path-item ${statusClass}">
-                <div class="path-item-top">
-                  <span class="path-name">${pq.name}</span>
-                  <span class="path-status-badge">${statusIcon} ${pq.statusLabel}</span>
-                </div>
-                <div class="path-npc-label">Bewohner: <strong>${pq.npcName}</strong></div>
-                <div class="path-desc">${pq.objective}</div>
-              </div>
-            `;
-            })
-            .join('')}
-        </div>
-      </div>
-    `;
-
-    const notesHtml = `
-      <div class="journal-section">
-        <h4 class="journal-section-title">📜 Reise-Chronik & Meilensteine</h4>
-        <div class="journal-notes-list">
-          ${report.journalNotes
-            .map(
-              (n) => `
-            <div class="journal-note-item ${n.completed ? 'is-completed' : 'is-pending'}">
-              <span class="note-bullet">${n.completed ? '✔' : '○'}</span>
-              <span class="note-text">${n.text}</span>
-            </div>
-          `
-            )
-            .join('')}
-        </div>
-      </div>
-    `;
+      } else {
+        questText = `Erkunde ${this.currentActivePath.name}`;
+      }
+    }
 
     this.journalModalEl.innerHTML = `
       <div class="journal-header">
         <div class="journal-title-wrap">
           <span class="journal-icon">📖</span>
-          <div>
-            <h2 class="journal-title">Tagebuch des Wanderers</h2>
-            <span class="journal-subtitle">Aufgaben & Schicksale der Sieben Wege</span>
-          </div>
+          <h2 class="journal-title">Tagebuch</h2>
         </div>
         <button type="button" class="journal-close-btn" title="Schließen (Taste Esc oder J)">✕</button>
       </div>
-      <div class="journal-content-scroll">
-        ${questCardHtml}
-        ${pathsHtml}
-        ${notesHtml}
+      <div class="journal-body-single">
+        <ul class="journal-quest-single-list">
+          <li class="journal-quest-single-item">${questText}</li>
+        </ul>
       </div>
     `;
 
@@ -471,73 +390,25 @@ export class HudOverlay {
   }
 
   public renderInventoryContent(): void {
-    if (!this.callbacks.getInventoryData) {
-      this.inventoryModalEl.innerHTML = `
-        <div class="inventory-header">
-          <div class="inventory-title-wrap">
-            <span class="inventory-icon">🎒</span>
-            <h2 class="inventory-title">Sammlung der Charakter-Items</h2>
-          </div>
-          <button type="button" class="inventory-close-btn" title="Schließen (Taste Esc oder I)">✕</button>
-        </div>
-        <p style="padding: 1rem; color: var(--text-muted);">Keine Inventar-Daten verfügbar.</p>
-      `;
-      this.inventoryModalEl.querySelector('.inventory-close-btn')?.addEventListener('click', () => {
-        this.toggleInventoryModal(false);
-      });
-      return;
-    }
+    const data = this.callbacks.getInventoryData?.();
+    const unlockedIds = new Set(data?.unlockedItems.map((i) => i.id) ?? []);
 
-    const data = this.callbacks.getInventoryData();
-    const unlockedIds = new Set(data.unlockedItems.map((i) => i.id));
+    // 6 Wegequests (Weg 1 bis 6)
+    const pathRewards = [
+      { pathId: 1, itemId: 'item_silver_ore', title: 'Weg 1: Silberstollen' },
+      { pathId: 2, itemId: 'item_nixie_tear', title: 'Weg 2: Nixenteich' },
+      { pathId: 3, itemId: 'item_giant_quartz', title: 'Weg 3: Quellenweg' },
+      { pathId: 4, itemId: 'item_wood_talisman', title: 'Weg 4: Holzfäller-Pfad' },
+      { pathId: 5, itemId: 'item_infernal_shard', title: 'Weg 5: Höllenschlund' },
+      { pathId: 6, itemId: 'item_hunter_badge', title: 'Weg 6: Jägerpfad' },
+    ];
 
-    const pendingHtml =
-      data.pendingRewards.length > 0
-        ? `
-      <div class="inventory-pending-banner">
-        <span class="pending-icon">✨</span>
-        <div class="pending-info">
-          <strong>${data.pendingRewards.length} Belohnung(en) in der Schatztruhe bereit!</strong>
-          <span>Kehre zur 7-Wegekreuzung zurück und öffne die Truhe vor Arvids Hütte.</span>
-        </div>
-      </div>
-    `
-        : '';
-
-    const cardsHtml = data.allItems
-      .map((item) => {
-        const isUnlocked = unlockedIds.has(item.id);
-        if (isUnlocked) {
-          return `
-            <div class="inventory-card is-unlocked">
-              <div class="card-top">
-                <span class="card-icon">${item.icon}</span>
-                <span class="card-path-tag">${item.pathId === 0 ? 'Kreuzung' : `Weg ${item.pathId}`}</span>
-              </div>
-              <div class="card-body">
-                <span class="card-category">${item.category}</span>
-                <h4 class="card-name">${item.name}</h4>
-                <p class="card-desc">${item.description}</p>
-                <div class="card-source">📍 ${item.source}</div>
-              </div>
-            </div>
-          `;
-        } else {
-          return `
-            <div class="inventory-card is-locked">
-              <div class="card-top">
-                <span class="card-icon locked-icon">🔒</span>
-                <span class="card-path-tag">${item.pathId === 0 ? 'Kreuzung' : `Weg ${item.pathId}`}</span>
-              </div>
-              <div class="card-body">
-                <span class="card-category">${item.category}</span>
-                <h4 class="card-name">Verborgene Belohnung</h4>
-                <p class="card-desc locked-text">${item.lockedHint}</p>
-                <div class="card-source locked-source">In der Schatztruhe verborgen</div>
-              </div>
-            </div>
-          `;
-        }
+    const starsHtml = pathRewards
+      .map((r) => {
+        const isUnlocked = unlockedIds.has(r.itemId);
+        const starClass = isUnlocked ? 'star-item is-active' : 'star-item is-muted';
+        const starTitle = isUnlocked ? `${r.title} (Gelöst)` : `${r.title} (Noch nicht gelöst)`;
+        return `<span class="${starClass}" title="${starTitle}">★</span>`;
       })
       .join('');
 
@@ -545,26 +416,13 @@ export class HudOverlay {
       <div class="inventory-header">
         <div class="inventory-title-wrap">
           <span class="inventory-icon">🎒</span>
-          <div>
-            <h2 class="inventory-title">Sammlung der Charakter-Items</h2>
-            <span class="inventory-subtitle">Artefakte & Belohnungen aus der uralten Schatztruhe</span>
-          </div>
+          <h2 class="inventory-title">Sammlung</h2>
         </div>
         <button type="button" class="inventory-close-btn" title="Schließen (Taste Esc oder I)">✕</button>
       </div>
-      <div class="inventory-progress-bar-wrap">
-        <div class="progress-labels">
-          <span>Gesammelte Charakter-Items</span>
-          <span style="font-weight: 700; color: var(--accent-gold);">${data.progress.collected} / ${data.progress.total} (${data.progress.percentage}%)</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill" style="width: ${data.progress.percentage}%;"></div>
-        </div>
-      </div>
-      <div class="inventory-content-scroll">
-        ${pendingHtml}
-        <div class="inventory-grid">
-          ${cardsHtml}
+      <div class="inventory-stars-container">
+        <div class="inventory-stars-row">
+          ${starsHtml}
         </div>
       </div>
     `;
@@ -732,6 +590,18 @@ export class HudOverlay {
       (selectedPathId !== null
         ? SEVEN_PATHS.find((p) => p.id === selectedPathId) ?? null
         : null);
+
+    const prevClearing = this.currentIsOnClearing;
+    const prevPathId = this.currentActivePath?.id ?? null;
+    this.currentIsOnClearing = isOnClearing;
+    this.currentActivePath = selectedPath;
+
+    if (
+      this.isJournalModalOpen &&
+      (prevClearing !== isOnClearing || prevPathId !== (selectedPath?.id ?? null))
+    ) {
+      this.renderJournalContent();
+    }
 
     // Bezeichnung des Weges und Link zur Kreuzung immer links unten anzeigen (mit Dirty-Checking gegen unnötige DOM-Reflows)
     const nextTitle = selectedPath && !isOnClearing ? `🧭 ${selectedPath.name}` : '🧭 7-Wegekreuzung';
