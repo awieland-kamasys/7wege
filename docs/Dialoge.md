@@ -51,19 +51,25 @@ Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../s
 
 > **Waldhüter Arvid:** „Zinsbachtal, Ja, ich erinnere mich. Da war es schön. Damals.“
 
-*(Keine Buttons: Schließt nach ca. 2,5 s automatisch)*
+**Antwort-Optionen (Ich):**
+- **1.** „Wie, damals? Nach meiner Karte ist es nur noch ein Katzensprung“ `(Aktion: close)`
+- **2.** „Ja ja, früher war alles besser. Ich weiß.“ `(Aktion: close)`
 
 ### Knoten: `arvid_bier`
 
 > **Waldhüter Arvid:** „Macht ein Euro!“
 
-*(Keine Buttons: Schließt nach ca. 2,0 s automatisch)*
+**Antwort-Optionen (Ich):**
+- **1.** „Ein Schnäppchen, her damit!“ `(Aktion: close)`
+- **2.** „Was gibts denn für ne Sorte?“ `(Aktion: close)`
 
 ### Knoten: `arvid_penner`
 
 > **Waldhüter Arvid:** „Ein Satz heiße Ohren gefällig?“
 
-*(Keine Buttons: Schließt nach ca. 2,2 s automatisch)*
+**Antwort-Optionen (Ich):**
+- **1.** „Große Worte für ein Stück Gammelfleisch.“ `(Aktion: close)`
+- **2.** „War nicht so gemeint. Hast du ein Bier über?“ `(Aktion: close)`
 
 ---
 

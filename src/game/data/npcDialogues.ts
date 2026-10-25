@@ -928,9 +928,20 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       speaker: GUIDE_NPC_NAME,
       speakerRole: GUIDE_NPC_ROLE,
       text: 'Zinsbachtal, Ja, ich erinnere mich. Da war es schön. Damals.',
-      options: [],
-      autoAction: { type: 'close' },
-      autoAdvanceDelayMs: 2500,
+      options: [
+        {
+          id: 'opt_zinsbachtal_katzensprung',
+          playerText: 'Wie, damals? Nach meiner Karte ist es nur noch ein Katzensprung',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+        {
+          id: 'opt_zinsbachtal_frueher',
+          playerText: 'Ja ja, früher war alles besser. Ich weiß.',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
     },
 
     arvid_bier: {
@@ -938,9 +949,20 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       speaker: GUIDE_NPC_NAME,
       speakerRole: GUIDE_NPC_ROLE,
       text: 'Macht ein Euro!',
-      options: [],
-      autoAction: { type: 'close' },
-      autoAdvanceDelayMs: 2000,
+      options: [
+        {
+          id: 'opt_bier_schnaeppchen',
+          playerText: 'Ein Schnäppchen, her damit!',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+        {
+          id: 'opt_bier_sorte',
+          playerText: 'Was gibts denn für ne Sorte?',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
     },
 
     arvid_penner: {
@@ -948,9 +970,20 @@ function buildDialogueNodes(): Record<string, DialogueNode> {
       speaker: GUIDE_NPC_NAME,
       speakerRole: GUIDE_NPC_ROLE,
       text: 'Ein Satz heiße Ohren gefällig?',
-      options: [],
-      autoAction: { type: 'close' },
-      autoAdvanceDelayMs: 2200,
+      options: [
+        {
+          id: 'opt_penner_gammelfleisch',
+          playerText: 'Große Worte für ein Stück Gammelfleisch.',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+        {
+          id: 'opt_penner_bier',
+          playerText: 'War nicht so gemeint. Hast du ein Bier über?',
+          nextNodeId: null,
+          action: { type: 'close' },
+        },
+      ],
     },
 
     // === FABELWESEN LUPO (auf Weg 7) ===

@@ -1,73 +1,25 @@
 {
-	"nodes": [
-		{
-			"id": "root",
-			"x": 220,
-			"y": 0,
-			"width": 360,
-			"height": 140,
-			"type": "text",
-			"text": "### 🌲 Waldhüter Arvid (Start)\n\n> „Ach du Scheiße, was willst du denn hier?“\n\n*Hüter der Schutzhütte*",
-			"color": "3"
-		},
-		{
-			"id": "arvid_zinsbachtal",
-			"x": -200,
-			"y": 280,
-			"width": 320,
-			"height": 140,
-			"type": "text",
-			"text": "### 🌲 Waldhüter Arvid\n\n> „Zinsbachtal, Ja, ich erinnere mich. Da war es schön. Damals.“\n\n*(schließt automatisch)*",
-			"color": "5"
-		},
-		{
-			"id": "arvid_bier",
-			"x": 240,
-			"y": 280,
-			"width": 320,
-			"height": 140,
-			"type": "text",
-			"text": "### 🌲 Waldhüter Arvid\n\n> „Macht ein Euro!“\n\n*(schließt automatisch)*",
-			"color": "5"
-		},
-		{
-			"id": "arvid_penner",
-			"x": 680,
-			"y": 280,
-			"width": 320,
-			"height": 140,
-			"type": "text",
-			"text": "### 🌲 Waldhüter Arvid\n\n> „Ein Satz heiße Ohren gefällig?“\n\n*(schließt automatisch)*",
-			"color": "5"
-		}
+	"nodes":[
+		{"id":"root","type":"text","text":"### 🌲 Waldhüter Arvid (Start)\n\n> „Ach du Scheiße, was willst du denn hier?“\n\n*Hüter der Schutzhütte*","x":220,"y":0,"width":360,"height":140,"color":"3"},
+		{"id":"arvid_zinsbachtal","type":"text","text":"### 🌲 Waldhüter Arvid\n\n> „Zinsbachtal, Ja, ich erinnere mich. Da war es schön. Damals.“","x":-200,"y":280,"width":320,"height":140,"color":"5"},
+		{"id":"arvid_penner","type":"text","text":"### 🌲 Waldhüter Arvid\n\n> „Ein Satz heiße Ohren gefällig?“","x":680,"y":280,"width":320,"height":140,"color":"5"},
+		{"id":"arvid_bier","type":"text","text":"### 🌲 Waldhüter Arvid\n\n> „Macht ein Euro!“","x":240,"y":280,"width":320,"height":140,"color":"5"},
+		{"id":"6ddf53f938027555","x":-380,"y":480,"width":283,"height":94,"color":"1","type":"text","text":"Wie, damals? Nach meiner Karte ist es nur noch ein Katzensprung"},
+		{"id":"fbde544d83d5985a","x":-81,"y":484,"width":250,"height":60,"color":"1","type":"text","text":"Ja ja, früher war alles besser. Ich weiß."},
+		{"id":"30be59c1316ff318","x":220,"y":484,"width":250,"height":60,"color":"1","type":"text","text":"Ein Schnäppchen, her damit!"},
+		{"id":"bf8c284075e01e32","x":396,"y":498,"width":250,"height":60,"color":"1","type":"text","text":"Was gibts denn für ne Sorte?"},
+		{"id":"66c32247c37edb3d","x":628,"y":486,"width":250,"height":60,"color":"1","type":"text","text":"Große Worte für ein Stück Gammelfleisch."},
+		{"id":"dc86ada276dc07bb","x":848,"y":499,"width":250,"height":60,"color":"1","type":"text","text":"War nicht so gemeint. Hast du ein Bier über?"}
 	],
-	"edges": [
-		{
-			"id": "edge_arvid_root_to_zinsbachtal",
-			"fromNode": "root",
-			"fromSide": "bottom",
-			"toNode": "arvid_zinsbachtal",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "1. Ich will ins Zinsbachtal."
-		},
-		{
-			"id": "edge_arvid_root_to_bier",
-			"fromNode": "root",
-			"fromSide": "bottom",
-			"toNode": "arvid_bier",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "2. Ein Bier."
-		},
-		{
-			"id": "edge_arvid_root_to_penner",
-			"fromNode": "root",
-			"fromSide": "bottom",
-			"toNode": "arvid_penner",
-			"toSide": "top",
-			"toEnd": "arrow",
-			"label": "3. Geht dich gar nichts an, Penner!"
-		}
+	"edges":[
+		{"id":"edge_arvid_root_to_zinsbachtal","fromNode":"root","fromSide":"bottom","toNode":"arvid_zinsbachtal","toSide":"top","label":"1. Ich will ins Zinsbachtal."},
+		{"id":"edge_arvid_root_to_bier","fromNode":"root","fromSide":"bottom","toNode":"arvid_bier","toSide":"top","label":"2. Ein Bier."},
+		{"id":"edge_arvid_root_to_penner","fromNode":"root","fromSide":"bottom","toNode":"arvid_penner","toSide":"top","label":"3. Geht dich gar nichts an, Penner!"},
+		{"id":"7b3c028642804155","fromNode":"arvid_zinsbachtal","fromSide":"bottom","toNode":"6ddf53f938027555","toSide":"top"},
+		{"id":"b74720bc554ecd16","fromNode":"arvid_zinsbachtal","fromSide":"bottom","toNode":"fbde544d83d5985a","toSide":"top"},
+		{"id":"f328296a1e1d887b","fromNode":"arvid_bier","fromSide":"bottom","toNode":"30be59c1316ff318","toSide":"top"},
+		{"id":"855ac5810b1821fe","fromNode":"arvid_bier","fromSide":"bottom","toNode":"bf8c284075e01e32","toSide":"top"},
+		{"id":"f56162765e6c6294","fromNode":"arvid_penner","fromSide":"bottom","toNode":"66c32247c37edb3d","toSide":"top"},
+		{"id":"97f983ab61766988","fromNode":"arvid_penner","fromSide":"bottom","toNode":"dc86ada276dc07bb","toSide":"top"}
 	]
 }
