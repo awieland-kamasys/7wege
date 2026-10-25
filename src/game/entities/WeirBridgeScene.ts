@@ -128,9 +128,9 @@ export function createWeirBridgeScene(
     group.add(bridgePier);
   }
 
-  // Temporärer Platzhalter während des GLB-Ladens des Baches (Höhe verdoppelt auf 0.16m)
+  // Temporärer Platzhalter während des GLB-Ladens des Baches (Höhe auf 0.32m angepasst)
   const fallbackBedMat = new THREE.MeshStandardMaterial({ color: 0x242d2a, roughness: 0.9 });
-  const fallbackStream = new THREE.Mesh(new THREE.BoxGeometry(32.4, 0.16, 2.8), fallbackBedMat);
+  const fallbackStream = new THREE.Mesh(new THREE.BoxGeometry(32.4, 0.32, 2.8), fallbackBedMat);
   fallbackStream.position.set(15.2, -1.62, 0);
   streamContainer.add(fallbackStream);
 
@@ -258,8 +258,8 @@ export function createWeirBridgeScene(
 
         segmentXPositions.forEach((segX, idx) => {
           const segClone = baseStream.clone(true);
-          // Höhe des Flusslaufs verdoppelt (scale.y: 4.8) für markantere Felsen und tief eingeschnittenes Flussbett
-          segClone.scale.set(6.4, 4.8, 12.8);
+          // Höhe des Flusslaufs verdoppelt (scale.y: 9.6) für markant aufragende Felsen und tief eingeschnittenes Flussbett
+          segClone.scale.set(6.4, 9.6, 12.8);
           segClone.position.set(segX, -1.62, 0);
 
           if (idx % 2 === 1) {
