@@ -624,7 +624,7 @@ Die technische Quelle im Code liegt unter [`src/game/data/npcDialogues.ts`](../s
 
 ### Knoten: `gate_root`
 
-> **Das geschlossene Tor:** „Vor dir ragt ein gewaltiges, zweiflügeliges Holztor empor, eingefasst in uralte, moosüberwachsene Steinpfeiler. Schwere Eisenbeschläge und verrostete Ketten halten die Flügel unnachgiebig zusammen. Ein kunstvoll geschmiedetes Vorhängeschloss mit verblichenen Siegelzeichen sichert den massiven Riegelbalken. Auf dem Torbogen steht in verwitterten Lettern gemeißelt: „Nur wer die Pfade erkannte und das Maß wahrte, tritt ein.““
+> **Das geschlossene Tor:**  „Nur wer die Pfade erkannte und das Maß wahrte, tritt ein.“
 
 **Antwort-Optionen (Ich):**
 - **1.** „Das Schloss und die Siegelzeichen genauer untersuchen.“ `-> gate_lock_inspect`

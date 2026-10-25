@@ -2,6 +2,8 @@ import { CrossroadsScene } from '../game/scenes/CrossroadsScene';
 import { CrossroadsState } from '../game/systems/CrossroadsState';
 import { DialogueSystem } from '../game/systems/DialogueSystem';
 import { DialogueNode } from '../game/data/npcDialogues';
+import { InventorySystem } from '../game/systems/InventorySystem';
+import { QuestSystem } from '../game/systems/QuestSystem';
 import { SoundService } from '../game/systems/SoundService';
 import { SpeechService } from '../game/systems/SpeechService';
 import { HudOverlay } from '../ui/HudOverlay';
@@ -15,6 +17,8 @@ export class GameApp {
   private readonly canvas: HTMLCanvasElement;
   private readonly state: CrossroadsState;
   private readonly dialogue: DialogueSystem;
+  private readonly inventory: InventorySystem;
+  private readonly questSystem: QuestSystem;
   private readonly speech: SpeechService;
   private readonly sound: SoundService;
   private dialogueAutoTimer: number | null = null;
@@ -57,6 +61,8 @@ export class GameApp {
     this.canvas = canvas;
     this.state = new CrossroadsState();
     this.dialogue = new DialogueSystem();
+    this.inventory = new InventorySystem();
+    this.questSystem = new QuestSystem();
     this.speech = new SpeechService();
     this.sound = new SoundService();
     this.scene = new CrossroadsScene(canvas);
@@ -103,6 +109,17 @@ export class GameApp {
       },
       onSelectTerrainPreset: (presetKey) => {
         this.setTerrainPreset(presetKey);
+      },
+      getQuestReport: () => {
+        return this.questSystem.getQuestReport(this.state, this.dialogue, this.inventory);
+      },
+      getInventoryData: () => {
+        return {
+          allItems: this.inventory.getAllItems(),
+          unlockedItems: this.inventory.getUnlockedItems(),
+          progress: this.inventory.getProgress(),
+          pendingRewards: this.inventory.getPendingChestRewards(this.dialogue),
+        };
       },
     });
 
@@ -253,6 +270,15 @@ export class GameApp {
     const nowOpen = this.state.toggleChest();
     if (nowOpen) {
       this.sound.playChestOpenFanfare();
+      const newItems = this.inventory.collectChestRewards(this.dialogue);
+      if (newItems.length > 0) {
+        for (const item of newItems) {
+          this.hud.showToast(
+            `🎁 Neues Charakter-Item erhalten: ${item.name}! In deiner Sammlung (🎒) abgelegt.`,
+            4200
+          );
+        }
+      }
     } else {
       this.sound.playChestCloseSound();
     }
@@ -493,8 +519,26 @@ export class GameApp {
     this.sound.unlock();
     const key = event.key.toLowerCase();
 
-    if (event.key === 'Escape' && this.dialogue.isOpen()) {
-      this.closeDialogueAndSpeech();
+    if (event.key === 'Escape') {
+      if (this.dialogue.isOpen()) {
+        this.closeDialogueAndSpeech();
+        return;
+      }
+      if (this.hud.isAnyModalOpen()) {
+        this.hud.closeAllModals();
+        return;
+      }
+    }
+
+    // Tagebuch & Quests per Taste J umschalten
+    if (key === 'j') {
+      this.hud.toggleJournalModal();
+      return;
+    }
+
+    // Charakter-Items-Sammlung per Taste I umschalten
+    if (key === 'i') {
+      this.hud.toggleInventoryModal();
       return;
     }
 

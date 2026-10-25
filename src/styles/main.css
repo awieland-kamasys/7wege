@@ -55,11 +55,71 @@ body,
   width: 100%;
 }
 
-/* Schlankes Badge für den aktuellen Pfad mit Schnellreise-Rücksprung zur Kreuzung (fest links unten) */
-.active-path-badge {
+/* Unteres Dock links mit Tagebuch-Button, Sammlungs-Button und Pfad-Badge */
+.hud-bottom-dock {
   position: absolute;
   bottom: 0.85rem;
   left: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.hud-dock-btn {
+  pointer-events: auto;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-dark);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  font-size: 1.25rem;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+
+.hud-dock-btn:hover {
+  transform: translateY(-2px) scale(1.06);
+  background: rgba(35, 48, 38, 0.95);
+  border-color: #ffd700;
+  box-shadow: 0 6px 20px rgba(226, 184, 107, 0.35);
+}
+
+.hud-dock-btn:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.hud-dock-btn.has-reward::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff7043;
+  border: 2px solid #111a14;
+  box-shadow: 0 0 8px #ff7043;
+  animation: pulse-glow 1.4s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(0.95); opacity: 0.85; }
+  50% { transform: scale(1.35); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.85; }
+}
+
+/* Schlankes Badge für den aktuellen Pfad mit Schnellreise-Rücksprung zur Kreuzung (im Dock links unten) */
+.active-path-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
@@ -74,7 +134,6 @@ body,
   pointer-events: auto;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
   white-space: nowrap;
-  z-index: 10;
 }
 
 /* Dezentes Performance-Badge oben links mit Live-FPS und Draw Calls */
@@ -935,6 +994,560 @@ body,
   text-align: center;
   background: rgba(108, 168, 112, 0.1);
   border-radius: 6px;
+}
+
+/* ==========================================================================
+   TAGEBUCH & QUEST-POPUP (.journal-modal)
+   ========================================================================== */
+.journal-modal {
+  position: absolute;
+  bottom: 4.4rem;
+  left: 0.85rem;
+  width: min(460px, calc(100vw - 1.7rem));
+  max-height: min(650px, calc(100vh - 6rem));
+  background: rgba(18, 26, 20, 0.96);
+  border: 1px solid var(--accent-gold);
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(16px);
+  pointer-events: auto;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-pop {
+  0% { transform: translateY(12px) scale(0.97); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.journal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.05rem;
+  background: rgba(26, 36, 28, 0.95);
+  border-bottom: 1px solid rgba(226, 184, 107, 0.35);
+}
+
+.journal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.journal-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.journal-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  letter-spacing: 0.2px;
+}
+
+.journal-subtitle {
+  display: block;
+  font-size: 0.73rem;
+  color: var(--text-muted);
+}
+
+.journal-close-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.journal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-light);
+  border-color: var(--accent-gold);
+}
+
+.journal-content-scroll {
+  padding: 0.95rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.0rem;
+}
+
+.journal-quest-card {
+  background: rgba(30, 42, 33, 0.85);
+  border: 1px solid rgba(226, 184, 107, 0.45);
+  border-radius: 10px;
+  padding: 0.85rem 0.95rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.quest-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.quest-chapter {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  letter-spacing: 0.5px;
+}
+
+.quest-progress-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(108, 168, 112, 0.25);
+  color: var(--accent-green);
+  border: 1px solid rgba(108, 168, 112, 0.4);
+}
+
+.quest-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-light);
+  margin-bottom: 0.45rem;
+}
+
+.quest-objective {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #f7f4ea;
+  margin-bottom: 0.65rem;
+}
+
+.journal-chest-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  background: rgba(226, 184, 107, 0.15);
+  border: 1px solid var(--accent-gold);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.65rem;
+  animation: banner-glow 2s infinite ease-in-out;
+}
+
+@keyframes banner-glow {
+  0% { box-shadow: 0 0 6px rgba(226, 184, 107, 0.2); }
+  50% { box-shadow: 0 0 16px rgba(226, 184, 107, 0.45); }
+  100% { box-shadow: 0 0 6px rgba(226, 184, 107, 0.2); }
+}
+
+.chest-banner-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.chest-banner-info strong {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--accent-gold);
+  margin-bottom: 0.15rem;
+}
+
+.chest-banner-info span {
+  font-size: 0.76rem;
+  color: var(--text-light);
+  line-height: 1.35;
+}
+
+.journal-hint-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 4px;
+  padding: 0.5rem 0.65rem;
+}
+
+.hint-icon {
+  font-size: 0.95rem;
+}
+
+.hint-text {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.hint-text strong {
+  color: var(--accent-green);
+}
+
+.journal-section-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  margin-bottom: 0.55rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.journal-paths-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.journal-path-item {
+  background: rgba(24, 34, 26, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  transition: border-color 0.12s ease;
+}
+
+.journal-path-item.status-completed {
+  border-color: rgba(108, 168, 112, 0.5);
+  background: rgba(20, 36, 24, 0.75);
+}
+
+.journal-path-item.status-blocked {
+  border-color: rgba(230, 90, 80, 0.35);
+}
+
+.journal-path-item.status-open {
+  border-color: rgba(226, 184, 107, 0.35);
+}
+
+.path-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.2rem;
+}
+
+.path-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-light);
+}
+
+.path-status-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.status-completed .path-status-badge {
+  color: var(--accent-green);
+}
+
+.status-blocked .path-status-badge {
+  color: #ff8a80;
+}
+
+.status-open .path-status-badge {
+  color: var(--accent-gold);
+}
+
+.path-npc-label {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.path-npc-label strong {
+  color: var(--accent-gold);
+}
+
+.path-desc {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: #d8decf;
+}
+
+.journal-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.journal-note-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  padding: 0.25rem 0;
+}
+
+.journal-note-item.is-completed {
+  color: var(--text-light);
+}
+
+.journal-note-item.is-pending {
+  color: var(--text-muted);
+  opacity: 0.65;
+}
+
+.note-bullet {
+  font-weight: 700;
+  color: var(--accent-green);
+  line-height: 1.2;
+}
+
+.journal-note-item.is-pending .note-bullet {
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   SAMMLUNG DER CHARAKTER-ITEMS (.inventory-modal)
+   ========================================================================== */
+.inventory-modal {
+  position: absolute;
+  bottom: 4.4rem;
+  left: 0.85rem;
+  width: min(560px, calc(100vw - 1.7rem));
+  max-height: min(680px, calc(100vh - 6rem));
+  background: rgba(18, 26, 20, 0.96);
+  border: 1px solid var(--accent-gold);
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(16px);
+  pointer-events: auto;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.inventory-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.05rem;
+  background: rgba(26, 36, 28, 0.95);
+  border-bottom: 1px solid rgba(226, 184, 107, 0.35);
+}
+
+.inventory-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.inventory-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.inventory-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.inventory-subtitle {
+  display: block;
+  font-size: 0.73rem;
+  color: var(--text-muted);
+}
+
+.inventory-close-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.inventory-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-light);
+  border-color: var(--accent-gold);
+}
+
+.inventory-progress-bar-wrap {
+  padding: 0.65rem 1.05rem;
+  background: rgba(14, 20, 16, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.76rem;
+  margin-bottom: 0.35rem;
+  color: var(--text-muted);
+}
+
+.progress-track {
+  width: 100%;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-gold));
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.inventory-pending-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: rgba(226, 184, 107, 0.2);
+  border: 1px solid var(--accent-gold);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 0.85rem;
+  animation: banner-glow 1.8s infinite ease-in-out;
+}
+
+.pending-icon {
+  font-size: 1.35rem;
+}
+
+.pending-info strong {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--accent-gold);
+}
+
+.pending-info span {
+  font-size: 0.74rem;
+  color: var(--text-light);
+}
+
+.inventory-content-scroll {
+  padding: 0.95rem;
+  overflow-y: auto;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.inventory-card {
+  background: rgba(26, 36, 28, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.inventory-card.is-unlocked {
+  border-color: rgba(226, 184, 107, 0.45);
+  background: rgba(30, 42, 33, 0.85);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.inventory-card.is-unlocked:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-gold);
+  box-shadow: 0 6px 20px rgba(226, 184, 107, 0.3);
+}
+
+.inventory-card.is-locked {
+  opacity: 0.6;
+  background: rgba(16, 22, 18, 0.6);
+  border-style: dashed;
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.card-icon.locked-icon {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+
+.card-path-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--accent-gold);
+  border: 1px solid rgba(226, 184, 107, 0.3);
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.card-category {
+  font-size: 0.68rem;
+  color: var(--accent-green);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+.card-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-light);
+}
+
+.card-desc {
+  font-size: 0.75rem;
+  line-height: 1.38;
+  color: #d5dcd0;
+}
+
+.card-desc.locked-text {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.card-source {
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  color: var(--accent-gold);
+  font-weight: 500;
+}
+
+.card-source.locked-source {
+  color: var(--text-muted);
+  opacity: 0.7;
 }
 
 .debug-log-item {

@@ -20,3 +20,4 @@ Der gesamte Projektordner ist zugleich der Obsidian-Vault. Die Projektnotizen li
 ## Stand
 
 Alle 7 Wege, Schauplätze, Wegsperren, NPCs, Dialoge und Audio-Systeme sind implementiert. Die 3D-Welt nutzt schauplatz-basiertes Lazy Loading und Asset-Streaming für einen extrem schnellen initialen Seitenstart (~16 MB).
+Unten links steht ein interaktives Aktions-Dock mit dem **Tagebuch des Wanderers (📖, Taste J)** für den aktuellen Questauftrag und die 7-Wege-Übersicht sowie der **Sammlung der Charakter-Items (🎒, Taste I)** mit Belohnungen aus der Schatztruhe bereit.

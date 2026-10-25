@@ -1,6 +1,9 @@
+import { CharacterItem } from '../game/data/characterItems';
 import { DialogueNode } from '../game/data/npcDialogues';
 import { ForestPathData, SEVEN_PATHS } from '../game/data/paths';
 import { PointOfInterest } from '../game/systems/CrossroadsState';
+import { InventoryProgress } from '../game/systems/InventorySystem';
+import { QuestReport } from '../game/systems/QuestSystem';
 import {
   DEFAULT_TERRAIN_PRESET,
   TERRAIN_PRESETS,
@@ -16,6 +19,13 @@ export interface RenderMetrics {
   pixelRatio: number;
 }
 
+export interface InventoryViewData {
+  allItems: readonly CharacterItem[];
+  unlockedItems: CharacterItem[];
+  progress: InventoryProgress;
+  pendingRewards: CharacterItem[];
+}
+
 export interface HudCallbacks {
   onSelectPath: (pathId: number) => void;
   onReturnToClearing: () => void;
@@ -29,6 +39,8 @@ export interface HudCallbacks {
   onSetMusicVolume?: (volume: number) => void;
   getMusicVolume?: () => number;
   onSelectTerrainPreset?: (presetKey: TerrainPresetKey) => void;
+  getQuestReport?: () => QuestReport;
+  getInventoryData?: () => InventoryViewData;
 }
 
 /**
@@ -41,9 +53,14 @@ export interface HudCallbacks {
  * - Ein dezenter Bodenstil-Wähler (Tasten 1-4 oder Klick) ermöglicht direktes Vergleichen der 4 Texturvarianten.
  */
 export class HudOverlay {
+  private readonly bottomDockEl: HTMLElement;
+  private readonly journalBtn: HTMLButtonElement;
+  private readonly inventoryBtn: HTMLButtonElement;
   private readonly activePathBadgeEl: HTMLElement;
   private readonly activePathTitleEl: HTMLElement;
   private readonly returnToClearingBtn: HTMLButtonElement;
+  private readonly journalModalEl: HTMLElement;
+  private readonly inventoryModalEl: HTMLElement;
   private readonly dialogueModalEl: HTMLElement;
   private readonly dialogueSpeakerEl: HTMLElement;
   private readonly dialogueRoleEl: HTMLElement;
@@ -66,6 +83,8 @@ export class HudOverlay {
   private lastPerfText: string | null = null;
   private isPerfModalOpen = false;
   private isPresetModalOpen = false;
+  private isJournalModalOpen = false;
+  private isInventoryModalOpen = false;
   private currentPresetKey: TerrainPresetKey = DEFAULT_TERRAIN_PRESET;
   private toastTimeout: number | null = null;
 
@@ -75,7 +94,35 @@ export class HudOverlay {
     const header = document.createElement('header');
     header.className = 'hud-header';
 
-    // Kompakte Anzeige für den aktuellen Pfad samt Rücksprung zur 7-Wegekreuzung (immer links unten)
+    // Unteres Dock links mit Tagebuch-Button, Sammlungs-Button und Pfad-Badge
+    this.bottomDockEl = document.createElement('div');
+    this.bottomDockEl.className = 'hud-bottom-dock';
+
+    // 1. Tagebuch-Symbol (öffnet Popup mit dem aktuellen Questauftrag)
+    this.journalBtn = document.createElement('button');
+    this.journalBtn.type = 'button';
+    this.journalBtn.className = 'hud-dock-btn journal-dock-btn';
+    this.journalBtn.textContent = '📖';
+    this.journalBtn.title = 'Tagebuch & aktueller Questauftrag (Taste J)';
+    this.journalBtn.setAttribute('aria-label', 'Tagebuch und Quests öffnen');
+    this.journalBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleJournalModal();
+    });
+
+    // 2. Icon für Übersicht der Sammlung der Charakter-Items
+    this.inventoryBtn = document.createElement('button');
+    this.inventoryBtn.type = 'button';
+    this.inventoryBtn.className = 'hud-dock-btn inventory-dock-btn';
+    this.inventoryBtn.textContent = '🎒';
+    this.inventoryBtn.title = 'Sammlung der Charakter-Items (Taste I)';
+    this.inventoryBtn.setAttribute('aria-label', 'Sammlung der Charakter-Items öffnen');
+    this.inventoryBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleInventoryModal();
+    });
+
+    // Kompakte Anzeige für den aktuellen Pfad samt Rücksprung zur 7-Wegekreuzung
     this.activePathBadgeEl = document.createElement('div');
     this.activePathBadgeEl.className = 'active-path-badge';
     this.activePathBadgeEl.setAttribute('aria-live', 'polite');
@@ -95,6 +142,16 @@ export class HudOverlay {
     });
 
     this.activePathBadgeEl.append(this.activePathTitleEl, this.returnToClearingBtn);
+
+    // Alle drei Elemente ins Dock links unten einbinden
+    this.bottomDockEl.append(this.journalBtn, this.inventoryBtn, this.activePathBadgeEl);
+
+    // Modals für Tagebuch und Charakter-Item-Sammlung
+    this.journalModalEl = document.createElement('div');
+    this.journalModalEl.className = 'journal-modal is-hidden';
+
+    this.inventoryModalEl = document.createElement('div');
+    this.inventoryModalEl.className = 'inventory-modal is-hidden';
 
     // Live Performance-Badge (oben links)
     this.perfBadgeEl = document.createElement('div');
@@ -234,13 +291,288 @@ export class HudOverlay {
 
     container.append(
       header,
-      this.activePathBadgeEl,
+      this.bottomDockEl,
+      this.journalModalEl,
+      this.inventoryModalEl,
       this.perfBadgeEl,
       this.perfModalEl,
       this.musicControlWrapEl,
       this.toastEl,
       this.dialogueModalEl
     );
+  }
+
+  public toggleJournalModal(forceOpen?: boolean): void {
+    const shouldOpen = forceOpen !== undefined ? forceOpen : !this.isJournalModalOpen;
+    this.isJournalModalOpen = shouldOpen;
+
+    if (this.isJournalModalOpen) {
+      if (this.isInventoryModalOpen) {
+        this.toggleInventoryModal(false);
+      }
+      this.journalModalEl.classList.remove('is-hidden');
+      this.renderJournalContent();
+    } else {
+      this.journalModalEl.classList.add('is-hidden');
+    }
+  }
+
+  public toggleInventoryModal(forceOpen?: boolean): void {
+    const shouldOpen = forceOpen !== undefined ? forceOpen : !this.isInventoryModalOpen;
+    this.isInventoryModalOpen = shouldOpen;
+
+    if (this.isInventoryModalOpen) {
+      if (this.isJournalModalOpen) {
+        this.toggleJournalModal(false);
+      }
+      this.inventoryModalEl.classList.remove('is-hidden');
+      this.renderInventoryContent();
+    } else {
+      this.inventoryModalEl.classList.add('is-hidden');
+    }
+  }
+
+  public isAnyModalOpen(): boolean {
+    return (
+      this.isJournalModalOpen ||
+      this.isInventoryModalOpen ||
+      this.isPresetModalOpen ||
+      this.isPerfModalOpen
+    );
+  }
+
+  public closeAllModals(): void {
+    if (this.isJournalModalOpen) this.toggleJournalModal(false);
+    if (this.isInventoryModalOpen) this.toggleInventoryModal(false);
+    if (this.isPresetModalOpen) this.togglePresetModal();
+    if (this.isPerfModalOpen) this.togglePerfModal();
+  }
+
+  public renderJournalContent(): void {
+    if (!this.callbacks.getQuestReport) {
+      this.journalModalEl.innerHTML = `
+        <div class="journal-header">
+          <div class="journal-title-wrap">
+            <span class="journal-icon">📖</span>
+            <h2 class="journal-title">Tagebuch des Wanderers</h2>
+          </div>
+          <button type="button" class="journal-close-btn" title="Schließen (Taste Esc oder J)">✕</button>
+        </div>
+        <p style="padding: 1rem; color: var(--text-muted);">Keine Quest-Daten verfügbar.</p>
+      `;
+      this.journalModalEl.querySelector('.journal-close-btn')?.addEventListener('click', () => {
+        this.toggleJournalModal(false);
+      });
+      return;
+    }
+
+    const report = this.callbacks.getQuestReport();
+
+    const questCardHtml = `
+      <div class="journal-quest-card">
+        <div class="quest-card-header">
+          <span class="quest-chapter">${report.currentQuest.chapter}</span>
+          <span class="quest-progress-badge">${report.currentQuest.progressText}</span>
+        </div>
+        <h3 class="quest-title">${report.currentQuest.title}</h3>
+        <p class="quest-objective">${report.currentQuest.objective}</p>
+
+        ${
+          report.currentQuest.hasChestReward
+            ? `
+          <div class="journal-chest-banner">
+            <span class="chest-banner-icon">🎁</span>
+            <div class="chest-banner-info">
+              <strong>Belohnung in der Schatztruhe!</strong>
+              <span>Öffne die alte Schatztruhe vor Arvids Hütte an der Waldkreuzung, um dein neues Charakter-Item zu erhalten.</span>
+            </div>
+          </div>
+        `
+            : ''
+        }
+
+        <div class="journal-hint-box">
+          <span class="hint-icon">💡</span>
+          <div class="hint-text">
+            <strong>Rat des Waldhüters:</strong> ${report.currentQuest.hint}
+          </div>
+        </div>
+      </div>
+    `;
+
+    const pathsHtml = `
+      <div class="journal-section">
+        <h4 class="journal-section-title">🗺️ Die Sieben Waldwege</h4>
+        <div class="journal-paths-list">
+          ${report.pathQuests
+            .map((pq) => {
+              const statusClass = pq.isCompleted
+                ? 'status-completed'
+                : pq.isBlocked
+                ? 'status-blocked'
+                : 'status-open';
+              const statusIcon = pq.isCompleted ? '🟢' : pq.isBlocked ? '🔴' : '🟡';
+              return `
+              <div class="journal-path-item ${statusClass}">
+                <div class="path-item-top">
+                  <span class="path-name">${pq.name}</span>
+                  <span class="path-status-badge">${statusIcon} ${pq.statusLabel}</span>
+                </div>
+                <div class="path-npc-label">Bewohner: <strong>${pq.npcName}</strong></div>
+                <div class="path-desc">${pq.objective}</div>
+              </div>
+            `;
+            })
+            .join('')}
+        </div>
+      </div>
+    `;
+
+    const notesHtml = `
+      <div class="journal-section">
+        <h4 class="journal-section-title">📜 Reise-Chronik & Meilensteine</h4>
+        <div class="journal-notes-list">
+          ${report.journalNotes
+            .map(
+              (n) => `
+            <div class="journal-note-item ${n.completed ? 'is-completed' : 'is-pending'}">
+              <span class="note-bullet">${n.completed ? '✔' : '○'}</span>
+              <span class="note-text">${n.text}</span>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+      </div>
+    `;
+
+    this.journalModalEl.innerHTML = `
+      <div class="journal-header">
+        <div class="journal-title-wrap">
+          <span class="journal-icon">📖</span>
+          <div>
+            <h2 class="journal-title">Tagebuch des Wanderers</h2>
+            <span class="journal-subtitle">Aufgaben & Schicksale der Sieben Wege</span>
+          </div>
+        </div>
+        <button type="button" class="journal-close-btn" title="Schließen (Taste Esc oder J)">✕</button>
+      </div>
+      <div class="journal-content-scroll">
+        ${questCardHtml}
+        ${pathsHtml}
+        ${notesHtml}
+      </div>
+    `;
+
+    this.journalModalEl.querySelector('.journal-close-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleJournalModal(false);
+    });
+  }
+
+  public renderInventoryContent(): void {
+    if (!this.callbacks.getInventoryData) {
+      this.inventoryModalEl.innerHTML = `
+        <div class="inventory-header">
+          <div class="inventory-title-wrap">
+            <span class="inventory-icon">🎒</span>
+            <h2 class="inventory-title">Sammlung der Charakter-Items</h2>
+          </div>
+          <button type="button" class="inventory-close-btn" title="Schließen (Taste Esc oder I)">✕</button>
+        </div>
+        <p style="padding: 1rem; color: var(--text-muted);">Keine Inventar-Daten verfügbar.</p>
+      `;
+      this.inventoryModalEl.querySelector('.inventory-close-btn')?.addEventListener('click', () => {
+        this.toggleInventoryModal(false);
+      });
+      return;
+    }
+
+    const data = this.callbacks.getInventoryData();
+    const unlockedIds = new Set(data.unlockedItems.map((i) => i.id));
+
+    const pendingHtml =
+      data.pendingRewards.length > 0
+        ? `
+      <div class="inventory-pending-banner">
+        <span class="pending-icon">✨</span>
+        <div class="pending-info">
+          <strong>${data.pendingRewards.length} Belohnung(en) in der Schatztruhe bereit!</strong>
+          <span>Kehre zur 7-Wegekreuzung zurück und öffne die Truhe vor Arvids Hütte.</span>
+        </div>
+      </div>
+    `
+        : '';
+
+    const cardsHtml = data.allItems
+      .map((item) => {
+        const isUnlocked = unlockedIds.has(item.id);
+        if (isUnlocked) {
+          return `
+            <div class="inventory-card is-unlocked">
+              <div class="card-top">
+                <span class="card-icon">${item.icon}</span>
+                <span class="card-path-tag">${item.pathId === 0 ? 'Kreuzung' : `Weg ${item.pathId}`}</span>
+              </div>
+              <div class="card-body">
+                <span class="card-category">${item.category}</span>
+                <h4 class="card-name">${item.name}</h4>
+                <p class="card-desc">${item.description}</p>
+                <div class="card-source">📍 ${item.source}</div>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="inventory-card is-locked">
+              <div class="card-top">
+                <span class="card-icon locked-icon">🔒</span>
+                <span class="card-path-tag">${item.pathId === 0 ? 'Kreuzung' : `Weg ${item.pathId}`}</span>
+              </div>
+              <div class="card-body">
+                <span class="card-category">${item.category}</span>
+                <h4 class="card-name">Verborgene Belohnung</h4>
+                <p class="card-desc locked-text">${item.lockedHint}</p>
+                <div class="card-source locked-source">In der Schatztruhe verborgen</div>
+              </div>
+            </div>
+          `;
+        }
+      })
+      .join('');
+
+    this.inventoryModalEl.innerHTML = `
+      <div class="inventory-header">
+        <div class="inventory-title-wrap">
+          <span class="inventory-icon">🎒</span>
+          <div>
+            <h2 class="inventory-title">Sammlung der Charakter-Items</h2>
+            <span class="inventory-subtitle">Artefakte & Belohnungen aus der uralten Schatztruhe</span>
+          </div>
+        </div>
+        <button type="button" class="inventory-close-btn" title="Schließen (Taste Esc oder I)">✕</button>
+      </div>
+      <div class="inventory-progress-bar-wrap">
+        <div class="progress-labels">
+          <span>Gesammelte Charakter-Items</span>
+          <span style="font-weight: 700; color: var(--accent-gold);">${data.progress.collected} / ${data.progress.total} (${data.progress.percentage}%)</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width: ${data.progress.percentage}%;"></div>
+        </div>
+      </div>
+      <div class="inventory-content-scroll">
+        ${pendingHtml}
+        <div class="inventory-grid">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+
+    this.inventoryModalEl.querySelector('.inventory-close-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleInventoryModal(false);
+    });
   }
 
   public setMusicActive(enabled: boolean): void {
@@ -420,6 +752,18 @@ export class HudOverlay {
 
     // Kommunikationsmenü nur einblenden, wenn ein Gespräch stattfindet
     this.renderDialogue(activeDialogueNode);
+
+    // Badges für Tagebuch und Sammlungs-Buttons aktualisieren
+    if (this.callbacks.getQuestReport) {
+      const rep = this.callbacks.getQuestReport();
+      if (rep.currentQuest.hasChestReward) {
+        this.inventoryBtn.classList.add('has-reward');
+        this.inventoryBtn.title = '🎁 Belohnung in der Schatztruhe bereit! (Taste I)';
+      } else {
+        this.inventoryBtn.classList.remove('has-reward');
+        this.inventoryBtn.title = 'Sammlung der Charakter-Items (Taste I)';
+      }
+    }
   }
 
   private renderDialogue(node: DialogueNode | null): void {
