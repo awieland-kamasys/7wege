@@ -202,7 +202,7 @@ export class CrossroadsScene {
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointerNdc = new THREE.Vector2();
 
-  private cameraOrbitAngle = Math.atan2(-21.0, -18.4);
+  private cameraOrbitAngle = Math.atan2(START_PLAYER_POS.x, START_PLAYER_POS.z);
   private cameraPitch = 0.56;
   private cameraDistance = 11.0;
   private hoveredPathId: number | null = null;
@@ -798,11 +798,11 @@ export class CrossroadsScene {
     this.targetMarker = this.createTargetMarker();
     this.scene.add(this.targetMarker);
 
-    // Spielfigur (Wandernde Person) – Start auf Weg 7 in halber Strecke mit Blick zur Kreuzung
+    // Spielfigur (Wandernde Person) – Start auf Weg 7 mit Blick zur Kreuzung
     this.playerGroup = this.createPlayerMarker();
     const startY = getTerrainHeight(START_PLAYER_POS.x, START_PLAYER_POS.z);
     this.playerGroup.position.set(START_PLAYER_POS.x, startY, START_PLAYER_POS.z);
-    this.playerGroup.rotation.y = Math.atan2(21.0, 18.4);
+    this.playerGroup.rotation.y = Math.atan2(-START_PLAYER_POS.x, -START_PLAYER_POS.z);
     this.scene.add(this.playerGroup);
 
     // Initiale Kamera-Ausrichtung hinter dem Spieler mit Blickrichtung zur Kreuzung (bodengeerdet)

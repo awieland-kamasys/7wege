@@ -45,6 +45,11 @@
     - **Proximity-Streaming:** Nähert sich die Spielfigur einem Schauplatz (ab 45–52 m bzw. 25 m bei Wegsperren), wird das Modell im dichten Waldnebel geladen, lange bevor der Schauplatz für den Spieler sichtbar wird.
     - **On-Demand-Auswahl:** Wählt der Spieler einen Pfad per Dialog, Klick oder HUD-Auswahl, wird der Schauplatz sofort priorisiert geladen.
     - **Sanfter Idle-Hintergrund-Lader:** Verweilt der Spieler an der Kreuzung, lädt eine Hintergrund-Warteschlange alle 2,5 Sekunden sequenziell einen weiteren Pfad nach, ohne jemals Framerate oder Netzwerkbandbreite zu blockieren.
+- **Einstiegspunkt & Atmosphäre auf Weg 7:**
+  - **Neuer Spieler-Startpunkt:** Die Spielfigur startet auf Weg 7 bei `(-31.5, -29.1)` (ca. 42,9 m von der Kreuzung entfernt) mit Blickrichtung entlang des Pfades zur Kreuzung.
+  - **Standort Fabelwesen Lupo:** Lupo rückt 15 m mit zurück auf `(-21.7, -19.1)` (ca. 28,9 m von der Kreuzung entfernt; Distanz zum Spieler unverändert 14 m).
+  - **Nebel-Verhüllung der Kreuzung:** Da die Nebelgrenze bei `fog.far = 25.0 m` liegt, ist die zentrale Waldkreuzung von Lupos Standort (28,9 m) und vom Spieler-Startpunkt (42,9 m) aus vollständig und blickdicht im dichten Waldnebel verborgen. Nur Lupos leuchtender Kristall schimmert einladend durch den Morgendunst.
+  - **Ruckelfreie Skelett-Laufanimation (In-Place Loop):** Die GLTF-Animation `run` des Tripo-Modells besaß ca. 0,77 m Vorwärtsdrift auf dem `Hip`-Bone, was beim Wiederholen des Loops alle 1,25 s zu einem sichtbaren Zurückspringen führte. Durch automatisierte In-Place-Neutralisierung (Subtraktion des linearen Drift-Trends auf den Keyframes) stimmen Start- und Endpose mathematisch exakt überein. Die Laufanimation loopt absolut nahtlos ohne jeden Ruckler, bis Lupo nach sanfter Drehung und Überquerung des Pfades im dichten Wald weich ausblendet.
 - **Asset-Bereinigung & Trennung:** Das Auslieferungsverzeichnis `public/assets/models/` wurde um ungenutzte Modelle bereinigt (u. a. Gärtnerei `garden beds 3d model.glb`, -2,73 MB). Alle nicht mehr im Spiel verwendeten Dateien liegen archiviert in `backup_assets/models/`.
 - **Textur- und Modelloptimierung (1024x1024 & WebP):**
   - Alle 28 aktiven GLB-Modelle sind automatisiert über `@gltf-transform` optimiert:

@@ -368,7 +368,7 @@ describe('CrossroadsState & 7 Wege', () => {
     const target = state.setTargetToPathEntrance(1);
     expect(target).not.toBeNull();
 
-    for (let i = 0; i < 40; i++) {
+    while (state.getTargetPosition()) {
       state.updateAutoWalk(0.1, 8);
       const pos = state.getPlayerPosition();
       expect(state.isWalkable(pos.x, pos.z)).toBe(true);
@@ -624,7 +624,7 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
   it('startet ein neues Spiel immer auf Weg 7 in halber Strecke mit Blick zur Kreuzung', () => {
     const state = new CrossroadsState();
     expect(state.getPlayerPosition()).toEqual(START_PLAYER_POS);
-    expect(state.getPlayerPosition()).toEqual({ x: -21.0, z: -18.4 });
+    expect(state.getPlayerPosition()).toEqual({ x: -31.5, z: -29.1 });
     expect(state.isOnClearing()).toBe(false);
     expect(state.getCurrentOrClosestPath()?.id).toBe(7);
 
@@ -1052,11 +1052,11 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
   it('verwaltet das Fabelwesen Lupo auf Weg 7 mit Näherung, Kollision und Fluchtstatus', () => {
     const state = new CrossroadsState();
     const creaturePos = state.getCreaturePosition();
-    expect(creaturePos.x).toBeCloseTo(-10.5, 1);
-    expect(creaturePos.z).toBeCloseTo(-9.2, 1);
+    expect(creaturePos.x).toBeCloseTo(-21.7, 1);
+    expect(creaturePos.z).toBeCloseTo(-19.1, 1);
     expect(state.isCreatureFled()).toBe(false);
 
-    // Am Startpunkt (-21.0, -18.4) ist der Spieler noch ca. 14 Meter entfernt
+    // Am Startpunkt (-31.5, -29.1) ist der Spieler noch ca. 14 Meter entfernt
     expect(state.isNearCreature()).toBe(false);
 
     // Ziel auf Lupo setzen und hinlaufen

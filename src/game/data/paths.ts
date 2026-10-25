@@ -31,21 +31,23 @@ export const PATH_1_WAYPOINTS: readonly PathPoint2D[] = [
 
 /**
  * Standard-Startpunkt der Spielfigur bei Spielstart:
- * Auf Weg 7 (Torweg) in halber Strecke (ca. 27.9 m von der Kreuzung) mit Blickrichtung zur Kreuzung.
+ * Auf Weg 7 (Torweg) ca. 42.9 m von der Kreuzung entfernt mit Blickrichtung zur Kreuzung.
+ * (15m weiter von der Kreuzung entfernt, sodass Kreuzung und Hütte tief im Waldnebel liegen).
  */
 export const START_PLAYER_POS: PathPoint2D = {
-  x: -21.0,
-  z: -18.4,
+  x: -31.5,
+  z: -29.1,
 };
 
 /**
- * Position des Fabelwesens (Fantasy Creature NPC):
- * Exakt auf dem halben Weg vom Startpunkt (-21.0, -18.4) zur Kreuzung (0, 0)
- * auf Weg 7 bei ca. (-10.5, -9.2).
+ * Position des Fabelwesens (Fantasy Creature NPC Lupo):
+ * Auf Weg 7 bei ca. 28.9 m von der Kreuzung (15m mit zurückgerückt auf Weg 7).
+ * Von Lupos Standort aus liegt die Waldkreuzung noch vollständig im dichten Waldnebel (Distanz 28.9m > fog.far 25m).
+ * Der Abstand zwischen Spielerstart und Lupo beträgt weiterhin ca. 14 Meter.
  */
 export const CREATURE_NPC_POS: PathPoint2D = {
-  x: -10.5,
-  z: -9.2,
+  x: -21.7,
+  z: -19.1,
 };
 
 /**

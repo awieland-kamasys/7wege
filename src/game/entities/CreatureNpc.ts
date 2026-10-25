@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { START_PLAYER_POS } from '../data/paths';
 import { getTerrainHeight } from '../utils/terrainHeight';
 import { disposeObject3D } from '../utils/threeUtils';
 
@@ -75,8 +76,8 @@ export function createCreatureNpc(
   const initialY = getTerrainHeight(initialPos.x, initialPos.z);
   group.position.set(initialPos.x, initialY, initialPos.z);
 
-  // Blickrichtung initial: Dem von Pfad 7 ankommenden Spieler entgegen (Richtung Startpunkt -21, -18.4)
-  const angleToStart = Math.atan2(-21.0 - initialPos.x, -18.4 - initialPos.z);
+  // Blickrichtung initial: Dem von Pfad 7 ankommenden Spieler entgegen
+  const angleToStart = Math.atan2(START_PLAYER_POS.x - initialPos.x, START_PLAYER_POS.z - initialPos.z);
   group.rotation.y = angleToStart;
 
   // Animations- und Zustandsvariablen
@@ -91,10 +92,8 @@ export function createCreatureNpc(
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
   let onFledCallback: (() => void) | null = null;
 
-  // Fluchtvektor: Quer über den Pfad in den dichten Fichtenwald rechts des Weges
-  // Weg 7 verläuft in Richtung (1, 0.85); rechts davon liegt dichter Wald Richtung (-22.0, -4.0)
-  const fleeTarget = { x: -22.5, z: -3.5 };
-  const fleeDir = new THREE.Vector2(fleeTarget.x - initialPos.x, fleeTarget.z - initialPos.z).normalize();
+  // Fluchtvektor: Quer über den Pfad in den dichten Fichtenwald rechts des Weges (Richtung Unterholz/Süden)
+  const fleeDir = new THREE.Vector2(-0.85, 0.52).normalize();
   const fleeSpeed = 4.2; // 4.2 m/s flinkes Waldhoppeln
   let distanceFled = 0;
   const maxFleeDistance = 14.0;
@@ -144,9 +143,39 @@ export function createCreatureNpc(
             ) ?? gltf.animations[0];
 
           if (clipRun) {
-            actionRun = mixer.clipAction(clipRun);
+            // Root-Motion des Hip-Bones entfernen:
+            // Der Hip-Bone des Tripo-Modells besitzt in "run" eine Vorwärtsdrift von ca. 0.77m pro Zyklus,
+            // die beim Drei-Sekunden-Loop zu einem abrupten Ruckler/Zurückspringen führte.
+            // Indem wir die lineare Vorwärtsdrift subtrahieren, wird der Laufzyklus perfekt in-place
+            // zentriert (Start- und Endframe sind exakt identisch) und loopet butterweich.
+            const inPlaceClip = clipRun.clone();
+            for (const track of inPlaceClip.tracks) {
+              if (
+                track.name.toLowerCase().includes('hip') &&
+                track.name.toLowerCase().includes('position') &&
+                track instanceof THREE.VectorKeyframeTrack
+              ) {
+                const times = track.times;
+                const values = track.values;
+                const dur = inPlaceClip.duration;
+                if (times.length > 1 && dur > 0) {
+                  const lastIdx = (times.length - 1) * 3;
+                  const dx = values[lastIdx] - values[0];
+                  const dy = values[lastIdx + 1] - values[1];
+                  const dz = values[lastIdx + 2] - values[2];
+                  for (let i = 0; i < times.length; i++) {
+                    const frac = times[i] / dur;
+                    values[i * 3] -= frac * dx;
+                    values[i * 3 + 1] -= frac * dy;
+                    values[i * 3 + 2] -= frac * dz;
+                  }
+                }
+              }
+            }
+
+            actionRun = mixer.clipAction(inPlaceClip);
             actionRun.setLoop(THREE.LoopRepeat, Infinity);
-            actionRun.timeScale = 1.15;
+            actionRun.timeScale = 1.35;
           }
 
           // Initial: Sanftes, neugieriges Hoppeln auf der Stelle
@@ -228,21 +257,17 @@ export function createCreatureNpc(
       indicator.visible = false;
       hitbox.userData = {}; // Keine Klicks mehr
 
-      // Animation zu "run" wechseln
+      // Animation zu "run" wechseln (weicher Crossfade, kein abrupter Posenwechsel)
       if (actionRun && mixer) {
         actionRun.timeScale = 1.35;
         if (currentAction && currentAction !== actionRun) {
-          actionRun.reset().fadeIn(0.25).play();
-          currentAction.fadeOut(0.25);
+          actionRun.reset().fadeIn(0.2).play();
+          currentAction.fadeOut(0.2);
         } else {
           actionRun.play();
         }
         currentAction = actionRun;
       }
-
-      // Figur in Fluchtrichtung ausrichten
-      const fleeAngle = Math.atan2(fleeDir.x, fleeDir.y);
-      group.rotation.y = fleeAngle;
     },
 
     isFled: () => state === 'fled',
@@ -280,6 +305,13 @@ export function createCreatureNpc(
 
         // Geländehöhe anpassen
         group.position.y = getTerrainHeight(group.position.x, group.position.z);
+
+        // Weiche Ausrichtung in Fluchtrichtung (verhindert ruckartigen Rotationssprung)
+        const targetFleeAngle = Math.atan2(fleeDir.x, fleeDir.y);
+        let angleDiff = targetFleeAngle - group.rotation.y;
+        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+        group.rotation.y += angleDiff * Math.min(1.0, delta * 10.0);
 
         // Sanftes Ausfaden im dichten Unterholz nach ersten Metern
         if (distanceFled > 5.0) {
