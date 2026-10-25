@@ -67,26 +67,6 @@ export function createWeirBridgeScene(
   fallbackWell.position.set(-5.4, 1.54, 0.0);
   wellContainer.add(fallbackWell);
 
-  const reservoirWaterMat = new THREE.MeshStandardMaterial({
-    color: 0x1b6e84,
-    emissive: 0x0a2e38,
-    emissiveIntensity: 0.42,
-    roughness: 0.15,
-    metalness: 0.25,
-    transparent: true,
-    opacity: 0.88,
-  });
-
-  // Im Brunneninneren: Glänzende Quellwasseroberfläche (Durchmesser ca. 4.9m, an verdoppelte Brunnenhöhe angepasst auf Y = 1.80)
-  const wellWater = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.45, 2.45, 0.2, 32),
-    reservoirWaterMat
-  );
-  wellWater.position.set(-5.4, 1.80, 0);
-  wellWater.receiveShadow = true;
-  wellWater.userData = { interactableType: 'weir' };
-  group.add(wellWater);
-
   // ============================================================================
   // 3. DER GEBIRGSBACH UNTER DEM WEHR & DER BRÜCKE INS TAL
   // Tiefe Schlucht mit über 1,07m lichter Höhe unter der Brücke für das durchströmende Wasser.
