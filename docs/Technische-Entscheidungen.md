@@ -45,7 +45,16 @@
     - **Proximity-Streaming:** Nähert sich die Spielfigur einem Schauplatz (ab 45–52 m bzw. 25 m bei Wegsperren), wird das Modell im dichten Waldnebel geladen, lange bevor der Schauplatz für den Spieler sichtbar wird.
     - **On-Demand-Auswahl:** Wählt der Spieler einen Pfad per Dialog, Klick oder HUD-Auswahl, wird der Schauplatz sofort priorisiert geladen.
     - **Sanfter Idle-Hintergrund-Lader:** Verweilt der Spieler an der Kreuzung, lädt eine Hintergrund-Warteschlange alle 2,5 Sekunden sequenziell einen weiteren Pfad nach, ohne jemals Framerate oder Netzwerkbandbreite zu blockieren.
-- **Asset-Bereinigung & Trennung:** Das Auslieferungsverzeichnis `public/assets/models/` wurde um 10 ungenutzte Modelle bereinigt (-24 MB). Alle nicht mehr verwendeten Dateien wurden in den Sicherungsordner `backup_assets/models/` verschoben (kein Datenverlust).
+- **Asset-Bereinigung & Trennung:** Das Auslieferungsverzeichnis `public/assets/models/` wurde um ungenutzte Modelle bereinigt (u. a. Gärtnerei `garden beds 3d model.glb`, -2,73 MB). Alle nicht mehr im Spiel verwendeten Dateien liegen archiviert in `backup_assets/models/`.
+- **Textur- und Modelloptimierung (1024x1024 & WebP):**
+  - Alle 28 aktiven GLB-Modelle sind automatisiert über `@gltf-transform` optimiert:
+    - Texturauflösungen auf maximal `1024×1024` gedeckelt (Lanczos3-Filter).
+    - Texturen verlustarm nach **WebP** komprimiert (Quality 85 via Sharp). Three.js unterstützt die glTF-Erweiterung `EXT_texture_webp` standardmäßig nativ im `GLTFLoader`.
+    - Geometrie- und Accessor-Deduplizierung (`dedup`) sowie Bereinigung toter Properties (`prune`).
+  - **High-Res-Sicherheitsnetz & punktuelle Wiederherstellung:**
+    - Sämtliche unkomprimierten Original-Modelle liegen 1:1 in `backup_assets/models_original_highres/`.
+    - Bei Bedarf kann jedes einzelne Modell punktuell mit `npm run restore:model -- "<Name>"` oder durch simples Zurückkopieren sofort wieder in High-Res aktiv geschaltet werden.
+    - Automatisierte Pipeline über `npm run optimize:models`.
 - **Prozedurale 3D-Höhenmap & Splatmap-Terrain (`TerrainMaterial.ts`, `TerrainSplatMap.ts`):**
   - Die Spielfläche ist ein plastisches 3D-Gelände mit Steigungen, Hügeln und Tälern (`PlaneGeometry(240, 240, 160, 160)` mit Vertex-Displacement und Vertex-Normalen-Neuberechnung).
   - **Splatmap-Shader-Blending:** Statt schwammiger, über die gesamte Welt gestreckter Texturen nutzt das Terrain ein hochmodernes PBR-Splatmap-Material (`MeshStandardMaterial.onBeforeCompile`):

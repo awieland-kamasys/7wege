@@ -30,7 +30,7 @@ Alle externen Modelle, Texturen, Bilder, Schriften und Audio-Dateien hier dokume
 | Verfallener Steinturm 3D-Modell (`ruined stone tower 3d model.glb`, 3,70 MB, verwitterter Wehrturm) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `backup_assets/models/ruined stone tower 3d model.glb` | Archiv (ersetzt durch Burg) |
 | Mittelalterliche Burg 3D-Modell Vorgänger (`medieval castle 3d model.glb`, 4,82 MB, wehrhafte Burg mit Wehrtürmen) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `backup_assets/models/medieval castle 3d model.glb` | Archiv (ersetzt durch neues Burgmodell) |
 | Mittelalterliche Burg 3D-Modell (`medieval castle 3d model neu.glb`, 2,60 MB, optimierte wehrhafte Burg mit Bergfried, Wehrtürmen, Zinnen und Innenhof auf Weg 6) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/medieval castle 3d model neu.glb` | aktiv |
-| Gartenbeete / Kräutergarten 3D-Modell (`garden beds 3d model.glb`, 2,86 MB, detailliertes 3D-Beetemodell mit Erdaufbauten und Bepflanzung neben der Burg auf Weg 6) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/garden beds 3d model.glb` | aktiv |
+| Gartenbeete / Kräutergarten 3D-Modell Vorgänger (`garden beds 3d model.glb`, 2,86 MB, detailliertes 3D-Beetemodell mit Erdaufbauten und Bepflanzung neben der Burg auf Weg 6) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `backup_assets/models/garden beds 3d model.glb` | Archiv (entfernt zur Performance- & Download-Optimierung) |
 | Pflanzkübel-Set 3D-Modell (`garden planter set 3d model.glb`, 4,88 MB, Pflanztröge und Hochbeete mit Bepflanzung vor der Burgruine auf Weg 6) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/garden planter set 3d model.glb` | aktiv |
 | Isometrischer Garten 3D-Modell Vorgänger (`isometric garden 3d model.glb`, 2,83 MB, 3D-Gartenanlage) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `backup_assets/models/isometric garden 3d model.glb` | Archiv (ersetzt durch Pflanzkübel-Set) |
 | Schneebedeckter Minenstollen (`snowy mine tunnel 3d model_ohne.glb`, 2,88 MB, 3D-Tunnelportal mit Holzstützen und Felsformation am Ende von Weg 1) | Eigene Erstellung / Tripo 3D-Generierung | Projektintern / Eigene Nutzung | Nein | `public/assets/models/snowy mine tunnel 3d model_ohne.glb` | aktiv |
@@ -52,3 +52,24 @@ Alle externen Modelle, Texturen, Bilder, Schriften und Audio-Dateien hier dokume
 - Quelle und Lizenz vor Verwendung prüfen.
 - Lizenztext oder erforderliche Namensnennung zusammen mit dem Asset aufbewahren.
 - Bei selbst erstellten Assets Urheber und Entstehungsdatum notieren.
+
+## High-Res-Originale & Asset-Optimierung (WebP & 1024x1024)
+
+- **Optimierungs-Pipeline:** Alle aktiven 3D-Modelle in `public/assets/models/` werden mit `@gltf-transform` automatisiert optimiert:
+  - Texturen auf maximal `1024x1024` herunterskaliert (Lanczos3-Filter).
+  - Texturkompression nach **WebP** (`--quality 85`).
+  - Pruning ungenutzter GLTF-Properties und Deduplizierung identischer Puffer/Meshes.
+  - Das Gesamtgewicht der 3D-Modelle sinkt dadurch drastisch (um über 70 %).
+- **High-Res-Original-Sicherung:**
+  - Sämtliche unkomprimierten Originaldateien (mit Original-Texturen bis zu 2048x2048 / unkomprimiert) sind 1:1 und unverändert in `backup_assets/models_original_highres/` gesichert.
+- **Punktuelle Wiederherstellung einzelner High-Res-Modelle:**
+  - Jedes Modell kann ohne Programmieraufwand wieder in maximaler Originalauflösung reaktiviert werden:
+    - Entweder per Hilfsskript: `npm run restore:model -- "<Modellname>"` (z. B. `npm run restore:model -- "fantasy tree"`)
+    - Oder durch direktes Kopieren:
+      ```powershell
+      Copy-Item "backup_assets\models_original_highres\<Dateiname>.glb" "public\assets\models\" -Force
+      ```
+  - Nach einer Wiederherstellung genügt ein `npm run build`, um die Änderung nach `dist/` zu übernehmen.
+- **Erneutes Optimieren aller Modelle:**
+  - `npm run optimize:models` führt die Optimierung für alle Modelle in `backup_assets/models_original_highres/` erneut aus und aktualisiert `public/assets/models/`.
+

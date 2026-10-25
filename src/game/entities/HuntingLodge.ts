@@ -94,29 +94,7 @@ export function createHuntingLodge(
   group.add(gardenGroup);
 
   // ==========================================
-  // 3. GARTENBEETE (garden beds 3d model.glb)
-  // Platziert neben der Burgruine an der südlichen Flanke
-  // ==========================================
-  const isoGardenGroup = new THREE.Group();
-  isoGardenGroup.name = 'GardenBeds';
-  isoGardenGroup.position.set(-1.8, 0, 4.6);
-
-  // Temporärer Platzhalter während des Ladens (zwei stilisierte Holzbeete mit Erde)
-  const isoGardenFallback = new THREE.Group();
-  isoGardenFallback.rotation.y = Math.PI;
-  for (const bz of [-0.85, 0.85]) {
-    const bed = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.32, 1.2), soilMat);
-    bed.position.set(0, 0.16, bz);
-    bed.castShadow = true;
-    bed.receiveShadow = true;
-    bed.userData = { interactableType: 'herb_garden' };
-    isoGardenFallback.add(bed);
-  }
-  isoGardenGroup.add(isoGardenFallback);
-  group.add(isoGardenGroup);
-
-  // ==========================================
-  // ON-DEMAND MODELL-LADEN (Burg + Kübel + Beete)
+  // ON-DEMAND MODELL-LADEN (Burg + Pflanzkübel)
   // ==========================================
   let isLoadedOrLoading = false;
   const startLoad = (): void => {
@@ -199,46 +177,6 @@ export function createHuntingLodge(
       undefined,
       (err) => {
         console.warn('Modell garden planter set 3d model.glb konnte nicht geladen werden:', err);
-      }
-    );
-
-    // 3. Gartenbeete
-    loader.load(
-      '/assets/models/garden beds 3d model.glb',
-      (gltf) => {
-        const model = gltf.scene;
-        model.scale.setScalar(3.6);
-        model.rotation.y = Math.PI;
-        model.updateMatrixWorld(true);
-        const bounds = new THREE.Box3().setFromObject(model);
-        model.position.set(0, -bounds.min.y, 0);
-
-        model.traverse((child) => {
-          const mesh = child as THREE.Mesh;
-          if (mesh.isMesh) {
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            mesh.userData = { interactableType: 'herb_garden' };
-
-            if (mesh.material && 'roughness' in mesh.material) {
-              const mat = mesh.material as THREE.MeshStandardMaterial;
-              mat.roughness = 0.88;
-              mat.metalness = 0.05;
-            }
-
-            if (onMeshLoaded) {
-              onMeshLoaded(mesh);
-            }
-          }
-        });
-
-        isoGardenGroup.remove(isoGardenFallback);
-        disposeObject3D(isoGardenFallback);
-        isoGardenGroup.add(model);
-      },
-      undefined,
-      (err) => {
-        console.warn('Modell garden beds 3d model.glb konnte nicht geladen werden:', err);
       }
     );
   };
