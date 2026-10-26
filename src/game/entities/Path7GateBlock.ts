@@ -51,12 +51,12 @@ export function createPath7GateBlock(): Path7GateBlockEntity {
   const mistTexture = typeof document !== 'undefined' ? createMistTexture() : null;
 
   // Mehrere gestaffelte Nebelwände quer über den Weg (14 m breit, 5.5 m hoch)
-  // Überdecken Weg 7 und die seitlichen Baumbereiche vollständig
+  // Staffelung rein nach hinten in Richtung Tor (offsetZ >= 0), damit keine Nebelschwaden nach vorn ragen
   const mistLayers = [
-    { offsetZ: -0.9, width: 14.0, height: 5.5, y: 2.2, baseOpacity: 0.65, swaySpeed: 0.6 },
-    { offsetZ: -0.3, width: 15.0, height: 5.8, y: 2.4, baseOpacity: 0.75, swaySpeed: 0.8 },
-    { offsetZ: 0.3, width: 14.5, height: 5.2, y: 2.1, baseOpacity: 0.82, swaySpeed: 0.7 },
-    { offsetZ: 0.8, width: 15.5, height: 5.6, y: 2.3, baseOpacity: 0.68, swaySpeed: 0.5 },
+    { offsetZ: 0.0, width: 14.0, height: 5.5, y: 2.2, baseOpacity: 0.70, swaySpeed: 0.6 },
+    { offsetZ: 0.4, width: 15.0, height: 5.8, y: 2.4, baseOpacity: 0.80, swaySpeed: 0.8 },
+    { offsetZ: 0.8, width: 14.5, height: 5.2, y: 2.1, baseOpacity: 0.85, swaySpeed: 0.7 },
+    { offsetZ: 1.2, width: 15.5, height: 5.6, y: 2.3, baseOpacity: 0.75, swaySpeed: 0.5 },
   ];
 
   const layerMeshes: THREE.Mesh[] = [];
