@@ -112,7 +112,7 @@ export const PATH_2_WAYPOINTS: readonly PathPoint2D[] = [
 export const PATH_2_PUDDLE_POS = {
   x: 13.2,
   z: -9.6,
-  radius: 1.55,
+  radius: 2.33,
 } as const;
 
 /**

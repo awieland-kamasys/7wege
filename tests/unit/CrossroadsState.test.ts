@@ -835,13 +835,13 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
 
     const pPos = state.getPath2PuddlePosition();
     expect(pPos).toEqual({ x: 13.2, z: -9.6 });
-    expect(state.getPath2PuddleRadius()).toBe(1.55);
+    expect(state.getPath2PuddleRadius()).toBe(2.33);
 
     // Kollisionsprüfung
     expect(state.isCollidingWithObstacles(pPos.x, pPos.z)).toBe(true);
 
     // Näherung / kein POI-Container für Hindernisse
-    state.setPlayerPosition(pPos.x - 1.2, pPos.z + 1.0);
+    state.setPlayerPosition(pPos.x - 1.8, pPos.z + 1.5);
     expect(state.isNearPuddle()).toBe(true);
     expect(state.getActivePointOfInterest().type).not.toBe('puddle');
 

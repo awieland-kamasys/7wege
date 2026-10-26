@@ -1241,7 +1241,7 @@ export class CrossroadsState {
     // Wasserpfütze auf Weg 2 (blockiert den Nixenteich-Pfad)
     if (this.path2PuddleBlocked) {
       if (
-        this.isCollidingWithBarrier(x, z, this.path2PuddlePos) ||
+        this.isCollidingWithBarrier(x, z, this.path2PuddlePos, 3.9, 2.18) ||
         Math.hypot(x - this.path2PuddlePos.x, z - this.path2PuddlePos.z) <
         this.path2PuddleRadius - eps
       ) {
@@ -1933,7 +1933,9 @@ export class CrossroadsState {
         const afterBarrier = this.pushOutOfBarrier(
           resolvedX,
           resolvedZ,
-          this.path2PuddlePos
+          this.path2PuddlePos,
+          3.9,
+          2.18
         );
         resolvedX = afterBarrier.x;
         resolvedZ = afterBarrier.z;

@@ -31,18 +31,18 @@ export function createPathPuddle(): PathPuddleEntity {
     flatShading: true,
   });
   const fallbackMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.55, 1.7, 0.08, 20),
+    new THREE.CylinderGeometry(2.33, 2.55, 0.12, 20),
     mudMaterial
   );
-  fallbackMesh.position.y = 0.04;
+  fallbackMesh.position.y = 0.06;
   fallbackMesh.userData = { interactableType: 'puddle' };
   fallbackGroup.add(fallbackMesh);
   group.add(fallbackGroup);
   pickableMeshes.push(fallbackMesh);
 
   // Sanftes, türkises Wasserlicht
-  const puddleLight = new THREE.PointLight(0x4ee2d0, 0.85, 4.5);
-  puddleLight.position.set(0, 0.45, 0);
+  const puddleLight = new THREE.PointLight(0x4ee2d0, 0.95, 6.5);
+  puddleLight.position.set(0, 0.65, 0);
   group.add(puddleLight);
 
   const modelMaterials: THREE.MeshStandardMaterial[] = [];
@@ -54,8 +54,8 @@ export function createPathPuddle(): PathPuddleEntity {
     (gltf) => {
       const model = gltf.scene;
 
-      // Skalierung: Auf 3.4m vergrößern, um den Pfad zur Nixe passgenau zu sperren
-      model.scale.setScalar(3.4);
+      // Skalierung: Um 50 % vergrößert (auf 5.1m statt 3.4m), um den Pfad zur Nixe imposant zu sperren
+      model.scale.setScalar(5.1);
 
       // Bounding Box berechnen und Modell passgenau auf Bodenniveau (y = 0) aufsetzen
       model.updateMatrixWorld(true);
@@ -95,6 +95,8 @@ export function createPathPuddle(): PathPuddleEntity {
   const dissolveDuration = 1.35;
   let onDissolveComplete: (() => void) | null = null;
   let elapsed = 0;
+  let initialY = 0;
+  let initialYCaptured = false;
 
   const update = (dtSeconds: number, isHovered = false): void => {
     elapsed += dtSeconds;
@@ -107,10 +109,15 @@ export function createPathPuddle(): PathPuddleEntity {
       dissolveTimer += dtSeconds;
       const progress = Math.min(1.0, dissolveTimer / dissolveDuration);
 
+      if (!initialYCaptured) {
+        initialY = group.position.y;
+        initialYCaptured = true;
+      }
+
       // Wasser versickert im Boden und schrumpft zusammen
       const scale = Math.max(0.001, 1.0 - progress * 0.98);
       group.scale.set(scale, scale, scale);
-      group.position.y = -progress * 0.75;
+      group.position.y = initialY - progress * 1.1;
 
       // Helles Aufleuchten beim Beginn des Versickerns
       const glowBoost = Math.max(0, 1.0 - progress * 1.5);

@@ -111,6 +111,12 @@
   - Alle echten Hinderniskollisionen (Bäume, Felsmassive, Gebäude, NPCs, Kraterwände, Zäune) bleiben über `resolveObstacleCollisions` und `isCollidingWithObstacles` zu 100 % aktiv und unüberwindbar.
   - Visuelles und haptisches Feedback: Der Sockel des Wegweisers pulsiert bei aktivem Freimodus in zartem Smaragdgrün (`0x10b981`), löst beim Umschalten einen Lichtimpuls aus und gibt eine Rückmeldung über Soundeffekt und HUD-Toast.
 
+- **Wegsperre Teich auf Weg 2 (`PathPuddle.ts`, `paths.ts`, `CrossroadsState.ts`):**
+  - Das 3D-Modell der Wegsperre (`rocky pond 3d model.glb`) wurde um 50 % vergrößert (Skalierung von `3.4` auf `5.1`).
+  - Die Low-Poly-Fallback-Geometrie wurde entsprechend auf Radius oben `2.33` und unten `2.55` angepasst.
+  - Der logische Kollisionsradius (`PATH_2_PUDDLE_POS.radius` in `paths.ts` und `CrossroadsState.ts`) stieg von `1.55 m` auf `2.33 m` (+50 %).
+  - Die physische Barrierenbreite und -tiefe in `isCollidingWithBarrier` und `pushOutOfBarrier` wurde proportional von `2.6 m / 1.45 m` auf `3.9 m / 2.18 m` erweitert, sodass der gesamte Pfadquerschnitt vor dem Felsenteich nahtlos und unüberwindbar abgesichert ist.
+
 ## Offene Punkte
 
 - Hosting, Build-Basis-Pfad und Einbindung in die Website prüfen.
