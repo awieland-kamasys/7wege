@@ -675,7 +675,7 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
   it('startet ein neues Spiel immer auf Weg 7 in halber Strecke mit Blick zur Kreuzung', () => {
     const state = new CrossroadsState();
     expect(state.getPlayerPosition()).toEqual(START_PLAYER_POS);
-    expect(state.getPlayerPosition()).toEqual({ x: -31.5, z: -29.1 });
+    expect(state.getPlayerPosition()).toEqual({ x: -26.0, z: -23.4 });
     expect(state.isOnClearing()).toBe(false);
     expect(state.getCurrentOrClosestPath()?.id).toBe(7);
 
@@ -1103,11 +1103,11 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
   it('verwaltet das Fabelwesen Lupo auf Weg 7 mit Näherung, Kollision und Fluchtstatus', () => {
     const state = new CrossroadsState();
     const creaturePos = state.getCreaturePosition();
-    expect(creaturePos.x).toBeCloseTo(-21.7, 1);
-    expect(creaturePos.z).toBeCloseTo(-19.1, 1);
+    expect(creaturePos.x).toBeCloseTo(-16.5, 1);
+    expect(creaturePos.z).toBeCloseTo(-14.1, 1);
     expect(state.isCreatureFled()).toBe(false);
 
-    // Am Startpunkt (-31.5, -29.1) ist der Spieler noch ca. 14 Meter entfernt
+    // Am Startpunkt (-26.0, -23.4) ist der Spieler noch ca. 13 Meter entfernt
     expect(state.isNearCreature()).toBe(false);
 
     // Ziel auf Lupo setzen und hinlaufen
@@ -1325,15 +1325,23 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(state.isPath7GateBlocked()).toBe(true);
 
     const blockPos = state.getPath7GateBlockPosition();
-    expect(blockPos.x).toBeCloseTo(-36.4, 1);
-    expect(blockPos.z).toBeCloseTo(-34.2, 1);
+    expect(blockPos.x).toBeCloseTo(-31.5, 1);
+    expect(blockPos.z).toBeCloseTo(-29.1, 1);
 
-    // Kollisionsprüfung an der Sperre
+    // Kollisionsprüfung an der Sperre (auch seitlich über die gesamte Wegbreite)
     expect(state.isCollidingWithObstacles(blockPos.x, blockPos.z)).toBe(true);
+    const blockLen = Math.hypot(blockPos.x, blockPos.z);
+    const perpX = -blockPos.z / blockLen;
+    const perpZ = blockPos.x / blockLen;
+    expect(state.isCollidingWithObstacles(blockPos.x + perpX * 2.5, blockPos.z + perpZ * 2.5)).toBe(true);
+    // Vor der Sperre (am Spielerstart) ist keine Kollision
+    expect(state.isCollidingWithObstacles(START_PLAYER_POS.x, START_PLAYER_POS.z)).toBe(false);
 
     // Aufhebung der Sperre
     expect(state.unblockPath7Gate()).toBe(true);
     expect(state.isPath7GateBlocked()).toBe(false);
+    // Nach Aufhebung ist der frühere Sperrpunkt frei
+    expect(state.isCollidingWithObstacles(blockPos.x, blockPos.z)).toBe(false);
 
     // Erneutes Aufheben liefert false
     expect(state.unblockPath7Gate()).toBe(false);

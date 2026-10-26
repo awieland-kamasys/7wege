@@ -31,23 +31,23 @@ export const PATH_1_WAYPOINTS: readonly PathPoint2D[] = [
 
 /**
  * Standard-Startpunkt der Spielfigur bei Spielstart:
- * Auf Weg 7 (Torweg) ca. 42.9 m von der Kreuzung entfernt mit Blickrichtung zur Kreuzung.
- * (15m weiter von der Kreuzung entfernt, sodass Kreuzung und Hütte tief im Waldnebel liegen).
+ * Auf Weg 7 (Torweg) ca. 35.0 m von der Kreuzung entfernt (bei Wegpunkt 3) mit Blickrichtung zur Kreuzung.
+ * Kreuzung und Hütte liegen tief im dichten Waldnebel.
  */
 export const START_PLAYER_POS: PathPoint2D = {
-  x: -31.5,
-  z: -29.1,
+  x: -26.0,
+  z: -23.4,
 };
 
 /**
  * Position des Fabelwesens (Fantasy Creature NPC Lupo):
- * Auf Weg 7 bei ca. 28.9 m von der Kreuzung (15m mit zurückgerückt auf Weg 7).
- * Von Lupos Standort aus liegt die Waldkreuzung noch vollständig im dichten Waldnebel (Distanz 28.9m > fog.far 25m).
- * Der Abstand zwischen Spielerstart und Lupo beträgt weiterhin ca. 14 Meter.
+ * Auf Weg 7 bei ca. 21.7 m von der Kreuzung (ca. 13.3 m vor der Startposition des Spielers).
+ * Von Lupos Standort aus liegt die Waldkreuzung noch vollständig im dichten Waldnebel (Distanz 21.7m > clearingRadius 10m).
+ * Der Abstand zwischen Spielerstart und Lupo beträgt stimmungsvolle ca. 13.3 Meter.
  */
 export const CREATURE_NPC_POS: PathPoint2D = {
-  x: -21.7,
-  z: -19.1,
+  x: -16.5,
+  z: -14.1,
 };
 
 /**
@@ -421,14 +421,14 @@ export const PATH_7_END_CLEARING = {
 
 /**
  * Position, Ausrichtung und Kollisionsradius der Wegsperre im Rücken des Spielers zu Beginn auf Weg 7.
- * Liegt bei x: -36.4, z: -34.2 (kurz vor dem Torvorplatz-Plateau {-40.5, -38.5}) und schließt
- * den schmalen Waldwegkorridor blickdicht ab, bevor sich das runde Vorplatzplateau öffnet.
+ * Liegt bei x: -31.5, z: -29.1 (ca. 8 m im Rücken der Startposition des Spielers und weit vor dem Torvorplatz {-40.5, -38.5})
+ * und riegelt den schmalen Waldwegkorridor blickdicht und unüberwindbar ab.
  * Die Ausrichtung (rotationY) ist so gedreht, dass die Vorderseite zum Spieler/zur Kreuzung blickt.
  */
 export const PATH_7_GATE_BLOCK_POS = {
-  x: -36.4,
-  z: -34.2,
-  radius: 2.2,
+  x: -31.5,
+  z: -29.1,
+  radius: 2.6,
   rotationY: Math.atan2(4.3 - (-40.5), 3.4 - (-38.5)),
 } as const;
 

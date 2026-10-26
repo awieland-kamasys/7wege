@@ -1296,7 +1296,7 @@ export class CrossroadsState {
     // Anfangssperre im Rücken des Spielers auf Weg 7 (blockiert den Weg zum Tor vor dem Arvid-Gespräch)
     if (this.path7GateBlocked) {
       if (
-        this.isCollidingWithBarrier(x, z, this.path7GateBlockPos) ||
+        this.isCollidingWithBarrier(x, z, this.path7GateBlockPos, 4.5, 2.0) ||
         Math.hypot(x - this.path7GateBlockPos.x, z - this.path7GateBlockPos.z) <
         this.path7GateBlockRadius - eps
       ) {
@@ -1592,7 +1592,8 @@ export class CrossroadsState {
     z: number,
     barrierPos: Vector2D,
     halfWidth = 2.6,
-    halfDepth = 1.45
+    halfDepth = 1.45,
+    unidirectional = false
   ): Vector2D {
     const len = Math.hypot(barrierPos.x, barrierPos.z);
     if (len < 1e-4) {
@@ -1606,8 +1607,8 @@ export class CrossroadsState {
     const dAcross = -dx * uz + dz * ux;
 
     if (Math.abs(dAcross) < halfWidth && Math.abs(dAlong) < halfDepth) {
-      // Wenn der Spieler sich von der Kreuzung genähert hat (dAlong <= 0): vor die Barriere schieben
-      const targetAlong = dAlong <= 0 ? -halfDepth : halfDepth;
+      // Wenn der Spieler sich von der Kreuzung genähert hat oder unidirektional: immer vor die Barriere schieben
+      const targetAlong = (unidirectional || dAlong <= 0) ? -halfDepth : halfDepth;
       return {
         x: barrierPos.x + dAcross * (-uz) + targetAlong * ux,
         z: barrierPos.z + dAcross * ux + targetAlong * uz,
@@ -2032,7 +2033,10 @@ export class CrossroadsState {
         const afterBarrier = this.pushOutOfBarrier(
           resolvedX,
           resolvedZ,
-          this.path7GateBlockPos
+          this.path7GateBlockPos,
+          4.5,
+          2.0,
+          true
         );
         resolvedX = afterBarrier.x;
         resolvedZ = afterBarrier.z;
