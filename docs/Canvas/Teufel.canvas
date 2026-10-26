@@ -1,0 +1,130 @@
+{
+  "nodes": [
+    {
+      "id": "devil_root",
+      "x": 200,
+      "y": 0,
+      "width": 400,
+      "height": 180,
+      "type": "text",
+      "text": "### 😈 Der Teufel am Höllenschlund (Start)\n\n> „Sieh an... Eine sterbliche Seele wagt sich bis an den Rand meines Höllenschlundes. Das Feuer brennt hier seit Anbeginn der Zeiten – und ich beobachte jeden Schritt auf den sieben Wegen.“\n\n*Beherrscher des Abgrunds am Ende von Weg 5*",
+      "color": "3"
+    },
+    {
+      "id": "devil_about_chasm",
+      "x": -240,
+      "y": 280,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 😈 Der Teufel\n\n> „Hier bricht das Urfeuer aus den Eingeweiden der Erde hervor. Nur wer das Feuer versteht, versteht die Kraft des Wandels.“",
+      "color": "5"
+    },
+    {
+      "id": "devil_about_identity",
+      "x": 140,
+      "y": 280,
+      "width": 330,
+      "height": 140,
+      "type": "text",
+      "text": "### 😈 Der Teufel\n\n> „Ich bin die Prüfung der sieben Wege. Manche nennen mich Verführer, andere Schicksal. Ich halte der Welt ihren Spiegel vor.“",
+      "color": "5"
+    },
+    {
+      "id": "devil_challenge",
+      "x": 530,
+      "y": 280,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 😈 Der Teufel (Die Herausforderung)\n\n> „Blick hinab in die glühende Tiefe! Glaubst du, dein Wille ist stark genug, um dem Feuer zu trotzen?“",
+      "color": "1"
+    },
+    {
+      "id": "devil_resolution_strength",
+      "x": -280,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 😈 Teufel (Prüfung: Unbeugsamkeit)\n\n> „Ha! Ein eiserner Blick ohne Wimpernzucken. Nimm dieses Bruchstück des Obsidians mit – es wird dich an deine Stärke erinnern.“\n\n*(Truhenbelohnung: Obsidian-Höllenglimmer)*",
+      "color": "4"
+    },
+    {
+      "id": "devil_resolution_trick",
+      "x": 120,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 😈 Teufel (Prüfung: Scharfsinn)\n\n> „Ein gewitzter Geist! Du durchschaust die Ränke des Feuers und bezwingst die Glut mit Verstand statt Zorn.“\n\n*(Truhenbelohnung: Gewitzter Schwefelfunke)*",
+      "color": "4"
+    },
+    {
+      "id": "devil_resolution_reject",
+      "x": 520,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 😈 Teufel (Prüfung: Standhaftigkeit)\n\n> „Kalt und rein wendest du dich vom Abgrund ab. Ein Herz, das nicht brennt, kann auch nicht verbrennen.“\n\n*(Truhenbelohnung: Reines Schutzkreuz)*",
+      "color": "4"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_devil_1",
+      "fromNode": "devil_root",
+      "fromSide": "bottom",
+      "toNode": "devil_about_chasm",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Was ist das für ein Ort?"
+    },
+    {
+      "id": "edge_devil_2",
+      "fromNode": "devil_root",
+      "fromSide": "bottom",
+      "toNode": "devil_about_identity",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Wer bist du wirklich?"
+    },
+    {
+      "id": "edge_devil_3",
+      "fromNode": "devil_root",
+      "fromSide": "bottom",
+      "toNode": "devil_challenge",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Der Prüfung stellen"
+    },
+    {
+      "id": "edge_devil_4",
+      "fromNode": "devil_challenge",
+      "fromSide": "bottom",
+      "toNode": "devil_resolution_strength",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Mit unbeugsamer Willenskraft"
+    },
+    {
+      "id": "edge_devil_5",
+      "fromNode": "devil_challenge",
+      "fromSide": "bottom",
+      "toNode": "devil_resolution_trick",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Mit scharfem Witz und List"
+    },
+    {
+      "id": "edge_devil_6",
+      "fromNode": "devil_challenge",
+      "fromSide": "bottom",
+      "toNode": "devil_resolution_reject",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Der Versuchung standhaft trotzen"
+    }
+  ]
+}

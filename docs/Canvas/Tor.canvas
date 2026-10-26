@@ -1,0 +1,73 @@
+{
+  "nodes": [
+    {
+      "id": "gate_root",
+      "x": 200,
+      "y": 0,
+      "width": 400,
+      "height": 180,
+      "type": "text",
+      "text": "### 🏛️ Das geschlossene Steintor (Weg 7)\n\n> „Vor dir ragt ein gewaltiges, uraltes Steintor empor, das tief in die Felsen des Zinsbachtals eingelassen ist. Seine schweren Torflügel sind von dichten Moosflechten überzogen. Sieben Runenfassungen leuchten geheimnisvoll.“",
+      "color": "3"
+    },
+    {
+      "id": "gate_examine_runes",
+      "x": -240,
+      "y": 280,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🏛️ Die 7 Runenfassungen\n\n> „Wer das Gold der Nixe verschmäht, das Wort des Bergmanns ehrt, dem Riesen wie dem Dürstenden Gehör schenkt und das Leben im Wald bewahrt, der wird den Schlüssel in sich tragen.“",
+      "color": "5"
+    },
+    {
+      "id": "gate_examine_lock",
+      "x": 140,
+      "y": 280,
+      "width": 330,
+      "height": 140,
+      "type": "text",
+      "text": "### 🏛️ Das uralte Schloss\n\n> „Das Schloss besteht aus gediegenem Meteoreisen. Erst wenn der Runenschlüssel aus der Schatztruhe alle Prüfungen in sich vereint, öffnet sich das Tor ins Tal.“",
+      "color": "5"
+    },
+    {
+      "id": "gate_listen_wind",
+      "x": 530,
+      "y": 280,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🏛️ Der Wind aus dem Tal\n\n> „Ein warmer, duftender Luftzug dringt durch die steinernen Fugen. Das Zinsbachtal wartet hinter dieser Schwelle auf deine Ankunft.“",
+      "color": "6"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_gate_1",
+      "fromNode": "gate_root",
+      "fromSide": "bottom",
+      "toNode": "gate_examine_runes",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Die Runenschrift entziffern"
+    },
+    {
+      "id": "edge_gate_2",
+      "fromNode": "gate_root",
+      "fromSide": "bottom",
+      "toNode": "gate_examine_lock",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Das Schlüsselloch untersuchen"
+    },
+    {
+      "id": "edge_gate_3",
+      "fromNode": "gate_root",
+      "fromSide": "bottom",
+      "toNode": "gate_listen_wind",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Dem Wind durch die Fugen lauschen"
+    }
+  ]
+}

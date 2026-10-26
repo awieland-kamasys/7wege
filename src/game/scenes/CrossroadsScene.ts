@@ -63,6 +63,7 @@ import { createPathStream, PathStreamEntity } from '../entities/PathStream';
 import { createPathLog, PathLogEntity } from '../entities/PathLog';
 import { createPathFire, PathFireEntity } from '../entities/PathFire';
 import { createPathHerbs, PathHerbsEntity } from '../entities/PathHerbs';
+import { createPath7GateBlock, Path7GateBlockEntity } from '../entities/Path7GateBlock';
 import {
   createBarkTexture,
   createFrostyBarkTexture,
@@ -118,6 +119,7 @@ export type ScenePickResult =
   | { kind: 'creature'; point: Vector2D }
   | { kind: 'mushroom_creature'; pathId: number; point: Vector2D }
   | { kind: 'world_tree'; point: Vector2D }
+  | { kind: 'path7_gate_block'; point: Vector2D }
   | { kind: 'ground'; point: Vector2D };
 
 interface ForestTreeInstance {
@@ -181,6 +183,7 @@ export class CrossroadsScene {
   private readonly path4Log: PathLogEntity;
   private readonly path5Fire: PathFireEntity;
   private readonly path6Herbs: PathHerbsEntity;
+  private readonly path7GateBlock: Path7GateBlockEntity;
   private readonly treasureChest: TreasureChestEntity;
   private snowfallPoints: THREE.Points | null = null;
   private snowfallFlakes: Array<{
@@ -215,6 +218,7 @@ export class CrossroadsScene {
   private isWildHunterHovered = false;
   private isWoodWomanLodgeHovered = false;
   private isGateHovered = false;
+  private isPath7GateBlockHovered = false;
   private isCreatureHovered = false;
   private isBoulderHovered = false;
   private isPuddleHovered = false;
@@ -774,8 +778,12 @@ export class CrossroadsScene {
     this.path6Herbs = createPathHerbs({ lazy: true });
     this.path6Herbs.group.position.y = getTerrainHeight(this.path6Herbs.group.position.x, this.path6Herbs.group.position.z) - 0.08;
     this.scene.add(this.path6Herbs.group);
-    this.path6Herbs.group.position.y = getTerrainHeight(this.path6Herbs.group.position.x, this.path6Herbs.group.position.z) - 0.08;
-    this.scene.add(this.path6Herbs.group);
+
+    // Anfangssperre auf Weg 7 im Rücken des Spielers zu Beginn (versperrt den Weg zum Tor vor dem Arvid-Gespräch)
+    this.path7GateBlock = createPath7GateBlock();
+    this.path7GateBlock.group.position.y = getTerrainHeight(this.path7GateBlock.group.position.x, this.path7GateBlock.group.position.z);
+    this.scene.add(this.path7GateBlock.group);
+    this.pickableObjects.push(...this.path7GateBlock.pickableMeshes);
 
 
     // Bäume rund um die Lichtung, zwischen den 7 Wegen und entlang aller Kurven von Weg 1 bis 7
@@ -2944,6 +2952,10 @@ export class CrossroadsScene {
     this.isHerbsHovered = hovered;
   }
 
+  public setPath7GateBlockHovered(hovered: boolean): void {
+    this.isPath7GateBlockHovered = hovered;
+  }
+
   public pulseGemstone(pathId: number): void {
     this.gemstonePulseTimers.set(pathId, 1.3);
   }
@@ -2998,6 +3010,14 @@ export class CrossroadsScene {
 
   public isPath6HerbsRemoved(): boolean {
     return this.path6Herbs.isRemoved();
+  }
+
+  public removePath7GateBlockVisual(onComplete?: () => void): void {
+    this.path7GateBlock.startDissolve(onComplete);
+  }
+
+  public isPath7GateBlockRemoved(): boolean {
+    return this.path7GateBlock.isRemoved();
   }
 
   public setSignpostCapHovered(hovered: boolean): void {
@@ -3074,6 +3094,9 @@ export class CrossroadsScene {
       }
       if (data.interactableType === 'gate') {
         return { kind: 'gate', point };
+      }
+      if (data.interactableType === 'path7_gate_block') {
+        return { kind: 'path7_gate_block', point };
       }
       if (data.interactableType === 'gemstone' && typeof data.pathId === 'number') {
         return { kind: 'gemstone', pathId: data.pathId, point };
@@ -3380,6 +3403,7 @@ export class CrossroadsScene {
     this.path4Log.update(dtSeconds, this.isLogHovered);
     this.path5Fire.update(dtSeconds, this.isFireHovered);
     this.path6Herbs.update(dtSeconds, this.isHerbsHovered);
+    this.path7GateBlock.update(dtSeconds, this.isPath7GateBlockHovered);
     this.treasureChest.update(dtSeconds, isChestOpen, this.isChestHovered);
 
     // Ziel-Markierung am Boden anzeigen, solange Click-to-Move aktiv ist

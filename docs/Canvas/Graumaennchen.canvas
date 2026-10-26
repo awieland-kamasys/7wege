@@ -1,0 +1,158 @@
+{
+  "nodes": [
+    {
+      "id": "grey_root",
+      "x": 200,
+      "y": 0,
+      "width": 400,
+      "height": 180,
+      "type": "text",
+      "text": "### ⛏️ Das Graumännchen (Start)\n\n> „Glück auf, Wandernde! Gut, dass du den Weg durch den Nebel bis zu diesem Stollenmundloch gefunden hast. Eine neue Silberader tief hier im Berg könnte unsere Mine und die Arbeiter retten. Doch ihr Auffinden verlangt Licht in einem Stollen, für den ein altes Verbot gilt.“\n\n*Hüter des Silberstollens am Ende von Weg 1*",
+      "color": "3"
+    },
+    {
+      "id": "grey_silver_vein",
+      "x": -240,
+      "y": 280,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### ⛏️ Das Graumännchen\n\n> „Die oberen Gänge sind taub geschlagen. Wenn kein frisches Erz gefördert wird, schließt die Zeche für immer und die Bergleute verlieren ihr Brot.“",
+      "color": "5"
+    },
+    {
+      "id": "grey_prohibition",
+      "x": 140,
+      "y": 280,
+      "width": 330,
+      "height": 140,
+      "type": "text",
+      "text": "### ⛏️ Das Graumännchen\n\n> „Vor einer Generation stürzte der hintere First ein. Als die Eingeschlossenen gerettet wurden, gaben die Ältesten dem Berg das Versprechen, niemals wieder mit offenem Grubenfeuer einzufahren.“",
+      "color": "5"
+    },
+    {
+      "id": "grey_dilemma",
+      "x": 530,
+      "y": 280,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### ⛏️ Das Graumännchen\n\n> „Ein gebrochener Schwur nimmt den Bergleuten ihre Ehre und ihren Schutz – doch eine geschlossene Mine nimmt ihnen das Brot.“",
+      "color": "2"
+    },
+    {
+      "id": "grey_light_choice",
+      "x": 120,
+      "y": 520,
+      "width": 380,
+      "height": 150,
+      "type": "text",
+      "text": "### ⛏️ Das Graumännchen (Die Prüfung)\n\n> „Das Verbot untersagt offenes Grubenfeuer. Doch in der Schatztruhe vor Arvids Hütte liegt ein kalt leuchtender Bergkristall. Welchen Weg hältst du für richtig?“",
+      "color": "6"
+    },
+    {
+      "id": "grey_resolution_crystal",
+      "x": -280,
+      "y": 770,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### ⛏️ Graumännchen (Lösung: Kristall)\n\n> „Ein kluger Gedanke! Der stille Glanz trägt weder Flamme noch Rauch und bringt dennoch das Silber im Fels zum Leuchten.“\n\n*(Truhenbelohnung: Glanzquarz-Kristallstufe)*",
+      "color": "4"
+    },
+    {
+      "id": "grey_resolution_honest",
+      "x": 120,
+      "y": 770,
+      "width": 330,
+      "height": 140,
+      "type": "text",
+      "text": "### ⛏️ Graumännchen (Lösung: Aufrichtigkeit)\n\n> „Aufrichtigkeit ehrt dich! Ein Versprechen zum Schutz des Lebens darf auch im Namen des Lebens erneuert werden.“\n\n*(Truhenbelohnung: Aufrichtige Silberstufe)*",
+      "color": "4"
+    },
+    {
+      "id": "grey_resolution_strict",
+      "x": 520,
+      "y": 770,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### ⛏️ Graumännchen (Lösung: Schwurtreue)\n\n> „Eine strenge, aber standhafte Entscheidung. Wer ein gegebenes Wort selbst in größter Not nicht bricht, bewahrt den Frieden mit dem Berg.“\n\n*(Truhenbelohnung: Siegel des Bergfriedens)*",
+      "color": "4"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_grey_1",
+      "fromNode": "grey_root",
+      "fromSide": "bottom",
+      "toNode": "grey_silver_vein",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Warum hängt alles an der Silberader?"
+    },
+    {
+      "id": "edge_grey_2",
+      "fromNode": "grey_root",
+      "fromSide": "bottom",
+      "toNode": "grey_prohibition",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Was hat es mit dem Verbot auf sich?"
+    },
+    {
+      "id": "edge_grey_3",
+      "fromNode": "grey_root",
+      "fromSide": "bottom",
+      "toNode": "grey_light_choice",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Wie bringen wir Licht hinein?"
+    },
+    {
+      "id": "edge_grey_4",
+      "fromNode": "grey_prohibition",
+      "fromSide": "bottom",
+      "toNode": "grey_dilemma",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Was wiegt schwerer: Schwur oder Arbeiter?"
+    },
+    {
+      "id": "edge_grey_5",
+      "fromNode": "grey_dilemma",
+      "fromSide": "bottom",
+      "toNode": "grey_light_choice",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Lass uns nach Wegen suchen"
+    },
+    {
+      "id": "edge_grey_6",
+      "fromNode": "grey_light_choice",
+      "fromSide": "bottom",
+      "toNode": "grey_resolution_crystal",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Kaltes Kristalllicht aus der Truhe"
+    },
+    {
+      "id": "edge_grey_7",
+      "fromNode": "grey_light_choice",
+      "fromSide": "bottom",
+      "toNode": "grey_resolution_honest",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Offene Bitte an die Ältesten"
+    },
+    {
+      "id": "edge_grey_8",
+      "fromNode": "grey_light_choice",
+      "fromSide": "bottom",
+      "toNode": "grey_resolution_strict",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Das Versprechen ist unantastbar"
+    }
+  ]
+}

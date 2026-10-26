@@ -249,6 +249,11 @@ describe('CrossroadsState & 7 Wege', () => {
       expect(state.isPointOnClearingOrPath(wp.x, wp.z)).toBe(true);
     }
 
+    // Die Anfangssperre auf Weg 7 versperrt zu Beginn den Zugang zum Tor
+    expect(state.isPath7GateBlocked()).toBe(true);
+    state.unblockPath7Gate();
+    expect(state.isPath7GateBlocked()).toBe(false);
+
     // Wandert entlang von Weg 7 bis auf den Vorplatz vor das geschlossene Tor
     state.setTargetToGate();
     for (let i = 0; i < 120; i++) {
@@ -1313,5 +1318,24 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     // Erneut startbar ohne Sperre
     const idleNode2 = dialogue.startDialogue('mushroom_7_idle');
     expect(idleNode2?.text).toBe('Kümmer dich um deinen Scheiß!');
+  });
+
+  it('versperrt zu Spielbeginn den Weg 7 zum Tor im Rücken des Spielers und öffnet ihn nach Arvid', () => {
+    const state = new CrossroadsState();
+    expect(state.isPath7GateBlocked()).toBe(true);
+
+    const blockPos = state.getPath7GateBlockPosition();
+    expect(blockPos.x).toBeCloseTo(-35.2, 1);
+    expect(blockPos.z).toBeCloseTo(-32.8, 1);
+
+    // Kollisionsprüfung an der Sperre
+    expect(state.isCollidingWithObstacles(blockPos.x, blockPos.z)).toBe(true);
+
+    // Aufhebung der Sperre
+    expect(state.unblockPath7Gate()).toBe(true);
+    expect(state.isPath7GateBlocked()).toBe(false);
+
+    // Erneutes Aufheben liefert false
+    expect(state.unblockPath7Gate()).toBe(false);
   });
 });

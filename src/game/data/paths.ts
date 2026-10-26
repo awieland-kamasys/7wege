@@ -420,6 +420,18 @@ export const PATH_7_END_CLEARING = {
 } as const;
 
 /**
+ * Position, Ausrichtung und Kollisionsradius der Wegsperre im Rücken des Spielers zu Beginn auf Weg 7.
+ * Liegt bei x: -35.2, z: -32.8 (ca. 5m hinter START_PLAYER_POS {-31.5, -29.1}) und verhindert den Zugang zum Tor,
+ * bevor die spielende Person mit Waldhüter Arvid an der Schutzhütte gesprochen hat.
+ */
+export const PATH_7_GATE_BLOCK_POS = {
+  x: -35.2,
+  z: -32.8,
+  radius: 1.85,
+  rotationY: Math.atan2(-40.5 - (-4.3), -38.5 - (-3.4)),
+} as const;
+
+/**
  * Position und Ausrichtung des geschlossenen Tors am Ende von Weg 7.
  */
 export const CLOSED_GATE_POS = {

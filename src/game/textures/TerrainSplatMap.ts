@@ -250,66 +250,6 @@ export function createTerrainSplatMap(): THREE.CanvasTexture | null {
     ctx.filter = 'none';
   }
 
-  // 3. ALPINE SCHNEEZONE AN DER BERGMINE & OBERER PFADABSCHNITT VON WEG 1 (BLAU-KANAL)
-  // Mittels 'lighter' (additives Blending) wird der Blaukanal beigemischt, ohne Rot (Weg) oder Grün (Lava) zu beschädigen.
-  ctx.globalCompositeOperation = 'lighter';
-
-  // 3a. Bergmassiv & Minenvorplatz: Kompakte Schneedecke direkt am Felsplateau
-  const cavePx = worldToPx(CAVE_ENTRANCE_POS.x, CAVE_ENTRANCE_POS.z, size);
-  const snowInnerPx = (7.5 / 240) * size;
-  const snowOuterPx = (17.5 / 240) * size;
-
-  const mountainSnowGrad = ctx.createRadialGradient(
-    cavePx.x,
-    cavePx.y,
-    snowInnerPx * 0.5,
-    cavePx.x,
-    cavePx.y,
-    snowOuterPx
-  );
-  mountainSnowGrad.addColorStop(0.0, 'rgba(0, 0, 255, 1.0)');
-  mountainSnowGrad.addColorStop(0.60, 'rgba(0, 0, 255, 0.95)');
-  mountainSnowGrad.addColorStop(0.85, 'rgba(0, 0, 255, 0.50)');
-  mountainSnowGrad.addColorStop(1.0, 'rgba(0, 0, 255, 0.0)');
-
-  ctx.fillStyle = mountainSnowGrad;
-  ctx.beginPath();
-  ctx.arc(cavePx.x, cavePx.y, snowOuterPx, 0, Math.PI * 2);
-  ctx.fill();
-
-  // 3b. Fließender Übergang der Schneegrenze entlang von Weg 1 hinauf zur Mine
-  // Beginnt erst im oberen Pfaddrittel ab z <= -28.0 m (Steilkurve), sodass der untere Waldweg sommerlich grün bleibt
-  const path1UpperWps = PATH_1_WAYPOINTS.filter((wp) => wp.z <= -27.5);
-  if (path1UpperWps.length >= 2) {
-    const pxSnowPts = path1UpperWps.map((pt) => worldToPx(pt.x, pt.z, size));
-
-    for (let i = 0; i < pxSnowPts.length - 1; i++) {
-      const p0 = pxSnowPts[i];
-      const p1 = pxSnowPts[i + 1];
-      const wpZ = path1UpperWps[i].z;
-      // Zarte Schneespuren ab z = -28m, geschlossener Schnee erst am Steilhang ab z < -38m
-      const progress = Math.min(1.0, Math.max(0.15, (-wpZ - 27.5) / 16.0));
-      const alpha = progress * 0.92;
-
-      // 6-stufiger weicher Auslauf für die Schneedecke
-      const snowLayers = 6;
-      for (let s = 0; s < snowLayers; s++) {
-        const st = s / (snowLayers - 1);
-        const w = ((12.5 - st * 6.5) / 240) * size;
-        const layerAlpha = alpha * (0.12 + 0.88 * (st * st));
-        ctx.strokeStyle = `rgba(0, 0, 255, ${(layerAlpha / snowLayers).toFixed(3)})`;
-        ctx.lineWidth = w;
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.stroke();
-      }
-    }
-  }
-
-  // Zurücksetzen auf Standard-Komposition
-  ctx.globalCompositeOperation = 'source-over';
-
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;

@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": "nixie_root",
+      "x": 200,
+      "y": 0,
+      "width": 400,
+      "height": 180,
+      "type": "text",
+      "text": "### 🧜‍♀️ Die Nixe vom Spiegelteich (Start)\n\n> „Sei gegrüßt, Wanderer im Nebelwald! Du stehst am Ufer des stillen Seerosenteichs. Tief unten schlummert ein uralter Schatz aus glänzendem Gold. Doch sei gewarnt: Ein schwerer Fluch liegt auf den Reichtümern des Wassers!“\n\n*Hüterin des Waldteichs am Ende von Weg 2*",
+      "color": "3"
+    },
+    {
+      "id": "nixie_curse",
+      "x": -180,
+      "y": 280,
+      "width": 340,
+      "height": 150,
+      "type": "text",
+      "text": "### 🧜‍♀️ Die Nixe\n\n> „Der Schatz wurde einst in blindem Neid geraubt und im Teich versenkt. Seitdem haftet ihm ein Fluch an: Wer das Gold aus Eigennutz hebt, dem verwandelt sich jeder Gewinn in Unglück.“",
+      "color": "5"
+    },
+    {
+      "id": "nixie_temptation",
+      "x": 240,
+      "y": 280,
+      "width": 360,
+      "height": 150,
+      "type": "text",
+      "text": "### 🧜‍♀️ Die Nixe (Prüfung der Verlockung)\n\n> „Das Wasser prüft das Herz jedes Einzelnen. Das Gold funkelt zum Greifen nah vor dir im Teich. Wie entscheidest du dich angesichts des verlockenden Schatzes?“",
+      "color": "6"
+    },
+    {
+      "id": "nixie_resolution_renounce",
+      "x": -280,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🧜‍♀️ Nixe (Entscheidung: Entsagung)\n\n> „Du hast ein klares Auge und ein freies Herz! Wer dem verlockenden Gold entsagt, über den hat der Fluch keine Macht.“\n\n*(Truhenbelohnung: Perle der Entsagung)*",
+      "color": "4"
+    },
+    {
+      "id": "nixie_resolution_cleanse",
+      "x": 120,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🧜‍♀️ Nixe (Entscheidung: Behütung)\n\n> „Weise gesprochen! Solange der Schatz auf dem Grund unter meiner Wacht verbleibt, schläft das drohende Unglück unter den Wellen.“\n\n*(Truhenbelohnung: Talisman des Schlaffluchs)*",
+      "color": "4"
+    },
+    {
+      "id": "nixie_resolution_take",
+      "x": 520,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🧜‍♀️ Nixe (Entscheidung: Gier / Warnung)\n\n> „Halt ein! Kaum berühren deine Finger das Wasser, zieht ein dunkler Schatten über den Teich. Zieh deine Hand zurück, solange das Unglück noch schläft!“\n\n*(Truhenbelohnung: Mahnende Fluchmünze)*",
+      "color": "1"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_nixie_1",
+      "fromNode": "nixie_root",
+      "fromSide": "bottom",
+      "toNode": "nixie_curse",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Erzähl mir vom Fluch des Goldes"
+    },
+    {
+      "id": "edge_nixie_2",
+      "fromNode": "nixie_root",
+      "fromSide": "bottom",
+      "toNode": "nixie_temptation",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Wie gehe ich weise damit um?"
+    },
+    {
+      "id": "edge_nixie_3",
+      "fromNode": "nixie_curse",
+      "fromSide": "bottom",
+      "toNode": "nixie_temptation",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Zur Entscheidung treten"
+    },
+    {
+      "id": "edge_nixie_4",
+      "fromNode": "nixie_temptation",
+      "fromSide": "bottom",
+      "toNode": "nixie_resolution_renounce",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Ich widerstehe der Verlockung"
+    },
+    {
+      "id": "edge_nixie_5",
+      "fromNode": "nixie_temptation",
+      "fromSide": "bottom",
+      "toNode": "nixie_resolution_cleanse",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Ich lasse den Schatz im Teich ruhen"
+    },
+    {
+      "id": "edge_nixie_6",
+      "fromNode": "nixie_temptation",
+      "fromSide": "bottom",
+      "toNode": "nixie_resolution_take",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Ich greife nach dem Gold"
+    }
+  ]
+}

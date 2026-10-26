@@ -40,6 +40,7 @@ import {
   PATH_6_HERBS_POS,
   PATH_6_WAYPOINTS,
   PATH_7_END_CLEARING,
+  PATH_7_GATE_BLOCK_POS,
   PATH_7_WAYPOINTS,
   PathPoint2D,
   POND_CENTER_POS,
@@ -159,6 +160,11 @@ export class CrossroadsState {
   private path6HerbsBlocked = true;
   private readonly path6HerbsPos: Vector2D = { x: PATH_6_HERBS_POS.x, z: PATH_6_HERBS_POS.z };
   private readonly path6HerbsRadius = PATH_6_HERBS_POS.radius;
+
+  // Auf Weg 7: Anfangssperre im Rücken des Spielers, die das Vorstoßen zum Tor vor dem Arvid-Gespräch verhindert
+  private path7GateBlocked = true;
+  private readonly path7GateBlockPos: Vector2D = { x: PATH_7_GATE_BLOCK_POS.x, z: PATH_7_GATE_BLOCK_POS.z };
+  private readonly path7GateBlockRadius = PATH_7_GATE_BLOCK_POS.radius;
 
 
   // Am Ende des 2. Weges: Waldteich und auf einem Stein im Teich die Nixe
@@ -513,6 +519,42 @@ export class CrossroadsState {
       this.playerPos.z - this.path6HerbsPos.z
     );
     return dist <= this.path6HerbsRadius + 0.95;
+  }
+
+  // --- WEG 7: ANFANGSSPERRE IM RÜCKEN DES SPIELERS ---
+  public isPath7GateBlocked(): boolean {
+    return this.path7GateBlocked;
+  }
+
+  public setPath7GateBlocked(blocked: boolean): void {
+    this.path7GateBlocked = blocked;
+  }
+
+  public unblockPath7Gate(): boolean {
+    if (!this.path7GateBlocked) {
+      return false;
+    }
+    this.path7GateBlocked = false;
+    return true;
+  }
+
+  public getPath7GateBlockPosition(): Readonly<Vector2D> {
+    return { ...this.path7GateBlockPos };
+  }
+
+  public getPath7GateBlockRadius(): number {
+    return this.path7GateBlockRadius;
+  }
+
+  public isNearPath7GateBlock(distThreshold = 3.2): boolean {
+    if (!this.path7GateBlocked) {
+      return false;
+    }
+    const dist = Math.hypot(
+      this.playerPos.x - this.path7GateBlockPos.x,
+      this.playerPos.z - this.path7GateBlockPos.z
+    );
+    return dist <= this.path7GateBlockRadius + distThreshold;
   }
 
   /**
@@ -1251,6 +1293,17 @@ export class CrossroadsState {
       }
     }
 
+    // Anfangssperre im Rücken des Spielers auf Weg 7 (blockiert den Weg zum Tor vor dem Arvid-Gespräch)
+    if (this.path7GateBlocked) {
+      if (
+        this.isCollidingWithBarrier(x, z, this.path7GateBlockPos) ||
+        Math.hypot(x - this.path7GateBlockPos.x, z - this.path7GateBlockPos.z) <
+        this.path7GateBlockRadius - eps
+      ) {
+        return true;
+      }
+    }
+
 
     // Das geschlossene Tor und die flankierenden Steinmauern am Ende von Weg 7
     const gateDx = x - CLOSED_GATE_POS.x;
@@ -1972,6 +2025,26 @@ export class CrossroadsState {
         );
         resolvedX = afterHerbs.x;
         resolvedZ = afterHerbs.z;
+      }
+
+      // Anfangssperre im Rücken des Spielers auf Weg 7
+      if (this.path7GateBlocked) {
+        const afterBarrier = this.pushOutOfBarrier(
+          resolvedX,
+          resolvedZ,
+          this.path7GateBlockPos
+        );
+        resolvedX = afterBarrier.x;
+        resolvedZ = afterBarrier.z;
+
+        const afterBlock = this.pushOutOfCircle(
+          resolvedX,
+          resolvedZ,
+          this.path7GateBlockPos,
+          this.path7GateBlockRadius
+        );
+        resolvedX = afterBlock.x;
+        resolvedZ = afterBlock.z;
       }
 
 

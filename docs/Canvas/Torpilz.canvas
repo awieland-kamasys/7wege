@@ -1,0 +1,110 @@
+{
+  "nodes": [
+    {
+      "id": "mushroom_7_root",
+      "x": 200,
+      "y": 0,
+      "width": 380,
+      "height": 160,
+      "type": "text",
+      "text": "### 🍄 Pilzling Glimmling (Torpilz - Start)\n\n> „Psst...! Hey du, ja du! Nicht so laut trampeln. Was schleichst du hier am großen Tor rum?“\n\n*Steht direkt 1m neben dem Steintor am Ende von Weg 7*",
+      "color": "3"
+    },
+    {
+      "id": "mushroom_7_diskurs",
+      "x": -240,
+      "y": 260,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🍄 Pilzling Glimmling\n\n> „Ich seh also aus wie ein Pilz! Na vielen Dank auch für die botanische Tiefenanalyse, Einstein. Ich bin ein Wächterspross!“",
+      "color": "5"
+    },
+    {
+      "id": "mushroom_7_tor",
+      "x": 140,
+      "y": 260,
+      "width": 330,
+      "height": 140,
+      "type": "text",
+      "text": "### 🍄 Pilzling Glimmling\n\n> „Das Tor? Das steht hier schon immer. Keiner weiß wer den Schlüssel hat – außer vielleicht die 7 Runen.“",
+      "color": "5"
+    },
+    {
+      "id": "mushroom_7_pruefungen",
+      "x": 530,
+      "y": 260,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🍄 Pilzling Glimmling\n\n> „Prüfungen? Frag den Typen der an der Hütte rumhängt. Der schwafelt den ganzen Tag von Moral und den sieben Wegen.“",
+      "color": "5"
+    },
+    {
+      "id": "mushroom_7_idle",
+      "x": 200,
+      "y": 500,
+      "width": 380,
+      "height": 130,
+      "type": "text",
+      "text": "### 🍄 Pilzling Glimmling (Dauerhafter Status)\n\n> „Kümmer dich um deinen Scheiß!“\n\n*(Erscheint unendlich oft bei jedem erneuten Anklicken nach dem Erstgespräch)*",
+      "color": "1"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_m7_1",
+      "fromNode": "mushroom_7_root",
+      "fromSide": "bottom",
+      "toNode": "mushroom_7_diskurs",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Du siehst aus wie ein Pilz!"
+    },
+    {
+      "id": "edge_m7_2",
+      "fromNode": "mushroom_7_root",
+      "fromSide": "bottom",
+      "toNode": "mushroom_7_tor",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Was hat es mit dem Tor auf sich?"
+    },
+    {
+      "id": "edge_m7_3",
+      "fromNode": "mushroom_7_root",
+      "fromSide": "bottom",
+      "toNode": "mushroom_7_pruefungen",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Wer weiß mehr über die Wege?"
+    },
+    {
+      "id": "edge_m7_4",
+      "fromNode": "mushroom_7_diskurs",
+      "fromSide": "bottom",
+      "toNode": "mushroom_7_idle",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "(Nach Beendigung)"
+    },
+    {
+      "id": "edge_m7_5",
+      "fromNode": "mushroom_7_tor",
+      "fromSide": "bottom",
+      "toNode": "mushroom_7_idle",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "(Nach Beendigung)"
+    },
+    {
+      "id": "edge_m7_6",
+      "fromNode": "mushroom_7_pruefungen",
+      "fromSide": "bottom",
+      "toNode": "mushroom_7_idle",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "(Nach Beendigung)"
+    }
+  ]
+}

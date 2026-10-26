@@ -188,34 +188,34 @@ export class QuestSystem {
     let currentQuest: CurrentQuestInfo;
 
     const hasTalkedToArvid = !dialogue.canStartDialogue('root');
-    const hasCompass = inventory.hasItem('item_compass');
+    const hasItemsInInventory = inventory.getUnlockedItems().length > 0;
 
     if (!hasTalkedToArvid) {
       currentQuest = {
         chapter: 'Kapitel 1: Der Ruf der Kreuzung',
-        title: 'Sprich mit Waldhüter Arvid',
-        objective: 'Folge Weg 7 nach vorn zur Waldkreuzung und sprich mit Arvid an der Schutzhütte.',
-        hint: 'Auf Weg 7 begegnest du Lupo. Arvid wartet vor der Schutzhütte im Zentrum der Kreuzung.',
+        title: 'Erkunde die Gegend',
+        objective: 'Erkunde die Gegend und folge Weg 7 nach vorn zur Waldkreuzung.',
+        hint: 'Auf Weg 7 begegnest du Lupo. Waldhüter Arvid wartet vor der Schutzhütte im Zentrum der Kreuzung.',
         progressText: 'Weg 7 → 7-Wegekreuzung',
-        hasChestReward,
-      };
-    } else if (!hasCompass) {
-      currentQuest = {
-        chapter: 'Kapitel 2: Die uralte Schatztruhe',
-        title: 'Öffne die Schatztruhe an der Kreuzung',
-        objective: 'Untersuche die Schatztruhe vor Arvids Hütte und nimm deine erste Belohnung in Empfang.',
-        hint: 'Klicke auf die Schatztruhe oder laufe direkt an sie heran. In ihr liegt Arvids Kompass für dich bereit.',
-        progressText: 'Schatztruhe untersuchen',
-        hasChestReward: true,
+        hasChestReward: false,
       };
     } else if (hasChestReward) {
       currentQuest = {
         chapter: 'Belohnung bereit: Schatztruhe',
         title: 'Hole deine Belohnung aus der Truhe',
         objective: 'Kehre zur Waldkreuzung zurück und öffne die Schatztruhe vor der Schutzhütte.',
-        hint: `In der Truhe wartet ${pendingRewards.length === 1 ? 'ein neues Charakter-Item' : `${pendingRewards.length} neue Charakter-Items`} auf deine Sammlung!`,
+        hint: `In der Schatztruhe wartet ${pendingRewards.length === 1 ? 'deine verdiente Quest-Belohnung' : `${pendingRewards.length} neue Belohnungen`} auf dich!`,
         progressText: `${pendingRewards.length} Item(s) in der Truhe`,
         hasChestReward: true,
+      };
+    } else if (completedQuestsCount === 0) {
+      currentQuest = {
+        chapter: 'Kapitel 2: Die Prüfungen der Wege',
+        title: 'Bestehe die erste Wegequest',
+        objective: 'Befreie die gesperrten Waldwege, sprich mit den Bewohnern und triff deine Entscheidungen.',
+        hint: 'Sobald du eine Wegequest (Weg 1–6) abschließt, bestimmt dein Ausgang den Inhalt der Schatztruhe an der Schutzhütte!',
+        progressText: '0 von 6 Wegequests gelöst',
+        hasChestReward: false,
       };
     } else if (clearedCount < 6) {
       currentQuest = {
@@ -260,8 +260,8 @@ export class QuestSystem {
       },
       {
         id: 'note_chest',
-        text: 'Die uralte Schatztruhe geöffnet und Arvids Messingkompass geborgen.',
-        completed: hasCompass,
+        text: 'Die Schatztruhe an der Schutzhütte geöffnet und die Quest-Belohnung geborgen.',
+        completed: hasItemsInInventory,
       },
       {
         id: 'note_barriers',

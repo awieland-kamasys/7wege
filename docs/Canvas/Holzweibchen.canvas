@@ -1,0 +1,140 @@
+{
+  "nodes": [
+    {
+      "id": "wood_woman_root",
+      "x": 200,
+      "y": 0,
+      "width": 400,
+      "height": 180,
+      "type": "text",
+      "text": "### 🌿 Das Holzweibchen (Holzfällercamp)\n\n> „Willkommen an unserem Lagerfeuer! Der nahende Winter droht bitterkalt zu werden. Das Dorf benötigt dringend Brennholz zum Heizen. Doch unbedachte Abholzungen verletzen den alten Wald. Wie halten wir die Waage?“\n\n*Hüterin auf der Lichtung am Ende von Weg 4*",
+      "color": "3"
+    },
+    {
+      "id": "wood_woman_firewood",
+      "x": -240,
+      "y": 280,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🌿 Das Holzweibchen\n\n> „Ohne das Holz erfrieren die Schwachen im Dorf. Die Axt ist ein Werkzeug der Not, kein Frevel aus Mordlust.“",
+      "color": "5"
+    },
+    {
+      "id": "wood_woman_forest_danger",
+      "x": 140,
+      "y": 280,
+      "width": 330,
+      "height": 140,
+      "type": "text",
+      "text": "### 🌿 Das Holzweibchen\n\n> „Schlagen wir die alten Eichen und Buchen, verliert der Wald seine Seele. Die Erde erodiert und der Wald stirbt.“",
+      "color": "5"
+    },
+    {
+      "id": "wood_woman_dilemma",
+      "x": 530,
+      "y": 280,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🌿 Das Holzweibchen (Entscheidung)\n\n> „Schutz des Waldes oder Schutz der Menschen im Dorf vor dem Erfrieren. Was empfiehlst du uns?“",
+      "color": "2"
+    },
+    {
+      "id": "wood_resolution_balance",
+      "x": -280,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🌿 Holzweibchen (Lösung: Ausgleich)\n\n> „Ein weiser Pakt! Wir entnehmen nur Totholz und Windbruch und pflanzen für jeden Baum zwei Setzlinge.“\n\n*(Truhenbelohnung: Bernstein-Waldanhänger)*",
+      "color": "4"
+    },
+    {
+      "id": "wood_resolution_protect",
+      "x": 120,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🌿 Holzweibchen (Lösung: Voller Waldschutz)\n\n> „Der Wald bleibt unantastbar. Das Dorf muss nach anderen Wegen suchen, um die Kälte zu überstehen.“\n\n*(Truhenbelohnung: Heiliger Eichenspross)*",
+      "color": "4"
+    },
+    {
+      "id": "wood_resolution_yield",
+      "x": 520,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🌿 Holzweibchen (Lösung: Dorfwirtschaft)\n\n> „Das Menschenleben geht in bitterer Not vor. Wir schlagen das Holz und bitten den Wald um Vergebung.“\n\n*(Truhenbelohnung: Harziger Nutzholz-Keil)*",
+      "color": "4"
+    },
+    {
+      "id": "wood_lodge_root",
+      "x": 1050,
+      "y": 0,
+      "width": 380,
+      "height": 170,
+      "type": "text",
+      "text": "### 🌿 Holzweibchen an der Jagdhütte (Weg 6)\n\n> „Ich habe die Kräuter aus dem Garten des Jägers genommen – ja! Aber nicht aus Bosheit! Ein todkrankes Waldtier und ein fieberndes Kind im Forst brauchten dringend die heilsame Salbe.“",
+      "color": "6"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_wood_1",
+      "fromNode": "wood_woman_root",
+      "fromSide": "bottom",
+      "toNode": "wood_woman_firewood",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Warum braucht das Dorf so viel Holz?"
+    },
+    {
+      "id": "edge_wood_2",
+      "fromNode": "wood_woman_root",
+      "fromSide": "bottom",
+      "toNode": "wood_woman_forest_danger",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Wie steht es um den Wald?"
+    },
+    {
+      "id": "edge_wood_3",
+      "fromNode": "wood_woman_root",
+      "fromSide": "bottom",
+      "toNode": "wood_woman_dilemma",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Zur Entscheidung"
+    },
+    {
+      "id": "edge_wood_4",
+      "fromNode": "wood_woman_dilemma",
+      "fromSide": "bottom",
+      "toNode": "wood_resolution_balance",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Nachhaltige Holzwirtschaft"
+    },
+    {
+      "id": "edge_wood_5",
+      "fromNode": "wood_woman_dilemma",
+      "fromSide": "bottom",
+      "toNode": "wood_resolution_protect",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Unbedingter Waldschutz"
+    },
+    {
+      "id": "edge_wood_6",
+      "fromNode": "wood_woman_dilemma",
+      "fromSide": "bottom",
+      "toNode": "wood_resolution_yield",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Schlagen für das Dorf"
+    }
+  ]
+}

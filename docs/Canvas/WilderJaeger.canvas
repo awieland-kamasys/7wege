@@ -1,0 +1,130 @@
+{
+  "nodes": [
+    {
+      "id": "hunter_root",
+      "x": 200,
+      "y": 0,
+      "width": 400,
+      "height": 180,
+      "type": "text",
+      "text": "### 🏹 Der Wilde Jäger (Start)\n\n> „Halt, Wanderer! Tritt nicht zwischen uns! Ich habe dieses Holzweibchen quer durch den Forst bis hierher verfolgt. Sie hat sich in meinen umzäunten Kräutergarten geschlichen und die seltenen Heilsalben-Kräuter gestohlen! Ein Diebstahl bleibt ein Vergehen gegen die Ordnung des Waldes!“\n\n*Hüter des Jagdreviers am Ende von Weg 6*",
+      "color": "3"
+    },
+    {
+      "id": "hunter_herbs",
+      "x": -240,
+      "y": 280,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🏹 Der Wilde Jäger\n\n> „Es sind uralte Mondschein-Kräuter, mühsam gehegt. Ohne sie kann ich meine Wundsalben für die Treiber und Hunde nicht sieden.“",
+      "color": "5"
+    },
+    {
+      "id": "hunter_poaching_argument",
+      "x": 140,
+      "y": 280,
+      "width": 330,
+      "height": 140,
+      "type": "text",
+      "text": "### 🏹 Der Wilde Jäger\n\n> „Wenn jeder nimmt, was er will, bricht die Jagdordnung zusammen. Gesetze sind der Damm gegen die Gesetzlosigkeit!“",
+      "color": "5"
+    },
+    {
+      "id": "hunter_dilemma",
+      "x": 530,
+      "y": 280,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🏹 Der Wilde Jäger (Das Urteil)\n\n> „Gesetz und Ordnung – oder Milde wegen eines kranken Waldkindes. Wie lautet dein Spruch?“",
+      "color": "2"
+    },
+    {
+      "id": "hunter_resolution_balance",
+      "x": -280,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🏹 Wilder Jäger (Urteil: Ausgleich & Pakt)\n\n> „Ein weiser Schiedsspruch! Das Holzweibchen hilft mir im Frühjahr beim Neuanpflanzen, und sie darf die nötigen Kräuter behalten.“\n\n*(Truhenbelohnung: Pakt-Münze des Forstes)*",
+      "color": "4"
+    },
+    {
+      "id": "hunter_resolution_mercy",
+      "x": 120,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🏹 Wilder Jäger (Urteil: Gnade vor Recht)\n\n> „Leben geht vor Gesetz. Ich stecke meine Flinte weg und gebe ihr die Kräuter freiwillig mit.“\n\n*(Truhenbelohnung: Heilsames Lebenskraut)*",
+      "color": "4"
+    },
+    {
+      "id": "hunter_resolution_law",
+      "x": 520,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🏹 Wilder Jäger (Urteil: Strikte Ordnung)\n\n> „Recht muss Recht bleiben. Die Kräuter verbleiben im Garten, und die Regeln des Waldes werden geachtet.“\n\n*(Truhenbelohnung: Silberner Hirschorden)*",
+      "color": "4"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_hunter_1",
+      "fromNode": "hunter_root",
+      "fromSide": "bottom",
+      "toNode": "hunter_herbs",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Welche Kräuter wirfst du ihr vor?"
+    },
+    {
+      "id": "edge_hunter_2",
+      "fromNode": "hunter_root",
+      "fromSide": "bottom",
+      "toNode": "hunter_poaching_argument",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Warum wiegt die Ordnung so schwer?"
+    },
+    {
+      "id": "edge_hunter_3",
+      "fromNode": "hunter_root",
+      "fromSide": "bottom",
+      "toNode": "hunter_dilemma",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Einen Schiedsspruch fällen"
+    },
+    {
+      "id": "edge_hunter_4",
+      "fromNode": "hunter_dilemma",
+      "fromSide": "bottom",
+      "toNode": "hunter_resolution_balance",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Gerechter Pakt: Hilfe gegen Kräuter"
+    },
+    {
+      "id": "edge_hunter_5",
+      "fromNode": "hunter_dilemma",
+      "fromSide": "bottom",
+      "toNode": "hunter_resolution_mercy",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Milde: Rettung des Lebens zählt"
+    },
+    {
+      "id": "edge_hunter_6",
+      "fromNode": "hunter_dilemma",
+      "fromSide": "bottom",
+      "toNode": "hunter_resolution_law",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Strenges Recht: Gesetz einhalten"
+    }
+  ]
+}

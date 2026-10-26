@@ -307,9 +307,16 @@ export class GameApp {
         for (const item of newItems) {
           this.hud.showToast(
             `🎁 Neues Charakter-Item erhalten: ${item.name}! In deiner Sammlung (🎒) abgelegt.`,
-            4200
+            4500
           );
         }
+      } else if (this.inventory.getUnlockedItems().length === 0) {
+        this.hud.showToast(
+          'Die Schatztruhe ist noch leer. Schließe zuerst eine Wegequest ab, um deine verdiente Belohnung zu empfangen!',
+          4200
+        );
+      } else {
+        this.hud.showToast('In der Schatztruhe liegt derzeit keine neue Belohnung.', 3200);
       }
     } else {
       this.sound.playChestCloseSound();
@@ -559,6 +566,13 @@ export class GameApp {
       this.initiateTalkToWildHunter();
     } else if (action?.type === 'walk_to_gate') {
       this.initiateInspectGate();
+    }
+
+    // Wenn der Erstkontakt mit Waldhüter Arvid geführt wurde, wird die Sperre im Rücken zum Tor aufgehoben
+    if (this.state.isPath7GateBlocked() && this.dialogue.isDialogueCompleted('root')) {
+      this.state.unblockPath7Gate();
+      this.scene.removePath7GateBlockVisual();
+      this.hud.showToast('Der dichte Nebel im Rücken hat sich gelichtet – der Pfad zum Tor ist nun frei!', 4000);
     }
   }
 
@@ -848,6 +862,7 @@ export class GameApp {
     this.scene.setLogHovered(hit.kind === 'log');
     this.scene.setFireHovered(hit.kind === 'fire');
     this.scene.setHerbsHovered(hit.kind === 'herbs');
+    this.scene.setPath7GateBlockHovered(hit.kind === 'path7_gate_block');
     this.scene.setChestHovered(hit.kind === 'chest');
     this.scene.setSignpostCapHovered(hit.kind === 'signpost_cap');
     this.scene.setSignpostBaseHovered(hit.kind === 'signpost_base');
@@ -950,6 +965,11 @@ export class GameApp {
 
       if (hit.kind === 'world_tree') {
         this.hud.showToast('Der uralte Weltenbaum: Seine mächtigen Wurzeln verbinden die Reiche des Wassers und der Berge.');
+        return;
+      }
+
+      if (hit.kind === 'path7_gate_block') {
+        this.hud.showToast('Ein undurchdringliches Dickicht und dichter Nebel versperren den Weg zum Tor. Sprich zuerst mit Waldhüter Arvid an der Schutzhütte!', 4200);
         return;
       }
 
@@ -1230,6 +1250,12 @@ export class GameApp {
         this.state.clearTargetPosition();
         this.toggleChestWithSound();
       }
+    }
+
+    // Automatische Aufhebung der Torwegsperre, sobald mit Arvid gesprochen wurde
+    if (this.state.isPath7GateBlocked() && this.dialogue.isDialogueCompleted('root')) {
+      this.state.unblockPath7Gate();
+      this.scene.removePath7GateBlockVisual();
     }
 
     const newPos = this.state.getPlayerPosition();

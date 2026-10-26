@@ -1,0 +1,148 @@
+{
+  "nodes": [
+    {
+      "id": "giant_root",
+      "x": 200,
+      "y": 0,
+      "width": 400,
+      "height": 180,
+      "type": "text",
+      "text": "### 🗿 Der Riese am Wehr (Start)\n\n> „Halt vor dem Wehr, kleines Menschenkind! Du stehst auf meiner Brücke über dem Quellbach. Siehst du das geschlossene Wehr? Eine Bergquelle versorgt eigentlich das Tal. Ihre Freigabe könnte unten eine Dürre lindern – doch wenn das Wehr geöffnet wird, zerstört das meine Heimat!“\n\n*Hüter der Bergquelle am Ende von Weg 3*",
+      "color": "3"
+    },
+    {
+      "id": "giant_source_drought",
+      "x": -240,
+      "y": 280,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🗿 Der Riese\n\n> „Die Sommerglut hat die Brunnen im Tal versiegen lassen. Das Vieh lechzt nach Wasser. Nur mein Quellsee hier oben führt noch reiches Gebirgswasser.“",
+      "color": "5"
+    },
+    {
+      "id": "giant_homeland",
+      "x": 140,
+      "y": 280,
+      "width": 330,
+      "height": 140,
+      "type": "text",
+      "text": "### 🗿 Der Riese\n\n> „Ich lebe seit Jahrhunderten an diesem Wehr. Öffne ich die Schleusen ganz, stürzen die Fluten mit Urgewalt hinab und spülen mein Quellbecken und meine Zuflucht für immer fort.“",
+      "color": "5"
+    },
+    {
+      "id": "giant_dilemma",
+      "x": 530,
+      "y": 280,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🗿 Der Riese (Die Prüfung)\n\n> „Dürstende Menschen unten im Tal – oder das alte Heim eines Bergriesen hier oben. Welchen Rat gibst du mir für die Schleuse?“",
+      "color": "2"
+    },
+    {
+      "id": "giant_resolution_compromise",
+      "x": -280,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🗿 Riese (Lösung: Ausgleich)\n\n> „Ein gerechter Vorschlag! Wir öffnen das Wehr zur Hälfte: Ein beständiger Bach lindert die Dürre im Tal, und mein Quellsee bleibt behütet.“\n\n*(Truhenbelohnung: Harmonie-Quellkristall)*",
+      "color": "4"
+    },
+    {
+      "id": "giant_resolution_open",
+      "x": 120,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🗿 Riese (Lösung: Volle Öffnung)\n\n> „Ein schweres Opfer für mich, aber das Leben vieler wiegt mehr als mein eigener Frieden. Möge das Quellwasser das Tal retten.“\n\n*(Truhenbelohnung: Stromflut-Talisman)*",
+      "color": "4"
+    },
+    {
+      "id": "giant_resolution_keep",
+      "x": 520,
+      "y": 530,
+      "width": 320,
+      "height": 140,
+      "type": "text",
+      "text": "### 🗿 Riese (Lösung: Quellschutz)\n\n> „Standhaft gesprochen. Wer das Erbe der Berge opfert, verliert seine Wurzeln. Ich halte die Schleuse verschlossen.“\n\n*(Truhenbelohnung: Felswächter-Granit)*",
+      "color": "4"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_giant_1",
+      "fromNode": "giant_root",
+      "fromSide": "bottom",
+      "toNode": "giant_source_drought",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "1. Wie steht es um die Dürre im Tal?"
+    },
+    {
+      "id": "edge_giant_2",
+      "fromNode": "giant_root",
+      "fromSide": "bottom",
+      "toNode": "giant_homeland",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "2. Warum zerstört es deine Heimat?"
+    },
+    {
+      "id": "edge_giant_3",
+      "fromNode": "giant_root",
+      "fromSide": "bottom",
+      "toNode": "giant_dilemma",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "3. Zur Entscheidung am Wehr"
+    },
+    {
+      "id": "edge_giant_4",
+      "fromNode": "giant_source_drought",
+      "fromSide": "bottom",
+      "toNode": "giant_dilemma",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Lösung suchen"
+    },
+    {
+      "id": "edge_giant_5",
+      "fromNode": "giant_homeland",
+      "fromSide": "bottom",
+      "toNode": "giant_dilemma",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Lösung suchen"
+    },
+    {
+      "id": "edge_giant_6",
+      "fromNode": "giant_dilemma",
+      "fromSide": "bottom",
+      "toNode": "giant_resolution_compromise",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Wehr zur Hälfte öffnen (Teilung)"
+    },
+    {
+      "id": "edge_giant_7",
+      "fromNode": "giant_dilemma",
+      "fromSide": "bottom",
+      "toNode": "giant_resolution_open",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Volle Öffnung für das Tal"
+    },
+    {
+      "id": "edge_giant_8",
+      "fromNode": "giant_dilemma",
+      "fromSide": "bottom",
+      "toNode": "giant_resolution_keep",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "Schleuse geschlossen halten"
+    }
+  ]
+}

@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import {
   createGrassTexture,
   createPathTexture,
-  createSnowTexture,
   createVeinedLavaRockTexture,
 } from './GroundTextures';
 import { createTerrainSplatMap } from './TerrainSplatMap';
@@ -65,16 +64,6 @@ export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_
     lavaTex.bumpMap.wrapT = THREE.RepeatWrapping;
   }
 
-  const snowTex = createSnowTexture();
-  if (snowTex.map) {
-    snowTex.map.wrapS = THREE.RepeatWrapping;
-    snowTex.map.wrapT = THREE.RepeatWrapping;
-  }
-  if (snowTex.bumpMap) {
-    snowTex.bumpMap.wrapS = THREE.RepeatWrapping;
-    snowTex.bumpMap.wrapT = THREE.RepeatWrapping;
-  }
-
   const splatMap = createTerrainSplatMap();
 
   let simpleMode = false;
@@ -86,7 +75,6 @@ export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_
     uLavaMap: { value: lavaTex.map },
     uLavaEmissive: { value: lavaTex.emissiveMap },
     uLavaPulse: { value: 1.0 },
-    uSnowMap: { value: snowTex.map },
     uSimpleMode: { value: 0.0 },
   };
 
@@ -118,7 +106,6 @@ export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_
       uniform sampler2D uLavaMap;
       uniform sampler2D uLavaEmissive;
       uniform float uLavaPulse;
-      uniform sampler2D uSnowMap;
       uniform float uSimpleMode;
     `;
 
@@ -139,22 +126,16 @@ export function createTerrainMaterial(initialPreset: TerrainPresetKey = DEFAULT_
         vec4 splat = texture2D( uSplatMap, vMapUv );
         vec4 colPath = texture2D( uPathMap, vMapUv * 38.0 );
         vec4 colLava = texture2D( uLavaMap, vMapUv * 16.0 );
-        vec4 colSnow = texture2D( uSnowMap, vMapUv * 46.0 );
 
         vec3 grassLinear = pow(colGrass.rgb, vec3(2.2));
         vec3 pathLinear = pow(colPath.rgb, vec3(2.2));
         vec3 lavaLinear = pow(colLava.rgb, vec3(2.2));
-        vec3 snowLinear = pow(colSnow.rgb, vec3(2.2));
 
         // 1. Wiese zu Weg mit natürlichem Auslauf
         vec3 terrainDiff = mix(grassLinear, pathLinear, splat.r);
 
         // 2. Zu tiefschwarzem Obsidianboden um den Lavasee
         terrainDiff = mix(terrainDiff, lavaLinear * 0.85, splat.g);
-
-        // 3. Zu alpiner Schneezone an der Bergmine (Blau-Kanal)
-        vec3 snowySurface = mix(snowLinear, snowLinear * vec3(0.92, 0.94, 0.97), splat.r * 0.35);
-        terrainDiff = mix(terrainDiff, snowySurface, splat.b);
 
         // Bei aktivem uSimpleMode stufenlos zur reinen Wiese überblenden
         vec3 finalTerrain = mix(terrainDiff, grassLinear, clamp(uSimpleMode, 0.0, 1.0));
