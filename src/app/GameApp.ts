@@ -969,7 +969,7 @@ export class GameApp {
       }
 
       if (hit.kind === 'path7_gate_block') {
-        this.hud.showToast('Ein undurchdringliches Dickicht und dichter Nebel versperren den Weg zum Tor. Sprich zuerst mit Waldhüter Arvid an der Schutzhütte!', 4200);
+        this.hud.showToast('Dichter, undurchdringlicher Waldnebel versperrt den Weg. Sprich zuerst mit Waldhüter Arvid an der Schutzhütte!', 4200);
         return;
       }
 

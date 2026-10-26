@@ -785,6 +785,13 @@ export class CrossroadsScene {
     this.scene.add(this.path7GateBlock.group);
     this.pickableObjects.push(...this.path7GateBlock.pickableMeshes);
 
+    // Zu Spielbeginn sind das Steintor und der Torpilz unsichtbar, um jegliche Sichtbarkeit vor dem Arvid-Gespräch auszuschließen
+    this.closedGate.group.visible = false;
+    const gateMushroom = this.mushroomCreatures.group.getObjectByName('MushroomCreature_Path7');
+    if (gateMushroom) {
+      gateMushroom.visible = false;
+    }
+
 
     // Bäume rund um die Lichtung, zwischen den 7 Wegen und entlang aller Kurven von Weg 1 bis 7
     this.buildForestRing();
@@ -3013,7 +3020,15 @@ export class CrossroadsScene {
   }
 
   public removePath7GateBlockVisual(onComplete?: () => void): void {
-    this.path7GateBlock.startDissolve(onComplete);
+    this.path7GateBlock.startDissolve(() => {
+      onComplete?.();
+    });
+    // Sobald die Nebelwand sich auflöst, wird das Steintor und der Torpilz aufgedeckt
+    this.closedGate.group.visible = true;
+    const gateMushroom = this.mushroomCreatures.group.getObjectByName('MushroomCreature_Path7');
+    if (gateMushroom) {
+      gateMushroom.visible = true;
+    }
   }
 
   public isPath7GateBlockRemoved(): boolean {
@@ -3090,9 +3105,15 @@ export class CrossroadsScene {
         return { kind: 'creature', point };
       }
       if (data.interactableType === 'mushroom_creature' && typeof data.pathId === 'number') {
+        if (data.pathId === 7 && !this.closedGate.group.visible) {
+          continue;
+        }
         return { kind: 'mushroom_creature', pathId: data.pathId, point };
       }
       if (data.interactableType === 'gate') {
+        if (!this.closedGate.group.visible) {
+          continue;
+        }
         return { kind: 'gate', point };
       }
       if (data.interactableType === 'path7_gate_block') {
@@ -3381,7 +3402,7 @@ export class CrossroadsScene {
       );
     }
     // Weg 7: Verschlossenes Tor
-    if (distGate < 33) {
+    if (this.closedGate.group.visible && distGate < 33) {
       this.closedGate.update(this.elapsedSeconds, playerPos, this.isGateHovered);
     }
 
