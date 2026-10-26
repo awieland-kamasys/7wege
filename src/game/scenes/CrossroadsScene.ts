@@ -23,6 +23,7 @@ import {
   PATH_6_END_CLEARING,
   PATH_6_WAYPOINTS,
   PATH_7_END_CLEARING,
+  PATH_7_GATE_BLOCK_POS,
   PATH_7_WAYPOINTS,
   PathPoint2D,
   POND_CENTER_POS,
@@ -823,8 +824,13 @@ export class CrossroadsScene {
     // Initiale Kamera-Ausrichtung hinter dem Spieler mit Blickrichtung zur Kreuzung (bodengeerdet)
     const targetY = startY + 1.1;
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
-    const initCamX = START_PLAYER_POS.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
-    const initCamZ = START_PLAYER_POS.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
+    let initCamX = START_PLAYER_POS.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
+    let initCamZ = START_PLAYER_POS.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
+    if (this.path7GateBlock && !this.path7GateBlock.isRemoved() && !this.path7GateBlock.isDissolving()) {
+      const clamped = this.clampCameraAgainstGateBlock(initCamX, initCamZ);
+      initCamX = clamped.x;
+      initCamZ = clamped.z;
+    }
     const initCamGroundY = getTerrainHeight(initCamX, initCamZ);
     const camHeight = Math.max(
       initCamGroundY + 0.75,
@@ -2847,6 +2853,24 @@ export class CrossroadsScene {
   }
 
   /**
+   * Hält die Kamera vor der Nebelwand auf Weg 7, solange die Wand aktiv ist.
+   * Verhindert, dass die Kamera hinter die Barriere gleitet oder der Spieler verdeckt wird.
+   */
+  private clampCameraAgainstGateBlock(camX: number, camZ: number): { x: number; z: number } {
+    const nx = Math.sin(PATH_7_GATE_BLOCK_POS.rotationY);
+    const nz = Math.cos(PATH_7_GATE_BLOCK_POS.rotationY);
+    const dist = (camX - PATH_7_GATE_BLOCK_POS.x) * nx + (camZ - PATH_7_GATE_BLOCK_POS.z) * nz;
+    if (dist < 1.2) {
+      const correction = 1.2 - dist;
+      return {
+        x: camX + nx * correction,
+        z: camZ + nz * correction,
+      };
+    }
+    return { x: camX, z: camZ };
+  }
+
+  /**
    * Setzt die Kamera und Spielfigur nach einem Schnellreise-Sprung sofort auf die Zielposition.
    */
   public snapCameraToPlayer(playerPos: Readonly<Vector2D>): void {
@@ -2858,8 +2882,13 @@ export class CrossroadsScene {
 
     const targetY = groundY + 1.1;
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
-    const targetCamX = playerPos.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
-    const targetCamZ = playerPos.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
+    let targetCamX = playerPos.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
+    let targetCamZ = playerPos.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
+    if (this.path7GateBlock && !this.path7GateBlock.isRemoved() && !this.path7GateBlock.isDissolving()) {
+      const clamped = this.clampCameraAgainstGateBlock(targetCamX, targetCamZ);
+      targetCamX = clamped.x;
+      targetCamZ = clamped.z;
+    }
     const camGroundY = getTerrainHeight(targetCamX, targetCamZ);
     const camHeight = Math.max(
       camGroundY + 0.75,
@@ -3513,8 +3542,15 @@ export class CrossroadsScene {
     // Sanfte Verfolgerkamera mit Maus-Orbit, Neigung (Pitch) und Zoom (Distanz)
     const targetY = groundY + 1.1;
     const horizontalDist = Math.cos(this.cameraPitch) * this.cameraDistance;
-    const targetCamX = playerPos.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
-    const targetCamZ = playerPos.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
+    let targetCamX = playerPos.x + Math.sin(this.cameraOrbitAngle) * horizontalDist;
+    let targetCamZ = playerPos.z + Math.cos(this.cameraOrbitAngle) * horizontalDist;
+
+    // Nebelwand-Kameraschutz auf Weg 7: Kamera bleibt vor der Barriere, sodass der Spieler immer im Blickfeld bleibt
+    if (this.path7GateBlock && !this.path7GateBlock.isRemoved() && !this.path7GateBlock.isDissolving()) {
+      const clamped = this.clampCameraAgainstGateBlock(targetCamX, targetCamZ);
+      targetCamX = clamped.x;
+      targetCamZ = clamped.z;
+    }
 
     // Geländehöhe an der Kameraposition prüfen (Kamera darf niemals in den Boden einsinken!)
     const targetCamGroundY = getTerrainHeight(targetCamX, targetCamZ);

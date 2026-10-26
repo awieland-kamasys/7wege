@@ -421,14 +421,15 @@ export const PATH_7_END_CLEARING = {
 
 /**
  * Position, Ausrichtung und Kollisionsradius der Wegsperre im Rücken des Spielers zu Beginn auf Weg 7.
- * Liegt bei x: -39.8, z: -37.8 (hinter der Startkamera und kurz vor dem Torvorplatz {-40.5, -38.5})
- * und verhindert den Zugang zum Tor, bevor die spielende Person mit Waldhüter Arvid an der Schutzhütte gesprochen hat.
+ * Liegt bei x: -36.4, z: -34.2 (kurz vor dem Torvorplatz-Plateau {-40.5, -38.5}) und schließt
+ * den schmalen Waldwegkorridor blickdicht ab, bevor sich das runde Vorplatzplateau öffnet.
+ * Die Ausrichtung (rotationY) ist so gedreht, dass die Vorderseite zum Spieler/zur Kreuzung blickt.
  */
 export const PATH_7_GATE_BLOCK_POS = {
-  x: -39.8,
-  z: -37.8,
+  x: -36.4,
+  z: -34.2,
   radius: 2.2,
-  rotationY: Math.atan2(-40.5 - (-4.3), -38.5 - (-3.4)),
+  rotationY: Math.atan2(4.3 - (-40.5), 3.4 - (-38.5)),
 } as const;
 
 /**

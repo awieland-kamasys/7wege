@@ -1325,8 +1325,8 @@ describe('DialogueSystem (Kommunikationssystem für Waldhüter, Graumännchen, N
     expect(state.isPath7GateBlocked()).toBe(true);
 
     const blockPos = state.getPath7GateBlockPosition();
-    expect(blockPos.x).toBeCloseTo(-39.8, 1);
-    expect(blockPos.z).toBeCloseTo(-37.8, 1);
+    expect(blockPos.x).toBeCloseTo(-36.4, 1);
+    expect(blockPos.z).toBeCloseTo(-34.2, 1);
 
     // Kollisionsprüfung an der Sperre
     expect(state.isCollidingWithObstacles(blockPos.x, blockPos.z)).toBe(true);

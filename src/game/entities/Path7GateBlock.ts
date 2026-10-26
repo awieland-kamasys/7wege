@@ -50,13 +50,13 @@ export function createPath7GateBlock(): Path7GateBlockEntity {
   const pickableMeshes: THREE.Object3D[] = [];
   const mistTexture = typeof document !== 'undefined' ? createMistTexture() : null;
 
-  // Mehrere gestaffelte Nebelwände quer über den Weg (14 m breit, 5.5 m hoch)
-  // Staffelung rein nach hinten in Richtung Tor (offsetZ >= 0), damit keine Nebelschwaden nach vorn ragen
+  // Mehrere gestaffelte Nebelwände quer über den Weg (18 m breit, 5.8 m hoch)
+  // Staffelung rein nach hinten in Richtung Tor (offsetZ <= 0), damit keine Nebelschwaden nach vorn ragen
   const mistLayers = [
-    { offsetZ: 0.0, width: 14.0, height: 5.5, y: 2.2, baseOpacity: 0.70, swaySpeed: 0.6 },
-    { offsetZ: 0.4, width: 15.0, height: 5.8, y: 2.4, baseOpacity: 0.80, swaySpeed: 0.8 },
-    { offsetZ: 0.8, width: 14.5, height: 5.2, y: 2.1, baseOpacity: 0.85, swaySpeed: 0.7 },
-    { offsetZ: 1.2, width: 15.5, height: 5.6, y: 2.3, baseOpacity: 0.75, swaySpeed: 0.5 },
+    { offsetZ: 0.0, width: 18.0, height: 5.6, y: 2.3, baseOpacity: 0.76, swaySpeed: 0.6 },
+    { offsetZ: -0.4, width: 18.5, height: 6.0, y: 2.5, baseOpacity: 0.84, swaySpeed: 0.8 },
+    { offsetZ: -0.8, width: 18.0, height: 5.4, y: 2.2, baseOpacity: 0.86, swaySpeed: 0.7 },
+    { offsetZ: -1.2, width: 18.5, height: 5.8, y: 2.4, baseOpacity: 0.78, swaySpeed: 0.5 },
   ];
 
   const layerMeshes: THREE.Mesh[] = [];
@@ -71,7 +71,7 @@ export function createPath7GateBlock(): Path7GateBlockEntity {
       transparent: true,
       opacity: layer.baseOpacity,
       depthWrite: false,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide, // FrontSide: blickdicht von vorn (Spielerseite), von hinten unsichtbar (kein Verdecken der Spielfigur)
       fog: true,
     });
     const mesh = new THREE.Mesh(geo, mat);
@@ -83,7 +83,7 @@ export function createPath7GateBlock(): Path7GateBlockEntity {
   }
 
   // Unsichtbare Raycast-Hitbox für Klicks auf die Nebelwand
-  const hitboxGeo = new THREE.PlaneGeometry(8.0, 4.0);
+  const hitboxGeo = new THREE.PlaneGeometry(12.0, 4.5);
   const hitboxMat = new THREE.MeshBasicMaterial({
     visible: false,
     side: THREE.DoubleSide,
