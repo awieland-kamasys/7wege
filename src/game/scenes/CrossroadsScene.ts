@@ -82,7 +82,6 @@ import { buildMergedMushroomClusters, MushroomClusterOptions, MushroomType } fro
 import { buildMergedBirdhouses, BirdhouseInstance } from '../entities/Birdhouse';
 import { buildMergedFlowerClusters, FlowerClusterOptions, FlowerType } from '../entities/ForestFlowers';
 import { buildMergedForestBushes, ForestBushInstance, BushType, BushFlowerColor } from '../entities/ForestBush';
-import { buildMergedForestRocks, ForestRockInstance, RockType } from '../entities/ForestRocks';
 import { Vector2D } from '../systems/CrossroadsState';
 import { disposeObject3D } from '../utils/threeUtils';
 import { getTerrainHeight } from '../utils/terrainHeight';
@@ -805,12 +804,12 @@ export class CrossroadsScene {
     this.buildCurvedPath6Trees();
     this.buildCurvedPath7Trees();
     this.buildInstancedForest();
-    this.buildPath7Wildflowers();
+    this.buildGrasslandWildflowers();
     this.buildForestMushrooms();
     this.buildHellChasmBackdropRocks();
     this.buildSnowfallSystem();
     this.buildNixiePondBushes();
-    this.buildGrasslandRocks();
+    this.buildGrasslandBushes();
 
     // Zielmarkierung für Maus-Bewegung (Click-to-Move)
     this.targetMarker = this.createTargetMarker();
@@ -2210,10 +2209,10 @@ export class CrossroadsScene {
 
   /**
    * Verteilt farbenfrohe Waldblumen (Buschwindröschen, Vergissmeinnicht, Waldglockenblumen,
-   * Goldhahnenfuß und Waldnelken) auf den Waldwiesen links und rechts von Weg 7.
+   * Goldhahnenfuß und Waldnelken) auf den grünen Wiesenflächen entlang aller 7 Waldwege
+   * sowie im Waldsaum rund um die zentrale Kreuzungslichtung.
    */
-  private buildPath7Wildflowers(): void {
-    const waypoints = PATH_7_WAYPOINTS;
+  private buildGrasslandWildflowers(): void {
     const availableTypes: FlowerType[] = [
       'anemone',
       'forget_me_not',
@@ -2225,79 +2224,98 @@ export class CrossroadsScene {
 
     const flowerSpots: FlowerClusterOptions[] = [];
 
-    // 1. Entlang der Segmente von Weg 7 auf den Waldwiesen beidseitig
-    for (let i = 0; i < waypoints.length - 1; i++) {
-      const a = waypoints[i];
-      const b = waypoints[i + 1];
-      const dx = b.x - a.x;
-      const dz = b.z - a.z;
-      const len = Math.hypot(dx, dz);
-      if (len < 0.001) continue;
+    // 1. Farbenfrohe Blumentuffs im Waldsaum rund um die Kreuzungslichtung (Radius 8.4m bis 13.5m)
+    for (let i = 0; i < SEVEN_PATHS.length; i++) {
+      const midAngle = SEVEN_PATHS[i].angleRad + Math.PI / 7;
+      for (const r of [8.8, 11.2, 13.0]) {
+        for (const angleOffset of [-0.08, 0.08]) {
+          const angle = midAngle + angleOffset + Math.sin(r * 2.3 + i) * 0.04;
+          const fx = Math.sin(angle) * r;
+          const fz = -Math.cos(angle) * r;
 
-      const ux = dx / len;
-      const uz = dz / len;
-      const perpX = -uz;
-      const perpZ = ux;
-
-      const tSteps = [0.15, 0.35, 0.55, 0.75, 0.92];
-
-      for (const t of tSteps) {
-        const segX = a.x + dx * t;
-        const segZ = a.z + dz * t;
-
-        for (const side of [-1, 1]) {
-          // Verschiedene Abstände auf der Wiese (ab 1.6m bis ca. 7.5m)
-          const distOptions = [1.65, 2.8, 4.2, 5.8, 7.2];
-          for (let dIdx = 0; dIdx < distOptions.length; dIdx++) {
-            // Natürliche Tuff-Gruppierung
-            if ((i * 3 + Math.round(t * 10) + dIdx + (side > 0 ? 1 : 0)) % 2 !== 0) {
-              continue;
-            }
-
-            const baseDist = distOptions[dIdx];
-            const jitterDist = baseDist + Math.sin(t * 11.0 + side * 4.0) * 0.35;
-            const jitterAlong = Math.cos(t * 9.0 + dIdx * 2.5) * 0.4;
-
-            const fx = segX + ux * jitterAlong + perpX * side * jitterDist;
-            const fz = segZ + uz * jitterAlong + perpZ * side * jitterDist;
-
-            // Nicht auf dem Weg selbst
-            if (this.isNearCurvedCorridor(fx, fz, PATH_7_WAYPOINTS, undefined, 1.45)) {
-              continue;
-            }
-
-            // Nicht auf der zentralen Kreuzungslichtung
-            if (Math.hypot(fx, fz) < 8.2) {
-              continue;
-            }
-
-            // Nicht im Korridor von Weg 6 oder Weg 1
-            if (this.isNearPath6Corridor(fx, fz, 2.6) || this.isNearPath1Corridor(fx, fz, 2.6)) {
-              continue;
-            }
-
-            // Nicht auf dem Vorplatz des Tores
-            if (Math.hypot(fx - CLOSED_GATE_POS.x, fz - CLOSED_GATE_POS.z) < CLOSED_GATE_POS.radius + 0.4) {
-              continue;
-            }
-
-            // Strikte Prüfung: muss sich auf dem kreisförmigen grünen Waldboden befinden
-            if (Math.hypot(fx, fz) > 105) {
-              continue;
-            }
-
-            const typeIdx = (i * 3 + Math.round(t * 7) + dIdx + (side > 0 ? 2 : 0)) % availableTypes.length;
-            const type = availableTypes[typeIdx];
-            const scale = 0.88 + ((i + dIdx) % 3) * 0.12;
-            const rotationY = (i * 1.5 + t * 4 + side) * 1.2;
-
-            flowerSpots.push({ x: fx, z: fz, type, scale, rotationY });
+          if (this.isPositionOnGreenGrass(fx, fz)) {
+            const type =
+              availableTypes[
+                (i * 3 + Math.round(r * 2) + (angleOffset > 0 ? 1 : 0)) % availableTypes.length
+              ];
+            const scale = 0.88 + ((i + Math.round(r)) % 3) * 0.12;
+            flowerSpots.push({
+              x: fx,
+              z: fz,
+              type,
+              scale,
+              rotationY: (i * 1.7 + r * 3) % (Math.PI * 2),
+            });
           }
         }
       }
     }
 
-    // 2. Zusätzliche idyllische Blumeninseln auf den Wiesen rund um den Vorplatz des geschlossenen Tores
+    // 2. Entlang aller 7 Waldwege beidseitig im weichen Wiesengras
+    const allPaths = [
+      { id: 1, waypoints: PATH_1_WAYPOINTS, preferredType: 'anemone' as FlowerType },
+      { id: 2, waypoints: PATH_2_WAYPOINTS, preferredType: 'forget_me_not' as FlowerType },
+      { id: 3, waypoints: PATH_3_WAYPOINTS, preferredType: 'bellflower' as FlowerType },
+      { id: 4, waypoints: PATH_4_WAYPOINTS, preferredType: 'buttercup' as FlowerType },
+      { id: 5, waypoints: PATH_5_WAYPOINTS, preferredType: 'campion' as FlowerType },
+      { id: 6, waypoints: PATH_6_WAYPOINTS, preferredType: 'mixed' as FlowerType },
+      { id: 7, waypoints: PATH_7_WAYPOINTS, preferredType: 'anemone' as FlowerType },
+    ];
+
+    for (const p of allPaths) {
+      const wps = p.waypoints;
+      for (let i = 0; i < wps.length - 1; i++) {
+        const a = wps[i];
+        const b = wps[i + 1];
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const len = Math.hypot(dx, dz);
+        if (len < 0.001) continue;
+
+        const ux = dx / len;
+        const uz = dz / len;
+        const perpX = -uz;
+        const perpZ = ux;
+
+        const tSteps = [0.20, 0.45, 0.70, 0.90];
+
+        for (const t of tSteps) {
+          const segX = a.x + dx * t;
+          const segZ = a.z + dz * t;
+
+          for (const side of [-1, 1]) {
+            const distOptions = [2.2, 3.8, 5.5];
+            for (let dIdx = 0; dIdx < distOptions.length; dIdx++) {
+              if ((i * 4 + Math.round(t * 10) + dIdx + (side > 0 ? 1 : 0)) % 2 !== 0) {
+                continue;
+              }
+
+              const baseDist = distOptions[dIdx];
+              const jitterDist = baseDist + Math.sin(t * 9.0 + side * 3.5 + p.id) * 0.35;
+              const jitterAlong = Math.cos(t * 8.0 + dIdx * 2.1) * 0.4;
+
+              const fx = segX + ux * jitterAlong + perpX * side * jitterDist;
+              const fz = segZ + uz * jitterAlong + perpZ * side * jitterDist;
+
+              if (!this.isPositionOnGreenGrass(fx, fz)) {
+                continue;
+              }
+
+              const typeCandidate =
+                dIdx === 0 && (i + side) % 2 === 0
+                  ? p.preferredType
+                  : availableTypes[(i * 3 + Math.round(t * 7) + dIdx + p.id) % availableTypes.length];
+              const scale = 0.85 + ((i + dIdx + p.id) % 3) * 0.12;
+              const rotationY = (i * 1.3 + t * 4 + side * 2) * 1.1;
+
+              flowerSpots.push({ x: fx, z: fz, type: typeCandidate, scale, rotationY });
+            }
+          }
+        }
+      }
+    }
+
+    // 3. Wiesenblumen rund um das geschlossene Tor
     const gateClearingFlowers: Array<{ lx: number; lz: number; type: FlowerType; scale: number }> = [
       { lx: -8.5, lz: 4.5, type: 'anemone', scale: 1.05 },
       { lx: -6.2, lz: 7.2, type: 'bellflower', scale: 0.95 },
@@ -2316,11 +2334,7 @@ export class CrossroadsScene {
       const wx = CLOSED_GATE_POS.x + spot.lx * gateCos + spot.lz * gateSin;
       const wz = CLOSED_GATE_POS.z - spot.lx * gateSin + spot.lz * gateCos;
 
-      if (
-        Math.hypot(wx, wz) >= 8.2 &&
-        Math.hypot(wx - CLOSED_GATE_POS.x, wz - CLOSED_GATE_POS.z) >= CLOSED_GATE_POS.radius + 0.3 &&
-        !this.isNearCurvedCorridor(wx, wz, PATH_7_WAYPOINTS, undefined, 2.2)
-      ) {
+      if (this.isPositionOnGreenGrass(wx, wz)) {
         flowerSpots.push({
           x: wx,
           z: wz,
@@ -2540,104 +2554,89 @@ export class CrossroadsScene {
   }
 
   /**
-   * Verteilt malerische Felsen, Findlinge, Felsgruppen und Kieselsteinbetten
-   * auf den grünen Waldboden- und Wiesenflächen der Spielwelt:
-   * - Eingerahmte Findlinge im Waldsaum rund um die zentrale Kreuzung
-   * - Moosige Findlinge und Felsformationen in den 7 großen Waldkeilen
-   * - Kieselgruppen und flache Trittsteine an den sanften Wiesenrändern der Wege
+   * Verteilt üppige Waldpflanzen, Wedelfarne, Beerensträucher und blühende Waldsträucher
+   * auf den weiten Grünflächen und Waldkeilen zwischen den 7 Pfaden:
+   * - Prachtvolle Farne (fern_bush) an den Baumwurzeln und schattigen Hängen
+   * - Fruchttragende Beerensträucher (berry_bush) mit roten Waldbeeren
+   * - Blühende Laubbüsche (lush_bush) mit bunten Blüten
    * - Ausschließlich auf Grünland (geprüft über isPositionOnGreenGrass)
    */
-  private buildGrasslandRocks(): void {
-    const rockSpots: ForestRockInstance[] = [];
+  private buildGrasslandBushes(): void {
+    const bushInstances: ForestBushInstance[] = [];
+    const flowerColors: BushFlowerColor[] = ['none', 'red', 'white', 'yellow', 'purple'];
 
-    // 1. Malerische Findlinge im Waldsaum rund um die Kreuzungslichtung (Radius 8.8m bis 14.5m)
-    // Diese Felsen rahmen die zentrale Lichtung organisch ein und sind von der Kreuzung aus sichtbar
+    // 1. Prächtige Pflanzen im Waldsaum rund um die Kreuzungslichtung (Radius 9m bis 14.5m)
     for (let i = 0; i < SEVEN_PATHS.length; i++) {
       const midAngle = SEVEN_PATHS[i].angleRad + Math.PI / 7;
-      // Zwei Entfernungsstufen im Waldsaum
-      for (const dist of [9.2, 13.5]) {
-        const jitterAngle = midAngle + ((i * 3 + Math.round(dist)) % 2 === 0 ? 0.09 : -0.09);
-        const rx = Math.sin(jitterAngle) * dist;
-        const rz = -Math.cos(jitterAngle) * dist;
 
-        if (this.isPositionOnGreenGrass(rx, rz)) {
-          const types: RockType[] = ['mossy_boulder', 'rock_cluster', 'flat_stone'];
+      for (const dist of [9.5, 12.8]) {
+        const offset = (i * 3 + Math.round(dist)) % 2 === 0 ? 0.08 : -0.08;
+        const bx = Math.sin(midAngle + offset) * dist;
+        const bz = -Math.cos(midAngle + offset) * dist;
+
+        if (this.isPositionOnGreenGrass(bx, bz)) {
+          const types: BushType[] = ['fern_bush', 'berry_bush', 'lush_bush'];
           const type = types[(i + Math.round(dist)) % types.length];
-          const scale = 0.85 + ((i * 5 + Math.round(dist * 2)) % 4) * 0.12;
+          const scale = 0.95 + ((i * 4 + Math.round(dist)) % 3) * 0.15;
 
-          rockSpots.push({
-            x: rx,
-            z: rz,
+          bushInstances.push({
+            x: bx,
+            z: bz,
             scale,
-            rotationY: jitterAngle + 0.4,
+            rotationY: midAngle + offset + 0.5,
             type,
-            colorVariant: 'granite',
+            flowerColor: flowerColors[(i + Math.round(dist)) % flowerColors.length],
           });
         }
       }
     }
 
-    // 2. Tiefe Waldkeile zwischen den 7 Wegen (Radien 18m bis 52m)
+    // 2. Tiefe Waldkeile zwischen den 7 Wegen (Radien 18m bis 48m)
     for (let i = 0; i < SEVEN_PATHS.length; i++) {
       const baseAngle = SEVEN_PATHS[i].angleRad + Math.PI / 7;
-      const pathId = SEVEN_PATHS[i].id;
 
-      // Je nach Himmelsrichtung / Pfadbereich passende Farbvariante:
-      // Weg 4/5 (Höllenschlund-Nähe) -> Schiefer/Basalt, Weg 6 (Jagdhütte) -> Sandstein, Rest -> Granit
-      const variant =
-        pathId === 4 || pathId === 5
-          ? 'slate'
-          : pathId === 6
-          ? 'sandstone'
-          : 'granite';
-
-      for (let r = 18.0; r <= 52.0; r += 4.5) {
-        // Natürlicher Rhythmus (nicht an jeder Stelle)
-        if ((i * 7 + Math.round(r * 2)) % 3 === 0) {
+      for (let r = 18.0; r <= 48.0; r += 4.5) {
+        if ((i * 5 + Math.round(r * 2)) % 3 === 0) {
           continue;
         }
 
-        const angleOffset = Math.sin(r * 0.45 + i * 2.1) * 0.14;
-        const rx = Math.sin(baseAngle + angleOffset) * r;
-        const rz = -Math.cos(baseAngle + angleOffset) * r;
+        const angleOffset = Math.sin(r * 0.4 + i * 1.8) * 0.12;
+        const bx = Math.sin(baseAngle + angleOffset) * r;
+        const bz = -Math.cos(baseAngle + angleOffset) * r;
 
-        if (this.isPositionOnGreenGrass(rx, rz)) {
-          const typeCandidates: RockType[] = [
-            'mossy_boulder',
-            'rock_cluster',
-            'flat_stone',
-            'pebbles',
-          ];
-          const type = typeCandidates[(i * 3 + Math.round(r)) % typeCandidates.length];
-          const scale = 0.75 + ((i + Math.round(r)) % 5) * 0.14;
+        if (this.isPositionOnGreenGrass(bx, bz)) {
+          const types: BushType[] = ['fern_bush', 'berry_bush', 'lush_bush'];
+          const type = types[(i * 2 + Math.round(r)) % types.length];
+          const scale = 0.90 + ((i + Math.round(r)) % 4) * 0.14;
 
-          rockSpots.push({
-            x: rx,
-            z: rz,
+          bushInstances.push({
+            x: bx,
+            z: bz,
             scale,
-            rotationY: (i * 1.5 + r * 0.3) % (Math.PI * 2),
+            rotationY: (i * 1.3 + r * 0.4) % (Math.PI * 2),
             type,
-            colorVariant: variant,
+            flowerColor: flowerColors[(i + Math.round(r / 3)) % flowerColors.length],
           });
         }
       }
     }
 
-    // 3. Wiesenränder entlang der geschwungenen Wege (in sicherem Abstand von 3.2m bis 5.5m im Gras)
-    const pathsWaypoints = [
-      { id: 1, wps: PATH_1_WAYPOINTS, variant: 'granite' as const },
-      { id: 2, wps: PATH_2_WAYPOINTS, variant: 'granite' as const },
-      { id: 3, wps: PATH_3_WAYPOINTS, variant: 'granite' as const },
-      { id: 4, wps: PATH_4_WAYPOINTS, variant: 'sandstone' as const },
-      { id: 5, wps: PATH_5_WAYPOINTS, variant: 'slate' as const },
-      { id: 6, wps: PATH_6_WAYPOINTS, variant: 'sandstone' as const },
-      { id: 7, wps: PATH_7_WAYPOINTS, variant: 'granite' as const },
+    // 3. Wiesenränder entlang der Wege (3.2m bis 5.5m im Gras)
+    const paths = [
+      PATH_1_WAYPOINTS,
+      PATH_2_WAYPOINTS,
+      PATH_3_WAYPOINTS,
+      PATH_4_WAYPOINTS,
+      PATH_5_WAYPOINTS,
+      PATH_6_WAYPOINTS,
+      PATH_7_WAYPOINTS,
     ];
 
-    for (const p of pathsWaypoints) {
-      for (let segIdx = 0; segIdx < p.wps.length - 1; segIdx++) {
-        const a = p.wps[segIdx];
-        const b = p.wps[segIdx + 1];
+    for (let pIdx = 0; pIdx < paths.length; pIdx++) {
+      const wps = paths[pIdx];
+      for (let segIdx = 0; segIdx < wps.length - 1; segIdx++) {
+        const a = wps[segIdx];
+        const b = wps[segIdx + 1];
         const dx = b.x - a.x;
         const dz = b.z - a.z;
         const len = Math.hypot(dx, dz);
@@ -2646,33 +2645,31 @@ export class CrossroadsScene {
         const perpX = -dz / len;
         const perpZ = dx / len;
 
-        // Entlang jedes Segments bei t = 0.35 und t = 0.72
-        for (const t of [0.35, 0.72]) {
+        for (const t of [0.35, 0.75]) {
           const segX = a.x + dx * t;
           const segZ = a.z + dz * t;
 
           for (const side of [-1, 1]) {
-            // Natürliche Selektion: nur ca. jeder 2. Punkt
-            if ((segIdx * 4 + Math.round(t * 10) + (side > 0 ? 1 : 0)) % 2 !== 0) {
+            if ((segIdx * 3 + Math.round(t * 10) + (side > 0 ? 1 : 0)) % 2 !== 0) {
               continue;
             }
 
-            const dist = 3.6 + Math.sin(segIdx * 3.0 + side * 2.0) * 0.8;
-            const rx = segX + perpX * side * dist;
-            const rz = segZ + perpZ * side * dist;
+            const dist = 3.8 + Math.sin(segIdx * 2.5 + side * 1.7) * 0.7;
+            const bx = segX + perpX * side * dist;
+            const bz = segZ + perpZ * side * dist;
 
-            if (this.isPositionOnGreenGrass(rx, rz)) {
-              const types: RockType[] = ['mossy_boulder', 'rock_cluster', 'flat_stone', 'pebbles'];
-              const type = types[(segIdx + side + Math.round(t * 5)) % types.length];
-              const scale = 0.70 + ((segIdx + Math.round(dist * 2)) % 4) * 0.12;
+            if (this.isPositionOnGreenGrass(bx, bz)) {
+              const types: BushType[] = ['fern_bush', 'berry_bush', 'lush_bush'];
+              const type = types[(segIdx + side + pIdx) % types.length];
+              const scale = 0.85 + ((segIdx + pIdx) % 3) * 0.12;
 
-              rockSpots.push({
-                x: rx,
-                z: rz,
+              bushInstances.push({
+                x: bx,
+                z: bz,
                 scale,
-                rotationY: Math.atan2(dx, dz) + (side > 0 ? 0.3 : -0.3),
+                rotationY: Math.atan2(dx, dz) + (side > 0 ? 0.4 : -0.4),
                 type,
-                colorVariant: p.variant,
+                flowerColor: flowerColors[(segIdx + pIdx) % flowerColors.length],
               });
             }
           }
@@ -2680,9 +2677,9 @@ export class CrossroadsScene {
       }
     }
 
-    if (rockSpots.length > 0) {
-      const rocksGroup = buildMergedForestRocks(rockSpots);
-      this.scene.add(rocksGroup);
+    if (bushInstances.length > 0) {
+      const bushesGroup = buildMergedForestBushes(bushInstances);
+      this.scene.add(bushesGroup);
     }
   }
 
