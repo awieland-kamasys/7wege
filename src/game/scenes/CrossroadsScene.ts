@@ -809,7 +809,6 @@ export class CrossroadsScene {
     this.buildHellChasmBackdropRocks();
     this.buildSnowfallSystem();
     this.buildNixiePondBushes();
-    this.buildGrasslandBushes();
 
     // Zielmarkierung für Maus-Bewegung (Click-to-Move)
     this.targetMarker = this.createTargetMarker();
@@ -2553,135 +2552,7 @@ export class CrossroadsScene {
     }
   }
 
-  /**
-   * Verteilt üppige Waldpflanzen, Wedelfarne, Beerensträucher und blühende Waldsträucher
-   * auf den weiten Grünflächen und Waldkeilen zwischen den 7 Pfaden:
-   * - Prachtvolle Farne (fern_bush) an den Baumwurzeln und schattigen Hängen
-   * - Fruchttragende Beerensträucher (berry_bush) mit roten Waldbeeren
-   * - Blühende Laubbüsche (lush_bush) mit bunten Blüten
-   * - Ausschließlich auf Grünland (geprüft über isPositionOnGreenGrass)
-   */
-  private buildGrasslandBushes(): void {
-    const bushInstances: ForestBushInstance[] = [];
-    const flowerColors: BushFlowerColor[] = ['none', 'red', 'white', 'yellow', 'purple'];
 
-    // 1. Prächtige Pflanzen im Waldsaum rund um die Kreuzungslichtung (Radius 9m bis 14.5m)
-    for (let i = 0; i < SEVEN_PATHS.length; i++) {
-      const midAngle = SEVEN_PATHS[i].angleRad + Math.PI / 7;
-
-      for (const dist of [9.5, 12.8]) {
-        const offset = (i * 3 + Math.round(dist)) % 2 === 0 ? 0.08 : -0.08;
-        const bx = Math.sin(midAngle + offset) * dist;
-        const bz = -Math.cos(midAngle + offset) * dist;
-
-        if (this.isPositionOnGreenGrass(bx, bz)) {
-          const types: BushType[] = ['fern_bush', 'berry_bush', 'lush_bush'];
-          const type = types[(i + Math.round(dist)) % types.length];
-          const scale = 0.95 + ((i * 4 + Math.round(dist)) % 3) * 0.15;
-
-          bushInstances.push({
-            x: bx,
-            z: bz,
-            scale,
-            rotationY: midAngle + offset + 0.5,
-            type,
-            flowerColor: flowerColors[(i + Math.round(dist)) % flowerColors.length],
-          });
-        }
-      }
-    }
-
-    // 2. Tiefe Waldkeile zwischen den 7 Wegen (Radien 18m bis 48m)
-    for (let i = 0; i < SEVEN_PATHS.length; i++) {
-      const baseAngle = SEVEN_PATHS[i].angleRad + Math.PI / 7;
-
-      for (let r = 18.0; r <= 48.0; r += 4.5) {
-        if ((i * 5 + Math.round(r * 2)) % 3 === 0) {
-          continue;
-        }
-
-        const angleOffset = Math.sin(r * 0.4 + i * 1.8) * 0.12;
-        const bx = Math.sin(baseAngle + angleOffset) * r;
-        const bz = -Math.cos(baseAngle + angleOffset) * r;
-
-        if (this.isPositionOnGreenGrass(bx, bz)) {
-          const types: BushType[] = ['fern_bush', 'berry_bush', 'lush_bush'];
-          const type = types[(i * 2 + Math.round(r)) % types.length];
-          const scale = 0.90 + ((i + Math.round(r)) % 4) * 0.14;
-
-          bushInstances.push({
-            x: bx,
-            z: bz,
-            scale,
-            rotationY: (i * 1.3 + r * 0.4) % (Math.PI * 2),
-            type,
-            flowerColor: flowerColors[(i + Math.round(r / 3)) % flowerColors.length],
-          });
-        }
-      }
-    }
-
-    // 3. Wiesenränder entlang der Wege (3.2m bis 5.5m im Gras)
-    const paths = [
-      PATH_1_WAYPOINTS,
-      PATH_2_WAYPOINTS,
-      PATH_3_WAYPOINTS,
-      PATH_4_WAYPOINTS,
-      PATH_5_WAYPOINTS,
-      PATH_6_WAYPOINTS,
-      PATH_7_WAYPOINTS,
-    ];
-
-    for (let pIdx = 0; pIdx < paths.length; pIdx++) {
-      const wps = paths[pIdx];
-      for (let segIdx = 0; segIdx < wps.length - 1; segIdx++) {
-        const a = wps[segIdx];
-        const b = wps[segIdx + 1];
-        const dx = b.x - a.x;
-        const dz = b.z - a.z;
-        const len = Math.hypot(dx, dz);
-        if (len < 0.001) continue;
-
-        const perpX = -dz / len;
-        const perpZ = dx / len;
-
-        for (const t of [0.35, 0.75]) {
-          const segX = a.x + dx * t;
-          const segZ = a.z + dz * t;
-
-          for (const side of [-1, 1]) {
-            if ((segIdx * 3 + Math.round(t * 10) + (side > 0 ? 1 : 0)) % 2 !== 0) {
-              continue;
-            }
-
-            const dist = 3.8 + Math.sin(segIdx * 2.5 + side * 1.7) * 0.7;
-            const bx = segX + perpX * side * dist;
-            const bz = segZ + perpZ * side * dist;
-
-            if (this.isPositionOnGreenGrass(bx, bz)) {
-              const types: BushType[] = ['fern_bush', 'berry_bush', 'lush_bush'];
-              const type = types[(segIdx + side + pIdx) % types.length];
-              const scale = 0.85 + ((segIdx + pIdx) % 3) * 0.12;
-
-              bushInstances.push({
-                x: bx,
-                z: bz,
-                scale,
-                rotationY: Math.atan2(dx, dz) + (side > 0 ? 0.4 : -0.4),
-                type,
-                flowerColor: flowerColors[(segIdx + pIdx) % flowerColors.length],
-              });
-            }
-          }
-        }
-      }
-    }
-
-    if (bushInstances.length > 0) {
-      const bushesGroup = buildMergedForestBushes(bushInstances);
-      this.scene.add(bushesGroup);
-    }
-  }
 
   /**
    * Errichtet eine monumentale, schroffe Felsenkulisse aus spitzen, hohen, dunklen Basalt- und Obsidianzacken
