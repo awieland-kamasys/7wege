@@ -82,6 +82,7 @@ import { buildMergedMushroomClusters, MushroomClusterOptions, MushroomType } fro
 import { buildMergedBirdhouses, BirdhouseInstance } from '../entities/Birdhouse';
 import { buildMergedFlowerClusters, FlowerClusterOptions, FlowerType } from '../entities/ForestFlowers';
 import { buildMergedForestBushes, ForestBushInstance, BushType, BushFlowerColor } from '../entities/ForestBush';
+import { buildMergedForestRocks, ForestRockInstance, RockType } from '../entities/ForestRocks';
 import { Vector2D } from '../systems/CrossroadsState';
 import { disposeObject3D } from '../utils/threeUtils';
 import { getTerrainHeight } from '../utils/terrainHeight';
@@ -809,6 +810,7 @@ export class CrossroadsScene {
     this.buildHellChasmBackdropRocks();
     this.buildSnowfallSystem();
     this.buildNixiePondBushes();
+    this.buildGrasslandRocks();
 
     // Zielmarkierung für Maus-Bewegung (Click-to-Move)
     this.targetMarker = this.createTargetMarker();
@@ -2534,6 +2536,153 @@ export class CrossroadsScene {
     if (bushInstances.length > 0) {
       const bushesGroup = buildMergedForestBushes(bushInstances);
       this.scene.add(bushesGroup);
+    }
+  }
+
+  /**
+   * Verteilt malerische Felsen, Findlinge, Felsgruppen und Kieselsteinbetten
+   * auf den grünen Waldboden- und Wiesenflächen der Spielwelt:
+   * - Eingerahmte Findlinge im Waldsaum rund um die zentrale Kreuzung
+   * - Moosige Findlinge und Felsformationen in den 7 großen Waldkeilen
+   * - Kieselgruppen und flache Trittsteine an den sanften Wiesenrändern der Wege
+   * - Ausschließlich auf Grünland (geprüft über isPositionOnGreenGrass)
+   */
+  private buildGrasslandRocks(): void {
+    const rockSpots: ForestRockInstance[] = [];
+
+    // 1. Malerische Findlinge im Waldsaum rund um die Kreuzungslichtung (Radius 8.8m bis 14.5m)
+    // Diese Felsen rahmen die zentrale Lichtung organisch ein und sind von der Kreuzung aus sichtbar
+    for (let i = 0; i < SEVEN_PATHS.length; i++) {
+      const midAngle = SEVEN_PATHS[i].angleRad + Math.PI / 7;
+      // Zwei Entfernungsstufen im Waldsaum
+      for (const dist of [9.2, 13.5]) {
+        const jitterAngle = midAngle + ((i * 3 + Math.round(dist)) % 2 === 0 ? 0.09 : -0.09);
+        const rx = Math.sin(jitterAngle) * dist;
+        const rz = -Math.cos(jitterAngle) * dist;
+
+        if (this.isPositionOnGreenGrass(rx, rz)) {
+          const types: RockType[] = ['mossy_boulder', 'rock_cluster', 'flat_stone'];
+          const type = types[(i + Math.round(dist)) % types.length];
+          const scale = 0.85 + ((i * 5 + Math.round(dist * 2)) % 4) * 0.12;
+
+          rockSpots.push({
+            x: rx,
+            z: rz,
+            scale,
+            rotationY: jitterAngle + 0.4,
+            type,
+            colorVariant: 'granite',
+          });
+        }
+      }
+    }
+
+    // 2. Tiefe Waldkeile zwischen den 7 Wegen (Radien 18m bis 52m)
+    for (let i = 0; i < SEVEN_PATHS.length; i++) {
+      const baseAngle = SEVEN_PATHS[i].angleRad + Math.PI / 7;
+      const pathId = SEVEN_PATHS[i].id;
+
+      // Je nach Himmelsrichtung / Pfadbereich passende Farbvariante:
+      // Weg 4/5 (Höllenschlund-Nähe) -> Schiefer/Basalt, Weg 6 (Jagdhütte) -> Sandstein, Rest -> Granit
+      const variant =
+        pathId === 4 || pathId === 5
+          ? 'slate'
+          : pathId === 6
+          ? 'sandstone'
+          : 'granite';
+
+      for (let r = 18.0; r <= 52.0; r += 4.5) {
+        // Natürlicher Rhythmus (nicht an jeder Stelle)
+        if ((i * 7 + Math.round(r * 2)) % 3 === 0) {
+          continue;
+        }
+
+        const angleOffset = Math.sin(r * 0.45 + i * 2.1) * 0.14;
+        const rx = Math.sin(baseAngle + angleOffset) * r;
+        const rz = -Math.cos(baseAngle + angleOffset) * r;
+
+        if (this.isPositionOnGreenGrass(rx, rz)) {
+          const typeCandidates: RockType[] = [
+            'mossy_boulder',
+            'rock_cluster',
+            'flat_stone',
+            'pebbles',
+          ];
+          const type = typeCandidates[(i * 3 + Math.round(r)) % typeCandidates.length];
+          const scale = 0.75 + ((i + Math.round(r)) % 5) * 0.14;
+
+          rockSpots.push({
+            x: rx,
+            z: rz,
+            scale,
+            rotationY: (i * 1.5 + r * 0.3) % (Math.PI * 2),
+            type,
+            colorVariant: variant,
+          });
+        }
+      }
+    }
+
+    // 3. Wiesenränder entlang der geschwungenen Wege (in sicherem Abstand von 3.2m bis 5.5m im Gras)
+    const pathsWaypoints = [
+      { id: 1, wps: PATH_1_WAYPOINTS, variant: 'granite' as const },
+      { id: 2, wps: PATH_2_WAYPOINTS, variant: 'granite' as const },
+      { id: 3, wps: PATH_3_WAYPOINTS, variant: 'granite' as const },
+      { id: 4, wps: PATH_4_WAYPOINTS, variant: 'sandstone' as const },
+      { id: 5, wps: PATH_5_WAYPOINTS, variant: 'slate' as const },
+      { id: 6, wps: PATH_6_WAYPOINTS, variant: 'sandstone' as const },
+      { id: 7, wps: PATH_7_WAYPOINTS, variant: 'granite' as const },
+    ];
+
+    for (const p of pathsWaypoints) {
+      for (let segIdx = 0; segIdx < p.wps.length - 1; segIdx++) {
+        const a = p.wps[segIdx];
+        const b = p.wps[segIdx + 1];
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const len = Math.hypot(dx, dz);
+        if (len < 0.001) continue;
+
+        const perpX = -dz / len;
+        const perpZ = dx / len;
+
+        // Entlang jedes Segments bei t = 0.35 und t = 0.72
+        for (const t of [0.35, 0.72]) {
+          const segX = a.x + dx * t;
+          const segZ = a.z + dz * t;
+
+          for (const side of [-1, 1]) {
+            // Natürliche Selektion: nur ca. jeder 2. Punkt
+            if ((segIdx * 4 + Math.round(t * 10) + (side > 0 ? 1 : 0)) % 2 !== 0) {
+              continue;
+            }
+
+            const dist = 3.6 + Math.sin(segIdx * 3.0 + side * 2.0) * 0.8;
+            const rx = segX + perpX * side * dist;
+            const rz = segZ + perpZ * side * dist;
+
+            if (this.isPositionOnGreenGrass(rx, rz)) {
+              const types: RockType[] = ['mossy_boulder', 'rock_cluster', 'flat_stone', 'pebbles'];
+              const type = types[(segIdx + side + Math.round(t * 5)) % types.length];
+              const scale = 0.70 + ((segIdx + Math.round(dist * 2)) % 4) * 0.12;
+
+              rockSpots.push({
+                x: rx,
+                z: rz,
+                scale,
+                rotationY: Math.atan2(dx, dz) + (side > 0 ? 0.3 : -0.3),
+                type,
+                colorVariant: p.variant,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    if (rockSpots.length > 0) {
+      const rocksGroup = buildMergedForestRocks(rockSpots);
+      this.scene.add(rocksGroup);
     }
   }
 
